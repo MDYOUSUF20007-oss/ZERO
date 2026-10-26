@@ -1,2 +1,23 @@
 @import "tailwindcss";
 body { background: #000; color: #fff; margin: 0; user-select: none; -webkit-user-select: none; }
+
+/* --- AMOLED THEME PATCH --- */
+body {
+  background: radial-gradient(circle at 50% 0%, #16062c 0%, #000000 75%);
+  color: #f3e8ff;
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.amoled-card {
+  background: rgba(20, 10, 35, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+.btn-engage {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #eab308 100%);
+  color: #000;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+}
