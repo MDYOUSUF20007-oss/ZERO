@@ -1,0 +1,217 @@
+/**
+ * Tactile Sound Synthesizer & Web Haptics Engine for Zero
+ * Synthesizes crisp clicks, mechanical detents, and escalating charge hums without external audio files.
+ */
+class HapticsEngine {
+  private ctx: AudioContext | null = null;
+  private holdOsc: OscillatorNode | null = null;
+  private holdGain: GainNode | null = null;
+
+  private getContext(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+    return this.ctx;
+  }
+
+  // Dial Scrub Click (short metallic/detent tick)
+  tick(frequency = 900) {
+    try {
+      if (navigator.vibrate) navigator.vibrate(8);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.015);
+
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.018);
+    } catch {
+      // Audio autoplay blocked or unsupported
+    }
+  }
+
+  // Heavy Detent Thud (e.g. Presets or 1-hour intervals)
+  thud() {
+    try {
+      if (navigator.vibrate) navigator.vibrate(20);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.04);
+
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+    } catch {
+      // Ignored
+    }
+  }
+
+  // Escalating hold-to-lock hum (starts at 120Hz, rises to 520Hz over 3s)
+  startHoldCharge() {
+    try {
+      if (navigator.vibrate) navigator.vibrate([15, 60, 20, 60, 30, 60, 40]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      this.stopHoldCharge();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(110, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 3.0);
+
+      gain.gain.setValueAtTime(0.01, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 3.0);
+
+      // Low pass filter to warm up the brutalist tone
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(300, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 3.0);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      this.holdOsc = osc;
+      this.holdGain = gain;
+    } catch {
+      // Ignored
+    }
+  }
+
+  stopHoldCharge() {
+    try {
+      if (this.holdOsc) {
+        this.holdOsc.stop();
+        this.holdOsc.disconnect();
+        this.holdOsc = null;
+      }
+      if (this.holdGain) {
+        this.holdGain.disconnect();
+        this.holdGain = null;
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
+  // Ignition Lock Engaged Clank
+  lockEngaged() {
+    try {
+      this.stopHoldCharge();
+      if (navigator.vibrate) navigator.vibrate([60, 40, 100]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.4, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.13);
+    } catch {
+      // Ignored
+    }
+  }
+
+  // Parachute Deployed Sound
+  parachuteDeploy() {
+    try {
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      // Descending warning alert
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.25);
+
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.26);
+    } catch {
+      // Ignored
+    }
+  }
+
+  // 20-Hour Milestone celebration sound
+  milestoneChime() {
+    try {
+      if (navigator.vibrate) navigator.vibrate([40, 40, 60, 40, 100]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const notes = [330, 440, 554, 659]; // E major chord
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+
+        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + idx * 0.08 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.6);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + idx * 0.08);
+        osc.stop(ctx.currentTime + idx * 0.08 + 0.65);
+      });
+    } catch {
+      // Ignored
+    }
+  }
+}
+
+export const haptics = new HapticsEngine();
