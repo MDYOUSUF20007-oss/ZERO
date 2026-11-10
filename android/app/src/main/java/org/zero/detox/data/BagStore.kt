@@ -9,13 +9,14 @@ import android.provider.Telephony
 import android.telecom.TelecomManager
 import org.json.JSONArray
 import org.json.JSONObject
+import org.zero.detox.engage.EngageConfigStore
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
 
 /**
  * BagStore:
- * Manages the user's active "Bag" (Suitcase) of up to 3 custom allowed apps + optional Normal SMS
+ * Manages the user's active "Bag" (Suitcase) of allowed/configured apps + optional Normal SMS
  * that remain permitted during an active Zero lock session.
  * Normal Phone Calls are compulsory and always remain accessible even in an empty Bag.
  */
@@ -34,7 +35,7 @@ class BagStore(private val context: Context) {
         const val KEY_ALLOW_SMS = "allow_sms"
         const val KEY_BAG_APPS_JSON = "bag_apps_json"
         const val KEY_BAG_APPS_COMPACT = "bag_apps_compact"
-        const val MAX_BAG_APPS = 3
+        const val MAX_BAG_APPS = 500
 
         @JvmStatic
         fun isWorkBag(bagId: String?, bagName: String?): Boolean {
@@ -254,11 +255,17 @@ class BagStore(private val context: Context) {
         if (PROTECTED_SYSTEM_PACKAGES.contains(pkg)) return false
         if (pkg == context.packageName) return true
 
+        // Phone Calls are compulsory and always permitted during locks
+        if (getAllowedDialerPackages().contains(pkg)) return true
+
+        // Phase 2 Engage rule check: explicit hard_block overrides BagStore allow list
+        if (EngageConfigStore(context).isPackageExplicitlyHardBlocked(pkg)) {
+            return false
+        }
+
         val customPkgs = getBagApps().map { it.packageName }.toSet()
         if (customPkgs.contains(pkg)) return true
 
-        // Phone Calls are compulsory and always permitted during locks
-        if (getAllowedDialerPackages().contains(pkg)) return true
         if (isSmsAllowed() && getAllowedSmsPackages().contains(pkg)) return true
 
         return false

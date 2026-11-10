@@ -348,6 +348,9 @@ export function App() {
         onSelectActiveBag={store.setActiveBagId}
         onUpdateBag={store.updateBag}
         onToggleBagApp={store.toggleBagApp}
+        onUpdateBagAppRule={store.updateBagAppRule}
+        onCreateCustomBag={store.createCustomBag}
+        onDeleteCustomBag={store.deleteCustomBag}
         onRefreshInstalledApps={store.refreshInstalledApps}
       />
 

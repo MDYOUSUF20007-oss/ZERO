@@ -122,20 +122,52 @@ export interface NativeStateSnapshot {
   pendingCompletions?: VerifiedNativeCompletionEvent[];
 }
 
+export type AppAccessMode = 'hard_block' | 'controlled' | 'unrestricted';
+
+export type ShortVideoAction = 'overlay' | 'back_action';
+
+export interface AppLockRuleConfig {
+  mode: AppAccessMode;
+  quotaSeconds: number;
+  maxContinuousSeconds: number;
+  cooldownSeconds: number;
+  frictionEnabled: boolean;
+  frictionDelaySeconds: number;
+  showBreathingCircle: boolean;
+  requireIntentText: boolean;
+  minIntentChars: number;
+  reEntryGraceSeconds: number;
+  blockShortVideos: boolean;
+  shortVideoAction: ShortVideoAction;
+  scrollVelocityLimit: number;
+  nudgeIntervalSeconds: number;
+}
+
+export interface EngageSessionPayload {
+  bagId: string;
+  bagName: string;
+  masterTimerSeconds: number;
+  allowSms: boolean;
+  compulsoryPackages: string[];
+  appConfigs: Record<string, AppLockRuleConfig>;
+}
+
 export interface BagApp {
   packageName: string;
   appName: string;
   category?: 'calls' | 'messages' | 'custom';
   iconBgColor?: string;
+  ruleConfig?: AppLockRuleConfig;
 }
 
 export interface OccasionBag {
   id: string;
   name: string;
   occasionLabel: string;
-  apps: BagApp[]; // Strictly capped at 3 custom apps
+  apps: BagApp[];
   allowCalls: boolean;
   allowSms: boolean;
+  isCustom?: boolean;
 }
 
 export type RestrictedSettingsStatus = 'allowed' | 'blocked' | 'check_app_info';
@@ -350,6 +382,9 @@ export interface ZeroNativeBridgeInterface {
   syncLedgerState(cumulativeSeconds: number, deployedCount: IntOrNum): void;
   syncLedgerStateWithBonus?(cumulativeSeconds: number, deployedCount: IntOrNum, bonusCount: IntOrNum): void;
   igniteSession(durationSeconds: number, tag: string): boolean;
+  startEngageSessionJson?(payloadJson: string): boolean;
+  stopEngageSession?(): void;
+  getEngageSessionStateJson?(): string;
   deployParachute(): boolean;
   getBatteryPercentage(): number;
   getNativeStateJson(): string;

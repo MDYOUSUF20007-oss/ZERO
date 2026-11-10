@@ -6,7 +6,6 @@ import type {
   ZeroProfile,
   ThemeConfig,
 } from '../types';
-import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { ObsidianCard } from './ObsidianCard';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
@@ -17,6 +16,7 @@ import {
   resolveActiveAccentTokens,
 } from '../utils/themes';
 import { isWorkBag } from '../utils/bagLayout';
+import { formatCompactDuration, resolveEffectiveAppRuleConfig } from '../utils/bagAppConfig';
 import { buildPixelClockLayout } from '../utils/pixelFont';
 import { resolveAppBrandVisual } from '../utils/appBrandColors';
 import {
@@ -91,6 +91,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   }, [themeConfig]);
 
   const workBagActive = isWorkBag(activeBag?.id, activeBag?.name);
+  const visibleBagApps = useMemo(
+    () =>
+      (activeBag?.apps || []).filter(
+        (app) => resolveEffectiveAppRuleConfig(app).mode !== 'hard_block'
+      ),
+    [activeBag]
+  );
 
   const badgeAccentStyle: React.CSSProperties = isBespoke
     ? {
@@ -230,10 +237,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           }`}
         >
           BAG: {activeBag.name.toUpperCase()} (
-          <span className="font-mono tabular-nums">
-            {activeBag.apps.length}/{MAX_BAG_APPS}
-          </span>{' '}
-          APPS)
+          <span className="font-mono tabular-nums">{visibleBagApps.length}</span> APPS)
         </span>
         <span
           className={`text-[10px] shrink-0 ${
@@ -243,12 +247,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             color: isBespoke ? '#3B82F6' : activeTheme.hex,
           }}
         >
-          {activeBag.apps.length === 0 ? 'Monk Mode Active' : 'Allowed Apps'}
+          {visibleBagApps.length === 0 ? 'Monk Mode Active' : 'Bag Rules Active'}
         </span>
       </div>
 
       <div className={compactBottom ? 'max-h-[22vh] sm:max-h-[26vh] overflow-y-auto pr-0.5' : ''}>
-        {activeBag.apps.length === 0 ? (
+        {visibleBagApps.length === 0 ? (
           <div className="space-y-2.5">
             {/* Tactical Empty-State Card */}
             <div
@@ -385,7 +389,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         ) : (
           /* Vertical Rows Matching App Brand Colors */
           <div className="flex flex-col gap-2">
-            {activeBag.apps.map((app) => {
+            {visibleBagApps.map((app) => {
+              const effRule = resolveEffectiveAppRuleConfig(app);
+              const statusLabel =
+                effRule.mode === 'controlled'
+                  ? effRule.quotaSeconds > 0
+                    ? `QUOTA ${formatCompactDuration(effRule.quotaSeconds).toUpperCase()}`
+                    : 'CONTROLLED'
+                  : 'ALLOWED';
               const brand = resolveAppBrandVisual(
                 app,
                 isBespoke ? '#3B82F6' : activeTheme.hex
@@ -436,7 +447,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       isBespoke ? 'rounded-sm' : 'rounded font-black'
                     }`}
                   >
-                    ALLOWED
+                    {statusLabel}
                   </span>
                 </div>
               );

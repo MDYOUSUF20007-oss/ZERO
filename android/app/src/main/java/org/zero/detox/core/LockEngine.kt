@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.service.LockForegroundService
 import org.zero.detox.ui.TheVoidActivity
 import javax.crypto.Mac
@@ -380,6 +381,10 @@ class LockEngine @JvmOverloads constructor(
     private fun clearLockState() {
         prefs.edit().clear().commit()
         _sessionState.value = SessionState(isLocked = false)
+
+        try {
+            EngageConfigStore(context).clearActiveSession()
+        } catch (_: Throwable) {}
 
         try {
             val serviceIntent = Intent(context, LockForegroundService::class.java)

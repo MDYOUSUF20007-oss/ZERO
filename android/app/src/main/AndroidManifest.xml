@@ -15,11 +15,15 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Android 11+ Package Visibility: lists launcher apps & default dialer/SMS for The Bag -->
+    <!-- Android 11+ Package Visibility: lists launcher apps, Home launchers & default dialer/SMS for The Bag -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
         </intent>
         <intent>
             <action android:name="android.intent.action.DIAL" />

@@ -5,6 +5,7 @@ import {
   type ProtectedIntegrityState,
 } from '../core/integrity/IntegrityEngine';
 import type {
+  AppLockRuleConfig,
   SessionTag,
   SessionRecord,
   ParachuteMetrics,
@@ -50,6 +51,19 @@ import {
 } from '../utils/themes';
 import { normalizeCustomHashtag } from '../utils/bagLayout';
 import {
+  buildEngageSessionPayload,
+  getAllowedBagAppsForNative,
+  isCompulsoryDialerPackage,
+  isProtectedSystemPackage,
+  sanitizeAppRuleConfig,
+  sanitizeBagApp,
+  sanitizeOccasionBag,
+} from '../utils/bagAppConfig';
+import {
+  startNativeEngageSession,
+  stopNativeEngageSession,
+} from '../plugins/zeroEngage';
+import {
   DEFAULT_WIDGETS_CONFIG,
   sanitizeWidgetsConfig,
 } from '../utils/heatmapAnalytics';
@@ -66,8 +80,6 @@ import {
 } from '../plugins/cloudAutoBackup';
 
 export { SECONDS_PER_PARACHUTE };
-export const MAX_BAG_APPS = 3; // Zero App 3-app cap per Bag
-export const MAX_BAGS = 4; // 4 customizable occasion Bags
 
 // Strictly UI preferences & non-protected local cache keys.
 // Protected stats, donor status, Escape Tickets, sessions, and ledger live inside IntegrityEngine.
@@ -552,19 +564,14 @@ export function useZeroStore() {
     }
   });
 
-  // 4 Custom Occasion Bags (max 3 apps each + SMS toggle; Phone Calls are compulsory Always ON)
+  // Default + Unlimited Custom Occasion Bags (with granular Phase 2 per-app rules; Phone Calls always ON)
   const [bags, setBags] = useState<OccasionBag[]>(() => {
     try {
       const saved = localStorage.getItem(UI_STORAGE_KEYS.BAGS);
       if (saved) {
-        const parsed = JSON.parse(saved) as OccasionBag[];
-        if (Array.isArray(parsed) && parsed.length === MAX_BAGS) {
-          return parsed.map((b) => ({
-            ...b,
-            apps: Array.isArray(b.apps) ? b.apps.slice(0, MAX_BAG_APPS) : [],
-            allowCalls: true,
-            allowSms: Boolean(b.allowSms),
-          }));
+        const parsed = JSON.parse(saved) as Partial<OccasionBag>[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.slice(0, 100).map((b, idx) => sanitizeOccasionBag(b, idx));
         }
       }
     } catch {
@@ -843,6 +850,7 @@ export function useZeroStore() {
           if (!nativeState.isLocked) {
             setActiveLock(IDLE_LOCK);
             localStorage.removeItem(UI_STORAGE_KEYS.ACTIVE_LOCK);
+            stopNativeEngageSession();
           }
           applyPostCompletionSideEffects(result.committedSessions, result.rewards);
           return nativeState;
@@ -871,6 +879,7 @@ export function useZeroStore() {
         }
         setActiveLock(IDLE_LOCK);
         localStorage.removeItem(UI_STORAGE_KEYS.ACTIVE_LOCK);
+        stopNativeEngageSession();
         return nativeState;
       }
 
@@ -889,6 +898,7 @@ export function useZeroStore() {
         // Native engine is unlocked with no verified completion and no abort — reset UI lock safely (0 free credit)
         setActiveLock(IDLE_LOCK);
         localStorage.removeItem(UI_STORAGE_KEYS.ACTIVE_LOCK);
+        stopNativeEngageSession();
       }
 
       return nativeState;
@@ -1181,7 +1191,8 @@ export function useZeroStore() {
     }
     try {
       if (window.ZeroNative && activeBag) {
-        const appsJson = JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS));
+        const allowedApps = getAllowedBagAppsForNative(activeBag);
+        const appsJson = JSON.stringify(allowedApps);
         if (window.ZeroNative.setBagStateWithIdJson) {
           window.ZeroNative.setBagStateWithIdJson(
             activeBag.id,
@@ -1333,8 +1344,9 @@ export function useZeroStore() {
 
     try {
       if (window.ZeroNative && activeBag) {
+        const allowedApps = getAllowedBagAppsForNative(activeBag);
         if (!latestSecurity.restrictions.presetBagEditingDisabled) {
-          const appsJson = JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS));
+          const appsJson = JSON.stringify(allowedApps);
           if (window.ZeroNative.setBagStateWithIdJson) {
             window.ZeroNative.setBagStateWithIdJson(
               activeBag.id,
@@ -1351,6 +1363,12 @@ export function useZeroStore() {
               activeBag.allowSms
             );
           }
+          const engagePayload = buildEngageSessionPayload({
+            bag: activeBag,
+            masterTimerSeconds: safeDuration,
+            installedApps,
+          });
+          startNativeEngageSession(engagePayload);
         }
         syncNativeLedger(
           integrityStateRef.current.cumulativeSeconds,
@@ -1370,6 +1388,7 @@ export function useZeroStore() {
         }
         const started = window.ZeroNative.igniteSession(safeDuration, tag);
         if (started === false) {
+          stopNativeEngageSession();
           refreshPermissions();
           return false;
         }
@@ -1377,6 +1396,7 @@ export function useZeroStore() {
         return false;
       }
     } catch {
+      stopNativeEngageSession();
       if (latestPerms.isNativeAndroid) return false;
     }
 
@@ -1425,6 +1445,7 @@ export function useZeroStore() {
     localStorage.removeItem(UI_STORAGE_KEYS.ACTIVE_LOCK);
 
     try {
+      stopNativeEngageSession();
       if (window.ZeroNative) {
         window.ZeroNative.deployParachute();
         window.ZeroNative.stopLockTaskMode();
@@ -1444,29 +1465,105 @@ export function useZeroStore() {
   const updateBag = (bagId: string, updater: (bag: OccasionBag) => OccasionBag) => {
     if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) return; // Anti-tamper: Bags locked mid-session & on rooted/emulator envs
     setBags((prev) =>
-      prev.map((b) => {
+      prev.map((b, idx) => {
         if (b.id !== bagId) return b;
         const next = updater(b);
-        return {
-          ...next,
-          allowCalls: true,
-          apps: next.apps.slice(0, MAX_BAG_APPS),
-        };
+        return sanitizeOccasionBag(
+          {
+            ...next,
+            allowCalls: true,
+          },
+          idx
+        );
       })
     );
   };
 
   const toggleBagApp = (bagId: string, app: BagApp) => {
+    if (isProtectedSystemPackage(app.packageName)) return;
     updateBag(bagId, (bag) => {
       const exists = bag.apps.some((a) => a.packageName === app.packageName);
       if (exists) {
         return { ...bag, apps: bag.apps.filter((a) => a.packageName !== app.packageName) };
       }
-      if (bag.apps.length >= MAX_BAG_APPS) {
-        return bag; // Hard cap at 3 custom apps per Bag
-      }
-      return { ...bag, apps: [...bag.apps, app] };
+      const sanitized = sanitizeBagApp(app);
+      if (!sanitized) return bag;
+      return { ...bag, apps: [...bag.apps, sanitized] };
     });
+  };
+
+  const updateBagAppRule = (
+    bagId: string,
+    app: BagApp,
+    ruleConfig: AppLockRuleConfig
+  ): boolean => {
+    if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) {
+      return false;
+    }
+    if (isProtectedSystemPackage(app.packageName)) {
+      return false;
+    }
+    const cleanRule = sanitizeAppRuleConfig(ruleConfig, {
+      isCompulsory: isCompulsoryDialerPackage(app),
+      defaultMode: 'controlled',
+    });
+    const cleanApp = sanitizeBagApp({ ...app, ruleConfig: cleanRule });
+    if (!cleanApp) return false;
+
+    updateBag(bagId, (bag) => {
+      const idx = bag.apps.findIndex((a) => a.packageName === cleanApp.packageName);
+      if (idx >= 0) {
+        const updatedApps = bag.apps.map((a, i) => (i === idx ? cleanApp : a));
+        return { ...bag, apps: updatedApps };
+      }
+      return { ...bag, apps: [...bag.apps, cleanApp] };
+    });
+    return true;
+  };
+
+  const createCustomBag = (name: string, occasionLabel?: string): OccasionBag | null => {
+    if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) {
+      return null;
+    }
+    const cleanName = name.trim().slice(0, 28);
+    if (!cleanName) return null;
+    const slug = cleanName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 20);
+    const id = `bag-${slug || 'custom'}-${Date.now().toString(36)}`;
+    const newBag = sanitizeOccasionBag(
+      {
+        id,
+        name: cleanName,
+        occasionLabel: occasionLabel?.trim() || 'Custom Rules & Quotas',
+        apps: [],
+        allowCalls: true,
+        allowSms: false,
+        isCustom: true,
+      },
+      bags.length
+    );
+    setBags((prev) => [...prev.slice(0, 99), newBag]);
+    setActiveBagIdState(newBag.id);
+    return newBag;
+  };
+
+  const deleteCustomBag = (bagId: string): boolean => {
+    if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) {
+      return false;
+    }
+    const target = bags.find((b) => b.id === bagId);
+    if (!target || !target.isCustom || bags.length <= 1) {
+      return false;
+    }
+    const remaining = bags.filter((b) => b.id !== bagId);
+    setBags(remaining);
+    if (activeBagId === bagId && remaining[0]) {
+      setActiveBagIdState(remaining[0].id);
+    }
+    return true;
   };
 
   const toggleSchedule = (id: string) => {
@@ -1697,10 +1794,15 @@ export function useZeroStore() {
       const nextState = outcome.state;
       const nextThemeConfig = outcome.themeConfig || DEFAULT_THEME_CONFIG;
       const nextSleepMode = outcome.sleepFarmingMode || 'quarter_credit';
-      const nextBags = (outcome.bags || DEFAULT_BAGS).map((b) => ({
-        ...b,
-        allowCalls: true,
-      }));
+      const nextBags = (outcome.bags || DEFAULT_BAGS).map((b, idx) =>
+        sanitizeOccasionBag(
+          {
+            ...b,
+            allowCalls: true,
+          },
+          idx
+        )
+      );
       const nextActiveBagId = outcome.activeBagId || nextBags[0].id;
       const nextSchedules = outcome.schedules || DEFAULT_SCHEDULES;
       const restoredNow = outcome.restoredAtMs || Date.now();
@@ -2131,6 +2233,9 @@ export function useZeroStore() {
     setActiveBagId,
     updateBag,
     toggleBagApp,
+    updateBagAppRule,
+    createCustomBag,
+    deleteCustomBag,
     installedApps,
     refreshInstalledApps,
     permissions,

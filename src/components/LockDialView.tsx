@@ -8,7 +8,6 @@ import type {
   ZeroProfile,
   CloudReminderInterval,
 } from '../types';
-import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
 import {
   DEFAULT_SESSION_TAGS,
@@ -1213,7 +1212,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                           : 'text-[10px] px-1.5 py-0.5 rounded obsidian-inset-neutral text-zinc-300 shrink-0'
                       }
                     >
-                      {activeBag.apps.length}/{MAX_BAG_APPS} apps
+                      {activeBag.apps.length} app{activeBag.apps.length === 1 ? '' : 's'}
                     </span>
                   </div>
                   <div

@@ -1,5 +1,6 @@
 package org.zero.detox.service
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,8 +9,10 @@ import android.app.PendingIntent
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Handler
@@ -17,10 +20,15 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
+import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
+import android.view.inputmethod.InputMethodManager
 import androidx.core.app.NotificationCompat
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.engage.EngageConfigStore
+import org.zero.detox.engage.EngageRuntimeEngine
 import org.zero.detox.ui.TheVoidActivity
 
 /**
@@ -28,7 +36,8 @@ import org.zero.detox.ui.TheVoidActivity
  * Keeps Zero active in OS memory and runs a 350ms Bag-aware foreground guard.
  * Uses UsageStatsManager (when granted) + SYSTEM_ALERT_WINDOW BAL exemption so users
  * can seamlessly use apps packed in their Bag (and allowed Phone/SMS), while immediately
- * snapping TheVoidActivity back over Settings, Launcher, or any disallowed app.
+ * snapping TheVoidActivity back over Settings, Launcher, or any disallowed/quota-exhausted app.
+ * Strictly avoids static references to ZeroAccessibilityService so both standard and strict flavors compile.
  */
 class LockForegroundService : Service() {
 
@@ -38,6 +47,7 @@ class LockForegroundService : Service() {
         const val CHANNEL_ID = "zero_void_channel"
         const val NOTIFICATION_ID = 1001
         private const val WATCHDOG_INTERVAL_MS = 350L
+        private const val CACHE_REFRESH_MS = 30_000L
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -45,7 +55,13 @@ class LockForegroundService : Service() {
     private lateinit var bagStore: BagStore
     private lateinit var parachuteStore: ParachuteStore
     private lateinit var lockEngine: LockEngine
+    private lateinit var engageConfigStore: EngageConfigStore
+    private lateinit var fallbackEngageEngine: EngageRuntimeEngine
+    private var lastSyncedRevision: Long = -1L
     private var lastKnownForegroundPkg: String? = null
+    private var cachedImePackages: Set<String> = emptySet()
+    private var cachedLauncherPackages: Set<String> = emptySet()
+    private var lastPackageCacheElapsed: Long = -CACHE_REFRESH_MS
 
     private val watchdogRunnable = object : Runnable {
         override fun run() {
@@ -68,33 +84,146 @@ class LockForegroundService : Service() {
                 }
             }
 
+            refreshPackageCachesIfNeeded(nowElapsed)
+
             // Skip enforcement while in emergency 911/112 grace or active Bag launch grace (monotonic clock)
             val inEmergencyGrace = nowElapsed <= TheVoidActivity.dialerGraceUntilElapsed
             val inBagTransitionGrace = nowElapsed <= TheVoidActivity.bagLaunchGraceUntilElapsed
 
             if (!TheVoidActivity.isInForeground && !inEmergencyGrace && !inBagTransitionGrace) {
                 val fgPkg = detectForegroundPackage(nowWall)
-                val allowedByBag = if (fgPkg != null) {
+                val accessibilityActive = isZeroAccessibilityServiceEnabled()
+
+                val allowedNow = if (fgPkg != null) {
                     if (fgPkg == "com.android.settings" || BagStore.PROTECTED_SYSTEM_PACKAGES.contains(fgPkg)) {
                         false
-                    } else {
+                    } else if (accessibilityActive) {
+                        // In Strict Edition, ZeroAccessibilityService owns granular controlled quotas,
+                        // mindful friction, scroll guard, and TYPE_ACCESSIBILITY_OVERLAY layers.
                         bagStore.isPackageAllowedDuringLock(fgPkg)
+                    } else {
+                        evaluateStandardFallbackPermission(fgPkg, nowElapsed)
                     }
                 } else {
                     // Fallback if Usage Access isn't granted: allow temporarily if user intentionally opened a Bag app
                     TheVoidActivity.activeBagPackage != null
                 }
 
-                if (!allowedByBag) {
+                if (!allowedNow) {
                     TheVoidActivity.activeBagPackage = null
                     snapBackToVoid()
                 }
             } else if (TheVoidActivity.isInForeground) {
                 lastKnownForegroundPkg = packageName
                 TheVoidActivity.activeBagPackage = null
+                if (!isZeroAccessibilityServiceEnabled()) {
+                    fallbackEngageEngine.onForegroundTick(
+                        foregroundPkg = packageName,
+                        nowElapsedMs = nowElapsed,
+                        imePackages = cachedImePackages,
+                        launcherPackages = cachedLauncherPackages,
+                        legacyBagAllowed = { bagStore.isPackageAllowedDuringLock(it) }
+                    )
+                }
             }
 
             handler.postDelayed(this, WATCHDOG_INTERVAL_MS)
+        }
+    }
+
+    private fun evaluateStandardFallbackPermission(fgPkg: String, nowElapsed: Long): Boolean {
+        val rev = engageConfigStore.getRevision()
+        val activeCfg = engageConfigStore.loadActiveConfig()
+        if (activeCfg == null) {
+            if (lastSyncedRevision != -1L) {
+                fallbackEngageEngine.reset()
+                lastSyncedRevision = -1L
+            }
+            return bagStore.isPackageAllowedDuringLock(fgPkg)
+        }
+        if (rev != lastSyncedRevision || fallbackEngageEngine.getConfig() == null) {
+            fallbackEngageEngine.configure(activeCfg, rev)
+            lastSyncedRevision = rev
+        }
+        val decision = fallbackEngageEngine.onForegroundTick(
+            foregroundPkg = fgPkg,
+            nowElapsedMs = nowElapsed,
+            imePackages = cachedImePackages,
+            launcherPackages = cachedLauncherPackages,
+            legacyBagAllowed = { bagStore.isPackageAllowedDuringLock(it) }
+        )
+        return when (decision.action) {
+            EngageRuntimeEngine.TickAction.BLOCK_HARD,
+            EngageRuntimeEngine.TickAction.BLOCK_QUOTA,
+            EngageRuntimeEngine.TickAction.BLOCK_COOLDOWN -> false
+            EngageRuntimeEngine.TickAction.NONE -> {
+                if (cachedLauncherPackages.contains(fgPkg)) false else true
+            }
+            EngageRuntimeEngine.TickAction.REQUIRE_FRICTION,
+            EngageRuntimeEngine.TickAction.ALLOW -> true
+        }
+    }
+
+    private fun refreshPackageCachesIfNeeded(nowElapsed: Long) {
+        if (nowElapsed - lastPackageCacheElapsed < CACHE_REFRESH_MS) return
+        lastPackageCacheElapsed = nowElapsed
+
+        try {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            val imeSet = imm?.enabledInputMethodList
+                ?.mapNotNull { it.packageName }
+                ?.filter { it.isNotBlank() }
+                ?.toSet()
+                ?: emptySet()
+            cachedImePackages = imeSet
+        } catch (_: Exception) {}
+
+        try {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+            }
+            val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.queryIntentActivities(homeIntent, PackageManager.ResolveInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.queryIntentActivities(homeIntent, 0)
+            }
+            cachedLauncherPackages = list
+                .mapNotNull { it.activityInfo?.packageName }
+                .filter { it.isNotBlank() && it != packageName }
+                .toSet()
+        } catch (_: Exception) {}
+    }
+
+    private fun isZeroAccessibilityServiceEnabled(): Boolean {
+        try {
+            val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            val enabledList = am?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            if (enabledList != null) {
+                for (info in enabledList) {
+                    if (info.resolveInfo?.serviceInfo?.packageName == packageName) {
+                        return true
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        return try {
+            val expectedFull = ComponentName(
+                packageName,
+                "${packageName}.service.ZeroAccessibilityService"
+            ).flattenToString()
+            val expectedShort = ComponentName(
+                packageName,
+                "${packageName}.service.ZeroAccessibilityService"
+            ).flattenToShortString()
+            val enabledServices = Settings.Secure.getString(
+                contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: ""
+            enabledServices.contains(expectedFull) || enabledServices.contains(expectedShort)
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -129,9 +258,15 @@ class LockForegroundService : Service() {
                     @Suppress("DEPRECATION")
                     event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
                 }
-                if (isResumed && event.timeStamp >= latestTime) {
+                val pkg = event.packageName
+                if (isResumed &&
+                    !pkg.isNullOrBlank() &&
+                    !cachedImePackages.contains(pkg) &&
+                    pkg != "com.android.systemui" &&
+                    event.timeStamp >= latestTime
+                ) {
                     latestTime = event.timeStamp
-                    latestPkg = event.packageName
+                    latestPkg = pkg
                 }
             }
             if (!latestPkg.isNullOrBlank()) {
@@ -160,6 +295,8 @@ class LockForegroundService : Service() {
         bagStore = BagStore(this)
         parachuteStore = ParachuteStore(this)
         lockEngine = LockEngine(this, parachuteStore)
+        engageConfigStore = EngageConfigStore(this)
+        fallbackEngageEngine = EngageRuntimeEngine(packageName)
         createNotificationChannel()
     }
 
@@ -189,6 +326,8 @@ class LockForegroundService : Service() {
     private fun stopWatchdogAndService() {
         isWatchdogActive = false
         handler.removeCallbacks(watchdogRunnable)
+        fallbackEngageEngine.reset()
+        lastSyncedRevision = -1L
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -196,6 +335,7 @@ class LockForegroundService : Service() {
     override fun onDestroy() {
         isWatchdogActive = false
         handler.removeCallbacks(watchdogRunnable)
+        fallbackEngageEngine.reset()
         super.onDestroy()
     }
 

@@ -29,6 +29,7 @@ import org.zero.detox.core.EndpointSecurityPolicy
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import org.zero.detox.security.AppSecurityGuard
 import org.zero.detox.ui.VoidThemeStore
@@ -512,6 +513,34 @@ class ZeroNativeBridge(
             put("allowCalls", bagStore.isCallsAllowed())
             put("allowSms", bagStore.isSmsAllowed())
             put("apps", arr)
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun startEngageSessionJson(payloadJson: String): Boolean {
+        val security = AppSecurityGuard.evaluateEnvironment(activity)
+        if (security.presetBagEditingDisabled) {
+            return false
+        }
+        return EngageConfigStore(activity).saveAndActivateSessionJson(payloadJson) != null
+    }
+
+    @JavascriptInterface
+    fun stopEngageSession() {
+        EngageConfigStore(activity).clearActiveSession()
+    }
+
+    @JavascriptInterface
+    fun getEngageSessionStateJson(): String {
+        val cfg = EngageConfigStore(activity).loadActiveConfig()
+        return JSONObject().apply {
+            put("active", cfg != null)
+            put("bagId", cfg?.bagId ?: "")
+            put("bagName", cfg?.bagName ?: "")
+            put("masterTimerSeconds", cfg?.masterTimerSeconds ?: 0L)
+            put("allowSms", cfg?.allowSms ?: false)
+            put("configuredAppCount", cfg?.appConfigs?.size ?: 0)
+            put("compulsoryCount", cfg?.compulsoryPackages?.size ?: 0)
         }.toString()
     }
 

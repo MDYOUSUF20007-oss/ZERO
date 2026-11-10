@@ -1,5 +1,7 @@
 import type {
   ActiveLockSession,
+  AppLockRuleConfig,
+  BagApp,
   CloudReminderInterval,
   NativeEnvironmentSecurity,
   NativePermissionStatus,
@@ -1551,6 +1553,69 @@ export function isSensitiveFeatureRestricted(
   );
 }
 
+function sanitizeRestoredRuleConfig(
+  raw: Partial<AppLockRuleConfig> | undefined | null
+): AppLockRuleConfig {
+  const clamp = (v: unknown, max: number) => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.min(max, Math.round(n));
+  };
+  const mode =
+    raw?.mode === 'hard_block' || raw?.mode === 'controlled' || raw?.mode === 'unrestricted'
+      ? raw.mode
+      : 'unrestricted';
+  const shortVideoAction = raw?.shortVideoAction === 'back_action' ? 'back_action' : 'overlay';
+  return {
+    mode,
+    quotaSeconds: clamp(raw?.quotaSeconds, 86_400 * 30),
+    maxContinuousSeconds: clamp(raw?.maxContinuousSeconds, 86_400),
+    cooldownSeconds: clamp(raw?.cooldownSeconds, 86_400),
+    frictionEnabled: Boolean(raw?.frictionEnabled),
+    frictionDelaySeconds: clamp(raw?.frictionDelaySeconds, 3600),
+    showBreathingCircle: Boolean(raw?.showBreathingCircle),
+    requireIntentText: Boolean(raw?.requireIntentText),
+    minIntentChars: clamp(raw?.minIntentChars, 500),
+    reEntryGraceSeconds: clamp(raw?.reEntryGraceSeconds, 86_400),
+    blockShortVideos: Boolean(raw?.blockShortVideos),
+    shortVideoAction,
+    scrollVelocityLimit: clamp(raw?.scrollVelocityLimit, 5000),
+    nudgeIntervalSeconds: clamp(raw?.nudgeIntervalSeconds, 86_400),
+  };
+}
+
+function sanitizeRestoredBagApps(rawApps: unknown): BagApp[] {
+  if (!Array.isArray(rawApps)) return [];
+  const out: BagApp[] = [];
+  const seen = new Set<string>();
+  const blockedPkgs = new Set([
+    'com.android.settings',
+    'com.android.packageinstaller',
+    'com.google.android.packageinstaller',
+    'com.samsung.android.packageinstaller',
+  ]);
+  for (const item of rawApps) {
+    if (out.length >= 500) break;
+    if (!item || typeof item !== 'object') continue;
+    const rawApp = item as Partial<BagApp>;
+    const pkg = typeof rawApp.packageName === 'string' ? rawApp.packageName.trim() : '';
+    if (!pkg || blockedPkgs.has(pkg) || seen.has(pkg)) continue;
+    seen.add(pkg);
+    const appName =
+      typeof rawApp.appName === 'string' && rawApp.appName.trim()
+        ? rawApp.appName.trim().slice(0, 64)
+        : pkg;
+    out.push({
+      packageName: pkg,
+      appName,
+      category: rawApp.category || 'custom',
+      ...(rawApp.iconBgColor ? { iconBgColor: rawApp.iconBgColor } : {}),
+      ruleConfig: sanitizeRestoredRuleConfig(rawApp.ruleConfig),
+    });
+  }
+  return out;
+}
+
 function applyVerifiedRestore(input: RestoreInputPayload, persist = true): VerifiedRestoreOutcome {
   if (isSensitiveFeatureRestricted(input.environmentSecurity)) {
     return {
@@ -1623,15 +1688,16 @@ function applyVerifiedRestore(input: RestoreInputPayload, persist = true): Verif
     const nextSchedules = Array.isArray(parsed.schedules)
       ? parsed.schedules
       : input.defaultSchedules;
-    const nextBags =
+    const nextBags: OccasionBag[] =
       Array.isArray(parsed.bags) && parsed.bags.length > 0
-        ? parsed.bags.slice(0, 4).map((b, i) => ({
+        ? parsed.bags.slice(0, 100).map((b, i) => ({
             id: b.id || `bag-${i + 1}`,
             name: (b.name || `Bag ${i + 1}`).slice(0, 28),
             occasionLabel: (b.occasionLabel || 'Custom Occasion').slice(0, 40),
-            apps: Array.isArray(b.apps) ? b.apps.slice(0, 3) : [],
-            allowCalls: Boolean(b.allowCalls),
+            apps: sanitizeRestoredBagApps(b.apps),
+            allowCalls: true,
             allowSms: Boolean(b.allowSms),
+            ...(b.isCustom ? { isCustom: true } : {}),
           }))
         : input.defaultBags;
     const nextActiveBagId =

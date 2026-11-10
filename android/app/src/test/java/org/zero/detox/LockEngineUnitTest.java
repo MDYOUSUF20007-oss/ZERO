@@ -11,8 +11,10 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -21,6 +23,9 @@ import org.zero.detox.core.EndpointSecurityPolicy;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
+import org.zero.detox.engage.EngageConfig;
+import org.zero.detox.engage.EngageConfigStore;
+import org.zero.detox.engage.EngageRuntimeEngine;
 import org.zero.detox.security.AppSecurityGuard;
 import org.zero.detox.ui.PixelFont5x7;
 import org.zero.detox.ui.VoidBrandPalette;
@@ -132,7 +137,7 @@ public class LockEngineUnitTest {
     }
 
     @Test
-    public void bagStore_enforcesThreeAppCapAndPackageIsolation() {
+    public void bagStore_allowsUnlimitedPackingWithPackageIsolation() {
         final Map<String, SharedPreferences> prefMap = new HashMap<>();
         Context fakeContext = new ContextWrapper(null) {
             @Override
@@ -151,16 +156,17 @@ public class LockEngineUnitTest {
             + "{\"packageName\":\"com.spotify.music\",\"appName\":\"Spotify\"},"
             + "{\"packageName\":\"com.google.android.apps.maps\",\"appName\":\"Maps\"},"
             + "{\"packageName\":\"md.obsidian\",\"appName\":\"Obsidian\"},"
-            + "{\"packageName\":\"com.instagram.android\",\"appName\":\"Instagram\"}"
+            + "{\"packageName\":\"com.slack\",\"appName\":\"Slack\"}"
             + "]";
         bagStore.saveActiveBag("Commute", fourApps, false, false);
 
         assertEquals("Commute", bagStore.getActiveBagName());
         assertTrue("Phone calls must remain compulsory even when false is passed", bagStore.isCallsAllowed());
-        assertEquals(3, bagStore.getBagApps().size());
+        assertEquals(4, bagStore.getBagApps().size());
         assertTrue(bagStore.isPackageAllowedDuringLock("org.zero.detox"));
         assertTrue(bagStore.isPackageAllowedDuringLock("com.spotify.music"));
         assertTrue(bagStore.isPackageAllowedDuringLock("md.obsidian"));
+        assertTrue(bagStore.isPackageAllowedDuringLock("com.slack"));
         assertTrue(
             "Default/core dialer packages must remain accessible during any active lock",
             bagStore.isPackageAllowedDuringLock("com.google.android.dialer")
@@ -784,5 +790,302 @@ public class LockEngineUnitTest {
             CloudUploadReminderWorker.computeDelayMillis("monthly", now - (20L * 24L * 60L * 60L * 1000L), now)
         );
         assertEquals(0L, CloudUploadReminderWorker.computeDelayMillis("weekly", now - weekMs - 5000L, now));
+    }
+
+    @Test
+    public void engageConfig_parsesDynamicRulesEnforcesCompulsoryAndHardBlocksSettings() {
+        String payload = "{"
+            + "\"bagId\":\"study\","
+            + "\"bagName\":\"Study Bag\","
+            + "\"masterTimerSeconds\":7200,"
+            + "\"allowSms\":false,"
+            + "\"compulsoryPackages\":[\"com.google.android.dialer\",\"com.android.settings\"],"
+            + "\"appConfigs\":{"
+            + "\"com.instagram.android\":{"
+            + "\"mode\":\"controlled\","
+            + "\"quotaSeconds\":1800,"
+            + "\"maxContinuousSeconds\":300,"
+            + "\"cooldownSeconds\":120,"
+            + "\"frictionEnabled\":true,"
+            + "\"frictionDelaySeconds\":15,"
+            + "\"showBreathingCircle\":true,"
+            + "\"requireIntentText\":true,"
+            + "\"minIntentChars\":10,"
+            + "\"reEntryGraceSeconds\":60,"
+            + "\"blockShortVideos\":true,"
+            + "\"shortVideoAction\":\"back_action\","
+            + "\"scrollVelocityLimit\":8,"
+            + "\"nudgeIntervalSeconds\":300"
+            + "},"
+            + "\"com.zhiliaoapp.musically\":{\"mode\":\"hard_block\"},"
+            + "\"com.google.android.dialer\":{\"mode\":\"hard_block\",\"quotaSeconds\":60},"
+            + "\"com.android.settings\":{\"mode\":\"unrestricted\",\"quotaSeconds\":9999}"
+            + "}"
+            + "}";
+
+        EngageConfig.SessionPayloadConfig cfg = EngageConfig.parseSessionPayload(payload, "org.zero.detox");
+        assertNotNull(cfg);
+        assertEquals("study", cfg.getBagId());
+        assertEquals("Study Bag", cfg.getBagName());
+        assertEquals(7200L, cfg.getMasterTimerSeconds());
+        assertFalse(cfg.getCompulsoryPackages().contains("com.android.settings"));
+        assertTrue(cfg.getCompulsoryPackages().contains("com.google.android.dialer"));
+
+        EngageConfig.AppRuleConfig ig = cfg.getAppConfigs().get("com.instagram.android");
+        assertNotNull(ig);
+        assertEquals(EngageConfig.AccessMode.CONTROLLED, ig.getMode());
+        assertEquals(1800L, ig.getQuotaSeconds());
+        assertEquals(300L, ig.getMaxContinuousSeconds());
+        assertEquals(120L, ig.getCooldownSeconds());
+        assertTrue(ig.getFrictionEnabled());
+        assertEquals(15, ig.getFrictionDelaySeconds());
+        assertTrue(ig.getShowBreathingCircle());
+        assertTrue(ig.getRequireIntentText());
+        assertEquals(10, ig.getMinIntentChars());
+        assertEquals(60, ig.getReEntryGraceSeconds());
+        assertTrue(ig.getBlockShortVideos());
+        assertEquals(EngageConfig.ShortVideoAction.BACK_ACTION, ig.getShortVideoAction());
+        assertEquals(8, ig.getScrollVelocityLimit());
+        assertEquals(300L, ig.getNudgeIntervalSeconds());
+
+        EngageConfig.AppRuleConfig tiktok = cfg.getAppConfigs().get("com.zhiliaoapp.musically");
+        assertNotNull(tiktok);
+        assertEquals(EngageConfig.AccessMode.HARD_BLOCK, tiktok.getMode());
+
+        // Compulsory dialers stay UNRESTRICTED even if tampered; protected Settings stays HARD_BLOCK
+        assertEquals(
+            EngageConfig.AccessMode.UNRESTRICTED,
+            cfg.getAppConfigs().get("com.google.android.dialer").getMode()
+        );
+        assertEquals(
+            EngageConfig.AccessMode.HARD_BLOCK,
+            cfg.getAppConfigs().get("com.android.settings").getMode()
+        );
+    }
+
+    @Test
+    public void engageRuntime_enforcesQuotaCooldownFrictionAndTransientImmunity() {
+        String payload = "{"
+            + "\"bagId\":\"study\","
+            + "\"bagName\":\"Study Bag\","
+            + "\"masterTimerSeconds\":3600,"
+            + "\"allowSms\":false,"
+            + "\"compulsoryPackages\":[\"com.google.android.dialer\"],"
+            + "\"appConfigs\":{"
+            + "\"com.instagram.android\":{"
+            + "\"mode\":\"controlled\","
+            + "\"quotaSeconds\":10,"
+            + "\"maxContinuousSeconds\":5,"
+            + "\"cooldownSeconds\":4,"
+            + "\"frictionEnabled\":true,"
+            + "\"frictionDelaySeconds\":10,"
+            + "\"showBreathingCircle\":true,"
+            + "\"requireIntentText\":true,"
+            + "\"minIntentChars\":10,"
+            + "\"reEntryGraceSeconds\":30,"
+            + "\"blockShortVideos\":false,"
+            + "\"shortVideoAction\":\"overlay\","
+            + "\"scrollVelocityLimit\":0,"
+            + "\"nudgeIntervalSeconds\":0"
+            + "}"
+            + "}"
+            + "}";
+
+        EngageConfig.SessionPayloadConfig cfg = EngageConfig.parseSessionPayload(payload, "org.zero.detox");
+        assertNotNull(cfg);
+        EngageRuntimeEngine engine = new EngageRuntimeEngine("org.zero.detox");
+        engine.configure(cfg, 1L);
+
+        Set<String> imes = new HashSet<>(Collections.singletonList("com.google.android.inputmethod.latin"));
+        Set<String> launchers = new HashSet<>(Collections.singletonList("com.google.android.apps.nexuslauncher"));
+
+        // 1. Opening controlled app with friction triggers REQUIRE_FRICTION
+        EngageRuntimeEngine.TickDecision d1 = engine.onForegroundTick(
+            "com.instagram.android",
+            10_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.REQUIRE_FRICTION, d1.getAction());
+
+        // 2. Completing friction grants access cleanly
+        engine.markFrictionPassed("com.instagram.android", 11_000L);
+        EngageRuntimeEngine.TickDecision d2 = engine.onForegroundTick(
+            "com.instagram.android",
+            12_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.ALLOW, d2.getAction());
+        assertEquals(9L, d2.getRemainingQuotaSeconds());
+        assertEquals(1L, d2.getContinuousSeconds());
+
+        // 3. Soft keyboard (IME), SystemUI, and transient Launcher ticks never reset continuous time or friction
+        EngageRuntimeEngine.TickDecision dIme = engine.onForegroundTick(
+            "com.google.android.inputmethod.latin",
+            13_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.ALLOW, dIme.getAction());
+        assertEquals("com.instagram.android", dIme.getPackageName());
+        assertEquals(2L, dIme.getContinuousSeconds());
+
+        EngageRuntimeEngine.TickDecision dSys = engine.onForegroundTick(
+            "com.android.systemui",
+            14_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.NONE, dSys.getAction());
+
+        EngageRuntimeEngine.TickDecision dHome = engine.onForegroundTick(
+            "com.google.android.apps.nexuslauncher",
+            14_500L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.NONE, dHome.getAction());
+
+        // Back to Instagram -> no re-entry friction, continuous session advances cleanly
+        EngageRuntimeEngine.TickDecision dBack = engine.onForegroundTick(
+            "com.instagram.android",
+            15_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.ALLOW, dBack.getAction());
+        assertEquals(4L, dBack.getContinuousSeconds());
+
+        // 4. Hitting continuous limit (5s) triggers BLOCK_COOLDOWN (4s)
+        EngageRuntimeEngine.TickDecision dCool = engine.onForegroundTick(
+            "com.instagram.android",
+            16_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.BLOCK_COOLDOWN, dCool.getAction());
+        assertEquals(4L, dCool.getCooldownRemainingSeconds());
+
+        // While cooldown active, user stays locked out
+        EngageRuntimeEngine.TickDecision dStillCool = engine.onForegroundTick(
+            "com.instagram.android",
+            19_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.BLOCK_COOLDOWN, dStillCool.getAction());
+        assertEquals(1L, dStillCool.getCooldownRemainingSeconds());
+
+        // Cooldown expires at 20_000 -> requires friction again because cooldown cleared session verification
+        EngageRuntimeEngine.TickDecision dPostCool = engine.onForegroundTick(
+            "com.instagram.android",
+            20_500L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.REQUIRE_FRICTION, dPostCool.getAction());
+
+        // Pass friction, leave briefly (<= 30s reEntryGraceSeconds), return -> grace skips friction!
+        engine.markFrictionPassed("com.instagram.android", 21_000L);
+        engine.onForegroundTick("org.zero.detox", 22_000L, imes, launchers, pkg -> Boolean.FALSE);
+        EngageRuntimeEngine.TickDecision dWithinGrace = engine.onForegroundTick(
+            "com.instagram.android",
+            35_000L,
+            imes,
+            launchers,
+            pkg -> Boolean.FALSE
+        );
+        assertEquals(EngageRuntimeEngine.TickAction.ALLOW, dWithinGrace.getAction());
+
+        // 5. Remaining quota (7s left) depletes completely -> BLOCK_QUOTA permanently for session
+        EngageRuntimeEngine.TickDecision dDepleted = null;
+        for (long t = 36_000L; t <= 45_000L; t += 1000L) {
+            dDepleted = engine.onForegroundTick(
+                "com.instagram.android",
+                t,
+                imes,
+                launchers,
+                pkg -> Boolean.FALSE
+            );
+            if (dDepleted.getAction() == EngageRuntimeEngine.TickAction.BLOCK_QUOTA) {
+                break;
+            }
+        }
+        assertNotNull(dDepleted);
+        assertEquals(EngageRuntimeEngine.TickAction.BLOCK_QUOTA, dDepleted.getAction());
+        assertEquals(0L, dDepleted.getRemainingQuotaSeconds());
+    }
+
+    @Test
+    public void engageRuntime_enforces400msDebounceScrollVelocityAndNudgeIntervals() {
+        String payload = "{"
+            + "\"bagId\":\"work\","
+            + "\"bagName\":\"Work Bag\","
+            + "\"masterTimerSeconds\":3600,"
+            + "\"allowSms\":false,"
+            + "\"compulsoryPackages\":[],"
+            + "\"appConfigs\":{"
+            + "\"com.google.android.youtube\":{"
+            + "\"mode\":\"controlled\","
+            + "\"quotaSeconds\":0,"
+            + "\"maxContinuousSeconds\":0,"
+            + "\"cooldownSeconds\":0,"
+            + "\"frictionEnabled\":false,"
+            + "\"frictionDelaySeconds\":0,"
+            + "\"showBreathingCircle\":false,"
+            + "\"requireIntentText\":false,"
+            + "\"minIntentChars\":0,"
+            + "\"reEntryGraceSeconds\":0,"
+            + "\"blockShortVideos\":true,"
+            + "\"shortVideoAction\":\"overlay\","
+            + "\"scrollVelocityLimit\":3,"
+            + "\"nudgeIntervalSeconds\":10"
+            + "}"
+            + "}"
+            + "}";
+
+        EngageConfig.SessionPayloadConfig cfg = EngageConfig.parseSessionPayload(payload, "org.zero.detox");
+        assertNotNull(cfg);
+        EngageRuntimeEngine engine = new EngageRuntimeEngine("org.zero.detox");
+        engine.configure(cfg, 1L);
+
+        // 400ms content sniff debounce
+        assertTrue(engine.shouldInspectWindowContent(1000L));
+        assertFalse(engine.shouldInspectWindowContent(1399L));
+        assertTrue(engine.shouldInspectWindowContent(1400L));
+
+        // 10s scroll velocity ring buffer (limit = 3 -> 4th scroll in <= 10s triggers)
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 5000L));
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 6000L));
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 7000L));
+        assertTrue(engine.onScrollEvent("com.google.android.youtube", 8000L));
+
+        // Old scroll timestamps outside 10s sliding window get pruned automatically without manual clear
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 18_500L));
+        engine.clearScrollBuffer("com.google.android.youtube");
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 20_000L));
+        assertFalse(engine.onScrollEvent("com.google.android.youtube", 21_000L));
+
+        // Nudge interval milestones (every 10s)
+        Set<String> empty = Collections.emptySet();
+        engine.onForegroundTick("com.google.android.youtube", 30_000L, empty, empty, pkg -> Boolean.FALSE);
+        assertNull(engine.consumePendingNudge("com.google.android.youtube"));
+        engine.onForegroundTick("com.google.android.youtube", 35_000L, empty, empty, pkg -> Boolean.FALSE);
+        engine.onForegroundTick("com.google.android.youtube", 40_000L, empty, empty, pkg -> Boolean.FALSE);
+        EngageRuntimeEngine.NudgeDecision nudge = engine.consumePendingNudge("com.google.android.youtube");
+        assertNotNull(nudge);
+        assertEquals(10L, nudge.getContinuousSeconds());
+        // Consumed once -> null until next 10s interval (20s)
+        assertNull(engine.consumePendingNudge("com.google.android.youtube"));
     }
 }

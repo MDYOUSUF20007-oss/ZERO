@@ -86,10 +86,20 @@ import {
   mergeHashtagList,
   normalizeCustomHashtag,
 } from '../src/utils/bagLayout.ts';
+import {
+  buildEngageSessionPayload,
+  createDefaultAppRuleConfig,
+  formatCompactDuration,
+  formatRuleSummary,
+  getAllowedBagAppsForNative,
+  sanitizeAppRuleConfig,
+  sanitizeOccasionBag,
+} from '../src/utils/bagAppConfig.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
 import type {
   NativeEnvironmentSecurity,
   NativePermissionStatus,
+  OccasionBag,
   SessionRecord,
   VerifiedNativeCompletionEvent,
   ZeroZbakPayload,
@@ -1475,5 +1485,137 @@ failIf(
   'Work Bag detector must identify bag-work ID or Work Bag name for Void hashtag spotlight layout'
 );
 console.log('PASS: Custom Hashtag Normalization & Work Bag Layout Detection Verified');
+
+console.log('\n=== TEST 22: Phase 2 Unlimited Bags, Granular App Rules & Dynamic Engage Payload ===');
+const igRule = sanitizeAppRuleConfig({
+  mode: 'controlled',
+  quotaSeconds: 1800,
+  maxContinuousSeconds: 600,
+  cooldownSeconds: 300,
+  frictionEnabled: true,
+  frictionDelaySeconds: 15,
+  showBreathingCircle: true,
+  requireIntentText: true,
+  minIntentChars: 12,
+  reEntryGraceSeconds: 60,
+  blockShortVideos: true,
+  shortVideoAction: 'back_action',
+  scrollVelocityLimit: 8,
+  nudgeIntervalSeconds: 300,
+});
+failIf(
+  igRule.mode === 'controlled' &&
+    igRule.quotaSeconds === 1800 &&
+    igRule.maxContinuousSeconds === 600 &&
+    igRule.cooldownSeconds === 300 &&
+    igRule.frictionEnabled === true &&
+    igRule.frictionDelaySeconds === 15 &&
+    igRule.showBreathingCircle === true &&
+    igRule.requireIntentText === true &&
+    igRule.minIntentChars === 12 &&
+    igRule.reEntryGraceSeconds === 60 &&
+    igRule.blockShortVideos === true &&
+    igRule.shortVideoAction === 'back_action' &&
+    igRule.scrollVelocityLimit === 8 &&
+    igRule.nudgeIntervalSeconds === 300,
+  'sanitizeAppRuleConfig must preserve every user-configured quota, friction, and intervention control'
+);
+
+const forcedDialerRule = sanitizeAppRuleConfig(
+  { mode: 'hard_block', quotaSeconds: 60 },
+  { isCompulsory: true }
+);
+const forcedSettingsRule = sanitizeAppRuleConfig(
+  { mode: 'unrestricted', quotaSeconds: 9999 },
+  { isProtectedSystem: true }
+);
+failIf(
+  forcedDialerRule.mode === 'unrestricted' &&
+    forcedDialerRule.quotaSeconds === 0 &&
+    forcedSettingsRule.mode === 'hard_block',
+  'Compulsory dialer must stay unrestricted while protected Settings stays hard_block'
+);
+
+// Bag with 5 apps (> old 3-app cap) plus sneaky com.android.settings entry
+const unlimitedCustomBag: OccasionBag = sanitizeOccasionBag({
+  id: 'bag-custom-phase2',
+  name: 'Phase 2 Custom Bag',
+  occasionLabel: 'Custom Occasion',
+  isCustom: true,
+  allowCalls: true,
+  allowSms: false,
+  apps: [
+    { packageName: 'com.instagram.android', appName: 'Instagram', ruleConfig: igRule },
+    { packageName: 'com.google.android.youtube', appName: 'YouTube', ruleConfig: { ...createDefaultAppRuleConfig('controlled'), blockShortVideos: true, shortVideoAction: 'overlay' } },
+    { packageName: 'com.zhiliaoapp.musically', appName: 'TikTok', ruleConfig: createDefaultAppRuleConfig('hard_block') },
+    { packageName: 'md.obsidian', appName: 'Obsidian', ruleConfig: createDefaultAppRuleConfig('unrestricted') },
+    { packageName: 'com.spotify.music', appName: 'Spotify', ruleConfig: createDefaultAppRuleConfig('unrestricted') },
+    { packageName: 'com.android.settings', appName: 'Settings' },
+  ],
+});
+failIf(
+  unlimitedCustomBag.isCustom === true &&
+    unlimitedCustomBag.apps.length === 5 &&
+    getAllowedBagAppsForNative(unlimitedCustomBag).length === 4 &&
+    !getAllowedBagAppsForNative(unlimitedCustomBag).some((a) => a.packageName === 'com.zhiliaoapp.musically'),
+  'Bag sanitizer must allow >3 apps, strip Settings, and exclude hard_block apps from allowed launch list'
+);
+
+const dynamicPayload = buildEngageSessionPayload({
+  bag: unlimitedCustomBag,
+  masterTimerSeconds: 7200,
+  installedApps: [
+    { packageName: 'com.google.android.dialer', appName: 'Phone', category: 'calls' },
+    { packageName: 'com.android.mms', appName: 'Messages', category: 'messages' },
+  ],
+});
+failIf(
+  dynamicPayload.bagId === 'bag-custom-phase2' &&
+    dynamicPayload.masterTimerSeconds === 7200 &&
+    dynamicPayload.compulsoryPackages.includes('com.google.android.dialer') &&
+    !dynamicPayload.compulsoryPackages.includes('com.android.mms') &&
+    dynamicPayload.appConfigs['com.instagram.android']?.quotaSeconds === 1800 &&
+    dynamicPayload.appConfigs['com.zhiliaoapp.musically']?.mode === 'hard_block' &&
+    dynamicPayload.appConfigs['com.google.android.youtube']?.shortVideoAction === 'overlay' &&
+    formatCompactDuration(1800) === '30m' &&
+    formatRuleSummary(igRule).includes('30m quota'),
+  'Dynamic Engage payload builder must serialize exact per-app rules without hardcoded limits'
+);
+
+// IntegrityEngine backup restore must preserve >4 bags, >3 apps, isCustom, and granular ruleConfigs
+const fiveBagsRestorePayload: ZeroZbakPayload = {
+  ...sampleZbakPayload,
+  bags: [
+    ...sampleZbakPayload.bags,
+    { ...sampleZbakPayload.bags[0], id: 'bag-2', name: 'Bag 2' },
+    { ...sampleZbakPayload.bags[0], id: 'bag-3', name: 'Bag 3' },
+    { ...sampleZbakPayload.bags[0], id: 'bag-4', name: 'Bag 4' },
+    { ...sampleZbakPayload.bags[0], id: 'bag-5', name: 'Bag 5' },
+    unlimitedCustomBag,
+  ],
+};
+const restoreFiveBags = IntegrityEngine.applyVerifiedRestore(
+  {
+    rawInput: encodeZbakPayload(fiveBagsRestorePayload),
+    defaultSchedules: [],
+    defaultBags: sampleZbakPayload.bags,
+    sanitizeProfile: sanitizeZeroProfile,
+    sanitizeThemeConfig,
+    environmentSecurity: safeEnv,
+  },
+  false
+);
+const restoredPhase2Bag = restoreFiveBags.bags?.find((b) => b.id === 'bag-custom-phase2');
+failIf(
+  restoreFiveBags.ok === true &&
+    restoreFiveBags.bags?.length === 6 &&
+    restoredPhase2Bag?.isCustom === true &&
+    restoredPhase2Bag?.apps.length === 5 &&
+    restoredPhase2Bag?.apps[0]?.ruleConfig?.quotaSeconds === 1800 &&
+    restoredPhase2Bag?.apps[0]?.ruleConfig?.shortVideoAction === 'back_action' &&
+    restoredPhase2Bag?.apps[0]?.ruleConfig?.scrollVelocityLimit === 8,
+  'IntegrityEngine restore must preserve >4 Bags, >3 Bag apps, isCustom flags & Phase 2 ruleConfigs'
+);
+console.log('PASS: Phase 2 Unlimited Bags, Granular App Rules & Dynamic Engage Payload Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

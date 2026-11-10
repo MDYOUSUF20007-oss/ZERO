@@ -30,6 +30,7 @@ import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
 import org.zero.detox.plugin.CloudAutoBackupPlugin;
+import org.zero.detox.plugin.ZeroEngagePlugin;
 import org.zero.detox.security.AppSecurityGuard;
 
 public class MainActivity extends BridgeActivity {
@@ -154,6 +155,7 @@ public class MainActivity extends BridgeActivity {
         signatureVerified = AppSecurityGuard.isAppSignatureValid(this);
         if (signatureVerified) {
             registerPlugin(CloudAutoBackupPlugin.class);
+            registerPlugin(ZeroEngagePlugin.class);
         }
         super.onCreate(savedInstanceState);
         if (!signatureVerified) {

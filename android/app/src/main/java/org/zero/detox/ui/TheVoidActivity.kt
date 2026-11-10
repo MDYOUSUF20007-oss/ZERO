@@ -37,6 +37,8 @@ import androidx.core.view.WindowInsetsCompat
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.engage.EngageConfig
+import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -813,11 +815,28 @@ class TheVoidActivity : AppCompatActivity() {
         return RippleDrawable(ColorStateList.valueOf(rippleColor), shape, null)
     }
 
+    private fun formatCompactQuota(totalSeconds: Long): String {
+        val safe = maxOf(0L, totalSeconds)
+        val hours = safe / 3600L
+        val mins = (safe % 3600L) / 60L
+        val secs = safe % 60L
+        return when {
+            hours > 0L && mins > 0L -> "${hours}H ${mins}M"
+            hours > 0L -> "${hours}H"
+            mins > 0L -> "${mins}M"
+            else -> "${secs}S"
+        }
+    }
+
     private fun populateBagSection() {
         bagContainer.removeAllViews()
         val bagName = bagStore.getActiveBagName().uppercase(Locale.US)
         val allowSms = bagStore.isSmsAllowed()
         val apps = bagStore.getBagApps()
+        val engageConfig = try { EngageConfigStore(this).loadActiveConfig() } catch (_: Exception) { null }
+        val visibleApps = apps.filter { app ->
+            engageConfig?.appConfigs?.get(app.packageName)?.mode != EngageConfig.AccessMode.HARD_BLOCK
+        }
         val workBagActive = bagStore.isWorkBagActive()
         val accent = resolveReadableAccent()
 
@@ -828,7 +847,7 @@ class TheVoidActivity : AppCompatActivity() {
             dp(if (workBagActive) 11 else 14)
         )
 
-        // Header Strip: BAG: WORK BAG (X/3 APPS)  |  Monk Mode Active / Allowed Apps
+        // Header Strip: BAG: WORK BAG (N APPS)  |  Monk Mode Active / Bag Rules Active
         val headerRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -839,7 +858,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         val headerLeft = TextView(this).apply {
-            text = "BAG: $bagName (${apps.size}/3 APPS)"
+            text = "BAG: $bagName (${visibleApps.size} APPS)"
             setTextColor(Color.parseColor("#D4D4D8"))
             textSize = 11f
             typeface = Typeface.create(
@@ -853,7 +872,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         val headerRight = TextView(this).apply {
-            text = if (apps.isEmpty()) "Monk Mode Active" else "Allowed Apps"
+            text = if (visibleApps.isEmpty()) "Monk Mode Active" else "Bag Rules Active"
             setTextColor(accent)
             textSize = 10f
             typeface = Typeface.create(
@@ -874,10 +893,12 @@ class TheVoidActivity : AppCompatActivity() {
             )
         }
 
-        if (apps.isEmpty()) {
+        if (visibleApps.isEmpty()) {
             // Tactical Empty-State Card
             val emptyNotice = TextView(this).apply {
-                text = if (allowSms) {
+                text = if (apps.isNotEmpty()) {
+                    "Monk Mode: Packed apps are currently hard-blocked for this Bag session."
+                } else if (allowSms) {
                     "Monk Mode: Empty Bag. Unbagged distraction apps are sealed."
                 } else {
                     "Monk Mode: Empty Bag. All normal apps & texts are sealed."
@@ -902,8 +923,8 @@ class TheVoidActivity : AppCompatActivity() {
             }
             rowsStack.addView(emptyNotice)
         } else {
-            // Packed Bag App Vertical Rows matching each app's brand color
-            for (app in apps) {
+            // Packed Bag App Vertical Rows matching each app's brand color & dynamic Phase 2 badge
+            for (app in visibleApps) {
                 val iconDrawable = loadAppIconSafe(app.packageName)
                 val brandColor = VoidBrandPalette.extractBrandColorFromDrawable(
                     drawable = iconDrawable,
@@ -912,10 +933,18 @@ class TheVoidActivity : AppCompatActivity() {
                     category = "custom",
                     fallbackHex = accentConfig.accentHex
                 )
+                val appRule = engageConfig?.appConfigs?.get(app.packageName)
+                val badgeLabel = when {
+                    appRule?.mode == EngageConfig.AccessMode.CONTROLLED && appRule.quotaSeconds > 0L ->
+                        "QUOTA ${formatCompactQuota(appRule.quotaSeconds)}"
+                    appRule?.mode == EngageConfig.AccessMode.CONTROLLED ->
+                        "CONTROLLED"
+                    else -> "ALLOWED"
+                }
                 val row = createBagAppRow(
                     title = app.appName,
                     subtitle = app.packageName,
-                    badgeLabel = "ALLOWED",
+                    badgeLabel = badgeLabel,
                     brandColor = brandColor,
                     iconDrawable = iconDrawable,
                     onClick = { launchAllowedBagPackage(app.packageName, null) }
