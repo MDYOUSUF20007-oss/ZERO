@@ -214,7 +214,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
+    <div className="flex-1 flex flex-col items-center justify-between px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
       {/* Top Banner: Parachute Balance & Milestone Progress */}
       <button
         onClick={onOpenDashboard}

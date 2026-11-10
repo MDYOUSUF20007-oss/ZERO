@@ -47,9 +47,19 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between relative selection:bg-white selection:text-black">
+      {/* Top Status Bar Safe-Area Scrim (prevents scrolled content from clashing with Android system icons) */}
+      <div
+        aria-hidden="true"
+        className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md pointer-events-none"
+        style={{ height: 'var(--zero-safe-top)' }}
+      />
+
       {/* 5-Minute Pre-Lock Heads-Up Warning Banner */}
       {store.preLockAlert && (
-        <div className="fixed top-3 left-4 right-4 z-50 max-w-md mx-auto bg-amber-500 text-black p-3 rounded-2xl shadow-2xl flex items-center justify-between font-mono animate-bounce">
+        <div
+          className="fixed left-4 right-4 z-50 max-w-md mx-auto bg-amber-500 text-black p-3 rounded-2xl shadow-2xl flex items-center justify-between font-mono animate-bounce"
+          style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
+        >
           <div className="flex items-center gap-2.5">
             <BellRing size={18} className="shrink-0" />
             <div>
@@ -71,7 +81,13 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col justify-start">
+      <main
+        className="flex-1 flex flex-col justify-start"
+        style={{
+          paddingTop: 'var(--zero-safe-top)',
+          paddingBottom: 'var(--zero-safe-bottom)',
+        }}
+      >
         {activeTab === 'dial' && (
           <LockDialView
             onIgnite={store.igniteSession}
@@ -141,7 +157,10 @@ export function App() {
       />
 
       {/* Neo-Brutalist Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-t border-zinc-900 py-2 px-4">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-t border-zinc-900 pt-2 px-4"
+        style={{ paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))' }}
+      >
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
           <button
             onClick={() => {

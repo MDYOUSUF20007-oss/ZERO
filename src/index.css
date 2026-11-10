@@ -4,6 +4,10 @@
 
 :root {
   color-scheme: dark;
+  --zero-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --zero-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --zero-safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --zero-safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 }
 
 body {

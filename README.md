@@ -16,7 +16,7 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 - **Earned-Only Parachutes:** Emergency unlocks ("Parachutes") cannot be bought. Users earn **1 Parachute for every 20 cumulative hours (72,000 seconds) of completed phone blockage**.
 - **The Anti-Sleep-Farming Rule:** To keep Parachutes a genuine badge of daytime focus, sleep blocks earn **0.25x parachute progression** by default (or Daytime-Only 0.0x mode). An 8-hour sleep lock contributes 2.0 hours toward the next parachute instead of allowing users to farm a parachute every 2.5 nights.
 - **Aborted Session Penalty (Anti-Exploit):** If a user deploys a Parachute mid-session, 1 Parachute is consumed and **all elapsed time in that aborted session is permanently voided**, never counting toward the next 20-hour milestone. If you lock for 4 hours and pull the parachute at hour 3, you lose 1 Parachute and gain 0 hours.
-- **Ethical Support Model:** Clean, non-intrusive "Keep Zero Free" section in Settings (GitHub Sponsors, Liberapay, Buy Me a Coffee, UPI, and Crypto) with zero pop-ups, zero nags, and zero advertisements.
+- **Ethical Support Model:** Clean, non-intrusive "Keep Zero Free" section in Settings ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis`) with zero pop-ups, zero nags, and zero advertisements.
 - **100% Local-First & Offline:** No accounts, no cloud sync, no tracking SDKs. Works fully offline with local-first persistence.
 
 ---
@@ -64,7 +64,7 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 ### 4. Schedules & Settings ("Keep Zero Free")
 - **Auto-Pilot Recurring Schedules:** Unlimited schedules (e.g., Weekdays 9:00 AM - 12:00 PM, Nightly Wind-Down 11:00 PM - 6:30 AM) with day-of-week selectors.
 - **5-Minute Heads-Up Alert:** Push notification and heads-up banner warning the user 5 minutes before lock engages. Includes a test simulation button.
-- **Keep Zero Free:** Ethical donation links (GitHub Sponsors, Buy Me a Coffee, Liberapay, UPI ID `zerofoss@upi` with QR modal, and Bitcoin).
+- **Keep Zero Free:** Ethical support links ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis` with scannable QR / instant pay launch) plus direct link to [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases).
 - **Data Portability:** Complete JSON export, import, and factory reset.
 - **Color Themes:** Pure OLED Void and Neo Monochrome.
 

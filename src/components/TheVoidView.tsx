@@ -88,7 +88,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between items-center p-6 select-none overflow-hidden bg-dot-matrix">
+    <div
+      className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between items-center px-6 select-none overflow-hidden bg-dot-matrix"
+      style={{
+        paddingTop: 'calc(1.25rem + var(--zero-safe-top))',
+        paddingBottom: 'calc(1.25rem + var(--zero-safe-bottom))',
+      }}
+    >
       {/* Top Status Bar */}
       <div className="w-full max-w-md flex items-center justify-between text-xs font-mono text-zinc-300 pt-2 border-b border-zinc-900 pb-3">
         <div className="flex items-center gap-2">

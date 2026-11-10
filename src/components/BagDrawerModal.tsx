@@ -59,8 +59,14 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   const bagFull = selectedBag.apps.length >= MAX_BAG_APPS;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-zinc-950 border-2 border-zinc-700 rounded-3xl p-5 shadow-2xl font-mono space-y-4 max-h-[92vh] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center px-4"
+      style={{
+        paddingTop: 'calc(1rem + var(--zero-safe-top))',
+        paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+      }}
+    >
+      <div className="w-full max-w-md bg-zinc-950 border-2 border-zinc-700 rounded-3xl p-5 shadow-2xl font-mono space-y-4 max-h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2.5">

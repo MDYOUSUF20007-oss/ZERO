@@ -391,6 +391,37 @@ class ZeroNativeBridge(
         }
     }
 
+    @JavascriptInterface
+    fun openExternalUrl(url: String) {
+        val trimmed = url.trim()
+        val parsed = try {
+            Uri.parse(trimmed)
+        } catch (_: Exception) {
+            null
+        } ?: return
+
+        val scheme = parsed.scheme?.lowercase() ?: return
+        if (scheme != "https" && scheme != "http" && scheme != "upi") {
+            return
+        }
+
+        activity.runOnUiThread {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, parsed).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                activity.startActivity(intent)
+            } catch (_: Exception) {
+                val msg = if (scheme == "upi") {
+                    "No UPI app found. Please copy the UPI ID (md.y2007@ptaxis) manually."
+                } else {
+                    "No browser app found to open this link."
+                }
+                Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     /**
      * Starts OS LockTaskMode strictly when Zero is provisioned as Device Owner.
      * Never invokes manual Screen Pinning fallback.

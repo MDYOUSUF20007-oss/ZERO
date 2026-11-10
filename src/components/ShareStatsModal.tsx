@@ -232,8 +232,14 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-zinc-950 border-2 border-zinc-700 rounded-3xl p-5 shadow-2xl font-mono space-y-4 max-h-[92vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center px-4"
+      style={{
+        paddingTop: 'calc(1rem + var(--zero-safe-top))',
+        paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+      }}
+    >
+      <div className="w-full max-w-md bg-zinc-950 border-2 border-zinc-700 rounded-3xl p-5 shadow-2xl font-mono space-y-4 max-h-full overflow-y-auto">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Sparkles size={18} className="text-amber-400" />

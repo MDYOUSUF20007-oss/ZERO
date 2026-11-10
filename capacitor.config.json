@@ -1,5 +1,12 @@
 {
   "appId": "org.zero.detox",
   "appName": "Zero",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
 }

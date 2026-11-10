@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { toDataURL as generateQrDataUrl } from 'qrcode';
 import type {
   RecurringSchedule,
   SessionTag,
@@ -48,6 +49,11 @@ interface SchedulesDonateViewProps {
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TAGS: SessionTag[] = ['Deep Work', 'Study', 'Sleep', 'Detox', 'Family'];
+const KOFI_URL = 'https://ko-fi.com/mdyousuf2620';
+const RELEASES_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO/releases';
+const SOURCE_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO';
+const UPI_ID = 'md.y2007@ptaxis';
+const UPI_PAY_URL = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Zero FOSS')}&cu=INR`;
 
 export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
@@ -70,10 +76,28 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
+  const [upiQrUrl, setUpiQrUrl] = useState<string>('');
   const [showPasteRestore, setShowPasteRestore] = useState(false);
   const [pasteJsonInput, setPasteJsonInput] = useState('');
   const [backupNotice, setBackupNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showUPIQR || upiQrUrl) return;
+    let cancelled = false;
+    generateQrDataUrl(UPI_PAY_URL, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' },
+    })
+      .then((url) => {
+        if (!cancelled) setUpiQrUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [showUPIQR, upiQrUrl]);
 
   const hasNativeBridge = permissions.isNativeAndroid;
   const isStrictBuild = permissions.isStrictAccessibilityBuild;
@@ -115,8 +139,29 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     }
   };
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
+  const handleOpenExternal = (e: React.MouseEvent, url: string) => {
+    if (window.ZeroNative?.openExternalUrl) {
+      e.preventDefault();
+      window.ZeroNative.openExternalUrl(url);
+    }
+  };
+
+  const handleCopy = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -736,7 +781,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               adb shell dpm set-device-owner org.zero.detox/.receiver.ZeroDeviceAdminReceiver
             </pre>
             <p className="text-zinc-500 text-[10px] leading-relaxed">
-              Also check latest APK releases anytime for seamless in-place updates.
+              Also check{' '}
+              <a
+                href={RELEASES_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
+                className="text-amber-300 hover:underline font-semibold"
+              >
+                GitHub Releases
+              </a>{' '}
+              anytime for the latest APK updates.
             </p>
           </div>
         </div>
@@ -761,17 +816,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </p>
             <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400 gap-2">
               <a
-                href="https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest"
+                href={RELEASES_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="text-amber-300 hover:underline font-bold"
+                onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
+                className="text-amber-300 hover:underline flex items-center gap-1 font-bold"
               >
-                Check Updates
+                <span>Check Updates</span>
+                <ExternalLink size={12} />
               </a>
               <a
-                href="https://github.com/MDYOUSUF20007-oss/ZERO"
+                href={SOURCE_URL}
                 target="_blank"
                 rel="noreferrer"
+                onClick={(e) => handleOpenExternal(e, SOURCE_URL)}
                 className="text-white hover:underline flex items-center gap-1 font-bold"
               >
                 <Code2 size={13} />
@@ -781,91 +839,63 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           </div>
 
           {/* Donation Channels */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold block">
               Support the Project
             </span>
 
-            {/* GitHub Sponsors */}
+            {/* Buy Me a Coffee via Ko-fi */}
             <a
-              href="https://github.com/sponsors"
+              href={KOFI_URL}
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => handleOpenExternal(e, KOFI_URL)}
               className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white">
-                  <Code2 size={18} />
-                </div>
-                <div>
-                  <div className="font-mono font-bold text-xs text-white">GitHub Sponsors</div>
-                  <div className="text-[11px] font-mono text-zinc-400">github.com/sponsors/zero-detox</div>
-                </div>
-              </div>
-              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200" />
-            </a>
-
-            {/* Buy Me a Coffee */}
-            <a
-              href="https://buymeacoffee.com"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
                   <Coffee size={18} />
                 </div>
-                <div>
-                  <div className="font-mono font-bold text-xs text-white">Buy Me a Coffee</div>
-                  <div className="text-[11px] font-mono text-zinc-400">buymeacoffee.com/zerodetox</div>
+                <div className="min-w-0">
+                  <div className="font-mono font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
+                  <div className="text-[11px] font-mono text-zinc-400 truncate">ko-fi.com/mdyousuf2620</div>
                 </div>
               </div>
-              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200" />
+              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
             </a>
 
-            {/* Liberapay */}
-            <a
-              href="https://liberapay.com"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-yellow-500 font-mono font-bold text-sm">
-                  LP
-                </div>
-                <div>
-                  <div className="font-mono font-bold text-xs text-white">Liberapay</div>
-                  <div className="text-[11px] font-mono text-zinc-400">liberapay.com/zerodetox</div>
-                </div>
-              </div>
-              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200" />
-            </a>
-
-            {/* UPI ID */}
-            <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold text-xs">
+            {/* UPI ID & Scannable QR */}
+            <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold text-xs shrink-0">
                     UPI
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-mono font-bold text-xs text-white">UPI / Instant Pay</div>
-                    <div className="text-[11px] font-mono text-zinc-400">zerofoss@upi</div>
+                    <div className="text-[11px] font-mono text-zinc-400 truncate">{UPI_ID}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
+                    type="button"
                     onClick={() => setShowUPIQR(!showUPIQR)}
-                    className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white"
+                    className={`p-1.5 rounded-lg border transition-colors ${
+                      showUPIQR
+                        ? 'bg-zinc-200 text-black border-white'
+                        : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white'
+                    }`}
                     title="Toggle QR Code"
+                    aria-label="Toggle UPI QR Code"
                   >
                     <QrCode size={14} />
                   </button>
                   <button
-                    onClick={() => handleCopy('zerofoss@upi', 'upi')}
+                    type="button"
+                    onClick={() => handleCopy(UPI_ID, 'upi')}
                     className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white"
+                    title="Copy UPI ID"
+                    aria-label="Copy UPI ID"
                   >
                     {copiedId === 'upi' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                   </button>
@@ -873,34 +903,36 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </div>
 
               {showUPIQR && (
-                <div className="p-3 bg-zinc-900 rounded-xl flex flex-col items-center justify-center text-center">
-                  <div className="w-32 h-32 bg-white p-2 rounded-lg flex items-center justify-center">
-                    <div className="w-full h-full bg-black flex items-center justify-center text-white text-[10px] font-mono p-1 text-center font-bold">
-                      UPI QR: zerofoss@upi
+                <div className="p-3.5 bg-zinc-900 rounded-xl flex flex-col items-center justify-center text-center space-y-2.5 border border-zinc-800">
+                  {upiQrUrl ? (
+                    <div className="bg-white p-2 rounded-xl shadow-md">
+                      <img
+                        src={upiQrUrl}
+                        alt={`UPI QR code for ${UPI_ID}`}
+                        className="w-36 h-36 block"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-36 h-36 bg-zinc-950 rounded-xl flex items-center justify-center text-[10px] font-mono text-zinc-400">
+                      Generating QR...
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] font-mono font-bold text-zinc-200">{UPI_ID}</div>
+                    <div className="text-[10px] font-mono text-zinc-400">
+                      Scan via Google Pay, PhonePe, Paytm, or BHIM
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-zinc-400 mt-2">
-                    Scan via Google Pay, PhonePe, or Paytm
-                  </span>
+                  <a
+                    href={UPI_PAY_URL}
+                    onClick={(e) => handleOpenExternal(e, UPI_PAY_URL)}
+                    className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-200 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  >
+                    <span>Open UPI App</span>
+                    <ExternalLink size={12} />
+                  </a>
                 </div>
               )}
-            </div>
-
-            {/* Crypto Monero / Bitcoin */}
-            <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between">
-              <div>
-                <div className="font-mono font-bold text-xs text-white">Bitcoin (BTC)</div>
-                <div className="text-[11px] font-mono text-zinc-500 truncate max-w-[200px]">
-                  bc1q9v8k7y3n4...2w8p
-                </div>
-              </div>
-              <button
-                onClick={() => handleCopy('bc1q9v8k7y3n4wz0detoxfocusreclaim2w8p', 'btc')}
-                className="p-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white text-xs font-mono flex items-center gap-1"
-              >
-                {copiedId === 'btc' ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                <span>Copy</span>
-              </button>
             </div>
           </div>
         </div>
@@ -908,7 +940,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
       {/* Add Schedule Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center px-4"
+          style={{
+            paddingTop: 'calc(1rem + var(--zero-safe-top))',
+            paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+          }}
+        >
           <form
             onSubmit={handleCreateSchedule}
             className="w-full max-w-sm bg-zinc-950 border-2 border-zinc-700 rounded-2xl p-5 shadow-2xl font-mono text-left space-y-4"
