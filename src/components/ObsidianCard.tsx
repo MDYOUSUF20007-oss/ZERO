@@ -1,5 +1,6 @@
 import React, { type CSSProperties, type FormEventHandler, type ReactNode } from 'react';
 import { ACCENT_THEMES, type AccentKey } from './ProfileAvatar';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 
 export interface ObsidianCardProps {
   accent?: AccentKey;
@@ -34,8 +35,8 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
   ambientGlow = false,
   fullWidth = true,
   className = '',
-  headerClassName = 'p-4',
-  footerClassName = 'px-4 py-2.5',
+  headerClassName,
+  footerClassName,
   style,
   onClick,
   onSubmit,
@@ -46,7 +47,13 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
   'data-amoled-banner': dataAmoledBanner,
   'data-restricted-guide': dataRestrictedGuide,
 }) => {
-  const resolvedAccent = accentOverride
+  const { isBespoke } = useInterfaceStyle();
+  const resolvedHeaderClass = headerClassName ?? (isBespoke ? 'p-5' : 'p-4');
+  const resolvedFooterClass = footerClassName ?? (isBespoke ? 'px-5 py-3' : 'px-4 py-2.5');
+
+  const resolvedAccent = isBespoke
+    ? null
+    : accentOverride
     ? accentOverride
     : forceAccent && accent
     ? ACCENT_THEMES[accent] || ACCENT_THEMES.Amber
@@ -60,11 +67,15 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
       } as CSSProperties)
     : {};
 
-  const borderExpr = resolvedAccent
+  const borderExpr = isBespoke
+    ? '1px solid var(--zero-border, #262626)'
+    : resolvedAccent
     ? `1.5px solid rgba(${resolvedAccent.rgb}, 0.45)`
     : '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.45)';
 
-  const shadowExpr = resolvedAccent
+  const shadowExpr = isBespoke
+    ? 'none'
+    : resolvedAccent
     ? `0 0 28px -4px rgba(${resolvedAccent.rgb}, 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)`
     : '0 0 28px -4px rgba(var(--accent-rgb, 245, 158, 11), 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)';
 
@@ -72,38 +83,58 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
     ? `linear-gradient(90deg, transparent 0%, ${resolvedAccent.hex} 50%, transparent 100%)`
     : 'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)';
 
-  const interactiveClasses =
-    onClick && !disabled
-      ? 'cursor-pointer hover:scale-[1.005] active:scale-[0.995]'
-      : '';
+  const interactiveClasses = isBespoke
+    ? onClick && !disabled
+      ? 'cursor-pointer hover:border-neutral-600 transition-colors duration-75'
+      : ''
+    : onClick && !disabled
+    ? 'cursor-pointer hover:scale-[1.005] active:scale-[0.995]'
+    : '';
 
   const widthClass = fullWidth ? 'w-full' : '';
-  const sharedClassName = `relative flex flex-col justify-between ${widthClass} rounded-2xl overflow-hidden transition-all duration-300 ${interactiveClasses} ${className}`;
+  const sharedClassName = isBespoke
+    ? `relative flex flex-col justify-between ${widthClass} rounded-md overflow-hidden transition-colors duration-75 ${interactiveClasses} ${className}`
+    : `relative flex flex-col justify-between ${widthClass} rounded-2xl overflow-hidden transition-all duration-300 ${interactiveClasses} ${className}`;
+
+  const bespokeStyleOverrides: CSSProperties =
+    isBespoke && style
+      ? {
+          ...style,
+          background: '#000000',
+          backgroundColor: '#000000',
+          borderColor: '#262626',
+          boxShadow: 'none',
+        }
+      : style || {};
 
   const sharedStyle: CSSProperties = {
     ...accentVarsStyle,
-    background: isPureAmoledBanner
+    background: isBespoke
+      ? '#000000'
+      : isPureAmoledBanner
       ? '#000000'
       : 'linear-gradient(180deg, rgba(26, 26, 30, 0.96) 0%, rgba(12, 12, 14, 0.99) 100%)',
     border: borderExpr,
     boxShadow: shadowExpr,
-    ...style,
+    ...bespokeStyleOverrides,
   };
 
   const innerMarkup = (
     <>
-      {/* Top Specular Metallic Highlight Line */}
-      <div
-        aria-hidden="true"
-        className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
-        style={{
-          background: topHighlightBg,
-          opacity: 0.85,
-        }}
-      />
+      {/* Top Specular Metallic Highlight Line (Classic UI only) */}
+      {!isBespoke && (
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
+          style={{
+            background: topHighlightBg,
+            opacity: 0.85,
+          }}
+        />
+      )}
 
-      {/* Optional Ambient Radial Glow */}
-      {ambientGlow && (
+      {/* Optional Ambient Radial Glow (Classic UI only) */}
+      {!isBespoke && ambientGlow && (
         <div
           aria-hidden="true"
           className="absolute -top-10 -left-10 w-40 h-40 rounded-full pointer-events-none blur-2xl"
@@ -115,18 +146,22 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
         />
       )}
 
-      {overlays}
+      {!isBespoke && overlays}
 
       {/* Tier 1: Primary Header & Content */}
-      <div className={`relative z-10 ${headerClassName}`}>{headerContent}</div>
+      <div className={`relative z-10 ${resolvedHeaderClass}`}>{headerContent}</div>
 
       {/* Tier 2: Optional Footer Bar */}
       {footerContent && (
         <div
-          className={`relative z-10 shrink-0 border-t ${footerClassName}`}
+          className={`relative z-10 shrink-0 border-t ${resolvedFooterClass}`}
           style={{
-            background: isPureAmoledBanner ? 'rgba(10, 7, 18, 0.92)' : 'rgba(5, 5, 7, 0.65)',
-            borderColor: 'rgba(255, 255, 255, 0.07)',
+            background: isBespoke
+              ? '#050505'
+              : isPureAmoledBanner
+              ? 'rgba(10, 7, 18, 0.92)'
+              : 'rgba(5, 5, 7, 0.65)',
+            borderColor: isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.07)',
           }}
         >
           {footerContent}

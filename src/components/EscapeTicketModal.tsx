@@ -5,6 +5,7 @@ import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { ACCENT_ID_TO_KEY, ACCENT_THEMES, ProfileAvatar } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
   Ticket,
   X,
@@ -42,6 +43,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   onOpenSupport,
   onOpenInsights,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   if (!isOpen) return null;
 
   const balance = parachuteMetrics.currentBalance;
@@ -64,6 +66,274 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       : balance === 1
       ? 'You have 1 Escape Ticket ready in your vault'
       : `You have ${balance} Escape Tickets ready in your vault`;
+
+  if (isBespoke) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/95 flex items-start justify-center px-4 overflow-y-auto"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="w-full max-w-md my-auto space-y-4 py-2 font-sans">
+          <ObsidianCard
+            accent={profileAccentKey}
+            className="font-sans"
+            headerClassName="p-5 space-y-4"
+            footerClassName="px-5 py-3 flex items-center justify-between gap-2 font-mono text-[10px] text-neutral-400"
+            headerContent={
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-semibold">
+                    <Ticket size={14} className="text-blue-500" />
+                    <span>ZERO PASS • VAULT</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="p-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors duration-75"
+                    aria-label="Close Escape Ticket View"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3.5 pt-1">
+                  <div className="w-14 h-14 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0">
+                    <Ticket size={24} className="text-blue-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-500">
+                      EMERGENCY EXIT VOUCHER
+                    </div>
+                    <h2 className="text-xl font-bold tracking-tight uppercase text-white leading-tight mt-0.5">
+                      ESCAPE TICKET
+                    </h2>
+                    <p className="text-xs text-neutral-300 mt-1">{balanceSentence}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {profile ? (
+                      <ProfileAvatar
+                        avatarId={profile.avatarId}
+                        accent={profile.accentColor}
+                        size="sm"
+                        interactive
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-sm bg-black border border-neutral-800 flex items-center justify-center shrink-0 font-mono text-sm font-bold text-white">
+                        0
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-neutral-400 font-semibold">
+                        ISSUED TO
+                      </div>
+                      <div className="text-sm font-semibold text-white uppercase tracking-wide truncate">
+                        {holderName}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {holderHandle && (
+                          <span className="font-mono text-[10px] text-neutral-400 truncate">
+                            {holderHandle}
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded-sm bg-black border border-neutral-800 text-blue-400 font-mono text-[9px] font-semibold uppercase tracking-wider">
+                          {rank.title}
+                        </span>
+                        {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-3.5 py-2.5 rounded-md bg-black border border-blue-500/60 text-center shrink-0">
+                    <div className="font-mono tabular-nums text-2xl font-bold text-blue-400 leading-none">
+                      {balance}
+                    </div>
+                    <div className="font-mono text-[9px] font-semibold uppercase tracking-widest text-neutral-400 mt-1">
+                      {balance === 1 ? 'TICKET' : 'TICKETS'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-neutral-800">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-300 font-medium">
+                      Progress to Next Escape Ticket
+                    </span>
+                    <span className="font-mono tabular-nums font-semibold text-blue-400">
+                      {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-none bg-neutral-950 border border-neutral-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-none bg-blue-600 transition-all duration-75"
+                      style={{ width: `${parachuteMetrics.progressPercentage}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between font-mono tabular-nums text-[10px] text-neutral-400">
+                    <span>{parachuteMetrics.hoursUntilNextParachute}h left for next +1 Ticket</span>
+                    <span>
+                      Earned: {parachuteMetrics.lifetimeEarnedParachutes} • Used: {parachuteMetrics.deployedParachutes}
+                    </span>
+                  </div>
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <span className="uppercase tracking-widest text-neutral-400 font-semibold">
+                  {balance > 0 ? 'STATUS: READY IN VAULT' : 'STATUS: 0 AVAILABLE'}
+                </span>
+                <span className="text-blue-400 font-semibold uppercase tracking-wider">
+                  {profile ? profile.primaryMission : 'MONOTONIC PROOF'}
+                </span>
+              </>
+            }
+          />
+
+          <ObsidianCard
+            accent={profileAccentKey}
+            className="font-sans"
+            headerClassName="p-5 space-y-3"
+            footerClassName="px-5 py-3 flex items-start gap-2.5 text-xs text-neutral-400 leading-relaxed"
+            headerContent={
+              <>
+                <div className="text-xs font-semibold uppercase tracking-wider text-white">
+                  How to Gain More Escape Tickets
+                </div>
+
+                <div className="p-3.5 rounded-md bg-neutral-950 border border-neutral-800 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-sm bg-black border border-neutral-800 flex items-center justify-center shrink-0">
+                    <Clock size={14} className="text-blue-500" />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-white">
+                        Every 20 Focus Hours (+1 Ticket)
+                      </span>
+                      <span className="font-mono text-[9px] font-semibold uppercase px-2 py-0.5 rounded-sm bg-black border border-neutral-800 text-neutral-200 shrink-0">
+                        Unlimited
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
+                      <span className="font-mono text-neutral-200 font-medium inline-flex items-center gap-1">
+                        <Moon size={10} className="text-blue-500" />
+                        {sleepRateLabel}
+                      </span>
+                      .
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-sm bg-black border border-neutral-800 flex items-center justify-center shrink-0">
+                      <Gift size={14} className="text-blue-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-white">
+                        Starter Profile Gift (+1 Ticket)
+                      </div>
+                      <div className="text-xs text-neutral-400 mt-0.5">
+                        One-time free welcome ticket when you create your profile.
+                      </div>
+                    </div>
+                  </div>
+                  {hasClaimedFirstTimeParachute ? (
+                    <span className="px-2 py-1 rounded-sm bg-black border border-emerald-500/50 text-emerald-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                      <CheckCircle2 size={10} />
+                      <span>Claimed</span>
+                    </span>
+                  ) : (
+                    onOpenProfile && (
+                      <button
+                        type="button"
+                        onClick={onOpenProfile}
+                        className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans text-[11px] font-semibold uppercase flex items-center gap-1 shrink-0 transition-colors duration-75"
+                      >
+                        <span>Claim</span>
+                        <ArrowRight size={11} />
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <div className="p-3.5 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-sm bg-black border border-neutral-800 flex items-center justify-center shrink-0">
+                      <Heart size={14} className="text-red-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-white">
+                        1st Tip ₹{FIRST_DONATION_BONUS_INR}+ Gift (+1 Ticket &amp; Gold Crest)
+                      </div>
+                      <div className="text-xs text-neutral-400 mt-0.5">
+                        Voluntary thank-you gift strictly on your first ₹{FIRST_DONATION_BONUS_INR}+ support tip.
+                      </div>
+                    </div>
+                  </div>
+                  {hasClaimedFirstDonationParachute ? (
+                    <span className="px-2 py-1 rounded-sm bg-black border border-emerald-500/50 text-emerald-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                      <CheckCircle2 size={10} />
+                      <span>Unlocked</span>
+                    </span>
+                  ) : (
+                    onOpenSupport && (
+                      <button
+                        type="button"
+                        onClick={onOpenSupport}
+                        className="px-3 py-1.5 rounded-md bg-black border border-neutral-800 hover:border-neutral-600 text-neutral-100 hover:text-white font-sans text-[11px] font-semibold uppercase flex items-center gap-1 shrink-0 transition-colors duration-75"
+                      >
+                        <span>Support</span>
+                        <ArrowRight size={11} />
+                      </button>
+                    )
+                  )}
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <ShieldAlert size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  Using a ticket ends the lock early, costs{' '}
+                  <strong className="font-mono text-white">1 Ticket</strong>, and voids that broken
+                  session&rsquo;s progress toward your next 20h ticket.
+                </span>
+              </>
+            }
+          />
+
+          <div className="flex gap-2.5">
+            {onOpenInsights && (
+              <button
+                type="button"
+                onClick={onOpenInsights}
+                className="flex-1 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-xs font-sans font-medium text-white transition-colors duration-75"
+              >
+                Ticket Log in Insights
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-sans font-semibold uppercase tracking-wider transition-colors duration-75"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

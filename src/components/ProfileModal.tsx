@@ -20,8 +20,9 @@ import {
   getZeroRankFromHours,
   normalizeProfileHandle,
 } from '../utils/parachuteRewardsPolicy';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { haptics } from '../utils/haptics';
-import { Sparkles, X, Gift, UserCheck, Flame, CloudDownload, Loader2 } from 'lucide-react';
+import { Sparkles, X, Gift, UserCheck, Flame, CloudDownload, Loader2, Ticket } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -76,6 +77,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSaveProfile,
   onClose,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [displayName, setDisplayName] = useState(initialProfile?.displayName || '');
   const [handleInput, setHandleInput] = useState(initialProfile?.handle || '');
   const [avatarId, setAvatarId] = useState<ProfileAvatarId>(initialProfile?.avatarId || 'monk');
@@ -171,17 +173,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         onSubmit={handleSubmit}
         accent={accentKey}
         forceAccent
-        ambientGlow
-        className="w-full max-w-md max-h-full font-mono"
-        headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
-        footerClassName="p-4 flex flex-col gap-2"
+        ambientGlow={!isBespoke}
+        className={`w-full max-w-md max-h-full ${isBespoke ? 'font-sans' : 'font-mono'}`}
+        headerClassName={
+          isBespoke
+            ? 'p-5 flex-1 min-h-0 overflow-y-auto space-y-5'
+            : 'p-5 flex-1 min-h-0 overflow-y-auto space-y-4'
+        }
+        footerClassName={isBespoke ? 'p-5 flex flex-col gap-2.5' : 'p-4 flex flex-col gap-2'}
         headerContent={
           <>
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
               <div>
                 {showGiftOffer && (
-                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider mb-1.5 animate-pulse">
+                  <div
+                    className={
+                      isBespoke
+                        ? 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm bg-neutral-950 border border-blue-500 text-blue-400 font-mono text-[10px] font-semibold uppercase tracking-wider mb-2'
+                        : 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider mb-1.5 animate-pulse'
+                    }
+                  >
                     <Gift size={11} />
                     <span>
                       {mode === 'welcome'
@@ -190,19 +202,37 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     </span>
                   </div>
                 )}
-                <h2 className="text-base font-black text-white tracking-tight">
+                <h2
+                  className={
+                    isBespoke
+                      ? 'text-base font-semibold text-white tracking-tight'
+                      : 'text-base font-black text-white tracking-tight'
+                  }
+                >
                   {initialProfile ? 'Interactive Zero Profile' : 'Create Interactive Profile'}
                 </h2>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+                <p
+                  className={
+                    isBespoke
+                      ? 'text-xs text-neutral-400 mt-1 leading-relaxed'
+                      : 'text-[11px] text-zinc-400 mt-0.5'
+                  }
+                >
                   {showGiftOffer
-                    ? 'Set your avatar, mission & daily focus goal to claim your free starter Emergency Escape Ticket (🎫).'
+                    ? isBespoke
+                      ? 'Set your emblem, mission & daily focus goal to claim your starter Emergency Escape Ticket.'
+                      : 'Set your avatar, mission & daily focus goal to claim your free starter Emergency Escape Ticket (🎫).'
                     : 'Customize your focus identity, daily goal & lock pledge.'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white shrink-0"
+                className={
+                  isBespoke
+                    ? 'p-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors duration-75 shrink-0'
+                    : 'p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white shrink-0'
+                }
                 aria-label="Close Profile Modal"
               >
                 <X size={16} />
@@ -213,32 +243,63 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {onRestoreFromCloud && (mode === 'welcome' || !initialProfile) && (
               <ObsidianCard
                 data-amoled-banner="true"
-                accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
-                ambientGlow
-                className="font-mono"
-                headerClassName="p-3.5 space-y-2.5"
-                footerClassName="px-3.5 py-2 text-[10px] flex items-center justify-between gap-2"
+                accentOverride={isBespoke ? undefined : { hex: '#8B5CF6', rgb: '139, 92, 246' }}
+                ambientGlow={!isBespoke}
+                className={isBespoke ? 'font-sans' : 'font-mono'}
+                headerClassName={isBespoke ? 'p-4 space-y-3' : 'p-3.5 space-y-2.5'}
+                footerClassName={
+                  isBespoke
+                    ? 'px-4 py-2.5 text-[10px] font-mono flex items-center justify-between gap-2'
+                    : 'px-3.5 py-2 text-[10px] flex items-center justify-between gap-2'
+                }
                 headerContent={
                   <>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="amoled-banner-title text-[11px] font-black uppercase tracking-wider text-white">
+                      <span
+                        className={
+                          isBespoke
+                            ? 'text-xs font-semibold uppercase tracking-wider text-white'
+                            : 'amoled-banner-title text-[11px] font-black uppercase tracking-wider text-white'
+                        }
+                      >
                         Reinstalled Zero? Skip Setup
                       </span>
                       <span
-                        className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                          color: '#C4B5FD',
-                        }}
+                        className={
+                          isBespoke
+                            ? 'font-mono text-[9px] font-semibold px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400'
+                            : 'text-[9px] font-bold px-2 py-0.5 rounded-full'
+                        }
+                        style={
+                          isBespoke
+                            ? undefined
+                            : {
+                                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                                color: '#C4B5FD',
+                              }
+                        }
                       >
                         .zbak Sync
                       </span>
                     </div>
-                    <p className="amoled-banner-sub text-[10px] leading-relaxed" style={{ color: '#C4B5FD' }}>
+                    <p
+                      className={
+                        isBespoke
+                          ? 'text-xs text-neutral-400 leading-relaxed'
+                          : 'amoled-banner-sub text-[10px] leading-relaxed'
+                      }
+                      style={isBespoke ? undefined : { color: '#C4B5FD' }}
+                    >
                       Restore focus stats, donor badges, emergency escape tickets &amp; preset Bags in 1 tap.
                     </p>
                     {restoreDisabled && (
-                      <div className="p-2 rounded-xl bg-amber-950/60 border border-amber-600/70 text-amber-200 text-[10px]">
+                      <div
+                        className={
+                          isBespoke
+                            ? 'p-2.5 rounded-sm bg-neutral-950 border border-amber-500/60 text-amber-300 text-xs'
+                            : 'p-2 rounded-xl bg-amber-950/60 border border-amber-600/70 text-amber-200 text-[10px]'
+                        }
+                      >
                         Cloud backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.
                       </div>
                     )}
@@ -246,11 +307,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       type="button"
                       onClick={handleCloudRestoreClick}
                       disabled={restoreDisabled || isCloudBusy || isRestoringLocal}
-                      className="w-full py-2.5 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        backgroundColor: '#8B5CF6',
-                        color: '#FFFFFF',
-                      }}
+                      className={
+                        isBespoke
+                          ? 'w-full py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75 disabled:opacity-50 disabled:cursor-not-allowed'
+                          : 'w-full py-2.5 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed'
+                      }
+                      style={
+                        isBespoke
+                          ? undefined
+                          : {
+                              backgroundColor: '#8B5CF6',
+                              color: '#FFFFFF',
+                            }
+                      }
                     >
                       {isCloudBusy || isRestoringLocal ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -260,7 +329,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       <span>Restore Backup from Cloud (Drive / OneDrive / JioDrive)</span>
                     </button>
                     {restoreFeedback && (
-                      <div className="p-2 rounded-xl bg-red-950/60 border border-red-700/80 text-red-200 text-[10px]">
+                      <div
+                        className={
+                          isBespoke
+                            ? 'p-2.5 rounded-sm bg-neutral-950 border border-red-500/60 text-red-300 text-xs'
+                            : 'p-2 rounded-xl bg-red-950/60 border border-red-700/80 text-red-200 text-[10px]'
+                        }
+                      >
                         {restoreFeedback}
                       </div>
                     )}
@@ -268,10 +343,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 }
                 footerContent={
                   <>
-                    <span className="amoled-banner-sub" style={{ color: '#C4B5FD' }}>
+                    <span
+                      className={isBespoke ? 'text-neutral-400' : 'amoled-banner-sub'}
+                      style={isBespoke ? undefined : { color: '#C4B5FD' }}
+                    >
                       Zero-Server Android SAF Restore
                     </span>
-                    <span className="amoled-banner-accent font-bold uppercase tracking-wider">
+                    <span
+                      className={
+                        isBespoke
+                          ? 'text-blue-400 font-semibold uppercase tracking-wider'
+                          : 'amoled-banner-accent font-bold uppercase tracking-wider'
+                      }
+                    >
                       HMAC Verified
                     </span>
                   </>
@@ -293,9 +377,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             />
 
             {/* Name & Handle */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+                <label
+                  className={
+                    isBespoke
+                      ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5'
+                      : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1'
+                  }
+                >
                   Callsign / Name *
                 </label>
                 <input
@@ -308,11 +398,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   placeholder="e.g. Yousuf"
                   maxLength={28}
                   autoFocus={mode === 'welcome'}
-                  className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  className={
+                    isBespoke
+                      ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 text-xs text-white outline-none transition-colors duration-75'
+                      : 'w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none'
+                  }
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+                <label
+                  className={
+                    isBespoke
+                      ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5'
+                      : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1'
+                  }
+                >
                   @Handle (Optional)
                 </label>
                 <input
@@ -321,14 +421,24 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   onChange={(e) => setHandleInput(e.target.value)}
                   placeholder={normalizeProfileHandle(displayName)}
                   maxLength={20}
-                  className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none"
+                  className={
+                    isBespoke
+                      ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 font-mono text-xs text-neutral-200 outline-none transition-colors duration-75'
+                      : 'w-full obsidian-input rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none'
+                  }
                 />
               </div>
             </div>
 
             {/* Avatar Emblem Picker */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
+              <label
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-2'
+                    : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5'
+                }
+              >
                 Select Emblem (Tap to Preview)
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -342,11 +452,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         haptics.tick(820);
                         setAvatarId(opt.id);
                       }}
-                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-                        active
-                          ? `${accentStyle.border} bg-zinc-900 text-white`
-                          : 'border-white/10 bg-black/70 text-zinc-400 hover:border-white/25'
-                      }`}
+                      className={
+                        isBespoke
+                          ? `p-2.5 rounded-md border flex flex-col items-center gap-1.5 transition-colors duration-75 ${
+                              active
+                                ? 'border-blue-500 bg-neutral-950 text-white'
+                                : 'border-neutral-800 bg-black text-neutral-400 hover:border-neutral-600'
+                            }`
+                          : `p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                              active
+                                ? `${accentStyle.border} bg-zinc-900 text-white`
+                                : 'border-white/10 bg-black/70 text-zinc-400 hover:border-white/25'
+                            }`
+                      }
                     >
                       <ProfileAvatar
                         avatarId={opt.id}
@@ -354,7 +472,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         size="sm"
                         glowHighlighted={active}
                       />
-                      <span className="text-[10px] font-bold">{opt.label}</span>
+                      <span className="text-[11px] font-medium">{opt.label}</span>
                     </button>
                   );
                 })}
@@ -363,8 +481,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             {/* Accent Swatches */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
-                Profile Accent
+              <label
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-2'
+                    : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5'
+                }
+              >
+                {isBespoke ? 'Profile Accent (Classic Mode)' : 'Profile Accent'}
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.keys(ACCENT_STYLES) as ProfileAccent[]).map((key) => {
@@ -378,13 +502,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         haptics.tick(760);
                         setAccentColor(key);
                       }}
-                      className={`py-2 px-2 rounded-xl border text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all ${
-                        selected
-                          ? `${info.border} bg-zinc-900 text-white`
-                          : 'border-white/10 bg-black/70 text-zinc-400 hover:border-white/25'
-                      }`}
+                      className={
+                        isBespoke
+                          ? `py-2 px-2 rounded-md border text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors duration-75 ${
+                              selected
+                                ? 'border-blue-500 bg-neutral-950 text-white'
+                                : 'border-neutral-800 bg-black text-neutral-400 hover:border-neutral-600'
+                            }`
+                          : `py-2 px-2 rounded-xl border text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                              selected
+                                ? `${info.border} bg-zinc-900 text-white`
+                                : 'border-white/10 bg-black/70 text-zinc-400 hover:border-white/25'
+                            }`
+                      }
                     >
-                      <span className={`w-2.5 h-2.5 rounded-full ${info.bar}`} />
+                      <span
+                        className={
+                          isBespoke
+                            ? `w-2.5 h-2.5 rounded-none ${info.bar}`
+                            : `w-2.5 h-2.5 rounded-full ${info.bar}`
+                        }
+                      />
                       <span>{info.label}</span>
                     </button>
                   );
@@ -394,7 +532,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             {/* Mission Pills */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
+              <label
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-2'
+                    : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5'
+                }
+              >
                 Primary Detox Mission
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -409,7 +553,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         setPrimaryMission(mission);
                       }}
                       style={
-                        isActiveMission
+                        !isBespoke && isActiveMission
                           ? {
                               background: liveTheme.badgeGradient,
                               color: liveTheme.badgeText,
@@ -417,11 +561,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             }
                           : undefined
                       }
-                      className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all ${
-                        isActiveMission
-                          ? 'border border-white/30 font-black'
-                          : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
-                      }`}
+                      className={
+                        isBespoke
+                          ? `px-2.5 py-1.5 rounded-sm border font-mono text-[11px] transition-colors duration-75 ${
+                              isActiveMission
+                                ? 'bg-blue-600 border-blue-500 text-white font-semibold'
+                                : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600'
+                            }`
+                          : `px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                              isActiveMission
+                                ? 'border border-white/30 font-black'
+                                : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
+                            }`
+                      }
                     >
                       #{mission}
                     </button>
@@ -431,13 +583,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             {/* Interactive Daily Focus Goal Slider */}
-            <div className="p-3 rounded-2xl obsidian-inset-neutral space-y-2">
+            <div
+              className={
+                isBespoke
+                  ? 'p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
+                  : 'p-3 rounded-2xl obsidian-inset-neutral space-y-2'
+              }
+            >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-zinc-300 flex items-center gap-1.5">
-                  <Flame size={13} style={{ color: liveTheme.hex }} />
+                <span
+                  className={
+                    isBespoke
+                      ? 'font-medium text-neutral-300 flex items-center gap-1.5'
+                      : 'font-bold text-zinc-300 flex items-center gap-1.5'
+                  }
+                >
+                  <Flame size={13} style={{ color: isBespoke ? '#3B82F6' : liveTheme.hex }} />
                   <span>Daily Phone-Free Goal</span>
                 </span>
-                <span className="font-black" style={{ color: liveTheme.hex }}>
+                <span
+                  className={isBespoke ? 'font-mono tabular-nums font-semibold' : 'font-black'}
+                  style={{ color: isBespoke ? '#3B82F6' : liveTheme.hex }}
+                >
                   {dailyGoalHours} {dailyGoalHours === 1 ? 'Hour' : 'Hours'} / Day
                 </span>
               </div>
@@ -451,10 +618,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   haptics.tick(650 + Number(e.target.value) * 35);
                   setDailyGoalHours(Number(e.target.value));
                 }}
-                style={{ accentColor: liveTheme.hex }}
+                style={{ accentColor: isBespoke ? '#2563EB' : liveTheme.hex }}
                 className="w-full cursor-pointer"
               />
-              <div className="flex justify-between text-[9px] text-zinc-400">
+              <div
+                className={
+                  isBespoke
+                    ? 'flex justify-between font-mono tabular-nums text-[10px] text-neutral-400'
+                    : 'flex justify-between text-[9px] text-zinc-400'
+                }
+              >
                 <span>1h Light</span>
                 <span>4h Balanced</span>
                 <span>8h Monk</span>
@@ -464,7 +637,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             {/* Focus Pledge / Motto */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+              <label
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block'
+                    : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 block'
+                }
+              >
                 Personal Lock Pledge
               </label>
               <input
@@ -473,15 +652,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onChange={(e) => setMotto(e.target.value)}
                 maxLength={72}
                 placeholder="Your focus rule..."
-                className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
+                className={
+                  isBespoke
+                    ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 text-xs text-white outline-none transition-colors duration-75'
+                    : 'w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none'
+                }
               />
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="flex gap-1.5 flex-wrap pt-0.5">
                 {MOTTO_PRESETS.map((preset) => (
                   <button
                     key={preset}
                     type="button"
                     onClick={() => setMotto(preset)}
-                    className="text-[9px] px-2 py-0.5 rounded obsidian-inset-neutral text-zinc-400 hover:text-zinc-200 transition-colors"
+                    className={
+                      isBespoke
+                        ? 'text-[10px] px-2 py-1 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors duration-75'
+                        : 'text-[9px] px-2 py-0.5 rounded obsidian-inset-neutral text-zinc-400 hover:text-zinc-200 transition-colors'
+                    }
                   >
                     {preset}
                   </button>
@@ -490,7 +677,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             {errorMsg && (
-              <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-700/80 text-red-200 text-[11px]">
+              <div
+                className={
+                  isBespoke
+                    ? 'p-3 rounded-md bg-neutral-950 border border-red-500/60 text-red-300 text-xs'
+                    : 'p-2.5 rounded-xl bg-red-950/60 border border-red-700/80 text-red-200 text-[11px]'
+                }
+              >
                 {errorMsg}
               </div>
             )}
@@ -500,17 +693,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <>
             <button
               type="submit"
-              style={{
-                background: liveTheme.badgeGradient,
-                color: liveTheme.badgeText,
-                boxShadow: `0 0 18px -2px rgba(${liveTheme.rgb}, 0.42)`,
-              }}
-              className="w-full py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+              style={
+                isBespoke
+                  ? undefined
+                  : {
+                      background: liveTheme.badgeGradient,
+                      color: liveTheme.badgeText,
+                      boxShadow: `0 0 18px -2px rgba(${liveTheme.rgb}, 0.42)`,
+                    }
+              }
+              className={
+                isBespoke
+                  ? 'w-full py-3 px-4 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75'
+                  : 'w-full py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all'
+              }
             >
               {showGiftOffer ? (
                 <>
-                  <Sparkles size={15} />
-                  <span>Create Profile &amp; Claim +1 Free 🎫</span>
+                  {isBespoke ? <Ticket size={15} /> : <Sparkles size={15} />}
+                  <span>
+                    {isBespoke
+                      ? 'Create Profile & Claim +1 Free Ticket'
+                      : 'Create Profile & Claim +1 Free 🎫'}
+                  </span>
                 </>
               ) : (
                 <>
@@ -523,7 +728,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl obsidian-inset-neutral text-zinc-300 hover:text-white text-xs font-bold transition-colors"
+              className={
+                isBespoke
+                  ? 'w-full py-2.5 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-600 text-xs font-medium transition-colors duration-75'
+                  : 'w-full py-2.5 rounded-xl obsidian-inset-neutral text-zinc-300 hover:text-white text-xs font-bold transition-colors'
+              }
             >
               {mode === 'welcome' ? 'Maybe Later' : 'Cancel'}
             </button>

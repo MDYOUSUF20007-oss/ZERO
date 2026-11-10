@@ -29,6 +29,11 @@ object VoidThemeStore {
     const val KEY_ACCENT_HEX = "accent_hex"
     const val KEY_ACCENT_RGB = "accent_rgb"
     const val KEY_BADGE_TEXT_HEX = "badge_text_hex"
+    const val KEY_INTERFACE_STYLE = "interface_style"
+
+    const val STYLE_BESPOKE = "bespoke"
+    const val STYLE_CLASSIC = "classic"
+    const val DEFAULT_INTERFACE_STYLE = STYLE_BESPOKE
 
     const val DEFAULT_ACCENT_HEX = "#F59E0B"
     const val DEFAULT_ACCENT_RGB = "245, 158, 11"
@@ -143,6 +148,31 @@ object VoidThemeStore {
             badgeTextColor = badgeColor
         )
     }
+
+    @JvmStatic
+    fun normalizeInterfaceStyle(raw: String?): String {
+        return if (raw?.trim()?.lowercase(Locale.US) == STYLE_CLASSIC) STYLE_CLASSIC else STYLE_BESPOKE
+    }
+
+    @JvmStatic
+    fun saveInterfaceStyle(context: Context, style: String?) {
+        val clean = normalizeInterfaceStyle(style)
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_INTERFACE_STYLE, clean)
+            .commit()
+    }
+
+    @JvmStatic
+    fun loadInterfaceStyle(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return normalizeInterfaceStyle(prefs.getString(KEY_INTERFACE_STYLE, DEFAULT_INTERFACE_STYLE))
+    }
+
+    @JvmStatic
+    fun isBespokeStyle(context: Context): Boolean {
+        return loadInterfaceStyle(context) == STYLE_BESPOKE
+    }
 }
 
 /**
@@ -241,6 +271,7 @@ class PixelClockView @JvmOverloads constructor(
     private var clockText: String = "3:39 PM"
     private var layoutData: PixelFont5x7.Layout = PixelFont5x7.buildLayout(clockText)
     private var accentColor: Int = 0xFFF59E0B.toInt()
+    private var bespokeMinimalist: Boolean = true
 
     private val pixelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -280,6 +311,13 @@ class PixelClockView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setBespokeMinimalist(enabled: Boolean) {
+        if (bespokeMinimalist == enabled) return
+        bespokeMinimalist = enabled
+        lastGradientAccent = 0
+        invalidate()
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val density = resources.displayMetrics.density
         val desiredHeight = (34f * density).roundToInt()
@@ -299,31 +337,33 @@ class PixelClockView @JvmOverloads constructor(
 
         val density = resources.displayMetrics.density
 
-        // 1. Subtle Dot-Matrix Underlay
-        val dotStep = max(4f * density, 1f)
-        val dotRadius = 0.75f * density
-        var dy = dotStep * 0.5f
-        while (dy < h) {
-            var dx = dotStep * 0.5f
-            while (dx < w) {
-                canvas.drawCircle(dx, dy, dotRadius, dotMatrixPaint)
-                dx += dotStep
+        if (!bespokeMinimalist) {
+            // 1. Subtle Dot-Matrix Underlay
+            val dotStep = max(4f * density, 1f)
+            val dotRadius = 0.75f * density
+            var dy = dotStep * 0.5f
+            while (dy < h) {
+                var dx = dotStep * 0.5f
+                while (dx < w) {
+                    canvas.drawCircle(dx, dy, dotRadius, dotMatrixPaint)
+                    dx += dotStep
+                }
+                dy += dotStep
             }
-            dy += dotStep
+
+            // 2. Ambient radial glow tinted with active theme accent
+            glowUnderlayPaint.shader = RadialGradient(
+                w * 0.5f,
+                h * 0.55f,
+                max(w * 0.46f, h * 0.9f),
+                VoidThemeStore.withAlpha(accentColor, 44),
+                0x00000000,
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(0f, 0f, w, h, glowUnderlayPaint)
         }
 
-        // 2. Ambient radial glow tinted with active theme accent
-        glowUnderlayPaint.shader = RadialGradient(
-            w * 0.5f,
-            h * 0.55f,
-            max(w * 0.46f, h * 0.9f),
-            VoidThemeStore.withAlpha(accentColor, 44),
-            0x00000000,
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, w, h, glowUnderlayPaint)
-
-        // 3. Crisp 5x7 Pixelated LED Matrix with Vertical White -> Accent Gradient
+        // 3. Crisp 5x7 Pixelated LED Matrix
         val padH = 6f * density
         val maxCellW = (w - padH * 2f) / max(1f, layoutData.totalCols)
         val maxCellH = (h - 2f * density) / PixelFont5x7.ROWS.toFloat()
@@ -334,10 +374,14 @@ class PixelClockView @JvmOverloads constructor(
             val startX = (w - drawWidth) * 0.5f
             val startY = (h - drawHeight) * 0.5f
 
-            if (
+            if (bespokeMinimalist) {
+                pixelPaint.shader = null
+                pixelPaint.color = 0xFFFAFAFA.toInt()
+            } else if (
                 lastGradientTop != startY ||
                 lastGradientHeight != drawHeight ||
-                lastGradientAccent != accentColor
+                lastGradientAccent != accentColor ||
+                pixelPaint.shader == null
             ) {
                 pixelPaint.shader = LinearGradient(
                     0f,
@@ -355,23 +399,29 @@ class PixelClockView @JvmOverloads constructor(
 
             val gap = cellSize * 0.14f
             val pixelExtent = cellSize - gap
-            val corner = cellSize * 0.1f
+            val corner = if (bespokeMinimalist) 0f else cellSize * 0.1f
 
             for (cell in layoutData.cells) {
                 val left = startX + cell.col * cellSize + gap * 0.5f
                 val top = startY + cell.row * cellSize + gap * 0.5f
                 rectBuffer.set(left, top, left + pixelExtent, top + pixelExtent)
-                canvas.drawRoundRect(rectBuffer, corner, corner, pixelPaint)
+                if (corner <= 0f) {
+                    canvas.drawRect(rectBuffer, pixelPaint)
+                } else {
+                    canvas.drawRoundRect(rectBuffer, corner, corner, pixelPaint)
+                }
             }
         }
 
-        // 4. Subtle Terminal CRT Scanlines across display
-        val scanStep = max(4f * density, 2f)
-        val scanThick = max(1.6f * density, 1f)
-        var sy = scanStep * 0.5f
-        while (sy < h) {
-            canvas.drawRect(0f, sy, w, sy + scanThick, scanlinePaint)
-            sy += scanStep
+        if (!bespokeMinimalist) {
+            // 4. Subtle Terminal CRT Scanlines across display
+            val scanStep = max(4f * density, 2f)
+            val scanThick = max(1.6f * density, 1f)
+            var sy = scanStep * 0.5f
+            while (sy < h) {
+                canvas.drawRect(0f, sy, w, sy + scanThick, scanlinePaint)
+                sy += scanStep
+            }
         }
     }
 }

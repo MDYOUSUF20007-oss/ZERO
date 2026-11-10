@@ -71,9 +71,14 @@ class TheVoidActivity : AppCompatActivity() {
     private var countDownTimer: CountDownTimer? = null
 
     private lateinit var accentConfig: VoidThemeStore.VoidAccentConfig
+    private var isBespokeStyle: Boolean = true
 
     private lateinit var textRemainingTime: TextView
     private lateinit var textCurrentTime: TextView
+    private lateinit var statusDot: View
+    private lateinit var textVoidActive: TextView
+    private lateinit var textClockHeader: TextView
+    private lateinit var textQuote: TextView
     private lateinit var textBattery: TextView
     private lateinit var textSessionTag: TextView
     private lateinit var btnEmergencyCall: Button
@@ -112,6 +117,7 @@ class TheVoidActivity : AppCompatActivity() {
         bagStore = BagStore(this)
         lockEngine = LockEngine(this, parachuteStore)
         accentConfig = VoidThemeStore.loadAccent(this)
+        isBespokeStyle = VoidThemeStore.isBespokeStyle(this)
 
         tryDeviceOwnerPinning()
         buildViewHierarchy()
@@ -189,22 +195,25 @@ class TheVoidActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        val statusDot = View(this).apply {
+        statusDot = View(this).apply {
             val dotSize = dp(6)
             layoutParams = LinearLayout.LayoutParams(dotSize, dotSize).apply {
                 marginEnd = dp(6)
             }
             background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
+                shape = if (isBespokeStyle) GradientDrawable.RECTANGLE else GradientDrawable.OVAL
+                if (isBespokeStyle) {
+                    cornerRadius = dp(1).toFloat()
+                }
                 setColor(Color.parseColor("#10B981"))
             }
         }
 
-        val textVoidActive = TextView(this).apply {
+        textVoidActive = TextView(this).apply {
             text = "VOID ACTIVE"
             setTextColor(Color.parseColor("#A1A1AA"))
             textSize = 10f
-            typeface = Typeface.MONOSPACE
+            typeface = if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE
             letterSpacing = 0.08f
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -246,12 +255,13 @@ class TheVoidActivity : AppCompatActivity() {
             )
         }
 
-        // 1. PIXELATED GRADIENT CLOCK CONTAINER (Directly Above Countdown Timer)
+        // 1. PIXELATED CLOCK CONTAINER (Directly Above Countdown Timer)
         pixelClockCard = FrameLayout(this).apply {
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, dp(16).toFloat())
+                    val radiusDp = if (isBespokeStyle) 6 else 16
+                    outline.setRoundRect(0, 0, view.width, view.height, dp(radiusDp).toFloat())
                 }
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -274,26 +284,27 @@ class TheVoidActivity : AppCompatActivity() {
         val clockInner = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(16), dp(12), dp(16), dp(14))
+            setPadding(dp(16), dp(14), dp(16), dp(14))
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
             )
         }
 
-        val textClockHeader = TextView(this).apply {
+        textClockHeader = TextView(this).apply {
             text = "SYSTEM TIME // SYNCED"
             setTextColor(Color.parseColor("#A1A1AA"))
             textSize = 9.5f
-            typeface = Typeface.MONOSPACE
-            letterSpacing = 0.22f
+            typeface = if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE
+            letterSpacing = if (isBespokeStyle) 0.16f else 0.22f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(8))
         }
 
         pixelClockView = PixelClockView(this).apply {
             setClockTime(initialTimeUpper)
-            setAccentTheme(accentConfig.accentColor)
+            setBespokeMinimalist(isBespokeStyle)
+            setAccentTheme(if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -310,9 +321,12 @@ class TheVoidActivity : AppCompatActivity() {
             val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
             val tag = prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work"
             text = "LOCKED IN #$tag"
-            setTextColor(accentConfig.accentColor)
+            setTextColor(if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor)
             textSize = 12.5f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
             letterSpacing = 0.14f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(8))
@@ -329,11 +343,14 @@ class TheVoidActivity : AppCompatActivity() {
             setPadding(0, 0, 0, dp(8))
         }
 
-        val textQuote = TextView(this).apply {
+        textQuote = TextView(this).apply {
             text = "\"The obstacle is the way. Stay phone-free.\""
             setTextColor(Color.parseColor("#9CA3AF"))
             textSize = 11.5f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.ITALIC
+            )
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(22))
         }
@@ -376,7 +393,10 @@ class TheVoidActivity : AppCompatActivity() {
         btnDeployParachute = Button(this).apply {
             text = "USE EMERGENCY ESCAPE TICKET"
             isAllCaps = false
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
             textSize = 12f
             letterSpacing = 0.06f
             stateListAnimator = null
@@ -392,17 +412,14 @@ class TheVoidActivity : AppCompatActivity() {
             text = "EMERGENCY CALL (911 / 112)"
             isAllCaps = false
             setTextColor(Color.WHITE)
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
             textSize = 12f
             letterSpacing = 0.06f
             stateListAnimator = null
             setPadding(dp(16), dp(14), dp(16), dp(14))
-            background = createRoundedButtonBg(
-                fillColors = intArrayOf(Color.parseColor("#18181C"), Color.parseColor("#111114")),
-                strokeColor = Color.parseColor("#1FFFFFFF"),
-                rippleColor = Color.parseColor("#33FFFFFF"),
-                radiusDp = 14
-            )
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -427,31 +444,87 @@ class TheVoidActivity : AppCompatActivity() {
 
     private fun applyAccentThemeVisuals() {
         accentConfig = VoidThemeStore.loadAccent(this)
-        val accent = accentConfig.accentColor
+        isBespokeStyle = VoidThemeStore.isBespokeStyle(this)
+        val accent = if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor
 
-        pixelClockCard.background = GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(Color.parseColor("#EB141418"), Color.parseColor("#F508080A"))
-        ).apply {
-            cornerRadius = dp(16).toFloat()
-            setStroke(dp(1), VoidThemeStore.withAlpha(accent, 90))
+        pixelClockCard.invalidateOutline()
+
+        if (isBespokeStyle) {
+            pixelClockCard.background = GradientDrawable().apply {
+                cornerRadius = dp(6).toFloat()
+                setColor(Color.BLACK)
+                setStroke(dp(1), Color.parseColor("#262626"))
+            }
+            pixelClockRim.visibility = View.GONE
+
+            bagContainer.background = GradientDrawable().apply {
+                cornerRadius = dp(6).toFloat()
+                setColor(Color.BLACK)
+                setStroke(dp(1), Color.parseColor("#262626"))
+            }
+
+            statusDot.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(1).toFloat()
+                setColor(Color.parseColor("#10B981"))
+            }
+
+            textVoidActive.typeface = Typeface.SANS_SERIF
+            textClockHeader.typeface = Typeface.SANS_SERIF
+            textSessionTag.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            textQuote.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.ITALIC)
+            btnDeployParachute.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            btnEmergencyCall.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            btnEmergencyCall.background = createRoundedButtonBg(
+                fillColors = intArrayOf(Color.parseColor("#0A0A0A"), Color.parseColor("#0A0A0A")),
+                strokeColor = Color.parseColor("#262626"),
+                rippleColor = Color.parseColor("#26FFFFFF"),
+                radiusDp = 6
+            )
+        } else {
+            pixelClockCard.background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.parseColor("#EB141418"), Color.parseColor("#F508080A"))
+            ).apply {
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), VoidThemeStore.withAlpha(accent, 90))
+            }
+            pixelClockRim.visibility = View.VISIBLE
+            pixelClockRim.background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(Color.TRANSPARENT, VoidThemeStore.withAlpha(accent, 196), Color.TRANSPARENT)
+            )
+
+            bagContainer.background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.parseColor("#EF101014"), Color.parseColor("#FA08080A"))
+            ).apply {
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), VoidThemeStore.withAlpha(accent, 74))
+            }
+
+            statusDot.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#10B981"))
+            }
+
+            textVoidActive.typeface = Typeface.MONOSPACE
+            textClockHeader.typeface = Typeface.MONOSPACE
+            textSessionTag.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            textQuote.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
+            btnDeployParachute.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            btnEmergencyCall.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            btnEmergencyCall.background = createRoundedButtonBg(
+                fillColors = intArrayOf(Color.parseColor("#18181C"), Color.parseColor("#111114")),
+                strokeColor = Color.parseColor("#1FFFFFFF"),
+                rippleColor = Color.parseColor("#33FFFFFF"),
+                radiusDp = 14
+            )
         }
 
-        pixelClockRim.background = GradientDrawable(
-            GradientDrawable.Orientation.LEFT_RIGHT,
-            intArrayOf(Color.TRANSPARENT, VoidThemeStore.withAlpha(accent, 196), Color.TRANSPARENT)
-        )
-
+        pixelClockView.setBespokeMinimalist(isBespokeStyle)
         pixelClockView.setAccentTheme(accent)
         textSessionTag.setTextColor(accent)
-
-        bagContainer.background = GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(Color.parseColor("#EF101014"), Color.parseColor("#FA08080A"))
-        ).apply {
-            cornerRadius = dp(16).toFloat()
-            setStroke(dp(1), VoidThemeStore.withAlpha(accent, 74))
-        }
 
         updateParachuteStatus()
     }
@@ -492,7 +565,10 @@ class TheVoidActivity : AppCompatActivity() {
             text = "BAG: $bagName (${apps.size}/3 APPS)"
             setTextColor(Color.parseColor("#D4D4D8"))
             textSize = 11f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
             letterSpacing = 0.08f
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
@@ -501,9 +577,15 @@ class TheVoidActivity : AppCompatActivity() {
 
         val headerRight = TextView(this).apply {
             text = if (apps.isEmpty()) "Monk Mode Active" else "Allowed Apps"
-            setTextColor(if (apps.isEmpty()) accent else Color.parseColor("#34D399"))
+            setTextColor(
+                if (apps.isEmpty()) {
+                    if (isBespokeStyle) Color.parseColor("#3B82F6") else accent
+                } else {
+                    Color.parseColor("#34D399")
+                }
+            )
             textSize = 10f
-            typeface = Typeface.MONOSPACE
+            typeface = if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE
         }
 
         headerRow.addView(headerLeft)
@@ -519,7 +601,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         if (apps.isEmpty()) {
-            // Tactical Empty-State Card with subtle accent glow
+            // Tactical Empty-State Card
             val emptyNotice = TextView(this).apply {
                 text = if (allowSms) {
                     "Monk Mode: Empty Bag. Unbagged distraction apps are sealed."
@@ -528,13 +610,16 @@ class TheVoidActivity : AppCompatActivity() {
                 }
                 setTextColor(Color.parseColor("#D4D4D8"))
                 textSize = 11.5f
-                typeface = Typeface.MONOSPACE
+                typeface = if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE
                 setLineSpacing(dp(3).toFloat(), 1f)
                 setPadding(dp(14), dp(11), dp(14), dp(11))
                 background = GradientDrawable().apply {
-                    cornerRadius = dp(12).toFloat()
-                    setColor(Color.parseColor("#D909090C"))
-                    setStroke(dp(1), VoidThemeStore.withAlpha(accent, 66))
+                    cornerRadius = dp(if (isBespokeStyle) 6 else 12).toFloat()
+                    setColor(Color.parseColor(if (isBespokeStyle) "#0A0A0A" else "#D909090C"))
+                    setStroke(
+                        dp(1),
+                        if (isBespokeStyle) Color.parseColor("#262626") else VoidThemeStore.withAlpha(accent, 66)
+                    )
                 }
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -664,12 +749,21 @@ class TheVoidActivity : AppCompatActivity() {
             isClickable = true
             isFocusable = true
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = createRoundedButtonBg(
-                fillColors = intArrayOf(Color.parseColor("#CC18181C"), Color.parseColor("#CC141418")),
-                strokeColor = Color.parseColor("#14FFFFFF"),
-                rippleColor = VoidThemeStore.withAlpha(brandColor, 64),
-                radiusDp = 12
-            )
+            background = if (isBespokeStyle) {
+                createRoundedButtonBg(
+                    fillColors = intArrayOf(Color.parseColor("#0A0A0A"), Color.parseColor("#0A0A0A")),
+                    strokeColor = Color.parseColor("#262626"),
+                    rippleColor = Color.parseColor("#26FFFFFF"),
+                    radiusDp = 6
+                )
+            } else {
+                createRoundedButtonBg(
+                    fillColors = intArrayOf(Color.parseColor("#CC18181C"), Color.parseColor("#CC141418")),
+                    strokeColor = Color.parseColor("#14FFFFFF"),
+                    rippleColor = VoidThemeStore.withAlpha(brandColor, 64),
+                    radiusDp = 12
+                )
+            }
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -677,19 +771,20 @@ class TheVoidActivity : AppCompatActivity() {
             setOnClickListener { onClick() }
         }
 
-        // Dynamic Brand-Colored App Icon Tile
+        // App Icon Tile
         val tileSize = dp(38)
+        val tileCornerDp = if (isBespokeStyle) 6 else 11
         val iconTile = FrameLayout(this).apply {
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, dp(11).toFloat())
+                    outline.setRoundRect(0, 0, view.width, view.height, dp(tileCornerDp).toFloat())
                 }
             }
             background = GradientDrawable().apply {
-                cornerRadius = dp(11).toFloat()
+                cornerRadius = dp(tileCornerDp).toFloat()
                 setColor(brandColor)
-                setStroke(dp(1), Color.parseColor("#33FFFFFF"))
+                setStroke(dp(1), Color.parseColor(if (isBespokeStyle) "#262626" else "#33FFFFFF"))
             }
             layoutParams = LinearLayout.LayoutParams(tileSize, tileSize).apply {
                 marginEnd = dp(12)
@@ -769,17 +864,20 @@ class TheVoidActivity : AppCompatActivity() {
         textCol.addView(tvTitle)
         textCol.addView(tvSub)
 
-        // Right Pill Badge ("ALLOWED" / "ALWAYS ON")
+        // Right Status Tag ("ALLOWED" / "ALWAYS ON")
         val badgeView = TextView(this).apply {
             text = badgeLabel
             setTextColor(Color.parseColor("#34D399"))
             textSize = 9f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
             letterSpacing = 0.05f
             setPadding(dp(8), dp(4), dp(8), dp(4))
             background = GradientDrawable().apply {
-                cornerRadius = dp(6).toFloat()
-                setColor(Color.parseColor("#1F10B981"))
+                cornerRadius = dp(if (isBespokeStyle) 4 else 6).toFloat()
+                setColor(Color.parseColor(if (isBespokeStyle) "#052E16" else "#1F10B981"))
                 setStroke(dp(1), Color.parseColor("#4010B981"))
             }
         }
@@ -838,6 +936,28 @@ class TheVoidActivity : AppCompatActivity() {
         textParachuteBalance.text = "$balance Escape Ticket(s) Available"
         btnDeployParachute.isEnabled = (balance > 0)
         btnDeployParachute.alpha = if (balance > 0) 1.0f else 0.42f
+
+        if (isBespokeStyle) {
+            if (balance > 0) {
+                val primaryBlue = Color.parseColor("#2563EB")
+                btnDeployParachute.setTextColor(Color.WHITE)
+                btnDeployParachute.background = createRoundedButtonBg(
+                    fillColors = intArrayOf(primaryBlue, primaryBlue),
+                    strokeColor = Color.parseColor("#3B82F6"),
+                    rippleColor = Color.parseColor("#44FFFFFF"),
+                    radiusDp = 6
+                )
+            } else {
+                btnDeployParachute.setTextColor(Color.parseColor("#A3A3A3"))
+                btnDeployParachute.background = createRoundedButtonBg(
+                    fillColors = intArrayOf(Color.parseColor("#0A0A0A"), Color.parseColor("#0A0A0A")),
+                    strokeColor = Color.parseColor("#262626"),
+                    rippleColor = Color.parseColor("#22FFFFFF"),
+                    radiusDp = 6
+                )
+            }
+            return
+        }
 
         val accent = accentConfig.accentColor
         if (balance > 0) {

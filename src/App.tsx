@@ -12,6 +12,7 @@ import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation'
 import { ShareStatsModal } from './components/ShareStatsModal';
 import { EscapeTicketModal } from './components/EscapeTicketModal';
 import { ObsidianCard } from './components/ObsidianCard';
+import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, Settings, X } from 'lucide-react';
 
@@ -86,102 +87,140 @@ export function App() {
     setShowProfileModal(true);
   };
 
+  const isBespoke = store.interfaceStyle === 'bespoke';
+
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
     return (
-      <TheVoidView
-        activeLock={store.activeLock}
-        parachuteMetrics={store.parachuteMetrics}
-        activeBag={store.activeBag}
-        profile={store.profile}
-        themeConfig={store.themeConfig}
-        onDeployParachute={store.deployParachute}
-      />
+      <InterfaceStyleProvider
+        interfaceStyle={store.interfaceStyle}
+        setInterfaceStyle={store.setInterfaceStyle}
+      >
+        <TheVoidView
+          activeLock={store.activeLock}
+          parachuteMetrics={store.parachuteMetrics}
+          activeBag={store.activeBag}
+          profile={store.profile}
+          themeConfig={store.themeConfig}
+          onDeployParachute={store.deployParachute}
+        />
+      </InterfaceStyleProvider>
     );
   }
 
   return (
-    <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
-      {/* Top Status Bar Safe-Area Scrim (prevents scrolled content from clashing with Android system icons) */}
-      <div
-        aria-hidden="true"
-        data-frosted-chrome="true"
-        className="fixed top-0 left-0 right-0 z-40 zero-top-scrim backdrop-blur-md pointer-events-none"
-        style={{ height: 'var(--zero-safe-top)' }}
-      />
-
-      {/* 5-Minute Pre-Lock Heads-Up Warning Banner */}
-      {store.preLockAlert && (
+    <InterfaceStyleProvider
+      interfaceStyle={store.interfaceStyle}
+      setInterfaceStyle={store.setInterfaceStyle}
+    >
+      <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
+        {/* Top Status Bar Safe-Area Scrim */}
         <div
-          className="fixed left-4 right-4 z-50 max-w-md mx-auto animate-bounce"
-          style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
-        >
-          <ObsidianCard
-            accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
-            ambientGlow
-            className="font-mono shadow-2xl"
-            headerClassName="p-3 flex items-center justify-between gap-2.5"
-            headerContent={
-              <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0 text-amber-400">
-                    <BellRing size={17} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-black text-xs uppercase tracking-wider text-amber-300">
-                      Heads-up: Lock Starts in {store.preLockAlert.minutesLeft}m
-                    </div>
-                    <div className="text-[11px] text-zinc-300 truncate">
-                      &ldquo;{store.preLockAlert.scheduleName}&rdquo; is about to engage The Void.
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => store.triggerTestWarning('')}
-                  className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white shrink-0"
-                  aria-label="Dismiss Heads-up Warning"
-                >
-                  <X size={15} />
-                </button>
-              </>
-            }
-          />
-        </div>
-      )}
+          aria-hidden="true"
+          data-frosted-chrome="true"
+          className={`fixed top-0 left-0 right-0 z-40 zero-top-scrim pointer-events-none ${
+            isBespoke ? '' : 'backdrop-blur-md'
+          }`}
+          style={{ height: 'var(--zero-safe-top)' }}
+        />
 
-      {/* Cloud Restore Confirmation Toast */}
-      {restoreToast && (
-        <div
-          className="fixed left-4 right-4 z-50 max-w-md mx-auto"
-          style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
-        >
-          <ObsidianCard
-            data-amoled-banner="true"
-            accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
-            ambientGlow
-            className="font-mono text-xs shadow-2xl"
-            headerClassName="p-3 flex items-center justify-between gap-2"
-            style={{
-              backgroundColor: '#000000',
-              borderColor: 'rgba(139, 92, 246, 0.7)',
-              color: '#FFFFFF',
-            }}
-            headerContent={
-              <>
-                <span className="amoled-banner-title font-bold">{restoreToast}</span>
-                <button
-                  type="button"
-                  onClick={() => setRestoreToast('')}
-                  className="p-1 text-zinc-400 hover:text-white shrink-0"
-                  aria-label="Dismiss Cloud Restore Notification"
-                >
-                  <X size={14} />
-                </button>
-              </>
-            }
-          />
-        </div>
-      )}
+        {/* 5-Minute Pre-Lock Heads-Up Warning Banner */}
+        {store.preLockAlert && (
+          <div
+            className={`fixed left-4 right-4 z-50 max-w-md mx-auto ${
+              isBespoke ? '' : 'animate-bounce'
+            }`}
+            style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
+          >
+            <ObsidianCard
+              accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
+              ambientGlow={!isBespoke}
+              className={isBespoke ? 'font-sans' : 'font-mono shadow-2xl'}
+              headerClassName={
+                isBespoke
+                  ? 'p-3.5 flex items-center justify-between gap-3'
+                  : 'p-3 flex items-center justify-between gap-2.5'
+              }
+              headerContent={
+                <>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 text-amber-400 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                      }`}
+                    >
+                      <BellRing size={17} />
+                    </div>
+                    <div className="min-w-0">
+                      <div
+                        className={`text-xs uppercase tracking-wider text-amber-300 ${
+                          isBespoke ? 'font-semibold' : 'font-black'
+                        }`}
+                      >
+                        Heads-up: Lock Starts in{' '}
+                        <span className="font-mono tabular-nums">
+                          {store.preLockAlert.minutesLeft}m
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-300 truncate">
+                        &ldquo;{store.preLockAlert.scheduleName}&rdquo; is about to engage The Void.
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => store.triggerTestWarning('')}
+                    className={`p-1.5 border text-zinc-400 hover:text-white shrink-0 ${
+                      isBespoke
+                        ? 'rounded-md bg-neutral-950 border-neutral-800 transition-colors duration-75'
+                        : 'rounded-xl bg-zinc-900 border-white/10'
+                    }`}
+                    aria-label="Dismiss Heads-up Warning"
+                  >
+                    <X size={15} />
+                  </button>
+                </>
+              }
+            />
+          </div>
+        )}
+
+        {/* Cloud Restore Confirmation Toast */}
+        {restoreToast && (
+          <div
+            className="fixed left-4 right-4 z-50 max-w-md mx-auto"
+            style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
+          >
+            <ObsidianCard
+              data-amoled-banner="true"
+              accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
+              ambientGlow={!isBespoke}
+              className={isBespoke ? 'font-sans text-xs' : 'font-mono text-xs shadow-2xl'}
+              headerClassName="p-3 flex items-center justify-between gap-2"
+              style={
+                isBespoke
+                  ? undefined
+                  : {
+                      backgroundColor: '#000000',
+                      borderColor: 'rgba(139, 92, 246, 0.7)',
+                      color: '#FFFFFF',
+                    }
+              }
+              headerContent={
+                <>
+                  <span className="amoled-banner-title font-bold">{restoreToast}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRestoreToast('')}
+                    className="p-1 text-zinc-400 hover:text-white shrink-0"
+                    aria-label="Dismiss Cloud Restore Notification"
+                  >
+                    <X size={14} />
+                  </button>
+                </>
+              }
+            />
+          </div>
+        )}
 
       {/* Main Content Area */}
       <main
@@ -259,6 +298,8 @@ export function App() {
             onTriggerTestWarning={store.triggerTestWarning}
             themeConfig={store.themeConfig}
             onThemeConfigChange={store.setThemeConfig}
+            interfaceStyle={store.interfaceStyle}
+            onInterfaceStyleChange={store.setInterfaceStyle}
             sectionOverride={rulesSectionOverride}
             viewMode={activeTab === 'support' ? 'support' : 'settings_os'}
             sleepFarmingMode={store.sleepFarmingMode}
@@ -382,34 +423,46 @@ export function App() {
         }}
       />
 
-      {/* Frosted Two-Tier Obsidian Bottom Navigation Dock */}
+      {/* Bottom Navigation Dock */}
       <nav
         data-frosted-chrome="true"
-        className="fixed bottom-0 left-0 right-0 z-40 obsidian-shell-bar backdrop-blur-md border-t pt-2 px-2 sm:px-3"
+        className={`fixed bottom-0 left-0 right-0 z-40 border-t pt-2 px-2 sm:px-3 ${
+          isBespoke ? 'bg-black' : 'obsidian-shell-bar backdrop-blur-md'
+        }`}
         style={{
           paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
-          borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+          borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
         }}
       >
-        <div
-          aria-hidden="true"
-          className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
-          style={{
-            background:
-              'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
-            opacity: 0.75,
-          }}
-        />
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
+        {!isBespoke && (
+          <div
+            aria-hidden="true"
+            className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+              opacity: 0.75,
+            }}
+          />
+        )}
+        <div className={`max-w-md mx-auto grid grid-cols-4 ${isBespoke ? 'gap-1.5' : 'gap-1'}`}>
           <button
             onClick={() => {
               haptics.tick(900);
               setActiveTab('dial');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
-              activeTab === 'dial'
-                ? 'obsidian-inset font-bold text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            className={`flex flex-col items-center justify-center py-2 px-1 ${
+              isBespoke
+                ? `rounded-md transition-colors duration-75 border ${
+                    activeTab === 'dial'
+                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                  }`
+                : `rounded-2xl transition-all ${
+                    activeTab === 'dial'
+                      ? 'obsidian-inset font-bold text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                  }`
             }`}
           >
             <Clock
@@ -417,7 +470,9 @@ export function App() {
               style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             />
             <span
-              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
+              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+              }`}
               style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             >
               Dial
@@ -429,22 +484,38 @@ export function App() {
               haptics.tick(900);
               setActiveTab('dashboard');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all relative ${
-              activeTab === 'dashboard'
-                ? 'obsidian-inset font-bold text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            className={`flex flex-col items-center justify-center py-2 px-1 relative ${
+              isBespoke
+                ? `rounded-md transition-colors duration-75 border ${
+                    activeTab === 'dashboard'
+                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                  }`
+                : `rounded-2xl transition-all ${
+                    activeTab === 'dashboard'
+                      ? 'obsidian-inset font-bold text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                  }`
             }`}
           >
             <div className="relative">
               <span className="text-sm leading-none">🎫</span>
               {store.parachuteMetrics.currentBalance > 0 && (
-                <span className="absolute -top-1.5 -right-3 text-[9px] font-mono px-1 rounded-full font-black obsidian-pill-active">
+                <span
+                  className={`absolute -top-1.5 -right-3 text-[9px] font-mono tabular-nums px-1 font-bold ${
+                    isBespoke
+                      ? 'rounded-sm bg-blue-600 text-white border border-blue-500'
+                      : 'rounded-full font-black obsidian-pill-active'
+                  }`}
+                >
                   {store.parachuteMetrics.currentBalance}
                 </span>
               )}
             </div>
             <span
-              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
+              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+              }`}
               style={
                 activeTab === 'dashboard' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
               }
@@ -458,10 +529,18 @@ export function App() {
               haptics.tick(900);
               setActiveTab('schedules');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
-              activeTab === 'schedules'
-                ? 'obsidian-inset font-bold text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            className={`flex flex-col items-center justify-center py-2 px-1 ${
+              isBespoke
+                ? `rounded-md transition-colors duration-75 border ${
+                    activeTab === 'schedules'
+                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                  }`
+                : `rounded-2xl transition-all ${
+                    activeTab === 'schedules'
+                      ? 'obsidian-inset font-bold text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                  }`
             }`}
           >
             <Settings
@@ -471,7 +550,9 @@ export function App() {
               }
             />
             <span
-              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-normal uppercase whitespace-nowrap"
+              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-normal'
+              }`}
               style={
                 activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
               }
@@ -485,10 +566,18 @@ export function App() {
               haptics.tick(900);
               setActiveTab('support');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
-              activeTab === 'support'
-                ? 'obsidian-inset font-bold text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            className={`flex flex-col items-center justify-center py-2 px-1 ${
+              isBespoke
+                ? `rounded-md transition-colors duration-75 border ${
+                    activeTab === 'support'
+                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                  }`
+                : `rounded-2xl transition-all ${
+                    activeTab === 'support'
+                      ? 'obsidian-inset font-bold text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                  }`
             }`}
           >
             <Heart
@@ -496,7 +585,9 @@ export function App() {
               style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             />
             <span
-              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
+              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+              }`}
               style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             >
               Support
@@ -505,6 +596,7 @@ export function App() {
         </div>
       </nav>
     </div>
+    </InterfaceStyleProvider>
   );
 }
 

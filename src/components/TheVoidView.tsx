@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { ObsidianCard } from './ObsidianCard';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { ACCENT_ID_TO_KEY, ACCENT_THEMES } from './ProfileAvatar';
 import { resolveActiveAccentTokens } from '../utils/themes';
 import { buildPixelClockLayout } from '../utils/pixelFont';
@@ -45,6 +46,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   themeConfig,
   onDeployParachute,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [clockText, setClockText] = useState<string>(() => format12HourClock(new Date()));
   const [batteryPct, setBatteryPct] = useState<number>(() => {
     if (typeof window !== 'undefined' && window.ZeroNative) {
@@ -146,7 +148,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   return (
     <div
       data-void-terminal="true"
-      className="fixed inset-0 z-50 text-white flex flex-col justify-between px-5 select-none overflow-y-auto bg-dot-matrix font-sans"
+      className={`fixed inset-0 z-50 text-white flex flex-col justify-between px-5 select-none overflow-y-auto font-sans ${
+        isBespoke ? 'bg-black' : 'bg-dot-matrix'
+      }`}
       style={{
         backgroundColor: '#000000',
         paddingTop: 'calc(1rem + var(--zero-safe-top))',
@@ -154,16 +158,26 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       }}
     >
       {/* Top Bar: System Time & Battery */}
-      <div className="w-full max-w-md mx-auto flex items-center justify-between text-xs font-mono text-zinc-400 pt-1 pb-2 shrink-0">
-        <span className="font-semibold text-zinc-300 lowercase">{clockText}</span>
+      <div className="w-full max-w-md mx-auto flex items-center justify-between text-xs font-mono tabular-nums text-neutral-400 pt-1 pb-2 shrink-0">
+        <span className="font-semibold text-neutral-300 lowercase">{clockText}</span>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
+            <span
+              className={
+                isBespoke
+                  ? 'w-1.5 h-1.5 rounded-none bg-emerald-500'
+                  : 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse'
+              }
+            />
+            <span
+              className={`text-[10px] uppercase tracking-wider text-neutral-400 font-semibold ${
+                isBespoke ? 'font-sans' : ''
+              }`}
+            >
               VOID ACTIVE
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-zinc-300">
+          <div className="flex items-center gap-1.5 text-neutral-300">
             <Wifi size={12} />
             <div className="flex items-center gap-1">
               <Battery size={14} />
@@ -175,7 +189,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Anti-Tamper Banner */}
       {tamperWarning && (
-        <div className="fixed top-14 left-5 right-5 max-w-md mx-auto z-60 bg-red-950/95 border border-red-500 text-red-200 text-xs font-mono px-4 py-2.5 rounded-xl flex items-center gap-2 animate-bounce">
+        <div
+          className={`fixed top-14 left-5 right-5 max-w-md mx-auto z-60 bg-red-950/95 border border-red-500 text-red-200 text-xs px-4 py-2.5 flex items-center gap-2 ${
+            isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono animate-bounce'
+          }`}
+        >
           <AlertTriangle size={16} className="text-red-400 shrink-0" />
           <span>{tamperWarning}</span>
         </div>
@@ -183,70 +201,92 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Center Content Container */}
       <div className="flex flex-col items-center justify-center my-auto w-full max-w-md mx-auto gap-5 py-3">
-        {/* 1. PIXELATED GRADIENT CLOCK CONTAINER (Directly Above Timer) */}
+        {/* 1. PIXELATED CLOCK CONTAINER (Directly Above Timer) */}
         <div
-          className="relative w-full rounded-2xl py-3.5 px-4 text-center overflow-hidden transition-all duration-300"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(20, 20, 24, 0.92) 0%, rgba(8, 8, 10, 0.98) 100%)',
-            border: `1px solid rgba(${activeTheme.rgb}, 0.34)`,
-            boxShadow: `0 0 24px -5px rgba(${activeTheme.rgb}, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
-          }}
+          className={
+            isBespoke
+              ? 'relative w-full rounded-md py-4 px-5 text-center bg-black border border-neutral-800'
+              : 'relative w-full rounded-2xl py-3.5 px-4 text-center overflow-hidden transition-all duration-300'
+          }
+          style={
+            isBespoke
+              ? undefined
+              : {
+                  background:
+                    'linear-gradient(180deg, rgba(20, 20, 24, 0.92) 0%, rgba(8, 8, 10, 0.98) 100%)',
+                  border: `1px solid rgba(${activeTheme.rgb}, 0.34)`,
+                  boxShadow: `0 0 24px -5px rgba(${activeTheme.rgb}, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
+                }
+          }
         >
-          {/* Specular Accent Rim */}
-          <div
-            aria-hidden="true"
-            className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
-            style={{
-              background: `linear-gradient(90deg, transparent 0%, ${activeTheme.hex} 50%, transparent 100%)`,
-              opacity: 0.78,
-            }}
-          />
+          {!isBespoke && (
+            <>
+              {/* Specular Accent Rim */}
+              <div
+                aria-hidden="true"
+                className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
+                style={{
+                  background: `linear-gradient(90deg, transparent 0%, ${activeTheme.hex} 50%, transparent 100%)`,
+                  opacity: 0.78,
+                }}
+              />
 
-          {/* Dot-Matrix Underlay */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-dot-matrix-dense pointer-events-none opacity-35"
-          />
+              {/* Dot-Matrix Underlay */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-dot-matrix-dense pointer-events-none opacity-35"
+              />
 
-          {/* Ambient Radial Bloom */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse 75% 85% at 50% 60%, rgba(${activeTheme.rgb}, 0.16) 0%, transparent 72%)`,
-            }}
-          />
+              {/* Ambient Radial Bloom */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse 75% 85% at 50% 60%, rgba(${activeTheme.rgb}, 0.16) 0%, transparent 72%)`,
+                }}
+              />
 
-          {/* Terminal Scanlines Overlay */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.34)_50%)] bg-[length:100%_4px] pointer-events-none opacity-45"
-          />
+              {/* Terminal Scanlines Overlay */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.34)_50%)] bg-[length:100%_4px] pointer-events-none opacity-45"
+              />
+            </>
+          )}
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="text-[9px] font-mono tracking-[0.24em] uppercase text-zinc-400 mb-2">
+            <div
+              className={`text-[10px] tracking-[0.2em] uppercase text-neutral-400 mb-2 ${
+                isBespoke ? 'font-sans font-medium' : 'text-[9px] font-mono tracking-[0.24em]'
+              }`}
+            >
               SYSTEM TIME // SYNCED
             </div>
 
-            {/* Retro-Digital 5x7 Pixel Matrix Clock with Sharp Vertical Accent Gradient */}
+            {/* Retro-Digital 5x7 Pixel Matrix Clock */}
             <svg
               role="img"
               aria-label={pixelLayout.normalizedText}
               viewBox={`0 0 ${pixelLayout.totalCols} ${pixelLayout.totalRows}`}
               className="h-8 sm:h-9 w-auto max-w-full overflow-visible"
               shapeRendering="crispEdges"
-              style={{
-                filter: `drop-shadow(0 0 10px rgba(${activeTheme.rgb}, 0.34))`,
-              }}
+              style={
+                isBespoke
+                  ? undefined
+                  : {
+                      filter: `drop-shadow(0 0 10px rgba(${activeTheme.rgb}, 0.34))`,
+                    }
+              }
             >
-              <defs>
-                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="28%" stopColor="#FFFFFF" />
-                  <stop offset="100%" stopColor={activeTheme.hex} />
-                </linearGradient>
-              </defs>
+              {!isBespoke && (
+                <defs>
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="28%" stopColor="#FFFFFF" />
+                    <stop offset="100%" stopColor={activeTheme.hex} />
+                  </linearGradient>
+                </defs>
+              )}
               {pixelLayout.rects.map((rect, idx) => (
                 <rect
                   key={idx}
@@ -254,7 +294,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   y={rect.y}
                   width={rect.w}
                   height={rect.h}
-                  fill={`url(#${gradId})`}
+                  fill={isBespoke ? '#FAFAFA' : `url(#${gradId})`}
                 />
               ))}
             </svg>
@@ -264,40 +304,75 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         {/* Countdown Timer & Focus Subtitle */}
         <div className="flex flex-col items-center text-center">
           <div
-            className="text-xs font-mono font-bold tracking-[0.18em] uppercase mb-2.5"
-            style={{ color: activeTheme.hex }}
+            className={`text-xs tracking-[0.18em] uppercase mb-2.5 ${
+              isBespoke ? 'font-sans font-semibold text-blue-500' : 'font-mono font-bold'
+            }`}
+            style={isBespoke ? undefined : { color: activeTheme.hex }}
           >
             LOCKED IN #{activeLock.tag}
           </div>
 
-          <div className="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.14)]">
+          <div
+            className={
+              isBespoke
+                ? 'text-5xl sm:text-6xl font-semibold font-mono tabular-nums tracking-tight text-neutral-50'
+                : 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.14)]'
+            }
+          >
             {formatCountdown(activeLock.remainingSeconds)}
           </div>
 
-          <p className="mt-2.5 text-xs font-mono italic text-zinc-400 max-w-xs">
+          <p
+            className={`mt-2.5 text-xs italic text-neutral-400 max-w-xs ${
+              isBespoke ? 'font-sans' : 'font-mono'
+            }`}
+          >
             &ldquo;The obstacle is the way. Stay phone-free.&rdquo;
           </p>
         </div>
 
-        {/* 2. WHATSAPP-STYLE APP BAG DISPLAY (Replacing Plain Tiles) */}
+        {/* 2. APP BAG DISPLAY */}
         <div
-          className="relative w-full rounded-2xl p-4 overflow-hidden transition-all duration-300"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(16, 16, 20, 0.94) 0%, rgba(8, 8, 10, 0.98) 100%)',
-            border: `1px solid rgba(${activeTheme.rgb}, 0.28)`,
-            boxShadow: `0 0 20px -4px rgba(${activeTheme.rgb}, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06)`,
-          }}
+          className={
+            isBespoke
+              ? 'relative w-full rounded-md p-5 bg-black border border-neutral-800'
+              : 'relative w-full rounded-2xl p-4 overflow-hidden transition-all duration-300'
+          }
+          style={
+            isBespoke
+              ? undefined
+              : {
+                  background:
+                    'linear-gradient(180deg, rgba(16, 16, 20, 0.94) 0%, rgba(8, 8, 10, 0.98) 100%)',
+                  border: `1px solid rgba(${activeTheme.rgb}, 0.28)`,
+                  boxShadow: `0 0 20px -4px rgba(${activeTheme.rgb}, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06)`,
+                }
+          }
         >
           {/* Header Strip */}
-          <div className="flex items-center justify-between gap-2 mb-3 px-0.5">
-            <span className="text-[11px] font-mono font-bold tracking-widest uppercase text-zinc-300 truncate">
-              BAG: {activeBag.name.toUpperCase()} ({activeBag.apps.length}/{MAX_BAG_APPS} APPS)
+          <div className="flex items-center justify-between gap-2 mb-3.5 px-0.5">
+            <span
+              className={`text-[11px] tracking-widest uppercase text-neutral-300 truncate ${
+                isBespoke ? 'font-sans font-semibold' : 'font-mono font-bold'
+              }`}
+            >
+              BAG: {activeBag.name.toUpperCase()} (
+              <span className="font-mono tabular-nums">
+                {activeBag.apps.length}/{MAX_BAG_APPS}
+              </span>{' '}
+              APPS)
             </span>
             <span
-              className="text-[10px] font-mono shrink-0"
+              className={`text-[10px] shrink-0 ${
+                isBespoke ? 'font-sans font-medium' : 'font-mono'
+              }`}
               style={{
-                color: activeBag.apps.length === 0 ? activeTheme.hex : '#34D399',
+                color:
+                  activeBag.apps.length === 0
+                    ? isBespoke
+                      ? '#3B82F6'
+                      : activeTheme.hex
+                    : '#34D399',
               }}
             >
               {activeBag.apps.length === 0 ? 'Monk Mode Active' : 'Allowed Apps'}
@@ -306,14 +381,22 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
           {activeBag.apps.length === 0 ? (
             <div className="space-y-2.5">
-              {/* Clean Tactical Empty-State Card with Subtle Accent Border Glow */}
+              {/* Tactical Empty-State Card */}
               <div
-                className="px-3.5 py-2.5 rounded-xl text-xs font-mono text-zinc-300 leading-relaxed"
-                style={{
-                  background: 'rgba(9, 9, 12, 0.84)',
-                  border: `1px solid rgba(${activeTheme.rgb}, 0.24)`,
-                  boxShadow: `inset 0 0 14px rgba(${activeTheme.rgb}, 0.08)`,
-                }}
+                className={
+                  isBespoke
+                    ? 'px-4 py-3 rounded-md bg-neutral-950 border border-neutral-800 text-xs font-sans text-neutral-300 leading-relaxed'
+                    : 'px-3.5 py-2.5 rounded-xl text-xs font-mono text-zinc-300 leading-relaxed'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background: 'rgba(9, 9, 12, 0.84)',
+                        border: `1px solid rgba(${activeTheme.rgb}, 0.24)`,
+                        boxShadow: `inset 0 0 14px rgba(${activeTheme.rgb}, 0.08)`,
+                      }
+                }
               >
                 Monk Mode: Empty Bag.{' '}
                 {activeBag.allowSms
@@ -325,15 +408,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <div className="flex flex-col gap-2">
                 <a
                   href="tel:"
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]"
-                  style={{
-                    background: 'rgba(24, 24, 28, 0.78)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                  }}
+                  className={
+                    isBespoke
+                      ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
+                      : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
+                  }
+                  style={
+                    isBespoke
+                      ? undefined
+                      : {
+                          background: 'rgba(24, 24, 28, 0.78)',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+                      className={`w-9 h-9 flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                      }`}
                       style={{
                         backgroundColor: phoneBrand.bgColor,
                         color: phoneBrand.textColor,
@@ -343,15 +436,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       <Phone size={16} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-white tracking-wide truncate">
+                      <div className="text-xs font-semibold text-white tracking-wide truncate">
                         Phone Calls
                       </div>
-                      <div className="text-[10px] font-mono text-zinc-400 truncate">
+                      <div
+                        className={`text-[10px] text-neutral-400 truncate ${
+                          isBespoke ? 'font-sans' : 'font-mono'
+                        }`}
+                      >
                         Compulsory Dialer • Always accessible
                       </div>
                     </div>
                   </div>
-                  <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0">
+                  <span
+                    className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0 ${
+                      isBespoke ? 'rounded-sm' : 'rounded font-black'
+                    }`}
+                  >
                     ALWAYS ON
                   </span>
                 </a>
@@ -359,15 +460,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 {activeBag.allowSms && (
                   <a
                     href="sms:"
-                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]"
-                    style={{
-                      background: 'rgba(24, 24, 28, 0.78)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
+                        : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: 'rgba(24, 24, 28, 0.78)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                          }
+                    }
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+                        className={`w-9 h-9 flex items-center justify-center shrink-0 ${
+                          isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                        }`}
                         style={{
                           backgroundColor: smsBrand.bgColor,
                           color: smsBrand.textColor,
@@ -377,15 +488,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                         <MessageSquare size={16} />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-white tracking-wide truncate">
+                        <div className="text-xs font-semibold text-white tracking-wide truncate">
                           Messages
                         </div>
-                        <div className="text-[10px] font-mono text-zinc-400 truncate">
+                        <div
+                          className={`text-[10px] text-neutral-400 truncate ${
+                            isBespoke ? 'font-sans' : 'font-mono'
+                          }`}
+                        >
                           Normal Texts (SMS)
                         </div>
                       </div>
                     </div>
-                    <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0">
+                    <span
+                      className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded font-black'
+                      }`}
+                    >
                       ALLOWED
                     </span>
                   </a>
@@ -393,41 +512,58 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               </div>
             </div>
           ) : (
-            /* WhatsApp-Style Vertical Rows Matching App Brand Colors */
+            /* Vertical Rows Matching App Brand Colors */
             <div className="flex flex-col gap-2">
               {activeBag.apps.map((app) => {
-                const brand = resolveAppBrandVisual(app, activeTheme.hex);
+                const brand = resolveAppBrandVisual(
+                  app,
+                  isBespoke ? '#3B82F6' : activeTheme.hex
+                );
                 return (
                   <div
                     key={app.packageName}
-                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all"
-                    style={{
-                      background: 'rgba(24, 24, 28, 0.80)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800'
+                        : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: 'rgba(24, 24, 28, 0.80)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                          }
+                    }
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shadow-md shrink-0"
+                        className={`w-9 h-9 flex items-center justify-center font-bold text-sm shrink-0 ${
+                          isBespoke ? 'rounded-md' : 'rounded-xl font-black shadow-md'
+                        }`}
                         style={{
                           backgroundColor: brand.bgColor,
                           color: brand.textColor,
                           border: `1px solid ${brand.borderColor}`,
-                          boxShadow: `0 4px 12px -4px ${brand.bgColor}`,
+                          boxShadow: isBespoke ? 'none' : `0 4px 12px -4px ${brand.bgColor}`,
                         }}
                       >
                         {brand.initial}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-white tracking-wide truncate">
+                        <div className="text-xs font-semibold text-white tracking-wide truncate">
                           {app.appName}
                         </div>
-                        <div className="text-[10px] font-mono text-zinc-400 truncate">
+                        <div className="text-[10px] font-mono text-neutral-400 truncate">
                           {app.packageName}
                         </div>
                       </div>
                     </div>
-                    <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0">
+                    <span
+                      className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded font-black'
+                      }`}
+                    >
                       ALLOWED
                     </span>
                   </div>
@@ -437,15 +573,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               {/* Compulsory Phone Calls Row */}
               <a
                 href="tel:"
-                className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]"
-                style={{
-                  background: 'rgba(24, 24, 28, 0.78)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                }}
+                className={
+                  isBespoke
+                    ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
+                    : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background: 'rgba(24, 24, 28, 0.78)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                      }
+                }
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+                    className={`w-9 h-9 flex items-center justify-center shrink-0 ${
+                      isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                    }`}
                     style={{
                       backgroundColor: phoneBrand.bgColor,
                       color: phoneBrand.textColor,
@@ -455,15 +601,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                     <Phone size={16} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-white tracking-wide truncate">
+                    <div className="text-xs font-semibold text-white tracking-wide truncate">
                       Phone Calls
                     </div>
-                    <div className="text-[10px] font-mono text-zinc-400 truncate">
+                    <div
+                      className={`text-[10px] text-neutral-400 truncate ${
+                        isBespoke ? 'font-sans' : 'font-mono'
+                      }`}
+                    >
                       Compulsory Dialer • Always ON
                     </div>
                   </div>
                 </div>
-                <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0">
+                <span
+                  className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0 ${
+                    isBespoke ? 'rounded-sm' : 'rounded font-black'
+                  }`}
+                >
                   ALWAYS ON
                 </span>
               </a>
@@ -471,15 +625,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               {activeBag.allowSms && (
                 <a
                   href="sms:"
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]"
-                  style={{
-                    background: 'rgba(24, 24, 28, 0.78)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                  }}
+                  className={
+                    isBespoke
+                      ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
+                      : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
+                  }
+                  style={
+                    isBespoke
+                      ? undefined
+                      : {
+                          background: 'rgba(24, 24, 28, 0.78)',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+                      className={`w-9 h-9 flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                      }`}
                       style={{
                         backgroundColor: smsBrand.bgColor,
                         color: smsBrand.textColor,
@@ -489,15 +653,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       <MessageSquare size={16} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-white tracking-wide truncate">
+                      <div className="text-xs font-semibold text-white tracking-wide truncate">
                         Messages
                       </div>
-                      <div className="text-[10px] font-mono text-zinc-400 truncate">
+                      <div
+                        className={`text-[10px] text-neutral-400 truncate ${
+                          isBespoke ? 'font-sans' : 'font-mono'
+                        }`}
+                      >
                         Normal Texts (SMS)
                       </div>
                     </div>
                   </div>
-                  <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0">
+                  <span
+                    className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-emerald-500/12 text-emerald-400 border border-emerald-500/25 shrink-0 ${
+                      isBespoke ? 'rounded-sm' : 'rounded font-black'
+                    }`}
+                  >
                     ALLOWED
                   </span>
                 </a>
@@ -509,19 +681,44 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Bottom Action Footer */}
       <div className="flex flex-col gap-2.5 w-full max-w-md mx-auto pb-2 shrink-0">
-        <div className="text-center text-xs font-mono text-zinc-400">
-          {escapeBalance > 0
-            ? `${escapeBalance} Escape Ticket(s) Available`
-            : `0 Escape Tickets Available • ${parachuteMetrics.hoursUntilNextParachute}h to next`}
+        <div
+          className={`text-center text-xs text-neutral-400 ${
+            isBespoke ? 'font-sans' : 'font-mono'
+          }`}
+        >
+          {escapeBalance > 0 ? (
+            <>
+              <span className="font-mono tabular-nums">{escapeBalance}</span> Escape Ticket(s)
+              Available
+            </>
+          ) : (
+            <>
+              <span className="font-mono tabular-nums">0</span> Escape Tickets Available •{' '}
+              <span className="font-mono tabular-nums">
+                {parachuteMetrics.hoursUntilNextParachute}h
+              </span>{' '}
+              to next
+            </>
+          )}
         </div>
 
         <button
           type="button"
           disabled={escapeBalance <= 0}
           onClick={() => setShowParachuteConfirm(true)}
-          className="w-full py-3.5 rounded-2xl font-mono font-black text-xs uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          className={
+            isBespoke
+              ? `w-full py-3.5 rounded-md border font-sans font-semibold text-xs uppercase tracking-wider transition-colors duration-75 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  escapeBalance > 0
+                    ? 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white'
+                    : 'bg-neutral-950 border-neutral-800 text-neutral-500'
+                }`
+              : 'w-full py-3.5 rounded-2xl font-mono font-black text-xs uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed'
+          }
           style={
-            escapeBalance > 0
+            isBespoke
+              ? undefined
+              : escapeBalance > 0
               ? {
                   background: activeTheme.badgeGradient,
                   color: activeTheme.badgeText,
@@ -540,11 +737,19 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         <button
           type="button"
           onClick={() => setShowEmergencyModal(true)}
-          className="w-full py-3.5 rounded-2xl font-mono font-bold text-xs uppercase tracking-wider text-zinc-200 hover:text-white transition-all active:scale-[0.98]"
-          style={{
-            background: 'rgba(24, 24, 28, 0.92)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
+          className={
+            isBespoke
+              ? 'w-full py-3.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 font-sans font-semibold text-xs uppercase tracking-wider text-neutral-200 hover:text-white transition-colors duration-75'
+              : 'w-full py-3.5 rounded-2xl font-mono font-bold text-xs uppercase tracking-wider text-zinc-200 hover:text-white transition-all active:scale-[0.98]'
+          }
+          style={
+            isBespoke
+              ? undefined
+              : {
+                  background: 'rgba(24, 24, 28, 0.92)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }
+          }
         >
           EMERGENCY CALL (911 / 112)
         </button>
@@ -556,38 +761,50 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           <ObsidianCard
             accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}
             ambientGlow
-            className="w-full max-w-sm font-mono text-left"
+            className={`w-full max-w-sm text-left ${isBespoke ? 'font-sans' : 'font-mono'}`}
             headerClassName="p-5 space-y-4"
             footerClassName="p-4"
             headerContent={
               <>
-                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
                   <Phone size={16} />
                   <span>EMERGENCY CALL ENGINE</span>
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">
+                <p className="text-xs text-neutral-400 leading-relaxed">
                   Direct emergency lines are never restricted. Choose a line or dial below:
                 </p>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <a
                     href="tel:911"
-                    className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
+                    className={
+                      isBespoke
+                        ? 'p-3 bg-neutral-950 hover:border-red-700 border border-neutral-800 rounded-md flex flex-col items-center justify-center text-red-300 font-mono font-semibold text-sm transition-colors duration-75'
+                        : 'p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all'
+                    }
                   >
                     <span>911</span>
-                    <span className="text-[10px] font-normal text-red-300">Emergency</span>
+                    <span className="text-[10px] font-sans font-normal text-neutral-400">
+                      Emergency
+                    </span>
                   </a>
                   <a
                     href="tel:112"
-                    className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
+                    className={
+                      isBespoke
+                        ? 'p-3 bg-neutral-950 hover:border-red-700 border border-neutral-800 rounded-md flex flex-col items-center justify-center text-red-300 font-mono font-semibold text-sm transition-colors duration-75'
+                        : 'p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all'
+                    }
                   >
                     <span>112</span>
-                    <span className="text-[10px] font-normal text-red-300">Global SOS</span>
+                    <span className="text-[10px] font-sans font-normal text-neutral-400">
+                      Global SOS
+                    </span>
                   </a>
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">
+                  <label className="text-xs text-neutral-400 block mb-1.5">
                     Custom ICE Contact:
                   </label>
                   <div className="flex gap-2">
@@ -596,14 +813,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       value={emergencyNumber}
                       onChange={(e) => setEmergencyNumber(e.target.value)}
                       placeholder="e.g. +1 555-0199"
-                      className="flex-1 obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
+                      className={`flex-1 obsidian-input px-3 py-2 text-xs font-mono text-white outline-none ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                      }`}
                     />
                     <a
                       href={`tel:${emergencyNumber}`}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center ${
+                      className={`px-4 py-2 text-xs font-semibold flex items-center justify-center transition-colors duration-75 ${
+                        isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono font-bold'
+                      } ${
                         emergencyNumber
-                          ? 'bg-red-500 text-white'
-                          : 'bg-zinc-800 text-zinc-500 pointer-events-none'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-neutral-900 text-neutral-500 pointer-events-none'
                       }`}
                     >
                       Dial
@@ -615,7 +836,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             footerContent={
               <button
                 onClick={() => setShowEmergencyModal(false)}
-                className="w-full py-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 text-xs rounded-xl font-bold transition-colors"
+                className={
+                  isBespoke
+                    ? 'w-full py-2.5 bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-200 text-xs rounded-md font-semibold transition-colors duration-75'
+                    : 'w-full py-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 text-xs rounded-xl font-bold transition-colors'
+                }
               >
                 Return to The Void
               </button>
@@ -628,34 +853,53 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       {showParachuteConfirm && (
         <div className="fixed inset-0 z-60 bg-black/95 flex items-center justify-center p-4">
           <ObsidianCard
-            accentOverride={{ hex: activeTheme.hex, rgb: activeTheme.rgb }}
+            accentOverride={
+              isBespoke
+                ? { hex: '#3B82F6', rgb: '59, 130, 246' }
+                : { hex: activeTheme.hex, rgb: activeTheme.rgb }
+            }
             ambientGlow
-            className="w-full max-w-sm font-mono text-left"
+            className={`w-full max-w-sm text-left ${isBespoke ? 'font-sans' : 'font-mono'}`}
             headerClassName="p-5 space-y-3"
             footerClassName="p-4 flex flex-col gap-2"
             headerContent={
               <>
                 <div
-                  className="flex items-center gap-2 font-bold text-sm"
-                  style={{ color: activeTheme.hex }}
+                  className={`flex items-center gap-2 font-semibold text-sm ${
+                    isBespoke ? 'text-blue-500' : 'font-bold'
+                  }`}
+                  style={isBespoke ? undefined : { color: activeTheme.hex }}
                 >
                   <AlertTriangle size={18} />
                   <span>USE EMERGENCY ESCAPE TICKET?</span>
                 </div>
 
-                <div className="space-y-3 text-xs text-zinc-300 leading-relaxed">
+                <div className="space-y-3 text-xs text-neutral-300 leading-relaxed">
                   <p>
                     You are about to use 1 of your{' '}
-                    <strong className="text-white">{parachuteMetrics.currentBalance}</strong>{' '}
+                    <strong className="text-white font-mono tabular-nums">
+                      {parachuteMetrics.currentBalance}
+                    </strong>{' '}
                     Emergency Escape Tickets.
                   </p>
-                  <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-amber-200 text-[11px]">
-                    <strong>Strict Anti-Exploit Rule:</strong> All elapsed time in this session (
-                    {Math.floor(activeLock.elapsedSeconds / 60)}m) will be{' '}
-                    <strong>permanently voided</strong> and will NOT count toward your next
+                  <div
+                    className={
+                      isBespoke
+                        ? 'p-3.5 bg-neutral-950 border border-neutral-800 rounded-md text-neutral-300 text-xs'
+                        : 'p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-amber-200 text-[11px]'
+                    }
+                  >
+                    <strong className={isBespoke ? 'text-neutral-100' : undefined}>
+                      Strict Anti-Exploit Rule:
+                    </strong>{' '}
+                    All elapsed time in this session (
+                    <span className="font-mono tabular-nums">
+                      {Math.floor(activeLock.elapsedSeconds / 60)}m
+                    </span>
+                    ) will be <strong>permanently voided</strong> and will NOT count toward your next
                     20-hour milestone.
                   </div>
-                  <p className="text-zinc-400 text-[11px]">
+                  <p className="text-neutral-400 text-xs">
                     Are you sure you want to surrender this session?
                   </p>
                 </div>
@@ -665,17 +909,29 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <>
                 <button
                   onClick={handleConfirmDeploy}
-                  className="w-full py-3 font-black text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95"
-                  style={{
-                    background: activeTheme.badgeGradient,
-                    color: activeTheme.badgeText,
-                  }}
+                  className={
+                    isBespoke
+                      ? 'w-full py-3 bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wider rounded-md transition-colors duration-75'
+                      : 'w-full py-3 font-black text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95'
+                  }
+                  style={
+                    isBespoke
+                      ? undefined
+                      : {
+                          background: activeTheme.badgeGradient,
+                          color: activeTheme.badgeText,
+                        }
+                  }
                 >
                   Use Escape Ticket (-1 Balance)
                 </button>
                 <button
                   onClick={() => setShowParachuteConfirm(false)}
-                  className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-white/15"
+                  className={
+                    isBespoke
+                      ? 'w-full py-2.5 bg-neutral-950 hover:border-neutral-700 text-neutral-300 font-medium text-xs rounded-md border border-neutral-800 transition-colors duration-75'
+                      : 'w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-white/15'
+                  }
                 >
                   Cancel &amp; Stay Focused
                 </button>

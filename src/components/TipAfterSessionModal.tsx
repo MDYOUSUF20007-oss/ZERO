@@ -15,6 +15,7 @@ import {
 import { TIP_SNOOZE_SESSIONS } from '../utils/tipPromptPolicy';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ObsidianCard } from './ObsidianCard';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
   Sparkles,
   X,
@@ -54,6 +55,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
   onDismiss,
   onBlockFiveSessions,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [showQr, setShowQr] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -89,6 +91,348 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
   };
+
+  if (isBespoke) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center px-4"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+      >
+        <ObsidianCard
+          className="w-full max-w-md max-h-full font-sans"
+          headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
+          footerClassName="p-5 flex flex-col sm:flex-row gap-2.5"
+          headerContent={
+            <>
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-md bg-neutral-950 border border-emerald-500/50 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 size={20} />
+                  </div>
+                  <div>
+                    <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+                      Session Complete • Focus Reclaimed
+                    </div>
+                    <h2 className="text-sm font-semibold text-white mt-0.5">
+                      <span className="font-mono tabular-nums">+{durationText}</span> Phone-Free{' '}
+                      <span className="font-mono text-neutral-400">(#{completedSession.tag})</span>
+                    </h2>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onDismiss}
+                  className="p-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors duration-75 shrink-0"
+                  aria-label="Close Tip Popup"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {onShareResults && (
+                <ObsidianCard
+                  asButton
+                  onClick={onShareResults}
+                  className="font-sans"
+                  headerClassName="p-4 flex items-center justify-between gap-2.5"
+                  headerContent={
+                    <>
+                      <div className="text-left min-w-0">
+                        <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                          <Share2 size={14} className="text-blue-500 shrink-0" />
+                          <span>Flex Session Results &amp; Badges</span>
+                        </div>
+                        <div className="text-xs text-neutral-400 truncate mt-0.5">
+                          {completedSession.durationSeconds >= 3600
+                            ? '1h+ lock completed — GETTING STARTED badge active!'
+                            : 'Generate a shareable PNG Focus Receipt with your badges'}
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-sm bg-blue-600 text-white font-mono text-[10px] font-semibold uppercase shrink-0">
+                        Flex
+                      </span>
+                    </>
+                  }
+                />
+              )}
+
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Zero is 100% free &amp; open-source with zero ads or paywalls. If staying
+                distraction-free helped you today, you can leave a small optional tip to support
+                development.
+              </p>
+
+              <ObsidianCard
+                className="font-sans"
+                headerClassName="p-5 space-y-3.5"
+                footerClassName="px-5 py-3 font-mono text-[10px] text-neutral-400 flex items-center justify-between gap-2 flex-wrap"
+                headerContent={
+                  <>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-neutral-950 border border-blue-500/60 text-blue-400 font-mono text-[10px] font-semibold uppercase tracking-wider">
+                        <Sparkles size={11} />
+                        <span>Best Offer • Best Option</span>
+                      </span>
+                      <span className="font-mono text-[10px] font-semibold text-emerald-400 bg-neutral-950 border border-emerald-500/40 px-2 py-0.5 rounded-sm">
+                        NO MINIMUM LIMIT (GENERAL UPI)
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-semibold text-sm text-white">UPI / Instant Pay</div>
+                        <div className="font-mono text-xs font-semibold text-blue-400">{UPI_ID}</div>
+                      </div>
+                      <p className="text-xs text-neutral-300 leading-relaxed">
+                        Regular UPI tips have <strong className="text-white">no minimum limit</strong> — tip
+                        even ₹1 with zero platform fees.
+                      </p>
+                    </div>
+
+                    {!hasClaimedFirstDonationParachute ? (
+                      <div className="p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-3">
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold uppercase tracking-wide">
+                            <Gift size={14} className="shrink-0" />
+                            <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 Ticket &amp; Gold Crest</span>
+                          </div>
+                          <span className="font-mono text-[9px] font-semibold uppercase px-2 py-0.5 rounded-sm bg-black border border-blue-500/60 text-blue-400 shrink-0">
+                            Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-300 leading-relaxed">
+                          <strong className="text-white">Strict Requirement:</strong> The{' '}
+                          <strong className="font-mono text-blue-400">ZERO-SUPPORTER</strong> Profile
+                          Badge &amp;{' '}
+                          <strong className="text-white">+1 Free Emergency Escape Ticket</strong>{' '}
+                          <strong className="text-white">
+                            ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}
+                          </strong>{' '}
+                          (tips under ₹{FIRST_DONATION_BONUS_INR} do not unlock this badge).
+                        </p>
+
+                        {!confirmingDonationClaim ? (
+                          <div className="flex flex-col sm:flex-row gap-2 pt-0.5">
+                            <a
+                              href={UPI_FIFTY_RS_PAY_URL}
+                              onClick={(e) => {
+                                handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL);
+                                setConfirmingDonationClaim(true);
+                              }}
+                              className="flex-1 py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-75"
+                            >
+                              <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 Ticket &amp; Gold)</span>
+                              <ExternalLink size={12} />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingDonationClaim(true)}
+                              className="px-3 py-2.5 rounded-md bg-black border border-neutral-800 hover:border-neutral-600 text-neutral-200 hover:text-white text-xs font-medium transition-colors duration-75"
+                            >
+                              Sent Min ₹{FIRST_DONATION_BONUS_INR}?
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-md bg-black border border-neutral-700 space-y-2.5">
+                            <div className="text-xs text-neutral-200 leading-relaxed">
+                              Confirm you completed your{' '}
+                              <strong className="text-white">
+                                1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}
+                              </strong>{' '}
+                              to unlock the{' '}
+                              <strong className="font-mono text-blue-400">ZERO-SUPPORTER</strong>{' '}
+                              Badge &amp;{' '}
+                              <strong className="text-white">+1 Free Emergency Escape Ticket</strong>:
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onClaimFirstDonationBonus();
+                                  setConfirmingDonationClaim(false);
+                                }}
+                                className="flex-1 py-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider transition-colors duration-75"
+                              >
+                                Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingDonationClaim(false)}
+                                className="px-3 py-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-600 text-xs font-medium transition-colors duration-75"
+                              >
+                                Back
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="px-3.5 py-2.5 rounded-md bg-neutral-950 border border-emerald-500/40 flex items-center justify-between gap-2 flex-wrap text-xs text-emerald-400">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <CheckCircle2 size={13} />
+                          <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
+                        </span>
+                        <ZeroSupporterGoldenBadge compact />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={UPI_PAY_URL}
+                        onClick={(e) => handleOpenExternalUrl(e, UPI_PAY_URL)}
+                        className="flex-1 py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-75"
+                      >
+                        <span>Any Amount via UPI</span>
+                        <ExternalLink size={13} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="px-3 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-neutral-200 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors duration-75"
+                        title="Copy UPI ID"
+                        aria-label="Copy UPI ID"
+                      >
+                        {copiedUpi ? (
+                          <>
+                            <Check size={14} className="text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowQr((prev) => !prev)}
+                        className={`p-2.5 rounded-md border transition-colors duration-75 ${
+                          showQr
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-600'
+                        }`}
+                        title="Toggle UPI QR Code"
+                        aria-label="Toggle UPI QR Code"
+                      >
+                        <QrCode size={16} />
+                      </button>
+                    </div>
+
+                    {showQr && (
+                      <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-md flex flex-col items-center justify-center text-center space-y-2.5">
+                        {upiQrUrl ? (
+                          <div
+                            data-qr-surface="true"
+                            className="bg-white p-2 rounded-sm border border-neutral-800"
+                          >
+                            <img
+                              src={upiQrUrl}
+                              alt={`UPI QR code for ${UPI_ID}`}
+                              className="w-36 h-36 block"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-36 h-36 bg-black border border-neutral-800 rounded-sm flex items-center justify-center font-mono text-[10px] text-neutral-400">
+                            Generating QR...
+                          </div>
+                        )}
+                        <div className="font-mono text-[10px] text-neutral-400">
+                          Scan via Google Pay, PhonePe, Paytm, or BHIM • {UPI_ID}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                }
+                footerContent={
+                  <>
+                    <span>Zero fees • 100% reaches the developer</span>
+                    <span className="text-blue-400 font-semibold uppercase">Instant</span>
+                  </>
+                }
+              />
+
+              <div className="space-y-3">
+                <ObsidianCard
+                  className="font-sans"
+                  headerClassName="p-0"
+                  headerContent={
+                    <a
+                      href={KOFI_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
+                      className="w-full p-4 flex items-center justify-between transition-colors duration-75 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-sm bg-neutral-950 border border-neutral-800 flex items-center justify-center text-blue-500 shrink-0">
+                          <Coffee size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs text-white">
+                            Buy Me a Coffee (Ko-fi)
+                          </div>
+                          <div className="font-mono text-[10px] text-neutral-400 truncate mt-0.5">
+                            Card / International • ko-fi.com/mdyousuf2620
+                          </div>
+                        </div>
+                      </div>
+                      <ExternalLink
+                        size={14}
+                        className="text-neutral-400 group-hover:text-white shrink-0 ml-2 transition-colors duration-75"
+                      />
+                    </a>
+                  }
+                />
+
+                <ObsidianCard
+                  data-amoled-banner="true"
+                  className="font-sans"
+                  headerClassName="p-4 text-xs leading-relaxed"
+                  headerContent={
+                    <p className="text-neutral-300">
+                      Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet?
+                      Send a screenshot of your receipt and your account email to{' '}
+                      <a
+                        href={SUPPORT_MAILTO_URL}
+                        onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
+                        className="font-mono font-semibold text-blue-400 underline decoration-blue-500/60"
+                      >
+                        {SUPPORT_EMAIL}
+                      </a>{' '}
+                      for manual activation.
+                    </p>
+                  }
+                />
+              </div>
+            </>
+          }
+          footerContent={
+            <>
+              <button
+                type="button"
+                onClick={onDismiss}
+                className="flex-1 py-2.5 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-neutral-200 hover:text-white text-xs font-medium transition-colors duration-75"
+              >
+                Maybe Later
+              </button>
+              <button
+                type="button"
+                onClick={onBlockFiveSessions}
+                className="flex-1 py-2.5 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors duration-75"
+              >
+                <EyeOff size={13} />
+                <span>Block for {TIP_SNOOZE_SESSIONS} Sessions</span>
+              </button>
+            </>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div

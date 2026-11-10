@@ -12,6 +12,7 @@ import {
 import { verifyDonorUnlockToken } from '../utils/donorUnlockToken';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ObsidianCard } from './ObsidianCard';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
   Award,
   Check,
@@ -23,6 +24,7 @@ import {
   KeyRound,
   Mail,
   ShieldCheck,
+  Ticket,
 } from 'lucide-react';
 
 interface DonorPerksBadgesCardProps {
@@ -46,6 +48,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   onImportData,
   onRestoreSuccess,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [tokenInput, setTokenInput] = useState('');
   const [tokenNotice, setTokenNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const [confirmingManualTip, setConfirmingManualTip] = useState(false);
@@ -119,36 +122,62 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   return (
     <ObsidianCard
       ambientGlow
-      accentOverride={badgeUnlocked ? { hex: '#F59E0B', rgb: '245, 158, 11' } : undefined}
-      className="font-mono"
-      headerClassName="p-4 space-y-3.5"
-      footerClassName="px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400"
+      accentOverride={
+        isBespoke ? undefined : badgeUnlocked ? { hex: '#F59E0B', rgb: '245, 158, 11' } : undefined
+      }
+      className={isBespoke ? 'font-sans' : 'font-mono'}
+      headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
+      footerClassName={
+        isBespoke
+          ? 'px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-neutral-400'
+          : 'px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400'
+      }
       headerContent={
         <>
           {/* Header & Live Donor Status */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2.5 text-xs text-white font-bold uppercase tracking-wider">
-              <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
-                <Award size={14} className="text-amber-400" />
+            <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
+              <div
+                className={`obsidian-icon-box flex items-center justify-center shrink-0 ${
+                  isBespoke ? 'w-8 h-8 rounded-md text-blue-500' : 'w-7 h-7 rounded-xl'
+                }`}
+              >
+                <Award size={14} className={isBespoke ? 'text-blue-500' : 'text-amber-400'} />
               </div>
               <span>Donor Perks &amp; Badges</span>
             </div>
             {badgeUnlocked ? (
               <ZeroSupporterGoldenBadge compact />
             ) : (
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full obsidian-inset-neutral text-zinc-300">
+              <span
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-mono uppercase px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300'
+                    : 'text-[9px] font-black uppercase px-2 py-0.5 rounded-full obsidian-inset-neutral text-zinc-300'
+                }
+              >
                 Status: Standard
               </span>
             )}
           </div>
 
           {/* Donor Status Summary */}
-          <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1.5 text-[11px]">
+          <div
+            className={
+              isBespoke
+                ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 space-y-2 text-xs'
+                : 'p-3 rounded-xl obsidian-inset-neutral space-y-1.5 text-[11px]'
+            }
+          >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-zinc-400">Supporter Badge:</span>
+              <span className="text-neutral-400">Supporter Badge:</span>
               <span
-                className={`font-bold ${
-                  badgeUnlocked ? 'text-amber-300' : 'text-zinc-300'
+                className={`font-semibold ${
+                  badgeUnlocked
+                    ? isBespoke
+                      ? 'text-blue-400'
+                      : 'text-amber-300'
+                    : 'text-neutral-300'
                 }`}
               >
                 {badgeUnlocked
@@ -157,10 +186,21 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-zinc-400">Ticket Gift (+1 🎫):</span>
+              <span className="text-neutral-400 flex items-center gap-1">
+                <span>Ticket Gift</span>
+                {isBespoke ? (
+                  <Ticket size={11} className="text-blue-500 inline" />
+                ) : (
+                  <span>(+1 🎫):</span>
+                )}
+              </span>
               <span
-                className={`font-bold ${
-                  hasClaimedFirstDonationParachute ? 'text-emerald-300' : 'text-amber-300'
+                className={`font-semibold ${
+                  hasClaimedFirstDonationParachute
+                    ? 'text-emerald-400'
+                    : isBespoke
+                    ? 'text-neutral-200'
+                    : 'text-amber-300'
                 }`}
               >
                 {hasClaimedFirstDonationParachute
@@ -169,12 +209,18 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-zinc-400">Escape Tickets Balance:</span>
-              <span className="text-white font-bold">{remainingEscapeTickets} Ready</span>
+              <span className="text-neutral-400">Escape Tickets Balance:</span>
+              <span className="text-white font-mono tabular-nums font-semibold">
+                {remainingEscapeTickets} Ready
+              </span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-zinc-400">Cloud Backup Protection:</span>
-              <span className={cloudAutoBackupEnabled ? 'text-emerald-300 font-bold' : 'text-zinc-400'}>
+              <span className="text-neutral-400">Cloud Backup Protection:</span>
+              <span
+                className={
+                  cloudAutoBackupEnabled ? 'text-emerald-400 font-semibold' : 'text-neutral-400'
+                }
+              >
                 {cloudAutoBackupEnabled ? 'Auto-Syncing (.zbak)' : 'Manual / Export JSON'}
               </span>
             </div>
@@ -182,14 +228,30 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
 
           {/* Quick In-App Donor Check / Unlock */}
           {!badgeUnlocked ? (
-            <div className="p-3 rounded-xl obsidian-inset space-y-2">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
-                <Gift size={13} className="shrink-0" />
+            <div
+              className={
+                isBespoke
+                  ? 'p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
+                  : 'p-3 rounded-xl obsidian-inset space-y-2'
+              }
+            >
+              <div
+                className={`flex items-center gap-1.5 text-xs font-semibold ${
+                  isBespoke ? 'text-neutral-100' : 'text-[11px] font-bold text-amber-300'
+                }`}
+              >
+                <Gift
+                  size={13}
+                  className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
+                />
                 <span>Check Donor Status or Claim 1st ₹{FIRST_DONATION_BONUS_INR}+ Tip</span>
               </div>
-              <p className="text-[10px] text-zinc-300 leading-relaxed">
-                Strict Rule: Golden <strong className="text-amber-300">ZERO-SUPPORTER</strong> Crest &amp;{' '}
-                <strong>+1 Free Emergency Escape Ticket (🎫)</strong> unlock strictly on your{' '}
+              <p className="text-[11px] text-neutral-300 leading-relaxed">
+                Strict Rule:{' '}
+                <strong className={isBespoke ? 'text-neutral-100' : 'text-amber-300'}>
+                  ZERO-SUPPORTER
+                </strong>{' '}
+                Crest &amp; <strong>+1 Free Emergency Escape Ticket</strong> unlock strictly on your{' '}
                 <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong> via UPI or Ko-fi.
               </p>
 
@@ -200,7 +262,11 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
-                    className="py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    className={
+                      isBespoke
+                        ? 'py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
+                        : 'py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
+                    }
                   >
                     <Coffee size={12} />
                     <span>Support on Ko-fi</span>
@@ -209,19 +275,29 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   <button
                     type="button"
                     onClick={() => setConfirmingManualTip(true)}
-                    className="py-2 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-emerald-600/60 text-emerald-300 font-bold text-[10px] uppercase tracking-wider"
+                    className={
+                      isBespoke
+                        ? 'py-2.5 px-3 rounded-md bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-xs uppercase tracking-wide transition-colors duration-75'
+                        : 'py-2 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-emerald-600/60 text-emerald-300 font-bold text-[10px] uppercase tracking-wider'
+                    }
                   >
                     Tipped ₹{FIRST_DONATION_BONUS_INR}+ Already?
                   </button>
                 </div>
               ) : (
-                <div className="p-2.5 rounded-xl bg-black/80 border border-emerald-600/60 space-y-2">
-                  <div className="text-[10px] text-emerald-200 leading-relaxed">
+                <div
+                  className={
+                    isBespoke
+                      ? 'p-3 rounded-md bg-black border border-neutral-800 space-y-2.5'
+                      : 'p-2.5 rounded-xl bg-black/80 border border-emerald-600/60 space-y-2'
+                  }
+                >
+                  <div className="text-[11px] text-neutral-200 leading-relaxed">
                     Confirm your <strong>1st ₹{FIRST_DONATION_BONUS_INR}+ tip</strong> via Ko-fi or UPI (
                     <a
                       href={UPI_FIFTY_RS_PAY_URL}
                       onClick={(e) => handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL)}
-                      className="underline text-amber-300"
+                      className={`underline ${isBespoke ? 'text-blue-400' : 'text-amber-300'}`}
                     >
                       Open ₹{FIRST_DONATION_BONUS_INR} UPI
                     </a>
@@ -234,14 +310,22 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                         onClaimFirstDonationBonus?.();
                         setConfirmingManualTip(false);
                       }}
-                      className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider"
+                      className={
+                        isBespoke
+                          ? 'flex-1 py-2 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide transition-colors duration-75'
+                          : 'flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider'
+                      }
                     >
                       Confirm &amp; Activate
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmingManualTip(false)}
-                      className="px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-bold"
+                      className={
+                        isBespoke
+                          ? 'px-3 py-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-neutral-200 text-xs font-medium transition-colors duration-75'
+                          : 'px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-bold'
+                      }
                     >
                       Back
                     </button>
@@ -250,8 +334,14 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               )}
             </div>
           ) : (
-            <div className="px-3 py-2 rounded-xl bg-emerald-950/45 border border-emerald-600/50 flex items-center justify-between gap-2 text-[10px] text-emerald-300">
-              <span className="flex items-center gap-1.5 font-bold">
+            <div
+              className={
+                isBespoke
+                  ? 'px-3.5 py-2.5 rounded-md bg-neutral-950 border border-emerald-800 flex items-center justify-between gap-2 text-xs text-emerald-400'
+                  : 'px-3 py-2 rounded-xl bg-emerald-950/45 border border-emerald-600/50 flex items-center justify-between gap-2 text-[10px] text-emerald-300'
+              }
+            >
+              <span className="flex items-center gap-1.5 font-semibold">
                 <CheckCircle2 size={13} />
                 <span>Donor Perks Active — Crest appears on Profile &amp; Flex Cards</span>
               </span>
@@ -263,9 +353,11 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           <form onSubmit={handleVerifyUnlockToken} className="space-y-2">
             <label
               htmlFor="donor-unlock-token-input"
-              className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5"
+              className={`font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5 ${
+                isBespoke ? 'text-[11px]' : 'text-[10px] font-bold'
+              }`}
             >
-              <KeyRound size={12} style={{ color: '#8B5CF6' }} />
+              <KeyRound size={12} style={{ color: isBespoke ? '#3B82F6' : '#8B5CF6' }} />
               <span>Enter Signed Unlock Token</span>
             </label>
             <div className="flex gap-2">
@@ -280,82 +372,144 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 placeholder={
                   restoreDisabled ? 'Paste ZDON1... unlock token' : 'Paste ZDON1... or ZBAK1... token'
                 }
-                className="flex-1 min-w-0 obsidian-input focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none"
+                className={
+                  isBespoke
+                    ? 'flex-1 min-w-0 obsidian-input focus:border-blue-500 rounded-md px-3 py-2 text-xs font-mono text-white outline-none'
+                    : 'flex-1 min-w-0 obsidian-input focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none'
+                }
               />
               <button
                 type="submit"
-                className="px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-all"
-                style={{
-                  backgroundColor: '#8B5CF6',
-                  color: '#FFFFFF',
-                }}
+                className={
+                  isBespoke
+                    ? 'px-3.5 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide shrink-0 transition-colors duration-75'
+                    : 'px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-all'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        backgroundColor: '#8B5CF6',
+                        color: '#FFFFFF',
+                      }
+                }
               >
                 Activate
               </button>
             </div>
 
             {restoreDisabled && (
-              <div className="p-2 rounded-xl bg-amber-950/50 border border-amber-600/60 text-amber-200 text-[10px]">
-                Root / test-keys ROM / emulator detected: <code>ZBAK1</code> cloud backup restore is disabled; signed <code>ZDON1</code> donor tokens remain enabled.
+              <div
+                className={
+                  isBespoke
+                    ? 'p-2.5 rounded-md bg-neutral-950 border border-amber-700 text-amber-300 text-[11px]'
+                    : 'p-2 rounded-xl bg-amber-950/50 border border-amber-600/60 text-amber-200 text-[10px]'
+                }
+              >
+                Root / test-keys ROM / emulator detected: <code className="font-mono">ZBAK1</code> cloud backup restore is disabled; signed <code className="font-mono">ZDON1</code> donor tokens remain enabled.
               </div>
             )}
 
             {tokenNotice && (
               <div
-                className={`p-2.5 rounded-xl text-[10px] border leading-relaxed ${
-                  tokenNotice.ok
-                    ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
-                    : 'bg-red-950/50 border-red-700 text-red-200'
-                }`}
+                className={
+                  isBespoke
+                    ? `p-3 rounded-md text-xs border leading-relaxed ${
+                        tokenNotice.ok
+                          ? 'bg-neutral-950 border-emerald-700 text-emerald-300'
+                          : 'bg-neutral-950 border-red-700 text-red-300'
+                      }`
+                    : `p-2.5 rounded-xl text-[10px] border leading-relaxed ${
+                        tokenNotice.ok
+                          ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
+                          : 'bg-red-950/50 border-red-700 text-red-200'
+                      }`
+                }
               >
                 {tokenNotice.message}
               </div>
             )}
           </form>
 
-          {/* Ko-fi Manual Verification Note — Two-Tier Pure AMOLED #000000 + Purple #8B5CF6 */}
+          {/* Ko-fi Manual Verification Note */}
           <ObsidianCard
             data-amoled-banner="true"
-            accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
-            headerClassName="p-3.5 space-y-2"
-            footerClassName="px-3.5 py-2.5 flex items-center gap-2"
-            style={{
-              backgroundColor: '#000000',
-              borderColor: 'rgba(139, 92, 246, 0.58)',
-              boxShadow: '0 0 22px rgba(139, 92, 246, 0.16)',
-            }}
+            accentOverride={
+              isBespoke
+                ? { hex: '#3B82F6', rgb: '59, 130, 246' }
+                : { hex: '#8B5CF6', rgb: '139, 92, 246' }
+            }
+            headerClassName={isBespoke ? 'p-4 space-y-2.5' : 'p-3.5 space-y-2'}
+            footerClassName={
+              isBespoke
+                ? 'px-4 py-3 flex items-center gap-2'
+                : 'px-3.5 py-2.5 flex items-center gap-2'
+            }
+            style={
+              isBespoke
+                ? undefined
+                : {
+                    backgroundColor: '#000000',
+                    borderColor: 'rgba(139, 92, 246, 0.58)',
+                    boxShadow: '0 0 22px rgba(139, 92, 246, 0.16)',
+                  }
+            }
             headerContent={
               <>
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span
-                    className="amoled-banner-title text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
-                    style={{ color: '#FFFFFF' }}
+                    className={
+                      isBespoke
+                        ? 'text-xs font-semibold uppercase tracking-wide text-neutral-100 flex items-center gap-1.5'
+                        : 'amoled-banner-title text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5'
+                    }
+                    style={isBespoke ? undefined : { color: '#FFFFFF' }}
                   >
-                    <Mail size={12} className="amoled-banner-accent shrink-0" style={{ color: '#8B5CF6' }} />
+                    <Mail
+                      size={12}
+                      className={isBespoke ? 'shrink-0 text-blue-500' : 'amoled-banner-accent shrink-0'}
+                      style={isBespoke ? undefined : { color: '#8B5CF6' }}
+                    />
                     <span>Manual Ko-fi Verification</span>
                   </span>
                   <span
-                    className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                      color: '#C4B5FD',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'text-[10px] font-mono px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300'
+                        : 'text-[9px] font-bold px-2 py-0.5 rounded-full'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            color: '#C4B5FD',
+                          }
+                    }
                   >
                     Ko-fi Support
                   </span>
                 </div>
 
                 <p
-                  className="amoled-banner-sub text-[11px] leading-relaxed"
-                  style={{ color: '#E9D5FF' }}
+                  className={
+                    isBespoke
+                      ? 'text-xs text-neutral-400 leading-relaxed'
+                      : 'amoled-banner-sub text-[11px] leading-relaxed'
+                  }
+                  style={isBespoke ? undefined : { color: '#E9D5FF' }}
                 >
                   Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet? Send a screenshot
                   of your receipt and your account email to{' '}
                   <a
                     href={SUPPORT_MAILTO_URL}
                     onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
-                    className="amoled-banner-email font-black underline decoration-[#8B5CF6] underline-offset-2"
-                    style={{ color: '#C4B5FD' }}
+                    className={
+                      isBespoke
+                        ? 'text-blue-400 font-mono underline underline-offset-2'
+                        : 'amoled-banner-email font-black underline decoration-[#8B5CF6] underline-offset-2'
+                    }
+                    style={isBespoke ? undefined : { color: '#C4B5FD' }}
                   >
                     <strong>{SUPPORT_EMAIL}</strong>
                   </a>{' '}
@@ -368,11 +522,19 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 <a
                   href={SUPPORT_MAILTO_URL}
                   onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
-                  className="flex-1 py-2 px-3 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                  style={{
-                    backgroundColor: '#8B5CF6',
-                    color: '#FFFFFF',
-                  }}
+                  className={
+                    isBespoke
+                      ? 'flex-1 py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
+                      : 'flex-1 py-2 px-3 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
+                  }
+                  style={
+                    isBespoke
+                      ? undefined
+                      : {
+                          backgroundColor: '#8B5CF6',
+                          color: '#FFFFFF',
+                        }
+                  }
                 >
                   <Mail size={12} />
                   <span>Email Receipt</span>
@@ -380,12 +542,20 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 <button
                   type="button"
                   onClick={handleCopySupportEmail}
-                  className="amoled-banner-secondary px-3 py-2 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                  style={{
-                    backgroundColor: '#09090B',
-                    borderColor: 'rgba(139, 92, 246, 0.5)',
-                    color: '#DDD6FE',
-                  }}
+                  className={
+                    isBespoke
+                      ? 'px-3 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
+                      : 'amoled-banner-secondary px-3 py-2 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
+                  }
+                  style={
+                    isBespoke
+                      ? undefined
+                      : {
+                          backgroundColor: '#09090B',
+                          borderColor: 'rgba(139, 92, 246, 0.5)',
+                          color: '#DDD6FE',
+                        }
+                  }
                 >
                   {copiedEmail ? (
                     <>
@@ -394,7 +564,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     </>
                   ) : (
                     <>
-                      <Copy size={12} style={{ color: '#8B5CF6' }} />
+                      <Copy size={12} style={{ color: isBespoke ? '#3B82F6' : '#8B5CF6' }} />
                       <span>Copy Email</span>
                     </>
                   )}
@@ -407,7 +577,15 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
       footerContent={
         <>
           <span>HMAC-verified ZDON1 &amp; .zbak state</span>
-          <span className={badgeUnlocked ? 'text-amber-300 font-bold' : 'text-zinc-400'}>
+          <span
+            className={
+              badgeUnlocked
+                ? isBespoke
+                  ? 'text-blue-400 font-semibold'
+                  : 'text-amber-300 font-bold'
+                : 'text-neutral-400'
+            }
+          >
             {badgeUnlocked ? 'Crest Active' : `Min ₹${FIRST_DONATION_BONUS_INR} Rule`}
           </span>
         </>

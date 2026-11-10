@@ -24,6 +24,7 @@ import type {
   ProfileAccent,
   CloudAutoBackupStatus,
   ThemeConfig,
+  InterfaceStyle,
   DashboardWidgetsConfig,
 } from '../types';
 import { haptics } from '../utils/haptics';
@@ -81,6 +82,7 @@ const UI_STORAGE_KEYS = {
   ACTIVE_BAG_ID: 'zero_active_bag_id_v4',
   THEME: 'zero_active_theme_v3',
   THEME_CONFIG: 'zero_theme_config_v1',
+  INTERFACE_STYLE: 'zero_interface_style_v1',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
   WIDGET_CONFIG: 'zero_widgets_config_v1',
@@ -296,6 +298,24 @@ export function useZeroStore() {
   const [theme, setThemeState] = useState<ThemeStyle>(() => {
     return (localStorage.getItem(UI_STORAGE_KEYS.THEME) as ThemeStyle) || 'amoled';
   });
+
+  const [interfaceStyle, setInterfaceStyleState] = useState<InterfaceStyle>(() => {
+    try {
+      return localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE) === 'classic'
+        ? 'classic'
+        : 'bespoke';
+    } catch {
+      return 'bespoke';
+    }
+  });
+  const interfaceStyleRef = useRef<InterfaceStyle>(interfaceStyle);
+  useEffect(() => {
+    interfaceStyleRef.current = interfaceStyle;
+  }, [interfaceStyle]);
+
+  const setInterfaceStyle = useCallback((nextStyle: InterfaceStyle) => {
+    setInterfaceStyleState(nextStyle === 'classic' ? 'classic' : 'bespoke');
+  }, []);
 
   const [themeConfig, setThemeConfigState] = useState<ThemeConfig>(() => {
     const legacy = (localStorage.getItem(UI_STORAGE_KEYS.THEME) as ThemeStyle) || 'amoled';
@@ -803,6 +823,7 @@ export function useZeroStore() {
         syncWithNativeState();
         if (window.ZeroNative && activeAccentTokensRef.current) {
           try {
+            window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
             window.ZeroNative.setActiveThemeAccent?.(
               activeAccentTokensRef.current.hex,
               activeAccentTokensRef.current.rgb,
@@ -882,8 +903,79 @@ export function useZeroStore() {
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.THEME_CONFIG, JSON.stringify(themeConfig));
+    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, interfaceStyle);
     const runtime = computeThemeRuntime(themeConfig);
     const rootEl = document.documentElement;
+    rootEl.setAttribute('data-zero-style', interfaceStyle);
+
+    if (interfaceStyle === 'bespoke') {
+      const isLightPaper = runtime.mode === 'light';
+      rootEl.className = isLightPaper ? 'light' : 'dark';
+      rootEl.setAttribute('data-zero-theme', runtime.family);
+      rootEl.setAttribute('data-zero-has-gradient', 'false');
+
+      Object.entries(runtime.cssVars).forEach(([cssVar, val]) => {
+        rootEl.style.setProperty(cssVar, val);
+      });
+
+      if (isLightPaper) {
+        rootEl.style.setProperty('--zero-bg-image', 'none');
+        rootEl.style.setProperty('--zero-accent', '#1D4ED8');
+        rootEl.style.setProperty('--zero-dial-stroke', '#1D4ED8');
+        rootEl.style.setProperty('--accent-rgb', '29, 78, 216');
+        rootEl.style.setProperty('--accent-hex', '#1D4ED8');
+        rootEl.style.setProperty('--accent-badge-gradient', '#1D4ED8');
+        rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
+      } else {
+        // Anchor dark mode strictly in pure AMOLED #000000 with neutral borders and functional utility blue
+        rootEl.style.setProperty('--zero-bg-primary', '#000000');
+        rootEl.style.setProperty('--zero-bg-image', 'none');
+        rootEl.style.setProperty('--zero-bg-size', '100% 100%');
+        rootEl.style.setProperty('--zero-surface-1', '#000000');
+        rootEl.style.setProperty('--zero-surface-2', '#0A0A0A');
+        rootEl.style.setProperty('--zero-surface-3', '#171717');
+        rootEl.style.setProperty('--zero-border', '#262626');
+        rootEl.style.setProperty('--zero-border-subtle', '#171717');
+        rootEl.style.setProperty('--zero-ink-primary', '#FAFAFA');
+        rootEl.style.setProperty('--zero-ink-secondary', '#D4D4D4');
+        rootEl.style.setProperty('--zero-ink-muted', '#737373');
+        rootEl.style.setProperty('--zero-inverted-bg', '#FAFAFA');
+        rootEl.style.setProperty('--zero-inverted-text', '#000000');
+        rootEl.style.setProperty('--zero-nav-bg', '#000000');
+        rootEl.style.setProperty('--zero-backdrop', 'rgba(0, 0, 0, 0.92)');
+        rootEl.style.setProperty('--zero-accent', '#3B82F6');
+        rootEl.style.setProperty('--zero-dial-stroke', '#3B82F6');
+        rootEl.style.setProperty('--accent-rgb', '59, 130, 246');
+        rootEl.style.setProperty('--accent-hex', '#3B82F6');
+        rootEl.style.setProperty('--accent-badge-gradient', '#2563EB');
+        rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
+      }
+
+      const nativeTokens = {
+        hex: '#3B82F6',
+        rgb: '59, 130, 246',
+        badgeText: '#FFFFFF',
+      };
+      activeAccentTokensRef.current = nativeTokens;
+
+      try {
+        window.ZeroNative?.setInterfaceStyle?.('bespoke');
+        window.ZeroNative?.setActiveThemeAccent?.(
+          nativeTokens.hex,
+          nativeTokens.rgb,
+          nativeTokens.badgeText
+        );
+      } catch {
+        // Ignore on web preview
+      }
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', isLightPaper ? runtime.metaThemeColor : '#000000');
+      }
+      return;
+    }
+
     rootEl.className = runtime.mode === 'light' ? 'light' : 'dark';
     rootEl.setAttribute('data-zero-theme', runtime.family);
     rootEl.setAttribute(
@@ -925,6 +1017,7 @@ export function useZeroStore() {
     }
 
     try {
+      window.ZeroNative?.setInterfaceStyle?.('classic');
       window.ZeroNative?.setActiveThemeAccent?.(
         activeTokens.hex,
         activeTokens.rgb,
@@ -938,7 +1031,7 @@ export function useZeroStore() {
     if (metaTheme) {
       metaTheme.setAttribute('content', runtime.metaThemeColor);
     }
-  }, [themeConfig, profile]);
+  }, [themeConfig, profile, interfaceStyle]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SLEEP_FARMING_MODE, sleepFarmingMode);
@@ -1135,11 +1228,16 @@ export function useZeroStore() {
         const accentKeyNow = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
         const profileThemeNow = ACCENT_THEMES[accentKeyNow] || ACCENT_THEMES.Amber;
         const activeTokensNow = resolveActiveAccentTokens(themeConfig, profileThemeNow);
-        window.ZeroNative.setActiveThemeAccent?.(
-          activeTokensNow.hex,
-          activeTokensNow.rgb,
-          activeTokensNow.badgeText
-        );
+        window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
+        if (interfaceStyleRef.current === 'bespoke') {
+          window.ZeroNative.setActiveThemeAccent?.('#3B82F6', '59, 130, 246', '#FFFFFF');
+        } else {
+          window.ZeroNative.setActiveThemeAccent?.(
+            activeTokensNow.hex,
+            activeTokensNow.rgb,
+            activeTokensNow.badgeText
+          );
+        }
         const started = window.ZeroNative.igniteSession(safeDuration, tag);
         if (started === false) {
           refreshPermissions();
@@ -1788,6 +1886,8 @@ export function useZeroStore() {
     setActiveBagIdState(DEFAULT_BAGS[0].id);
     setThemeState('amoled');
     setThemeConfigState(DEFAULT_THEME_CONFIG);
+    setInterfaceStyleState('bespoke');
+    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'bespoke');
     setWidgetsConfigState(DEFAULT_WIDGETS_CONFIG);
     setTipSkipRemaining(0);
     tipSkipRemainingRef.current = 0;
@@ -1819,6 +1919,8 @@ export function useZeroStore() {
     setTheme,
     themeConfig,
     setThemeConfig,
+    interfaceStyle,
+    setInterfaceStyle,
     widgetsConfig,
     setWidgetsConfig,
     sleepFarmingMode,

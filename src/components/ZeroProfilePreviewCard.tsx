@@ -7,6 +7,7 @@ import {
 } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 
 // 3. Upgraded Top Preview Badge Component (Frosted Two-Tier Obsidian)
 export interface ZeroProfilePreviewCardProps {
@@ -32,6 +33,7 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   rankTitle = 'INITIATE',
   isZeroSupporter = false,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const theme = ACCENT_THEMES[accent] || ACCENT_THEMES.Amber;
   const formattedHandle = handle.trim()
     ? handle.trim().startsWith('@')
@@ -41,6 +43,56 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   const formattedMission = mission.trim().startsWith('#')
     ? mission.trim()
     : `#${mission.trim() || 'Deep Work'}`;
+
+  if (isBespoke) {
+    return (
+      <ObsidianCard
+        accent={accent}
+        className="my-3"
+        headerClassName="p-5"
+        footerClassName="px-5 py-3"
+        headerContent={
+          <div className="flex items-center justify-between gap-3.5">
+            <div className="flex-shrink-0 w-14 h-14 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-center">
+              <ZeroEmblemIcon emblem={emblem} color="#3B82F6" size={26} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center flex-wrap gap-1.5">
+                <span className="font-sans text-white font-semibold text-base tracking-wide uppercase truncate">
+                  {callsign.trim() || 'ANONYMOUS'}
+                </span>
+                <span className="px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 font-mono text-[10px] font-semibold uppercase tracking-widest">
+                  {rankTitle}
+                </span>
+                {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+              </div>
+
+              <p className="mt-1 text-xs font-mono text-neutral-400 truncate">
+                <span>{formattedHandle}</span>
+                <span className="mx-1.5 text-neutral-600">•</span>
+                <span className="text-blue-400">{formattedMission}</span>
+              </p>
+            </div>
+
+            <div className="flex-shrink-0 px-3 py-2 rounded-md bg-neutral-950 border border-neutral-800 text-center">
+              <div className="text-sm font-bold font-mono tabular-nums text-blue-400 leading-none">
+                {dailyGoalHours}h/day
+              </div>
+              <div className="mt-1 text-[9px] font-mono tracking-widest uppercase text-neutral-400">
+                TARGET
+              </div>
+            </div>
+          </div>
+        }
+        footerContent={
+          <p className="text-xs font-sans text-neutral-300 leading-relaxed break-words">
+            &ldquo;{pledge.trim() || 'Put your phone facedown. Reclaim your hours.'}&rdquo;
+          </p>
+        }
+      />
+    );
+  }
 
   return (
     <ObsidianCard

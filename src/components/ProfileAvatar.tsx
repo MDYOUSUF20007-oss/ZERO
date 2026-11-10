@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { ProfileAccent, ProfileAvatarId } from '../types';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { haptics } from '../utils/haptics';
 
 // 1. Dynamic Accent Palette Mapping (matches the 4 Profile Accents)
@@ -276,14 +277,24 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   glowHighlighted = false,
   onPulse,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [pulsing, setPulsing] = useState(false);
   const style = ACCENT_STYLES[accent] || ACCENT_STYLES.amber;
   const accentKey = ACCENT_ID_TO_KEY[accent] || 'Amber';
   const theme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
   const emblem = AVATAR_ID_TO_EMBLEM[avatarId] || 'Monk';
 
-  const boxSize =
-    size === 'lg' ? 'w-14 h-14 rounded-2xl' : size === 'sm' ? 'w-9 h-9 rounded-xl' : 'w-11 h-11 rounded-2xl';
+  const boxSize = isBespoke
+    ? size === 'lg'
+      ? 'w-14 h-14 rounded-md'
+      : size === 'sm'
+      ? 'w-9 h-9 rounded-sm'
+      : 'w-11 h-11 rounded-md'
+    : size === 'lg'
+    ? 'w-14 h-14 rounded-2xl'
+    : size === 'sm'
+    ? 'w-9 h-9 rounded-xl'
+    : 'w-11 h-11 rounded-2xl';
   const iconPx = size === 'lg' ? 28 : size === 'sm' ? 20 : 24;
 
   const boxGlowStyle: React.CSSProperties = glowHighlighted
@@ -303,9 +314,39 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     e.stopPropagation();
     haptics.tick(960);
     setPulsing(true);
-    setTimeout(() => setPulsing(false), 550);
+    setTimeout(() => setPulsing(false), isBespoke ? 180 : 550);
     onPulse?.();
   };
+
+  if (isBespoke) {
+    const bespokeBorderClass = pulsing
+      ? 'border-blue-400'
+      : glowHighlighted
+      ? 'border-blue-500'
+      : 'border-neutral-800';
+    const bespokeIconColor = '#3B82F6';
+
+    if (interactive) {
+      return (
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label="Interactive profile emblem"
+          className={`${boxSize} border ${bespokeBorderClass} bg-neutral-950 hover:border-neutral-600 flex items-center justify-center shrink-0 transition-colors duration-75`}
+        >
+          <ZeroEmblemIcon emblem={emblem} color={bespokeIconColor} size={iconPx} />
+        </button>
+      );
+    }
+
+    return (
+      <div
+        className={`${boxSize} border ${bespokeBorderClass} bg-neutral-950 flex items-center justify-center shrink-0 transition-colors duration-75`}
+      >
+        <ZeroEmblemIcon emblem={emblem} color={bespokeIconColor} size={iconPx} />
+      </div>
+    );
+  }
 
   if (interactive) {
     return (

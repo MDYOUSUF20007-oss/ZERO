@@ -710,5 +710,13 @@ public class LockEngineUnitTest {
         assertEquals("#09090B", loaded.getBadgeTextHex());
         assertEquals(0xFF10B981, loaded.getAccentColor());
         assertEquals(0xFF09090B, loaded.getBadgeTextColor());
+
+        assertEquals("bespoke", VoidThemeStore.loadInterfaceStyle(fakeContext));
+        assertTrue(VoidThemeStore.isBespokeStyle(fakeContext));
+        VoidThemeStore.saveInterfaceStyle(fakeContext, "classic");
+        assertEquals("classic", VoidThemeStore.loadInterfaceStyle(fakeContext));
+        assertFalse(VoidThemeStore.isBespokeStyle(fakeContext));
+        VoidThemeStore.saveInterfaceStyle(fakeContext, "unexpected-value");
+        assertEquals("bespoke", VoidThemeStore.loadInterfaceStyle(fakeContext));
     }
 }

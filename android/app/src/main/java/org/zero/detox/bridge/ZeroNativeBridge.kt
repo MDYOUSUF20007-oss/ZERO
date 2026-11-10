@@ -505,6 +505,11 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
+    fun setInterfaceStyle(style: String) {
+        VoidThemeStore.saveInterfaceStyle(activity, style)
+    }
+
+    @JavascriptInterface
     fun shareImageBase64(base64Png: String, fileName: String, caption: String) {
         try {
             val cleanB64 = base64Png.substringAfter(",", base64Png)

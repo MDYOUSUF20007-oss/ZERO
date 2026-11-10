@@ -12,6 +12,7 @@ import {
 } from '../utils/focusReceipt';
 import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ObsidianCard } from './ObsidianCard';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { X, Share2, Download, Sparkles, Trophy } from 'lucide-react';
 
 interface ShareStatsModalProps {
@@ -168,6 +169,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   isZeroSupporter = false,
   onClose,
 }) => {
+  const { isBespoke } = useInterfaceStyle();
   const [period, setPeriod] = useState<FlexPeriod>('today');
   const [receiptExport, setReceiptExport] = useState<{ dataUrl: string; dateLabel: string }>({
     dataUrl: '',
@@ -214,179 +216,218 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       .toUpperCase();
     const { hex: activeAccentHex, rgb: activeAccentRgb } = readLiveAccentCssTokens();
 
-    // Pitch AMOLED Canvas Background + Subtle Dot Matrix
+    // Pitch AMOLED Canvas Background (+ Subtle Dot Matrix in Classic mode)
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    for (let x = 36; x < W; x += 36) {
-      for (let y = 36; y < H; y += 36) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+    if (!isBespoke) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      for (let x = 36; x < W; x += 36) {
+        for (let y = 36; y < H; y += 36) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
-    // Frosted Two-Tier Obsidian Outer Receipt Card
+    // Outer Receipt Card
     const cardX = 56;
     const cardY = 56;
     const cardW = W - 112;
     const cardH = H - 112;
-    const cardR = 36;
+    const cardR = isBespoke ? 14 : 36;
 
-    ctx.save();
-    ctx.shadowColor = `rgba(${activeAccentRgb}, 0.24)`;
-    ctx.shadowBlur = 42;
-    const cardBg = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
-    cardBg.addColorStop(0, 'rgba(20, 20, 24, 0.99)');
-    cardBg.addColorStop(1, 'rgba(7, 7, 9, 1)');
-    ctx.fillStyle = cardBg;
-    drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
-    ctx.fill();
-    ctx.restore();
+    if (isBespoke) {
+      ctx.fillStyle = '#000000';
+      drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
+      ctx.fill();
+    } else {
+      ctx.save();
+      ctx.shadowColor = `rgba(${activeAccentRgb}, 0.24)`;
+      ctx.shadowBlur = 42;
+      const cardBg = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
+      cardBg.addColorStop(0, 'rgba(20, 20, 24, 0.99)');
+      cardBg.addColorStop(1, 'rgba(7, 7, 9, 1)');
+      ctx.fillStyle = cardBg;
+      drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Clip interior tiers cleanly to rounded card corners
     ctx.save();
     drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.clip();
 
-    // Subtle top-left radial ambient accent sheen
-    const glowGrad = ctx.createRadialGradient(cardX + 90, cardY + 70, 10, cardX + 90, cardY + 70, 320);
-    glowGrad.addColorStop(0, `rgba(${activeAccentRgb}, 0.16)`);
-    glowGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(cardX, cardY, 440, 400);
+    if (!isBespoke) {
+      const glowGrad = ctx.createRadialGradient(cardX + 90, cardY + 70, 10, cardX + 90, cardY + 70, 320);
+      glowGrad.addColorStop(0, `rgba(${activeAccentRgb}, 0.16)`);
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(cardX, cardY, 440, 400);
+    }
 
     // Tier 1B Grid Band Backdrop
     const gridBandY = 516;
     const gridBandH = 412;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.44)';
+    ctx.fillStyle = isBespoke ? '#000000' : 'rgba(0, 0, 0, 0.44)';
     ctx.fillRect(cardX, gridBandY, cardW, gridBandH);
 
-    // Tier 2 Footer Band (#09090C)
+    // Tier 2 Footer Band
     const tier2Y = gridBandY + gridBandH; // 928
-    ctx.fillStyle = '#09090C';
+    ctx.fillStyle = isBespoke ? '#0A0A0A' : '#09090C';
     ctx.fillRect(cardX, tier2Y, cardW, cardY + cardH - tier2Y);
 
     ctx.restore();
 
-    // Card Border (1.5dp accent-colored glowing stroke)
-    ctx.strokeStyle = `rgba(${activeAccentRgb}, 0.45)`;
-    ctx.lineWidth = 3;
+    // Card Border
+    ctx.strokeStyle = isBespoke ? '#262626' : `rgba(${activeAccentRgb}, 0.45)`;
+    ctx.lineWidth = isBespoke ? 2 : 3;
     drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.stroke();
 
-    // Top Specular Metallic Highlight Line
-    const specGrad = ctx.createLinearGradient(cardX + 64, cardY, cardX + cardW - 64, cardY);
-    specGrad.addColorStop(0, 'transparent');
-    specGrad.addColorStop(0.5, activeAccentHex);
-    specGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = specGrad;
-    ctx.fillRect(cardX + 64, cardY, cardW - 128, 3);
+    if (!isBespoke) {
+      const specGrad = ctx.createLinearGradient(cardX + 64, cardY, cardX + cardW - 64, cardY);
+      specGrad.addColorStop(0, 'transparent');
+      specGrad.addColorStop(0.5, activeAccentHex);
+      specGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = specGrad;
+      ctx.fillRect(cardX + 64, cardY, cardW - 128, 3);
+    }
 
     // Tier 1A Header Row
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 38px monospace';
+    ctx.fillStyle = isBespoke ? '#FAFAFA' : '#FFFFFF';
+    ctx.font = isBespoke
+      ? '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : '900 38px monospace';
     ctx.fillText('ZERO // FOCUS RECEIPT', 104, 136);
 
     ctx.save();
-    ctx.fillStyle = activeAccentHex;
+    ctx.fillStyle = isBespoke ? '#3B82F6' : activeAccentHex;
     ctx.font = '700 22px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(currentDateLabel, W - 104, 134);
     ctx.restore();
 
-    // Handle • Rank + Optional Golden ZERO-SUPPORTER Crest
+    // Handle • Rank + Optional ZERO-SUPPORTER Crest
     const handleSub = `${formattedHandle.toUpperCase()}  •  ${rankTitle}`;
     ctx.fillStyle = '#A1A1AA';
     ctx.font = '600 22px monospace';
     ctx.fillText(handleSub, 104, 184, badgeSummary.isZeroSupporter ? 540 : W - 208);
 
     if (badgeSummary.isZeroSupporter) {
-      ctx.font = '900 18px monospace';
+      ctx.font = '700 18px monospace';
       const label = 'ZERO-SUPPORTER';
       const textWidth = ctx.measureText(label).width;
       const pillW = Math.round(textWidth + 58);
       const pillH = 44;
       const pillX = W - 104 - pillW;
       const pillY = 152;
+      const crestR = isBespoke ? 6 : 22;
 
-      ctx.save();
-      ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
-      ctx.shadowBlur = 16;
-      const goldGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
-      goldGrad.addColorStop(0, '#FDE68A');
-      goldGrad.addColorStop(0.5, '#FBBF24');
-      goldGrad.addColorStop(1, '#D97706');
-      ctx.fillStyle = goldGrad;
-      drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, 22);
-      ctx.fill();
-      ctx.restore();
+      if (isBespoke) {
+        ctx.fillStyle = '#0A0A0A';
+        drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, crestR);
+        ctx.fill();
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 2;
+        drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, crestR);
+        ctx.stroke();
+        drawVectorStar(ctx, pillX + 24, pillY + pillH / 2, 9.5, 4.2, '#3B82F6');
+        ctx.fillStyle = '#FAFAFA';
+        ctx.font = '700 18px monospace';
+        ctx.fillText(label, pillX + 42, pillY + 29);
+      } else {
+        ctx.save();
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
+        ctx.shadowBlur = 16;
+        const goldGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
+        goldGrad.addColorStop(0, '#FDE68A');
+        goldGrad.addColorStop(0.5, '#FBBF24');
+        goldGrad.addColorStop(1, '#D97706');
+        ctx.fillStyle = goldGrad;
+        drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, crestR);
+        ctx.fill();
+        ctx.restore();
 
-      ctx.strokeStyle = '#FEF3C7';
-      ctx.lineWidth = 2;
-      drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, 22);
-      ctx.stroke();
+        ctx.strokeStyle = '#FEF3C7';
+        ctx.lineWidth = 2;
+        drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, crestR);
+        ctx.stroke();
 
-      drawVectorStar(ctx, pillX + 24, pillY + pillH / 2, 9.5, 4.2, '#000000');
-      ctx.fillStyle = '#000000';
-      ctx.font = '900 18px monospace';
-      ctx.fillText(label, pillX + 42, pillY + 29);
+        drawVectorStar(ctx, pillX + 24, pillY + pillH / 2, 9.5, 4.2, '#000000');
+        ctx.fillStyle = '#000000';
+        ctx.font = '900 18px monospace';
+        ctx.fillText(label, pillX + 42, pillY + 29);
+      }
     }
 
     // Period Badge
     const badgeLabel = FOCUS_RECEIPT_PERIOD_LABELS[period].title;
-    ctx.font = '900 22px monospace';
+    ctx.font = isBespoke
+      ? '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : '900 22px monospace';
     const periodPillW = Math.max(180, Math.round(ctx.measureText(badgeLabel).width + 52));
-    ctx.fillStyle = '#F59E0B';
-    drawRoundedRectPath(ctx, 104, 226, periodPillW, 44, 10);
+    ctx.fillStyle = isBespoke ? '#2563EB' : '#F59E0B';
+    drawRoundedRectPath(ctx, 104, 226, periodPillW, 44, isBespoke ? 6 : 10);
     ctx.fill();
-    ctx.fillStyle = '#09090B';
+    ctx.fillStyle = isBespoke ? '#FFFFFF' : '#09090B';
     ctx.fillText(badgeLabel, 130, 255);
 
     // Giant Hero Metric (auto-scaled so long 1Y / All-Time totals fit cleanly)
     const timeText = periodStats.formattedTime;
     const heroFontPx = timeText.length >= 8 ? 104 : timeText.length >= 6 ? 124 : 148;
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = `900 ${heroFontPx}px monospace`;
+    ctx.font = `${isBespoke ? '700' : '900'} ${heroFontPx}px monospace`;
     ctx.fillText(timeText, 104, 412, W - 208);
 
     ctx.fillStyle = '#A1A1AA';
-    ctx.font = '700 24px monospace';
+    ctx.font = isBespoke
+      ? '600 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : '700 24px monospace';
     ctx.fillText('DISTRACTION-FREE & PHONE-OFF', 104, 468);
 
     // Hairline Divider above 2x2 Grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeStyle = isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cardX, gridBandY);
     ctx.lineTo(cardX + cardW, gridBandY);
     ctx.stroke();
 
-    // 4-Cell Frosted Obsidian Stats Receipt Box
+    // 4-Cell Stats Receipt Box
     const drawStat = (label: string, value: string, x: number, y: number, accent = '#FFFFFF') => {
-      ctx.fillStyle = '#121216';
-      drawRoundedRectPath(ctx, x, y, 422, 166, 20);
+      ctx.fillStyle = isBespoke ? '#0A0A0A' : '#121216';
+      drawRoundedRectPath(ctx, x, y, 422, 166, isBespoke ? 8 : 20);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.strokeStyle = isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.07)';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = '#A1A1AA';
-      ctx.font = '600 19px monospace';
+      ctx.font = isBespoke
+        ? '600 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        : '600 19px monospace';
       ctx.fillText(label, x + 28, y + 48);
 
       ctx.fillStyle = accent;
-      ctx.font = '900 46px monospace';
+      ctx.font = `${isBespoke ? '700' : '900'} 46px monospace`;
       ctx.fillText(value, x + 28, y + 120, 366);
     };
 
     drawStat('COMPLETED BLOCKS', `${periodStats.completedCount}`, 104, 548);
-    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 554, 548, '#F59E0B');
-    drawStat('COMPLETION RATE', `${periodStats.completionRate}%`, 104, 738, activeAccentHex);
+    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 554, 548, isBespoke ? '#3B82F6' : '#F59E0B');
+    drawStat(
+      'COMPLETION RATE',
+      `${periodStats.completionRate}%`,
+      104,
+      738,
+      isBespoke ? '#3B82F6' : activeAccentHex
+    );
     drawStat('TOP FOCUS TAG', periodStats.topTag.slice(0, 12), 554, 738);
 
     // Divider above Tier 2 Footer
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeStyle = isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cardX, tier2Y);
@@ -394,8 +435,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.stroke();
 
     // Tier 2: Badges & Achievements Showcase
-    ctx.fillStyle = '#71717A';
-    ctx.font = '700 20px monospace';
+    ctx.fillStyle = '#737373';
+    ctx.font = isBespoke
+      ? '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : '700 20px monospace';
     ctx.fillText(
       `BADGES & ACHIEVEMENTS (${badgeSummary.unlockedBadges.length}/${badgeSummary.badges.length})`,
       104,
@@ -406,7 +449,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ctx.fillStyle = '#D4D4D8';
       ctx.font = '700 21px monospace';
       ctx.fillText('NEXT UNLOCK: COMPLETE 1H LOCK -> GETTING STARTED', 104, tier2Y + 106, cardW - 96);
-      ctx.fillStyle = '#FBBF24';
+      ctx.fillStyle = isBespoke ? '#93C5FD' : '#FBBF24';
       ctx.font = '600 20px monospace';
       ctx.fillText('SUPPORTER CREST: MIN RS.50 1ST TIP -> ZERO-SUPPORTER', 104, tier2Y + 150, cardW - 96);
     } else {
@@ -418,7 +461,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       const gapY = 12;
 
       for (const badge of badgeSummary.unlockedBadges) {
-        ctx.font = '900 18px monospace';
+        ctx.font = '700 18px monospace';
         const pillW = Math.min(maxX - 104, Math.round(ctx.measureText(badge.title).width + 52));
         if (curX + pillW > maxX) {
           curX = 104;
@@ -426,29 +469,51 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         }
         if (curY + pillH > tier2Y + 196) break;
 
-        const theme = CANVAS_BADGE_COLORS[badge.tierColor];
-        ctx.save();
-        if (theme.glow) {
-          ctx.shadowColor = theme.glow;
-          ctx.shadowBlur = 12;
+        if (isBespoke) {
+          const isSupporter = badge.tierColor === 'gold';
+          ctx.fillStyle = '#000000';
+          drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 6);
+          ctx.fill();
+          ctx.strokeStyle = isSupporter ? '#3B82F6' : '#262626';
+          ctx.lineWidth = 2;
+          drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 6);
+          ctx.stroke();
+          drawVectorStar(
+            ctx,
+            curX + 22,
+            curY + pillH / 2,
+            8.5,
+            4,
+            isSupporter ? '#3B82F6' : '#A3A3A3'
+          );
+          ctx.fillStyle = isSupporter ? '#93C5FD' : '#E5E5E5';
+          ctx.font = '700 18px monospace';
+          ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
+        } else {
+          const theme = CANVAS_BADGE_COLORS[badge.tierColor];
+          ctx.save();
+          if (theme.glow) {
+            ctx.shadowColor = theme.glow;
+            ctx.shadowBlur = 12;
+          }
+          const grad = ctx.createLinearGradient(curX, curY, curX + pillW, curY + pillH);
+          grad.addColorStop(0, theme.bgStart);
+          grad.addColorStop(1, theme.bgEnd);
+          ctx.fillStyle = grad;
+          drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.strokeStyle = theme.border;
+          ctx.lineWidth = 2;
+          drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
+          ctx.stroke();
+
+          drawVectorStar(ctx, curX + 22, curY + pillH / 2, 8.5, 4, theme.icon);
+          ctx.fillStyle = theme.text;
+          ctx.font = '900 18px monospace';
+          ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
         }
-        const grad = ctx.createLinearGradient(curX, curY, curX + pillW, curY + pillH);
-        grad.addColorStop(0, theme.bgStart);
-        grad.addColorStop(1, theme.bgEnd);
-        ctx.fillStyle = grad;
-        drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.strokeStyle = theme.border;
-        ctx.lineWidth = 2;
-        drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
-        ctx.stroke();
-
-        drawVectorStar(ctx, curX + 22, curY + pillH / 2, 8.5, 4, theme.icon);
-        ctx.fillStyle = theme.text;
-        ctx.font = '900 18px monospace';
-        ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
 
         curX += pillW + gapX;
       }
@@ -456,7 +521,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     // Sub-divider inside Tier 2 above Escape Tickets + Motto
     const manifestoY = tier2Y + 216;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.strokeStyle = isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.07)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(104, manifestoY);
@@ -472,7 +537,9 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       cardW - 96
     );
     ctx.fillStyle = '#A1A1AA';
-    ctx.font = 'italic 600 21px monospace';
+    ctx.font = isBespoke
+      ? 'italic 500 21px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      : 'italic 600 21px monospace';
     ctx.fillText(mottoQuoted, 104, manifestoY + 96, cardW - 96);
 
     setReceiptExport({
@@ -481,6 +548,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     });
   }, [
     isOpen,
+    isBespoke,
     period,
     periodStats,
     currentStreak,
@@ -554,14 +622,20 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         paddingBottom: 'calc(0.75rem + var(--zero-safe-bottom))',
       }}
     >
-      <div className="w-full max-w-md max-h-full flex flex-col gap-2.5 min-h-0 font-mono">
+      <div
+        className={`w-full max-w-md max-h-full flex flex-col gap-3 min-h-0 ${
+          isBespoke ? 'font-sans' : 'font-mono gap-2.5'
+        }`}
+      >
         {/* Top Context Header Strip */}
         <div
-          className="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest px-1 shrink-0"
-          style={{ color: '#A1A1AA' }}
+          className={`flex items-center justify-between text-[11px] uppercase tracking-widest px-1 shrink-0 ${
+            isBespoke ? 'font-sans text-neutral-400' : 'font-mono'
+          }`}
+          style={isBespoke ? undefined : { color: '#A1A1AA' }}
         >
           <span>ESCAPE TICKETS &amp; METRICS</span>
-          <span style={{ color: '#71717A' }}>
+          <span className="font-mono tabular-nums" style={{ color: '#737373' }}>
             {currentStreak > 0 ? `${currentStreak}D STREAK` : 'STREAKS'}
           </span>
         </div>
@@ -569,22 +643,33 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         {/* 1. FLEX YOUR FOCUS CARD OUTER OBSIDIAN CONTAINER */}
         <ObsidianCard
           ambientGlow
-          className="w-full flex-1 min-h-0 font-mono"
-          headerClassName="p-4 sm:p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
+          className={`w-full flex-1 min-h-0 ${isBespoke ? 'font-sans' : 'font-mono'}`}
+          headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
           footerClassName="p-4 flex items-center gap-2.5"
           headerContent={
             <>
               {/* Card Title Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
-                    <Sparkles size={18} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                  <div
+                    className={`w-10 h-10 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
+                    }`}
+                  >
+                    <Sparkles
+                      size={18}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-sm font-black uppercase tracking-wide text-white truncate">
+                    <h2
+                      className={`text-sm uppercase tracking-wide truncate ${
+                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                      }`}
+                    >
                       FLEX YOUR FOCUS CARD
                     </h2>
-                    <p className="text-[11px] text-zinc-400 truncate">
+                    <p className="text-xs text-neutral-400 truncate">
                       Share distraction-free time with friends
                     </p>
                   </div>
@@ -592,7 +677,11 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white transition-colors shrink-0"
+                  className={
+                    isBespoke
+                      ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75 shrink-0'
+                      : 'p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white transition-colors shrink-0'
+                  }
                   aria-label="Close Focus Receipt"
                 >
                   <X size={16} />
@@ -601,11 +690,19 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
               {/* Interactive Time Range Selector Tabs */}
               <div
-                className="grid grid-cols-5 gap-1 p-1 rounded-xl text-[10px]"
-                style={{
-                  background: 'rgba(12, 12, 15, 0.85)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
+                className={
+                  isBespoke
+                    ? 'grid grid-cols-5 gap-1 p-1 rounded-md bg-neutral-950 border border-neutral-800 text-[11px] font-sans'
+                    : 'grid grid-cols-5 gap-1 p-1 rounded-xl text-[10px]'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background: 'rgba(12, 12, 15, 0.85)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                      }
+                }
               >
                 {FOCUS_RECEIPT_PERIOD_ORDER.map((p) => {
                   const isActive = period === p;
@@ -614,11 +711,19 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       key={p}
                       type="button"
                       onClick={() => setPeriod(p)}
-                      className={`py-2 rounded-lg transition-all text-center ${
-                        isActive
-                          ? 'obsidian-pill-active font-black'
-                          : 'text-zinc-400 hover:text-white font-semibold'
-                      }`}
+                      className={
+                        isBespoke
+                          ? `py-2 rounded-sm transition-colors duration-75 text-center ${
+                              isActive
+                                ? 'bg-blue-600 text-white font-semibold'
+                                : 'text-neutral-400 hover:text-white font-medium'
+                            }`
+                          : `py-2 rounded-lg transition-all text-center ${
+                              isActive
+                                ? 'obsidian-pill-active font-black'
+                                : 'text-zinc-400 hover:text-white font-semibold'
+                            }`
+                      }
                     >
                       {FOCUS_RECEIPT_PERIOD_LABELS[p].tabLabel}
                     </button>
@@ -628,20 +733,33 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
               {/* Badges On Card Progress Section */}
               <div
-                className="rounded-xl p-3.5 text-xs font-mono space-y-2"
-                style={{
-                  background: 'rgba(16, 16, 20, 0.82)',
-                  border: '1px solid rgba(255, 255, 255, 0.07)',
-                }}
+                className={
+                  isBespoke
+                    ? 'rounded-md p-3.5 text-xs bg-neutral-950 border border-neutral-800 space-y-2'
+                    : 'rounded-xl p-3.5 text-xs font-mono space-y-2'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background: 'rgba(16, 16, 20, 0.82)',
+                        border: '1px solid rgba(255, 255, 255, 0.07)',
+                      }
+                }
               >
                 <div className="flex items-center justify-between gap-2 text-[10px]">
-                  <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-zinc-300">
-                    <Trophy size={12} className="text-amber-400 shrink-0" />
+                  <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-neutral-300">
+                    <Trophy
+                      size={12}
+                      className={isBespoke ? 'text-blue-500 shrink-0' : 'text-amber-400 shrink-0'}
+                    />
                     <span>Badges On Card</span>
                   </span>
                   <span
-                    className="font-black uppercase tracking-wider"
-                    style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                    className={`font-mono tabular-nums font-semibold uppercase tracking-wider ${
+                      isBespoke ? 'text-blue-400' : 'font-black'
+                    }`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
                   >
                     {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
                   </span>
@@ -657,76 +775,105 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     )}
                   </div>
                 ) : (
-                  <p className="text-[10px] leading-relaxed" style={{ color: '#A1A1AA' }}>
+                  <p className="text-[11px] leading-relaxed text-neutral-400">
                     Complete a 1h lock for{' '}
-                    <strong className="text-zinc-200">GETTING STARTED</strong> or make your 1st min
-                    ₹50 tip for the Golden{' '}
-                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge.
+                    <strong className="text-neutral-200">GETTING STARTED</strong> or make your 1st min
+                    ₹50 tip for the{' '}
+                    <strong className={isBespoke ? 'text-blue-400' : 'text-amber-300'}>
+                      ZERO-SUPPORTER
+                    </strong>{' '}
+                    badge.
                   </p>
                 )}
               </div>
 
-              {/* 2. INNER FOCUS RECEIPT TICKET CARD (Nested Frosted Two-Tier Obsidian) */}
+              {/* 2. INNER FOCUS RECEIPT TICKET CARD */}
               <div
                 data-obsidian-card="true"
-                className="relative rounded-2xl overflow-hidden shadow-2xl"
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(16, 16, 20, 0.98) 0%, rgba(6, 6, 8, 1) 100%)',
-                  border: '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.36)',
-                  boxShadow:
-                    '0 14px 32px -8px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                }}
+                className={
+                  isBespoke
+                    ? 'relative rounded-md overflow-hidden bg-black border border-neutral-800'
+                    : 'relative rounded-2xl overflow-hidden shadow-2xl'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background:
+                          'linear-gradient(180deg, rgba(16, 16, 20, 0.98) 0%, rgba(6, 6, 8, 1) 100%)',
+                        border: '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.36)',
+                        boxShadow:
+                          '0 14px 32px -8px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                      }
+                }
               >
-                {/* Inner Top Specular Metallic Highlight Line */}
-                <div
-                  aria-hidden="true"
-                  className="absolute top-0 left-5 right-5 h-[1.5px] pointer-events-none z-10"
-                  style={{
-                    background:
-                      'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
-                    opacity: 0.78,
-                  }}
-                />
+                {!isBespoke && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-0 left-5 right-5 h-[1.5px] pointer-events-none z-10"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+                      opacity: 0.78,
+                    }}
+                  />
+                )}
 
                 {/* Tier 1A: Receipt Header & Hero Metric */}
-                <div className="p-4 border-b border-white/5">
-                  <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
-                    <span className="font-black text-white tracking-widest uppercase">
+                <div
+                  className={`p-4 border-b ${
+                    isBespoke ? 'border-neutral-800' : 'border-white/5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span
+                      className={`text-white tracking-widest uppercase ${
+                        isBespoke ? 'font-sans font-semibold' : 'font-mono font-black text-[11px]'
+                      }`}
+                    >
                       ZERO // FOCUS RECEIPT
                     </span>
                     <span
-                      className="text-[10px] font-bold tracking-wider uppercase shrink-0"
-                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                      className={`text-[10px] font-mono font-semibold tracking-wider uppercase shrink-0 ${
+                        isBespoke ? 'text-blue-500' : 'font-bold'
+                      }`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
                     >
                       {receiptExport.dateLabel || 'TODAY'}
                     </span>
                   </div>
 
                   <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
-                    <div
-                      className="text-[10px] font-mono uppercase tracking-wider"
-                      style={{ color: '#A1A1AA' }}
-                    >
-                      {formattedHandle} <span style={{ color: '#52525B' }}>•</span> {rankTitle}
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                      {formattedHandle} <span className="text-neutral-600">•</span> {rankTitle}
                     </div>
                     {badgeSummary.isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
                   </div>
 
-                  {/* Period Pill */}
+                  {/* Period Tag */}
                   <div
-                    className="mt-3 inline-block px-3 py-0.5 rounded-md text-[10px] font-black font-mono tracking-widest uppercase"
-                    style={{
-                      backgroundColor: '#F59E0B',
-                      color: '#09090B',
-                    }}
+                    className={`mt-3 inline-block px-2.5 py-0.5 text-[10px] tracking-widest uppercase ${
+                      isBespoke
+                        ? 'rounded-sm bg-blue-600 text-white font-sans font-semibold'
+                        : 'rounded-md font-black font-mono'
+                    }`}
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            backgroundColor: '#F59E0B',
+                            color: '#09090B',
+                          }
+                    }
                   >
                     {FOCUS_RECEIPT_PERIOD_LABELS[period].title}
                   </div>
 
                   {/* Huge Focus Time Display */}
                   <div
-                    className={`mt-2.5 font-black font-mono tracking-tighter text-white leading-none ${
+                    className={`mt-2.5 font-mono tabular-nums tracking-tight text-white leading-none ${
+                      isBespoke ? 'font-semibold' : 'font-black tracking-tighter'
+                    } ${
                       periodStats.formattedTime.length >= 7
                         ? 'text-4xl'
                         : periodStats.formattedTime.length >= 5
@@ -737,92 +884,119 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     {periodStats.formattedTime}
                   </div>
                   <div
-                    className="text-[10px] font-mono tracking-[0.2em] uppercase mt-1.5"
-                    style={{ color: '#A1A1AA' }}
+                    className={`text-[10px] tracking-[0.18em] uppercase mt-1.5 text-neutral-400 ${
+                      isBespoke ? 'font-sans' : 'font-mono tracking-[0.2em]'
+                    }`}
                   >
                     DISTRACTION-FREE &amp; PHONE-OFF
                   </div>
                 </div>
 
-                {/* Tier 1B: 2x2 Frosted Obsidian Stats Grid */}
+                {/* Tier 1B: 2x2 Stats Grid */}
                 <div
-                  className="grid grid-cols-2 gap-2 p-3"
-                  style={{ background: 'rgba(0, 0, 0, 0.44)' }}
+                  className={`grid grid-cols-2 gap-2.5 p-3.5 ${
+                    isBespoke ? 'bg-black' : ''
+                  }`}
+                  style={isBespoke ? undefined : { background: 'rgba(0, 0, 0, 0.44)' }}
                 >
                   <div
-                    className="p-3 rounded-xl border border-white/5"
-                    style={{
-                      background: '#121216',
-                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
+                        : 'p-3 rounded-xl border border-white/5'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: '#121216',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                          }
+                    }
                   >
-                    <div
-                      className="text-[9px] font-mono uppercase tracking-wider"
-                      style={{ color: '#A1A1AA' }}
-                    >
+                    <div className="text-[10px] uppercase tracking-wider text-neutral-400">
                       COMPLETED BLOCKS
                     </div>
-                    <div className="text-xl font-bold font-mono text-white mt-0.5">
+                    <div className="text-xl font-semibold font-mono tabular-nums text-white mt-0.5">
                       {periodStats.completedCount}
                     </div>
                   </div>
 
                   <div
-                    className="p-3 rounded-xl border border-white/5"
-                    style={{
-                      background: '#121216',
-                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
+                        : 'p-3 rounded-xl border border-white/5'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: '#121216',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                          }
+                    }
                   >
-                    <div
-                      className="text-[9px] font-mono uppercase tracking-wider"
-                      style={{ color: '#A1A1AA' }}
-                    >
+                    <div className="text-[10px] uppercase tracking-wider text-neutral-400">
                       DAILY STREAK
                     </div>
                     <div
-                      className="text-xl font-bold font-mono mt-0.5"
-                      style={{ color: '#F59E0B' }}
+                      className={`text-xl font-semibold font-mono tabular-nums mt-0.5 ${
+                        isBespoke ? 'text-blue-400' : 'font-bold'
+                      }`}
+                      style={isBespoke ? undefined : { color: '#F59E0B' }}
                     >
                       {currentStreak} DAYS
                     </div>
                   </div>
 
                   <div
-                    className="p-3 rounded-xl border border-white/5"
-                    style={{
-                      background: '#121216',
-                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
+                        : 'p-3 rounded-xl border border-white/5'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: '#121216',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                          }
+                    }
                   >
-                    <div
-                      className="text-[9px] font-mono uppercase tracking-wider"
-                      style={{ color: '#A1A1AA' }}
-                    >
+                    <div className="text-[10px] uppercase tracking-wider text-neutral-400">
                       COMPLETION RATE
                     </div>
                     <div
-                      className="text-xl font-bold font-mono mt-0.5"
-                      style={{ color: 'var(--accent-hex, #34D399)' }}
+                      className={`text-xl font-semibold font-mono tabular-nums mt-0.5 ${
+                        isBespoke ? 'text-blue-400' : 'font-bold'
+                      }`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #34D399)' }}
                     >
                       {periodStats.completionRate}%
                     </div>
                   </div>
 
                   <div
-                    className="p-3 rounded-xl border border-white/5"
-                    style={{
-                      background: '#121216',
-                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                    }}
+                    className={
+                      isBespoke
+                        ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
+                        : 'p-3 rounded-xl border border-white/5'
+                    }
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            background: '#121216',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                          }
+                    }
                   >
-                    <div
-                      className="text-[9px] font-mono uppercase tracking-wider"
-                      style={{ color: '#A1A1AA' }}
-                    >
+                    <div className="text-[10px] uppercase tracking-wider text-neutral-400">
                       TOP FOCUS TAG
                     </div>
-                    <div className="text-base font-bold font-mono text-white mt-1 truncate">
+                    <div className="text-base font-semibold font-mono text-white mt-1 truncate">
                       {periodStats.topTag}
                     </div>
                   </div>
@@ -830,16 +1004,18 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
                 {/* Tier 2: Receipt Footer (Badges, Escape Tickets & Signature Quote) */}
                 <div
-                  className="p-3.5 border-t border-white/5 text-[11px] font-mono flex flex-col gap-2.5"
-                  style={{ background: '#09090C' }}
+                  className={`p-4 border-t text-xs flex flex-col gap-2.5 ${
+                    isBespoke ? 'bg-neutral-950 border-neutral-800' : 'p-3.5 border-white/5 text-[11px] font-mono'
+                  }`}
+                  style={isBespoke ? undefined : { background: '#09090C' }}
                 >
                   <div>
-                    <div
-                      className="text-[10px] font-bold uppercase tracking-wider"
-                      style={{ color: '#71717A' }}
-                    >
-                      BADGES &amp; ACHIEVEMENTS ({badgeSummary.unlockedBadges.length}/
-                      {badgeSummary.badges.length})
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                      BADGES &amp; ACHIEVEMENTS (
+                      <span className="font-mono tabular-nums">
+                        {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                      </span>
+                      )
                     </div>
 
                     {badgeSummary.unlockedBadges.length > 0 ? (
@@ -853,24 +1029,26 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                         )}
                       </div>
                     ) : (
-                      <div className="mt-1.5 text-[10px] leading-relaxed space-y-0.5">
-                        <div style={{ color: '#D4D4D8' }}>
+                      <div className="mt-1.5 text-[10px] font-mono leading-relaxed space-y-0.5">
+                        <div className="text-neutral-300">
                           NEXT UNLOCK: COMPLETE 1H LOCK -&gt; GETTING STARTED
                         </div>
-                        <div style={{ color: '#FBBF24' }}>
+                        <div className={isBespoke ? 'text-blue-400' : 'text-amber-400'}>
                           SUPPORTER CREST: MIN RS.50 1ST TIP -&gt; ZERO-SUPPORTER
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-2.5 border-t border-white/5 space-y-1">
-                    <div className="text-[11px] font-bold" style={{ color: '#E4E4E7' }}>
+                  <div
+                    className={`pt-2.5 border-t space-y-1 ${
+                      isBespoke ? 'border-neutral-800' : 'border-white/5'
+                    }`}
+                  >
+                    <div className="text-[11px] font-mono font-semibold text-neutral-200">
                       ESCAPE TICKETS: {parachuteMetrics.currentBalance} | FOSS • ZERO PAYWALLS
                     </div>
-                    <div className="italic text-[10px]" style={{ color: '#A1A1AA' }}>
-                      {mottoQuoted}
-                    </div>
+                    <div className="italic text-[11px] text-neutral-400">{mottoQuoted}</div>
                   </div>
                 </div>
               </div>
@@ -884,11 +1062,19 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               <button
                 type="button"
                 onClick={handleNativeOrWebShare}
-                className="flex-1 py-3.5 rounded-2xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-                style={{
-                  boxShadow:
-                    '0 0 20px rgba(var(--accent-rgb, 245, 158, 11), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28)',
-                }}
+                className={
+                  isBespoke
+                    ? 'flex-1 py-3.5 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75'
+                    : 'flex-1 py-3.5 rounded-2xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] transition-all'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        boxShadow:
+                          '0 0 20px rgba(var(--accent-rgb, 245, 158, 11), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28)',
+                      }
+                }
               >
                 <Share2 size={15} />
                 <span>Share with Friends</span>
@@ -896,11 +1082,19 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadPng}
-                className="p-3.5 rounded-2xl flex items-center justify-center transition-all active:scale-[0.98] text-white hover:border-white/25 shrink-0"
-                style={{
-                  background: 'rgba(24, 24, 28, 0.92)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                }}
+                className={
+                  isBespoke
+                    ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-white flex items-center justify-center transition-colors duration-75 shrink-0'
+                    : 'p-3.5 rounded-2xl flex items-center justify-center transition-all active:scale-[0.98] text-white hover:border-white/25 shrink-0'
+                }
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        background: 'rgba(24, 24, 28, 0.92)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                      }
+                }
                 title="Save PNG"
                 aria-label="Download Focus Receipt PNG"
               >

@@ -243,6 +243,8 @@ export interface CloudAutoBackupStatus {
 
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
 
+export type InterfaceStyle = 'bespoke' | 'classic';
+
 export type AmoledGradientId =
   | 'pure'
   | 'ember'
@@ -324,6 +326,7 @@ export interface ZeroNativeBridgeInterface {
   getNativeStateJson(): string;
   acknowledgeVerifiedCompletions?(eventIdsJson: string): void;
   setActiveThemeAccent?(accentHex: string, accentRgb: string, badgeTextHex: string): void;
+  setInterfaceStyle?(style: InterfaceStyle): void;
 }
 
 type StringOrStr = string;
