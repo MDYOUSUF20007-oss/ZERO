@@ -18,8 +18,8 @@ import org.zero.detox.ui.TheVoidActivity
 class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val action = intent.action ?: return
-        Log.i("ZeroAntiTamper", "Boot event intercepted: $action")
+        val receivedAction = intent.action ?: return
+        Log.i("ZeroAntiTamper", "Boot event intercepted: $receivedAction")
 
         val prefs = context.getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
         val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
@@ -38,7 +38,7 @@ class BootReceiver : BroadcastReceiver() {
             Log.w("ZeroAntiTamper", "Device rebooted mid-session! Re-engaging The Void. Remaining: ${(targetEndTime - now)/1000}s")
             try {
                 val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
-                    action = LockForegroundService.ACTION_START_LOCK
+                    setAction(LockForegroundService.ACTION_START_LOCK)
                     putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
                     putExtra("EXTRA_TAG", tag)
                 }
