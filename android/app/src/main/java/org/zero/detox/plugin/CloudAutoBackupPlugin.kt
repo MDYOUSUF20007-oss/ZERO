@@ -16,6 +16,7 @@ import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import org.json.JSONObject
 import org.zero.detox.core.EndpointSecurityPolicy
+import org.zero.detox.security.AppSecurityGuard
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.Executors
@@ -352,6 +353,14 @@ class CloudAutoBackupPlugin : Plugin() {
 
     @PluginMethod
     fun pickAndReadBackupFile(call: PluginCall) {
+        val security = AppSecurityGuard.evaluateEnvironment(context)
+        if (security.backupRestoreDisabled) {
+            call.reject(
+                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.",
+                "SECURITY_RESTRICTED"
+            )
+            return
+        }
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
@@ -367,6 +376,14 @@ class CloudAutoBackupPlugin : Plugin() {
     @ActivityCallback
     private fun handlePickBackupFileResult(call: PluginCall?, result: ActivityResult) {
         if (call == null) return
+        val security = AppSecurityGuard.evaluateEnvironment(context)
+        if (security.backupRestoreDisabled) {
+            call.reject(
+                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.",
+                "SECURITY_RESTRICTED"
+            )
+            return
+        }
         val uri = result.data?.data
         if (result.resultCode != Activity.RESULT_OK || uri == null) {
             call.reject("Cloud backup file selection cancelled.", "CANCELLED")

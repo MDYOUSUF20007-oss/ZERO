@@ -16,6 +16,7 @@ import type {
   BagApp,
   NativePermissionStatus,
   NativeAppBuildInfo,
+  NativeEnvironmentSecurity,
   NativeStateSnapshot,
   ZeroProfile,
   ParachuteRewardEvent,
@@ -245,6 +246,19 @@ function readAppBuildInfoFromNative(): NativeAppBuildInfo | null {
   }
 }
 
+function readEnvironmentSecurityFromNative(): NativeEnvironmentSecurity {
+  if (typeof window === 'undefined' || !window.ZeroNative?.getEnvironmentSecurityJson) {
+    return IntegrityEngine.DEFAULT_SAFE_ENVIRONMENT_SECURITY;
+  }
+  try {
+    return IntegrityEngine.parseEnvironmentSecurityJson(
+      window.ZeroNative.getEnvironmentSecurityJson()
+    );
+  } catch {
+    return IntegrityEngine.parseEnvironmentSecurityJson('invalid');
+  }
+}
+
 export function useZeroStore() {
   // Protected Integrity State — strictly loaded & mutated only through frozen IntegrityEngine
   const [integrityState, setIntegrityState] = useState<ProtectedIntegrityState>(() =>
@@ -430,7 +444,7 @@ export function useZeroStore() {
     return DEFAULT_BAGS;
   });
 
-  const [activeBagId, setActiveBagId] = useState<string>(() => {
+  const [activeBagId, setActiveBagIdState] = useState<string>(() => {
     return localStorage.getItem(UI_STORAGE_KEYS.ACTIVE_BAG_ID) || DEFAULT_BAGS[0].id;
   });
 
@@ -439,6 +453,9 @@ export function useZeroStore() {
   );
   const [appBuildInfo, setAppBuildInfo] = useState<NativeAppBuildInfo | null>(() =>
     readAppBuildInfoFromNative()
+  );
+  const [environmentSecurity, setEnvironmentSecurity] = useState<NativeEnvironmentSecurity>(() =>
+    readEnvironmentSecurityFromNative()
   );
 
   const [installedApps, setInstalledApps] = useState<BagApp[]>(() => {
@@ -531,6 +548,7 @@ export function useZeroStore() {
   const refreshPermissions = useCallback(() => {
     setPermissions(readPermissionsFromNative());
     setAppBuildInfo(readAppBuildInfoFromNative());
+    setEnvironmentSecurity(readEnvironmentSecurityFromNative());
   }, []);
 
   const refreshInstalledApps = useCallback(() => {
@@ -867,6 +885,9 @@ export function useZeroStore() {
 
   // Keep native BagStore & ParachuteStore synchronized seamlessly
   useEffect(() => {
+    if (environmentSecurity.restrictions.presetBagEditingDisabled) {
+      return;
+    }
     try {
       if (window.ZeroNative && activeBag) {
         window.ZeroNative.setBagStateJson(
@@ -879,7 +900,7 @@ export function useZeroStore() {
     } catch {
       // Web mode
     }
-  }, [activeBag]);
+  }, [activeBag, environmentSecurity.restrictions.presetBagEditingDisabled]);
 
   useEffect(() => {
     syncNativeLedger(cumulativeSeconds, usedParachutes, bonusParachutes);
@@ -997,7 +1018,9 @@ export function useZeroStore() {
 
   const igniteSession = (durationSeconds: number, tag: SessionTag): boolean => {
     const latestPerms = readPermissionsFromNative();
+    const latestSecurity = readEnvironmentSecurityFromNative();
     setPermissions(latestPerms);
+    setEnvironmentSecurity(latestSecurity);
 
     if (latestPerms.isNativeAndroid && !latestPerms.strictReady) {
       window.ZeroNative?.requestNextMissingPermission();
@@ -1008,12 +1031,14 @@ export function useZeroStore() {
 
     try {
       if (window.ZeroNative && activeBag) {
-        window.ZeroNative.setBagStateJson(
-          activeBag.name,
-          JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-          activeBag.allowCalls,
-          activeBag.allowSms
-        );
+        if (!latestSecurity.restrictions.presetBagEditingDisabled) {
+          window.ZeroNative.setBagStateJson(
+            activeBag.name,
+            JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
+            activeBag.allowCalls,
+            activeBag.allowSms
+          );
+        }
         syncNativeLedger(
           integrityStateRef.current.cumulativeSeconds,
           integrityStateRef.current.usedParachutes,
@@ -1086,8 +1111,13 @@ export function useZeroStore() {
     return true;
   };
 
+  const setActiveBagId = (bagId: string) => {
+    if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) return;
+    setActiveBagIdState(bagId);
+  };
+
   const updateBag = (bagId: string, updater: (bag: OccasionBag) => OccasionBag) => {
-    if (activeLock.isLocked) return; // Anti-tamper: Bags cannot be altered mid-lock
+    if (activeLock.isLocked || environmentSecurity.restrictions.presetBagEditingDisabled) return; // Anti-tamper: Bags locked mid-session & on rooted/emulator envs
     setBags((prev) =>
       prev.map((b) => {
         if (b.id !== bagId) return b;
@@ -1287,6 +1317,16 @@ export function useZeroStore() {
 
   const importData = useCallback(
     (rawInput: string): { ok: boolean; message: string } => {
+      const latestSecurity = readEnvironmentSecurityFromNative();
+      setEnvironmentSecurity(latestSecurity);
+      if (latestSecurity.restrictions.backupRestoreDisabled || latestSecurity.isCompromised) {
+        return {
+          ok: false,
+          message:
+            'Backup restore is disabled on rooted devices, custom test-keys ROMs, or debug emulators to protect ZERO integrity.',
+        };
+      }
+
       const outcome = IntegrityEngine.applyVerifiedRestore(
         {
           rawInput,
@@ -1294,6 +1334,7 @@ export function useZeroStore() {
           defaultBags: DEFAULT_BAGS,
           sanitizeProfile: sanitizeZeroProfile,
           sanitizeThemeConfig,
+          environmentSecurity: latestSecurity,
         },
         true
       );
@@ -1315,7 +1356,7 @@ export function useZeroStore() {
       setProfile(outcome.profile ?? null);
       setSchedules(nextSchedules);
       setBags(nextBags);
-      setActiveBagId(nextActiveBagId);
+      setActiveBagIdState(nextActiveBagId);
       setThemeState(nextThemeConfig.family);
       setThemeConfigState(nextThemeConfig);
       setSleepFarmingMode(nextSleepMode);
@@ -1529,6 +1570,16 @@ export function useZeroStore() {
     cancelled?: boolean;
     message: string;
   }> => {
+    const latestSecurity = readEnvironmentSecurityFromNative();
+    setEnvironmentSecurity(latestSecurity);
+    if (latestSecurity.restrictions.backupRestoreDisabled || latestSecurity.isCompromised) {
+      return {
+        ok: false,
+        message:
+          'Backup restore is disabled on rooted devices, custom test-keys ROMs, or debug emulators to protect ZERO integrity.',
+      };
+    }
+
     setIsCloudBusy(true);
     try {
       const pick = await pickCloudBackupFileContent();
@@ -1601,7 +1652,7 @@ export function useZeroStore() {
     setJustEarnedParachute(false);
     setSchedules(DEFAULT_SCHEDULES);
     setBags(DEFAULT_BAGS);
-    setActiveBagId(DEFAULT_BAGS[0].id);
+    setActiveBagIdState(DEFAULT_BAGS[0].id);
     setThemeState('amoled');
     setThemeConfigState(DEFAULT_THEME_CONFIG);
     setTipSkipRemaining(0);
@@ -1666,6 +1717,7 @@ export function useZeroStore() {
     refreshInstalledApps,
     permissions,
     appBuildInfo,
+    environmentSecurity,
     refreshPermissions,
     preLockAlert,
     postSessionTipPrompt,

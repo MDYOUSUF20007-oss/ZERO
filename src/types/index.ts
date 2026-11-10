@@ -162,6 +162,18 @@ export interface NativeAppBuildInfo {
   installerPackageName?: string;
 }
 
+export interface NativeEnvironmentSecurity {
+  isSignatureValid: boolean;
+  isRooted: boolean;
+  isEmulator: boolean;
+  isCompromised: boolean;
+  restrictions: {
+    backupRestoreDisabled: boolean;
+    presetBagEditingDisabled: boolean;
+  };
+  reasons: string[];
+}
+
 export interface ZeroBackupPayload {
   schemaVersion: number;
   appName: 'Zero';
@@ -277,6 +289,7 @@ export interface ZeroNativeBridgeInterface {
   hasRestrictedSettingsAllowed?(): boolean;
   getPermissionStatusJson(): string;
   getAppBuildInfoJson?(): string;
+  getEnvironmentSecurityJson?(): string;
   requestNextMissingPermission(): void;
   getInstalledAppsJson(): string;
   setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;

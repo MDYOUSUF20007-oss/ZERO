@@ -7,7 +7,11 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import java.lang.reflect.Proxy;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,6 +21,7 @@ import org.zero.detox.core.EndpointSecurityPolicy;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
+import org.zero.detox.security.AppSecurityGuard;
 
 public class LockEngineUnitTest {
 
@@ -479,5 +484,137 @@ public class LockEngineUnitTest {
         // Path traversal filename sanitization
         assertEquals("passwd", EndpointSecurityPolicy.sanitizeBackupFileName("../../etc/passwd"));
         assertEquals("zero-backup.zbak", EndpointSecurityPolicy.sanitizeBackupFileName(".."));
+    }
+
+    @Test
+    public void appSecurityGuard_validatesOfficialReleaseSignatureAndRejectsTamperedOrMultiSigner() throws Exception {
+        String officialHex =
+            "A1:4A:36:1E:D4:B7:F7:D6:6E:57:69:92:99:9D:02:8A:05:32:65:85:0A:6C:A4:AF:EE:4F:C1:2F:29:48:CE:11";
+        String attackerHex =
+            "0D:6F:3C:19:9D:C8:F1:81:D1:0F:02:0A:4C:7B:46:2A:CD:08:61:2A:47:70:91:72:D5:D1:9A:8D:BE:89:E6:93";
+
+        assertTrue(AppSecurityGuard.isValidReleaseSignatureHexList(Collections.singletonList(officialHex)));
+        assertTrue(
+            AppSecurityGuard.isValidReleaseSignatureHexList(
+                Collections.singletonList(officialHex.replace(":", "").toLowerCase())
+            )
+        );
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureHexList(Collections.singletonList(attackerHex)));
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureHexList(Collections.emptyList()));
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureHexList(null));
+        // Multi-signer APK must always be rejected even if one entry matches official key
+        assertFalse(
+            AppSecurityGuard.isValidReleaseSignatureHexList(Arrays.asList(officialHex, attackerHex))
+        );
+
+        byte[] officialDigest = new byte[32];
+        String cleanHex = officialHex.replace(":", "");
+        for (int i = 0; i < 32; i++) {
+            officialDigest[i] = (byte) Integer.parseInt(cleanHex.substring(i * 2, i * 2 + 2), 16);
+        }
+        byte[] fakeDigest = MessageDigest.getInstance("SHA-256").digest("tampered-apk".getBytes("UTF-8"));
+
+        assertTrue(AppSecurityGuard.isValidReleaseSignatureDigests(Collections.singletonList(officialDigest)));
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureDigests(Collections.singletonList(fakeDigest)));
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureDigests(Collections.singletonList(new byte[16])));
+        assertFalse(AppSecurityGuard.isValidReleaseSignatureDigests(Arrays.asList(officialDigest, fakeDigest)));
+    }
+
+    @Test
+    public void appSecurityGuard_detectsRootAndEmulatorEnvironmentsWithoutFalsePositives() {
+        List<String> cleanRoot = AppSecurityGuard.detectRootReasons(
+            "release-keys",
+            Collections.emptyList(),
+            Collections.emptyList(),
+            false
+        );
+        assertTrue("Clean release-keys device must not flag root", cleanRoot.isEmpty());
+
+        List<String> testKeysRoot = AppSecurityGuard.detectRootReasons(
+            "test-keys",
+            Collections.emptyList(),
+            Collections.emptyList(),
+            false
+        );
+        assertTrue(testKeysRoot.contains("test_keys_rom"));
+
+        List<String> binaryAndPkgRoot = AppSecurityGuard.detectRootReasons(
+            "release-keys",
+            Collections.singletonList("/system/bin/su"),
+            Collections.singletonList("com.topjohnwu.magisk"),
+            true
+        );
+        assertTrue(binaryAndPkgRoot.contains("root_binary"));
+        assertTrue(binaryAndPkgRoot.contains("root_manager_app"));
+        assertTrue(binaryAndPkgRoot.contains("writable_system_partition"));
+
+        List<String> cleanDevice = AppSecurityGuard.detectEmulatorReasons(
+            "google/cheetah/cheetah:15/AP4A/123456:user/release-keys",
+            "Pixel 7 Pro",
+            "Google",
+            "google",
+            "cheetah",
+            "cloudripper",
+            "cheetah",
+            false
+        );
+        assertTrue("Genuine Pixel properties must not trigger emulator detection", cleanDevice.isEmpty());
+
+        List<String> sdkEmulator = AppSecurityGuard.detectEmulatorReasons(
+            "google/sdk_gphone64_x86_64/emu64xa:14/UE1A/123:userdebug/dev-keys",
+            "sdk_gphone64_x86_64",
+            "Google",
+            "google",
+            "emu64xa",
+            "ranchu",
+            "sdk_gphone64_x86_64",
+            true
+        );
+        assertTrue(sdkEmulator.contains("emulator_environment"));
+
+        List<String> genymotion = AppSecurityGuard.detectEmulatorReasons(
+            "generic/vbox86p/vbox86p:11/RSR1/1:userdebug/test-keys",
+            "Custom Phone",
+            "Genymotion",
+            "Android",
+            "vbox86p",
+            "goldfish",
+            "vbox86p",
+            false
+        );
+        assertTrue(genymotion.contains("emulator_environment"));
+    }
+
+    @Test
+    public void appSecurityGuard_environmentStatusDisablesSensitiveFeaturesWhenCompromised() throws Exception {
+        AppSecurityGuard.EnvironmentSecurityStatus clean =
+            new AppSecurityGuard.EnvironmentSecurityStatus(true, false, false, Collections.emptyList());
+        assertFalse(clean.compromised);
+        assertFalse(clean.backupRestoreDisabled);
+        assertFalse(clean.presetBagEditingDisabled);
+
+        JSONObject cleanJson = new JSONObject(clean.toJsonString());
+        assertTrue(cleanJson.getBoolean("isSignatureValid"));
+        assertFalse(cleanJson.getBoolean("isCompromised"));
+        assertFalse(cleanJson.getJSONObject("restrictions").getBoolean("backupRestoreDisabled"));
+        assertFalse(cleanJson.getJSONObject("restrictions").getBoolean("presetBagEditingDisabled"));
+
+        AppSecurityGuard.EnvironmentSecurityStatus rooted =
+            new AppSecurityGuard.EnvironmentSecurityStatus(
+                true,
+                true,
+                false,
+                Arrays.asList("root_binary", "test_keys_rom")
+            );
+        assertTrue(rooted.compromised);
+        assertTrue(rooted.backupRestoreDisabled);
+        assertTrue(rooted.presetBagEditingDisabled);
+
+        JSONObject rootedJson = new JSONObject(rooted.toJsonString());
+        assertTrue(rootedJson.getBoolean("isRooted"));
+        assertTrue(rootedJson.getBoolean("isCompromised"));
+        assertTrue(rootedJson.getJSONObject("restrictions").getBoolean("backupRestoreDisabled"));
+        assertTrue(rootedJson.getJSONObject("restrictions").getBoolean("presetBagEditingDisabled"));
+        assertEquals(2, rootedJson.getJSONArray("reasons").length());
     }
 }

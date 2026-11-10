@@ -30,6 +30,7 @@ import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
+import org.zero.detox.security.AppSecurityGuard
 import java.io.File
 
 /**
@@ -416,6 +417,15 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
+    fun getEnvironmentSecurityJson(): String {
+        return try {
+            AppSecurityGuard.evaluateEnvironment(activity).toJsonString()
+        } catch (_: Throwable) {
+            "{\"isSignatureValid\":false,\"isRooted\":false,\"isEmulator\":false,\"isCompromised\":true,\"restrictions\":{\"backupRestoreDisabled\":true,\"presetBagEditingDisabled\":true},\"reasons\":[\"security_eval_error\"]}"
+        }
+    }
+
+    @JavascriptInterface
     fun getInstalledAppsJson(): String {
         val pm = activity.packageManager
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -462,6 +472,10 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun setBagStateJson(bagName: String, appsJson: String, allowCalls: Boolean, allowSms: Boolean) {
+        val security = AppSecurityGuard.evaluateEnvironment(activity)
+        if (security.presetBagEditingDisabled) {
+            return
+        }
         bagStore.saveActiveBag(bagName, appsJson, allowCalls, allowSms)
     }
 

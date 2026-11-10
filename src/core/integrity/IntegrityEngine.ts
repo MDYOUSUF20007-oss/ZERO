@@ -1,5 +1,6 @@
 import type {
   ActiveLockSession,
+  NativeEnvironmentSecurity,
   NativePermissionStatus,
   OccasionBag,
   ParachuteLedgerEntry,
@@ -726,6 +727,7 @@ export interface RestoreInputPayload {
   defaultBags: OccasionBag[];
   sanitizeProfile: (p: Partial<ZeroProfile>) => ZeroProfile | null;
   sanitizeThemeConfig: (raw: Partial<ThemeConfig> | null | undefined, legacy?: ThemeStyle) => ThemeConfig;
+  environmentSecurity?: NativeEnvironmentSecurity;
 }
 
 export interface VerifiedRestoreOutcome {
@@ -1408,7 +1410,88 @@ function activateDonorUnlockToken(
   };
 }
 
+export const DEFAULT_SAFE_ENVIRONMENT_SECURITY: NativeEnvironmentSecurity = Object.freeze({
+  isSignatureValid: true,
+  isRooted: false,
+  isEmulator: false,
+  isCompromised: false,
+  restrictions: Object.freeze({
+    backupRestoreDisabled: false,
+    presetBagEditingDisabled: false,
+  }),
+  reasons: Object.freeze([]) as unknown as string[],
+}) as NativeEnvironmentSecurity;
+
+export function parseEnvironmentSecurityJson(
+  rawJson: string | null | undefined
+): NativeEnvironmentSecurity {
+  if (typeof rawJson !== 'string' || !rawJson.trim()) {
+    return DEFAULT_SAFE_ENVIRONMENT_SECURITY;
+  }
+  try {
+    const parsed = JSON.parse(rawJson) as Partial<NativeEnvironmentSecurity>;
+    const isSignatureValid = parsed.isSignatureValid !== false;
+    const isRooted = Boolean(parsed.isRooted);
+    const isEmulator = Boolean(parsed.isEmulator);
+    const isCompromised =
+      Boolean(parsed.isCompromised) || !isSignatureValid || isRooted || isEmulator;
+    const backupRestoreDisabled =
+      Boolean(parsed.restrictions?.backupRestoreDisabled) || isCompromised;
+    const presetBagEditingDisabled =
+      Boolean(parsed.restrictions?.presetBagEditingDisabled) || isCompromised;
+    const reasons = Array.isArray(parsed.reasons)
+      ? parsed.reasons.filter((r): r is string => typeof r === 'string')
+      : [];
+
+    return {
+      isSignatureValid,
+      isRooted,
+      isEmulator,
+      isCompromised,
+      restrictions: {
+        backupRestoreDisabled,
+        presetBagEditingDisabled,
+      },
+      reasons,
+    };
+  } catch {
+    return {
+      isSignatureValid: false,
+      isRooted: false,
+      isEmulator: false,
+      isCompromised: true,
+      restrictions: {
+        backupRestoreDisabled: true,
+        presetBagEditingDisabled: true,
+      },
+      reasons: ['invalid_security_json'],
+    };
+  }
+}
+
+export function isSensitiveFeatureRestricted(
+  env: NativeEnvironmentSecurity | null | undefined
+): boolean {
+  if (!env) return false;
+  return Boolean(
+    env.isCompromised ||
+      env.isRooted ||
+      env.isEmulator ||
+      !env.isSignatureValid ||
+      env.restrictions?.backupRestoreDisabled ||
+      env.restrictions?.presetBagEditingDisabled
+  );
+}
+
 function applyVerifiedRestore(input: RestoreInputPayload, persist = true): VerifiedRestoreOutcome {
+  if (isSensitiveFeatureRestricted(input.environmentSecurity)) {
+    return {
+      ok: false,
+      message:
+        'Backup restore is disabled on rooted devices, custom test-keys ROMs, or debug emulators to protect ZERO integrity.',
+    };
+  }
+
   try {
     const trimmed = input.rawInput.trim();
     if (!trimmed) {
@@ -1893,4 +1976,7 @@ export const IntegrityEngine = Object.freeze({
     return JSON.stringify(payload, null, 2);
   },
   canAcceptNativeStateSync,
+  DEFAULT_SAFE_ENVIRONMENT_SECURITY,
+  parseEnvironmentSecurityJson,
+  isSensitiveFeatureRestricted,
 });

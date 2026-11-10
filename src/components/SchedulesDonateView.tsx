@@ -18,6 +18,7 @@ import type {
   SleepFarmingMode,
   NativePermissionStatus,
   NativeAppBuildInfo,
+  NativeEnvironmentSecurity,
   ZeroProfile,
   CloudAutoBackupStatus,
 } from '../types';
@@ -65,6 +66,7 @@ interface SchedulesDonateViewProps {
   schedules: RecurringSchedule[];
   permissions: NativePermissionStatus;
   appBuildInfo?: NativeAppBuildInfo | null;
+  environmentSecurity?: NativeEnvironmentSecurity;
   onRefreshPermissions: () => void;
   onToggleSchedule: (id: string) => void;
   onAddSchedule: (sched: Omit<RecurringSchedule, 'id'>) => void;
@@ -108,6 +110,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
   permissions,
   appBuildInfo = null,
+  environmentSecurity,
   onRefreshPermissions,
   onToggleSchedule,
   onAddSchedule,
@@ -142,6 +145,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 }) => {
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
+  const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
   const [activeSection, setActiveSection] = useState<'schedules' | 'themes' | 'settings' | 'os_security' | 'support'>(
     sectionOverride?.section || 'schedules'
   );
@@ -644,6 +648,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
             remainingEscapeTickets={remainingEscapeTickets}
             cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
+            environmentSecurity={environmentSecurity}
             onClaimFirstDonationBonus={onClaimFirstDonationBonus}
             onImportData={onImportData}
             onRestoreSuccess={onRestoreSuccess}
@@ -811,7 +816,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               {onRestoreFromCloudPicker && (
                 <button
                   type="button"
-                  disabled={isCloudBusy}
+                  disabled={isCloudBusy || restoreDisabled}
                   onClick={async () => {
                     const res = await onRestoreFromCloudPicker();
                     if (res.ok) {
@@ -821,13 +826,22 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       setCloudNotice({ ok: false, message: res.message });
                     }
                   }}
-                  className="py-2.5 px-3 rounded-xl bg-zinc-200 hover:bg-white text-black font-black text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  className="py-2.5 px-3 rounded-xl bg-zinc-200 hover:bg-white text-black font-black text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CloudDownload size={14} />
                   <span>Restore Backup from Cloud (Drive / OneDrive / JioDrive)</span>
                 </button>
               )}
             </div>
+
+            {restoreDisabled && (
+              <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px] leading-relaxed flex items-start gap-2">
+                <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Cloud backup restore is disabled to prevent stat or ticket tampering.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Data Management: Full Export, Restore & Reset */}
@@ -838,6 +852,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             <p className="text-[11px] text-zinc-400 leading-relaxed">
               Save all sessions, 20h Escape Ticket progress, streaks, schedules, themes, and all 4 Bags to a local <code>.json</code> file or restore a <code>.zbak</code> / <code>.json</code> archive.
             </p>
+
+            {restoreDisabled && (
+              <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px]">
+                File &amp; JSON restore are disabled in this rooted or emulator environment. Exports stay active.
+              </div>
+            )}
 
             {backupNotice && (
               <div
@@ -879,8 +899,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
               <button
                 type="button"
+                disabled={restoreDisabled}
                 onClick={() => fileInputRef.current?.click()}
-                className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors"
+                className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 <Upload size={14} />
                 <span>Restore File</span>
@@ -902,14 +923,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
               <button
                 type="button"
+                disabled={restoreDisabled}
                 onClick={() => setShowPasteRestore(!showPasteRestore)}
-                className="flex-1 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[11px] text-zinc-300"
+                className="flex-1 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[11px] text-zinc-300 disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 {showPasteRestore ? 'Hide Paste Box' : 'Paste JSON to Restore'}
               </button>
             </div>
 
-            {showPasteRestore && (
+            {showPasteRestore && !restoreDisabled && (
               <div className="space-y-2 pt-1">
                 <textarea
                   rows={4}
@@ -1206,6 +1228,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     {appBuildInfo.signingSha256 || 'Unavailable'}
                   </span>
                 </div>
+                {environmentSecurity && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-900">
+                    <span className="text-zinc-400">Runtime Environment:</span>
+                    <span
+                      className={`font-bold ${
+                        environmentSecurity.isCompromised ? 'text-amber-300' : 'text-emerald-300'
+                      }`}
+                    >
+                      {environmentSecurity.isCompromised
+                        ? `Restricted (${environmentSecurity.reasons.join(', ') || 'compromised'})`
+                        : 'Verified Device & R8'}
+                    </span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-2.5 rounded-xl bg-black border border-zinc-800 text-[11px] text-zinc-400">
@@ -1510,6 +1546,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
               remainingEscapeTickets={remainingEscapeTickets}
               cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
+              environmentSecurity={environmentSecurity}
               onClaimFirstDonationBonus={onClaimFirstDonationBonus}
               onImportData={onImportData}
               onRestoreSuccess={onRestoreSuccess}

@@ -299,6 +299,7 @@ if (
   !codeowners ||
   !codeowners.includes('@MDYOUSUF20007-oss') ||
   !codeowners.includes('/android/app/src/main/java/**') ||
+  !codeowners.includes('/android/app/proguard-rules.pro') ||
   !codeowners.includes('/src/core/integrity/**') ||
   !codeowners.includes('/.github/workflows/**') ||
   !codeowners.includes('/android/app/src/main/res/xml/network_security_config.xml') ||
@@ -500,6 +501,99 @@ for (const relFile of srcCodeFiles) {
   }
 }
 
+// ============================================================================
+// CHECK F: Release Hardening (R8/ProGuard, Runtime APK Signature, Root/Emulator)
+// ============================================================================
+if (appBuildGradle) {
+  const buildTypesBlock = extractBracedBlock(appBuildGradle, /\bbuildTypes\s*\{/) || '';
+  const releaseBlock = extractBracedBlock(buildTypesBlock, /\brelease\s*\{/) || '';
+  if (
+    !releaseBlock ||
+    !/\bminifyEnabled\s+true\b/.test(releaseBlock) ||
+    !/\bshrinkResources\s+true\b/.test(releaseBlock) ||
+    !/proguard-android-optimize\.txt/.test(releaseBlock) ||
+    !/['"]proguard-rules\.pro['"]/.test(releaseBlock)
+  ) {
+    fail(
+      'F1',
+      'android/app/build.gradle release block must enable R8/ProGuard shrinking & obfuscation (minifyEnabled true, shrinkResources true, proguard-android-optimize.txt, proguard-rules.pro).'
+    );
+  }
+}
+
+const proguardRulesRaw = readText('android/app/proguard-rules.pro');
+const proguardActive = (proguardRulesRaw || '')
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter((line) => line && !line.startsWith('#'))
+  .join('\n');
+if (
+  !proguardRulesRaw ||
+  !proguardActive.includes('@com.getcapacitor.annotation.CapacitorPlugin') ||
+  !proguardActive.includes('org.zero.detox.plugin.**') ||
+  !proguardActive.includes('org.zero.detox.service.ZeroAccessibilityService') ||
+  !proguardActive.includes('android.accessibilityservice.AccessibilityService') ||
+  !proguardActive.includes('@android.webkit.JavascriptInterface') ||
+  !proguardActive.includes('androidx.work.ListenableWorker')
+) {
+  fail(
+    'F2',
+    'android/app/proguard-rules.pro must preserve Capacitor plugins, ZeroAccessibilityService, JavascriptInterface, and WorkManager workers under R8.'
+  );
+}
+
+const permHelperKt = stripJsComments(
+  readText('android/app/src/main/java/org/zero/detox/bridge/PermissionStatusHelper.kt') || ''
+);
+const securityGuardRel = 'android/app/src/main/java/org/zero/detox/security/AppSecurityGuard.java';
+const securityGuardRaw = readText(securityGuardRel);
+const securityGuard = stripJsComments(securityGuardRaw || '');
+const hasOfficialHash =
+  securityGuard.includes('A14A361ED4B7F7D66E576992999D028A053265850A6CA4AFEE4FC12F2948CE11') ||
+  (securityGuard.includes('PermissionStatusHelper.OFFICIAL_RELEASE_CERT_SHA256_HEX') &&
+    permHelperKt.includes('A14A361ED4B7F7D66E576992999D028A053265850A6CA4AFEE4FC12F2948CE11'));
+if (
+  !securityGuardRaw ||
+  /FLAG_DEBUGGABLE/i.test(securityGuard) ||
+  !hasOfficialHash ||
+  !securityGuard.includes('MessageDigest.getInstance("SHA-256")') ||
+  !securityGuard.includes('"/system/bin/su"') ||
+  !securityGuard.includes('"test-keys"') ||
+  !securityGuard.includes('detectEmulatorReasons')
+) {
+  fail(
+    'F3',
+    `${securityGuardRel} must verify the official SHA-256 release signature (with zero FLAG_DEBUGGABLE bypass) and detect root/test-keys/emulators.`
+  );
+}
+
+if (
+  !mainActivityJava.includes('AppSecurityGuard.isAppSignatureValid(this)') ||
+  !mainActivityJava.includes('showTamperAlertAndTerminate()') ||
+  !mainActivityJava.includes('Process.killProcess') ||
+  /FLAG_DEBUGGABLE/i.test(mainActivityJava)
+) {
+  fail(
+    'F4',
+    'MainActivity.java must enforce AppSecurityGuard.isAppSignatureValid(this) before loading Capacitor and terminate tampered builds unconditionally.'
+  );
+}
+
+if (
+  !nativeBridgeKt.includes('AppSecurityGuard.evaluateEnvironment') ||
+  !nativeBridgeKt.includes('presetBagEditingDisabled') ||
+  !nativeBridgeKt.includes('getEnvironmentSecurityJson') ||
+  !cloudPluginKt.includes('AppSecurityGuard.evaluateEnvironment') ||
+  !cloudPluginKt.includes('backupRestoreDisabled') ||
+  !cloudPluginKt.includes('SECURITY_RESTRICTED') ||
+  !(integrityEngine || '').includes('isSensitiveFeatureRestricted')
+) {
+  fail(
+    'F5',
+    'Root/emulator detection must disable sensitive backup restore & preset Bag editing in both native Android (ZeroNativeBridge/CloudAutoBackupPlugin) and IntegrityEngine.'
+  );
+}
+
 if (failures.length > 0) {
   console.error('\n[INTEGRITY CHECK FAILED] Violations detected:\n');
   for (const f of failures) {
@@ -512,6 +606,8 @@ if (failures.length > 0) {
 
 console.log('[PASS] ZERO Core Productivity Integrity verification succeeded:');
 console.log('  - AndroidManifest debuggable & V1+V2+V3 release update signing: OK');
+console.log('  - Release R8/ProGuard shrinking & keep rules: OK');
+console.log('  - Runtime APK SHA-256 signature tamper guard & root/emulator restrictions: OK');
 console.log('  - Native SystemClock.elapsedRealtime() & Settings protection: OK');
 console.log('  - IntegrityEngine isolation & zero raw stat/donor bypasses: OK');
 console.log('  - Anti-exfiltration (hardcoded URIs, network_security_config, strict CSP): OK');

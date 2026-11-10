@@ -213,6 +213,7 @@ export function App() {
             schedules={store.schedules}
             permissions={store.permissions}
             appBuildInfo={store.appBuildInfo}
+            environmentSecurity={store.environmentSecurity}
             onRefreshPermissions={store.refreshPermissions}
             onToggleSchedule={store.toggleSchedule}
             onAddSchedule={store.addSchedule}
@@ -254,6 +255,7 @@ export function App() {
         bags={store.bags}
         activeBagId={store.activeBagId}
         installedApps={store.installedApps}
+        environmentSecurity={store.environmentSecurity}
         onClose={() => setShowBagModal(false)}
         onSelectActiveBag={store.setActiveBagId}
         onUpdateBag={store.updateBag}
@@ -300,6 +302,7 @@ export function App() {
         sessions={store.sessions}
         totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
         isCloudBusy={store.isCloudBusy}
+        environmentSecurity={store.environmentSecurity}
         onRestoreFromCloud={store.restoreBackupFromCloudPicker}
         onRestoreSuccess={handleCloudRestoreSuccess}
         onSaveProfile={store.saveProfileAndClaimGift}

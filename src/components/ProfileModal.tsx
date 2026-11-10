@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { ProfileAccent, ProfileAvatarId, SessionRecord, ZeroProfile } from '../types';
+import type {
+  NativeEnvironmentSecurity,
+  ProfileAccent,
+  ProfileAvatarId,
+  SessionRecord,
+  ZeroProfile,
+} from '../types';
 import {
   ACCENT_STYLES,
   AVATAR_OPTIONS,
@@ -23,6 +29,7 @@ interface ProfileModalProps {
   sessions: SessionRecord[];
   totalReclaimedHours: number;
   isCloudBusy?: boolean;
+  environmentSecurity?: NativeEnvironmentSecurity;
   onRestoreFromCloud?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onRestoreSuccess?: () => void;
   onSaveProfile: (draft: {
@@ -60,6 +67,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   sessions,
   totalReclaimedHours,
   isCloudBusy = false,
+  environmentSecurity,
   onRestoreFromCloud,
   onRestoreSuccess,
   onSaveProfile,
@@ -116,6 +124,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const previewName = displayName.trim() || 'Zero Monk';
   const previewHandle = normalizeProfileHandle(previewName, handleInput);
   const showGiftOffer = !hasClaimedFirstTimeParachute;
+  const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,11 +237,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <p className="amoled-banner-sub text-[10px] leading-relaxed" style={{ color: '#C4B5FD' }}>
               Restore focus stats, donor badges, emergency escape tickets &amp; preset Bags in 1 tap.
             </p>
+            {restoreDisabled && (
+              <div className="p-2 rounded-xl bg-amber-950/70 border border-amber-600/70 text-amber-200 text-[10px]">
+                Cloud backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.
+              </div>
+            )}
             <button
               type="button"
               onClick={handleCloudRestoreClick}
-              disabled={isCloudBusy || isRestoringLocal}
-              className="w-full py-2.5 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-60"
+              disabled={restoreDisabled || isCloudBusy || isRestoringLocal}
+              className="w-full py-2.5 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: '#8B5CF6',
                 color: '#FFFFFF',

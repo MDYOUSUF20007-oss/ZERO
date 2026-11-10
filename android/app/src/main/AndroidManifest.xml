@@ -42,6 +42,27 @@
             <action android:name="android.intent.action.SENDTO" />
             <data android:scheme="mailto" />
         </intent>
+        <!-- Package visibility for root / tamper manager detection on Android 11+ -->
+        <package android:name="com.topjohnwu.magisk" />
+        <package android:name="io.github.vvb2060.magisk" />
+        <package android:name="me.weishu.kernelsu" />
+        <package android:name="me.bmax.apatch" />
+        <package android:name="eu.chainfire.supersu" />
+        <package android:name="com.noshufou.android.su" />
+        <package android:name="com.noshufou.android.su.elite" />
+        <package android:name="com.koushikdutta.superuser" />
+        <package android:name="com.thirdparty.superuser" />
+        <package android:name="com.yellowes.su" />
+        <package android:name="com.kingroot.kinguser" />
+        <package android:name="com.kingo.root" />
+        <package android:name="com.smedialink.oneclickroot" />
+        <package android:name="com.zhiqupk.root.global" />
+        <package android:name="com.alephzain.framaroot" />
+        <package android:name="com.devadvance.rootcloak" />
+        <package android:name="com.devadvance.rootcloak2" />
+        <package android:name="de.robv.android.xposed.installer" />
+        <package android:name="org.meowcat.edxposed.manager" />
+        <package android:name="org.lsposed.manager" />
     </queries>
 
     <application

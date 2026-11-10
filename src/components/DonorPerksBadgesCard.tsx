@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { NativeEnvironmentSecurity } from '../types';
 import {
   FIRST_DONATION_BONUS_INR,
   KOFI_URL,
@@ -28,6 +29,7 @@ interface DonorPerksBadgesCardProps {
   hasClaimedFirstDonationParachute: boolean;
   remainingEscapeTickets: number;
   cloudAutoBackupEnabled?: boolean;
+  environmentSecurity?: NativeEnvironmentSecurity;
   onClaimFirstDonationBonus?: () => boolean;
   onImportData?: (rawInput: string) => { ok: boolean; message: string };
   onRestoreSuccess?: () => void;
@@ -38,6 +40,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   hasClaimedFirstDonationParachute,
   remainingEscapeTickets,
   cloudAutoBackupEnabled = false,
+  environmentSecurity,
   onClaimFirstDonationBonus,
   onImportData,
   onRestoreSuccess,
@@ -48,6 +51,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const badgeUnlocked = Boolean(isZeroSupporter || hasClaimedFirstDonationParachute);
+  const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
 
   const handleCopySupportEmail = async () => {
     await copyTextSafely(SUPPORT_EMAIL);
@@ -66,14 +70,24 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
       return;
     }
 
-    if (trimmed.startsWith('ZBAK1.') && onImportData) {
-      const importRes = onImportData(trimmed);
-      setTokenNotice(importRes);
-      if (importRes.ok) {
-        setTokenInput('');
-        onRestoreSuccess?.();
+    if (trimmed.startsWith('ZBAK1.')) {
+      if (restoreDisabled) {
+        setTokenNotice({
+          ok: false,
+          message:
+            'Cloud .zbak restore is disabled on rooted devices, test-keys ROMs, or debug emulators. Signed ZDON1 donor tokens can still be activated.',
+        });
+        return;
       }
-      return;
+      if (onImportData) {
+        const importRes = onImportData(trimmed);
+        setTokenNotice(importRes);
+        if (importRes.ok) {
+          setTokenInput('');
+          onRestoreSuccess?.();
+        }
+        return;
+      }
     }
 
     const verified = verifyDonorUnlockToken(trimmed);
@@ -253,7 +267,9 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               setTokenInput(e.target.value);
               if (tokenNotice) setTokenNotice(null);
             }}
-            placeholder="Paste ZDON1... or ZBAK1... token"
+            placeholder={
+              restoreDisabled ? 'Paste ZDON1... unlock token' : 'Paste ZDON1... or ZBAK1... token'
+            }
             className="flex-1 min-w-0 bg-black border border-zinc-700 focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none"
           />
           <button
@@ -267,6 +283,12 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             Activate
           </button>
         </div>
+
+        {restoreDisabled && (
+          <div className="p-2 rounded-xl bg-amber-950/50 border border-amber-600/60 text-amber-200 text-[10px]">
+            Root / test-keys ROM / emulator detected: <code>ZBAK1</code> cloud backup restore is disabled; signed <code>ZDON1</code> donor tokens remain enabled.
+          </div>
+        )}
 
         {tokenNotice && (
           <div

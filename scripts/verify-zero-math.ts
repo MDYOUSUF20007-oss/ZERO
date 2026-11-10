@@ -52,11 +52,12 @@ import {
 import { KOFI_URL, SUPPORT_EMAIL } from '../src/utils/supportLinks.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
 import type {
+  NativeEnvironmentSecurity,
   NativePermissionStatus,
   SessionRecord,
   VerifiedNativeCompletionEvent,
   ZeroZbakPayload,
-} from '../src/types.ts';
+} from '../src/types/index.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -965,5 +966,103 @@ failIf(
   'Cleartext HTTP, third-party websites, spoofed email recipients/BCC, and tampered UPI VPAs must be rejected'
 );
 console.log('PASS: Hardcoded SAF Cloud Destinations & Endpoint Tampering Guards Verified');
+
+console.log('\n=== TEST 17: Runtime APK Integrity & Root/Emulator Graceful Restriction Policy ===');
+const safeEnv = IntegrityEngine.parseEnvironmentSecurityJson(null);
+failIf(
+  safeEnv.isCompromised === false &&
+    safeEnv.restrictions.backupRestoreDisabled === false &&
+    safeEnv.restrictions.presetBagEditingDisabled === false,
+  'Missing/web environment JSON should default to non-compromised preview state'
+);
+
+const malformedEnv = IntegrityEngine.parseEnvironmentSecurityJson('{not-valid-json');
+failIf(
+  malformedEnv.isCompromised === true &&
+    malformedEnv.restrictions.backupRestoreDisabled === true &&
+    malformedEnv.restrictions.presetBagEditingDisabled === true,
+  'Malformed native security JSON must fail closed and disable sensitive features'
+);
+
+const rootedEnv: NativeEnvironmentSecurity = IntegrityEngine.parseEnvironmentSecurityJson(
+  JSON.stringify({
+    isSignatureValid: true,
+    isRooted: true,
+    isEmulator: false,
+    isCompromised: true,
+    restrictions: {
+      backupRestoreDisabled: true,
+      presetBagEditingDisabled: true,
+    },
+    reasons: ['root_binary', 'test_keys_rom'],
+  })
+);
+failIf(
+  IntegrityEngine.isSensitiveFeatureRestricted(rootedEnv) === true,
+  'Rooted device status must mark sensitive features restricted'
+);
+
+const emulatorEnv: NativeEnvironmentSecurity = IntegrityEngine.parseEnvironmentSecurityJson(
+  JSON.stringify({
+    isSignatureValid: true,
+    isRooted: false,
+    isEmulator: true,
+    isCompromised: true,
+    restrictions: {
+      backupRestoreDisabled: true,
+      presetBagEditingDisabled: true,
+    },
+    reasons: ['emulator_environment'],
+  })
+);
+
+const blockedRootRestore = IntegrityEngine.applyVerifiedRestore(
+  {
+    rawInput: encodedZbak,
+    defaultSchedules: [],
+    defaultBags: sampleZbakPayload.bags,
+    sanitizeProfile: sanitizeZeroProfile,
+    sanitizeThemeConfig,
+    environmentSecurity: rootedEnv,
+  },
+  false
+);
+failIf(
+  blockedRootRestore.ok === false,
+  'IntegrityEngine.applyVerifiedRestore must block .zbak restore when device is rooted'
+);
+
+const blockedEmuRestore = IntegrityEngine.applyVerifiedRestore(
+  {
+    rawInput: JSON.stringify(sampleZbakPayload),
+    defaultSchedules: [],
+    defaultBags: sampleZbakPayload.bags,
+    sanitizeProfile: sanitizeZeroProfile,
+    sanitizeThemeConfig,
+    environmentSecurity: emulatorEnv,
+  },
+  false
+);
+failIf(
+  blockedEmuRestore.ok === false,
+  'IntegrityEngine.applyVerifiedRestore must block .json restore when running on debug emulator'
+);
+
+const allowedCleanRestore = IntegrityEngine.applyVerifiedRestore(
+  {
+    rawInput: encodedZbak,
+    defaultSchedules: [],
+    defaultBags: sampleZbakPayload.bags,
+    sanitizeProfile: sanitizeZeroProfile,
+    sanitizeThemeConfig,
+    environmentSecurity: safeEnv,
+  },
+  false
+);
+failIf(
+  allowedCleanRestore.ok === true && allowedCleanRestore.state?.isZeroSupporter === true,
+  'IntegrityEngine.applyVerifiedRestore must succeed cleanly on uncompromised devices'
+);
+console.log('PASS: Runtime Integrity & Root/Emulator Feature Restrictions Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { OccasionBag, BagApp } from '../types';
+import type { OccasionBag, BagApp, NativeEnvironmentSecurity } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import {
   Briefcase,
@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface BagDrawerModalProps {
@@ -19,6 +20,7 @@ interface BagDrawerModalProps {
   bags: OccasionBag[];
   activeBagId: string;
   installedApps: BagApp[];
+  environmentSecurity?: NativeEnvironmentSecurity;
   onClose: () => void;
   onSelectActiveBag: (id: string) => void;
   onUpdateBag: (bagId: string, updater: (bag: OccasionBag) => OccasionBag) => void;
@@ -31,6 +33,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   bags,
   activeBagId,
   installedApps,
+  environmentSecurity,
   onClose,
   onSelectActiveBag,
   onUpdateBag,
@@ -57,6 +60,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   if (!isOpen || !selectedBag) return null;
 
   const bagFull = selectedBag.apps.length >= MAX_BAG_APPS;
+  const bagEditingDisabled = Boolean(environmentSecurity?.restrictions?.presetBagEditingDisabled);
 
   return (
     <div
@@ -91,6 +95,16 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
           </button>
         </div>
 
+        {/* Environment Integrity Guard Banner */}
+        {bagEditingDisabled && (
+          <div className="p-2.5 rounded-2xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px] leading-relaxed flex items-start gap-2 shrink-0">
+            <ShieldAlert size={14} className="text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              <strong>Preset Bag Editing Disabled:</strong> Root access, test-keys ROM, or debug emulator detected. Bags are locked to prevent bypass tampering.
+            </span>
+          </div>
+        )}
+
         {/* 4 Occasion Bag Switcher */}
         <div className="grid grid-cols-2 gap-1.5 shrink-0">
           {bags.map((bag, idx) => {
@@ -99,13 +113,17 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
               <button
                 key={bag.id}
                 type="button"
+                disabled={bagEditingDisabled && !isActive}
                 onClick={() => {
+                  if (bagEditingDisabled) return;
                   onSelectActiveBag(bag.id);
                   setEditingName(false);
                 }}
                 className={`p-2.5 rounded-2xl border text-left transition-all ${
                   isActive
                     ? 'bg-zinc-200 text-black border-white shadow-sm'
+                    : bagEditingDisabled
+                    ? 'bg-zinc-950 text-zinc-600 border-zinc-900 opacity-50 cursor-not-allowed'
                     : 'bg-zinc-900/70 text-zinc-300 border-zinc-800 hover:border-zinc-700'
                 }`}
               >
@@ -125,7 +143,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
         <div className="flex-1 overflow-y-auto space-y-3.5 pr-0.5">
           {/* Bag Name Editor */}
           <div className="p-3 bg-zinc-900/70 border border-zinc-800 rounded-2xl">
-            {editingName ? (
+            {editingName && !bagEditingDisabled ? (
               <div className="space-y-2">
                 <input
                   type="text"
@@ -163,8 +181,9 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 </div>
                 <button
                   type="button"
+                  disabled={bagEditingDisabled}
                   onClick={() => setEditingName(true)}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-300 hover:text-white text-[11px] flex items-center gap-1"
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-300 hover:text-white text-[11px] flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Edit3 size={12} />
                   <span>Rename</span>
@@ -181,10 +200,11 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                disabled={bagEditingDisabled}
                 onClick={() =>
                   onUpdateBag(selectedBag.id, (b) => ({ ...b, allowCalls: !b.allowCalls }))
                 }
-                className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
                   selectedBag.allowCalls
                     ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
                     : 'bg-zinc-900/50 border-zinc-800 text-zinc-400'
@@ -204,10 +224,11 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
 
               <button
                 type="button"
+                disabled={bagEditingDisabled}
                 onClick={() =>
                   onUpdateBag(selectedBag.id, (b) => ({ ...b, allowSms: !b.allowSms }))
                 }
-                className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
                   selectedBag.allowSms
                     ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
                     : 'bg-zinc-900/50 border-zinc-800 text-zinc-400'
@@ -253,8 +274,9 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                     </div>
                     <button
                       type="button"
+                      disabled={bagEditingDisabled}
                       onClick={() => onToggleBagApp(selectedBag.id, app)}
-                      className="p-1.5 text-red-400 hover:text-red-300 rounded-lg bg-zinc-950 border border-zinc-800"
+                      className="p-1.5 text-red-400 hover:text-red-300 rounded-lg bg-zinc-950 border border-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Remove from Bag"
                     >
                       <Trash2 size={13} />
@@ -291,7 +313,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
               {filteredApps.map((app) => {
                 const isPacked = selectedBag.apps.some((a) => a.packageName === app.packageName);
-                const disabled = !isPacked && bagFull;
+                const disabled = bagEditingDisabled || (!isPacked && bagFull);
                 return (
                   <button
                     key={app.packageName}
@@ -328,7 +350,9 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
           onClick={onClose}
           className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider shrink-0"
         >
-          Use "{selectedBag.name}" ({selectedBag.apps.length}/3 Apps)
+          {bagEditingDisabled
+            ? `Close "${selectedBag.name}" (Read-Only)`
+            : `Use "${selectedBag.name}" (${selectedBag.apps.length}/3 Apps)`}
         </button>
       </div>
     </div>

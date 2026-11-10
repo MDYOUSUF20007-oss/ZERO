@@ -5,9 +5,9 @@ android {
     namespace = "org.zero.detox"
     compileSdk = rootProject.ext.compileSdkVersion
     def envVersionCode = System.getenv("ZERO_VERSION_CODE")
-    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 126
+    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 127
     def envVersionName = System.getenv("ZERO_VERSION_NAME")
-    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.26"
+    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.27"
 
     defaultConfig {
         applicationId "org.zero.detox"
@@ -55,9 +55,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             def ksPath = System.getenv("ZERO_KEYSTORE_PATH")
             if (ksPath != null && !ksPath.trim().isEmpty() && file(ksPath).exists()) {
                 signingConfig signingConfigs.release

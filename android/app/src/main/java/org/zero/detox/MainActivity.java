@@ -4,14 +4,20 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Process;
 import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
@@ -24,6 +30,7 @@ import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
 import org.zero.detox.plugin.CloudAutoBackupPlugin;
+import org.zero.detox.security.AppSecurityGuard;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_ONBOARDING = "zero_onboarding_prefs";
@@ -31,9 +38,11 @@ public class MainActivity extends BridgeActivity {
     private static final int REQ_NOTIFICATIONS = 1001;
 
     private ZeroNativeBridge nativeBridge;
+    private boolean signatureVerified = false;
+    private boolean tamperDialogShown = false;
 
     private void ensureNativeBridge() {
-        if (nativeBridge != null) return;
+        if (!signatureVerified || nativeBridge != null) return;
         try {
             ParachuteStore parachuteStore = new ParachuteStore(this);
             BagStore bagStore = new BagStore(this);
@@ -46,6 +55,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void load() {
+        if (!signatureVerified) {
+            return;
+        }
         ensureNativeBridge();
         try {
             WebView rawWebView = findViewById(com.getcapacitor.android.R.id.webview);
@@ -139,9 +151,61 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(CloudAutoBackupPlugin.class);
+        signatureVerified = AppSecurityGuard.isAppSignatureValid(this);
+        if (signatureVerified) {
+            registerPlugin(CloudAutoBackupPlugin.class);
+        }
         super.onCreate(savedInstanceState);
+        if (!signatureVerified) {
+            showTamperAlertAndTerminate();
+            return;
+        }
         requestStartupNotificationPermissionOnce();
+    }
+
+    private void showTamperAlertAndTerminate() {
+        Log.e("ZeroMainActivity", "APK signature verification failed. Blocking startup and terminating.");
+        try {
+            FrameLayout blackScreen = new FrameLayout(this);
+            blackScreen.setBackgroundColor(Color.BLACK);
+            setContentView(blackScreen);
+        } catch (Throwable ignored) {}
+
+        if (tamperDialogShown) {
+            return;
+        }
+        tamperDialogShown = true;
+
+        try {
+            new AlertDialog.Builder(this)
+                .setTitle("Security Tamper Alert")
+                .setMessage(
+                    "ZERO detected an unauthorized APK signature modification or cloned package.\n\n"
+                        + "For your safety and integrity protection, modified or re-signed APKs cannot run. "
+                        + "Install the official release only from GitHub Releases (MDYOUSUF20007-oss/ZERO)."
+                )
+                .setCancelable(false)
+                .setPositiveButton("Exit ZERO", (dialog, which) -> terminateApplication())
+                .setOnDismissListener(dialog -> terminateApplication())
+                .show();
+        } catch (Throwable t) {
+            terminateApplication();
+            return;
+        }
+
+        // Guarantee termination even if dialog presentation is suppressed on headless/restricted hosts
+        new Handler(Looper.getMainLooper()).postDelayed(this::terminateApplication, 15000L);
+    }
+
+    private void terminateApplication() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                finishAndRemoveTask();
+            }
+            finishAffinity();
+        } catch (Throwable ignored) {}
+        Process.killProcess(Process.myPid());
+        System.exit(1);
     }
 
     private void requestStartupNotificationPermissionOnce() {
@@ -182,6 +246,11 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        if (!signatureVerified || !AppSecurityGuard.isAppSignatureValid(this)) {
+            signatureVerified = false;
+            showTamperAlertAndTerminate();
+            return;
+        }
         dispatchPermissionRefreshToJs();
     }
 

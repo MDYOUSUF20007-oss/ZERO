@@ -28,8 +28,10 @@ ZERO's value depends on strict, tamper-resistant phone blockage and honest disci
    - Do not expose setter helpers (such as `addFakeHours()`, `setStats()`, `setCumulativeSeconds()`, `setBonusParachutes()`, or `setIsZeroSupporter()`) to UI components or React hooks.
    - Never bypass `IntegrityEngine` with direct `localStorage` mutations on focus stats, sessions, Emergency Escape Ticket balances, donor perks, or `.zbak` HMAC checks.
 
-4. **Release Security & Update Continuity:**
+4. **Release Security, R8 Obfuscation & Update Continuity:**
    - Never add `android:debuggable="true"` to any `AndroidManifest.xml` or enable `debuggable true` on release `buildTypes` in `android/app/build.gradle`.
+   - Keep `minifyEnabled true`, `shrinkResources true`, `proguard-android-optimize.txt`, and `proguard-rules.pro` enabled on release builds in `android/app/build.gradle`.
+   - Never bypass or weaken runtime APK signing certificate verification (`AppSecurityGuard.isAppSignatureValid`) or root/emulator feature restrictions (`backupRestoreDisabled` / `presetBagEditingDisabled`), and never add a `FLAG_DEBUGGABLE` exemption.
    - Never alter `applicationId "org.zero.detox"`, strip V1+V2+V3 signing flags, or replace the official release signing workflow so users always receive seamless in-place APK updates.
 
 5. **No Data Exfiltration or Endpoint Tampering:**
