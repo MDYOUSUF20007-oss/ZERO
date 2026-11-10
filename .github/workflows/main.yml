@@ -122,14 +122,9 @@ jobs:
           KS_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
         run: |
           if [ -z "$KEYSTORE_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KS_ALIAS" ]; then
-            if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-              echo "::error::Missing persistent signing secrets (ZERO_KEYSTORE_BASE64, ZERO_KEYSTORE_PASS, ZERO_KEYSTORE_ALIAS). Refusing to generate disposable keys so user updates never require uninstalling."
-              exit 1
-            else
-              echo "PR build without secrets: skipping release signing."
-              echo "signed=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
+            echo "::warning::Persistent signing secrets (ZERO_KEYSTORE_BASE64, ZERO_KEYSTORE_PASS, ZERO_KEYSTORE_ALIAS) are not set yet. Building debug-signed preview APKs so you can install and test now; add those 4 Repository secrets for update-compatible permanent releases."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           echo "$KEYSTORE_B64" | tr -d '\r\n ' | base64 -d > "${{ runner.temp }}/zero-release.p12"
           keytool -list -v -storetype PKCS12 \
@@ -138,7 +133,13 @@ jobs:
             -alias "$KS_ALIAS" | grep -E "Alias name:|SHA256:"
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Compile Standard & Strict Release APKs (v${{ env.ZERO_VERSION_NAME }} / code ${{ env.ZERO_VERSION_CODE }})
+      - name: Run Android Unit Tests (Standard & Strict)
+        run: |
+          cd android
+          ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest --no-daemon --stacktrace
+
+      - name: Compile Signed Release APKs (v${{ env.ZERO_VERSION_NAME }} / code ${{ env.ZERO_VERSION_CODE }})
+        if: steps.keystore.outputs.signed == 'true'
         env:
           ZERO_KEYSTORE_PATH: ${{ runner.temp }}/zero-release.p12
           ZERO_KEYSTORE_TYPE: PKCS12
@@ -147,7 +148,16 @@ jobs:
           ZERO_KEYSTORE_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
         run: |
           cd android
-          ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
+          ./gradlew assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
+
+      - name: Compile Preview Test APKs (Debug-Signed Fallback)
+        if: steps.keystore.outputs.signed != 'true'
+        run: |
+          cd android
+          ./gradlew assembleStandardDebug assembleStrictDebug --no-daemon --stacktrace
+          mkdir -p ../release-assets
+          cp app/build/outputs/apk/strict/debug/app-strict-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-strict-accessibility-preview.apk"
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-standard-sideload-preview.apk"
 
       - name: Verify APK Signing Certificate & Stage Release Assets
         if: steps.keystore.outputs.signed == 'true'
@@ -172,20 +182,18 @@ jobs:
           cat release-assets/SHA256SUMS.txt
 
       - name: Upload Strict Accessibility APK Artifact (Full BlockIt Mode)
-        if: steps.keystore.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Zero-strict-accessibility-apk
-          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility.apk
+          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility*.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload Standard Sideload APK Artifact (Usage Access + Overlay)
-        if: steps.keystore.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Zero-standard-sideload-apk
-          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload.apk
+          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload*.apk
           if-no-files-found: error
           retention-days: 30
 
