@@ -239,6 +239,7 @@ export function App() {
             onResetTipPromptBlock={store.resetTipPromptBlock}
             profile={store.profile}
             isZeroSupporter={store.isZeroSupporter}
+            remainingEscapeTickets={store.parachuteMetrics.currentBalance}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
             onOpenProfileModal={openInteractiveProfile}
@@ -370,7 +371,7 @@ export function App() {
             }`}
           >
             <Heart size={18} className={activeTab === 'schedules' ? 'text-red-500' : ''} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Rules &amp; OS</span>
+            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Settings &amp; OS</span>
           </button>
         </div>
       </nav>

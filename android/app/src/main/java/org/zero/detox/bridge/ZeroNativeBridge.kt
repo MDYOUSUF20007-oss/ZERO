@@ -544,21 +544,42 @@ class ZeroNativeBridge(
         } ?: return
 
         val scheme = parsed.scheme?.lowercase() ?: return
-        if (scheme != "https" && scheme != "http" && scheme != "upi") {
+        if (scheme != "https" && scheme != "http" && scheme != "upi" && scheme != "mailto") {
             return
         }
 
         activity.runOnUiThread {
             try {
-                val intent = Intent(Intent.ACTION_VIEW, parsed).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val intent = if (scheme == "mailto") {
+                    val ssp = parsed.schemeSpecificPart ?: ""
+                    val targetEmail = ssp.substringBefore('?').trim()
+                    val queryPart = ssp.substringAfter('?', "")
+                    val subjectParam = queryPart
+                        .split('&')
+                        .firstOrNull { it.startsWith("subject=") }
+                        ?.substringAfter("subject=")
+                        ?.let { Uri.decode(it) }
+                    Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:$targetEmail")
+                        if (targetEmail.isNotEmpty()) {
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf(targetEmail))
+                        }
+                        if (!subjectParam.isNullOrBlank()) {
+                            putExtra(Intent.EXTRA_SUBJECT, subjectParam)
+                        }
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                } else {
+                    Intent(Intent.ACTION_VIEW, parsed).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 }
                 activity.startActivity(intent)
             } catch (_: Exception) {
-                val msg = if (scheme == "upi") {
-                    "No UPI app found. Please copy the UPI ID (md.y2007@ptaxis) manually."
-                } else {
-                    "No browser app found to open this link."
+                val msg = when (scheme) {
+                    "upi" -> "No UPI app found. Please copy the UPI ID (md.y2007@ptaxis) manually."
+                    "mailto" -> "No email app found. Please copy mdyousuf982007@proton.me manually."
+                    else -> "No browser app found to open this link."
                 }
                 Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
             }

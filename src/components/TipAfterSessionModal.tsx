@@ -4,6 +4,8 @@ import type { SessionRecord } from '../types';
 import {
   FIRST_DONATION_BONUS_INR,
   KOFI_URL,
+  SUPPORT_EMAIL,
+  SUPPORT_MAILTO_URL,
   UPI_ID,
   UPI_PAY_URL,
   UPI_FIFTY_RS_PAY_URL,
@@ -321,26 +323,51 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
         </div>
 
         {/* Secondary Option: Ko-fi */}
-        <a
-          href={KOFI_URL}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
-          className="w-full p-3 bg-zinc-900/70 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Coffee size={16} />
-            </div>
-            <div className="min-w-0">
-              <div className="font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
-              <div className="text-[10px] text-zinc-400 truncate">
-                Card / International • ko-fi.com/mdyousuf2620
+        <div className="space-y-2">
+          <a
+            href={KOFI_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
+            className="w-full p-3 bg-zinc-900/70 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <Coffee size={16} />
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
+                <div className="text-[10px] text-zinc-400 truncate">
+                  Card / International • ko-fi.com/mdyousuf2620
+                </div>
               </div>
             </div>
+            <ExternalLink size={13} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
+          </a>
+
+          <div
+            data-amoled-banner="true"
+            className="p-3 rounded-2xl border text-[10px] leading-relaxed"
+            style={{
+              backgroundColor: '#000000',
+              borderColor: 'rgba(139, 92, 246, 0.5)',
+            }}
+          >
+            <p className="amoled-banner-sub" style={{ color: '#E9D5FF' }}>
+              Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet? Send a
+              screenshot of your receipt and your account email to{' '}
+              <a
+                href={SUPPORT_MAILTO_URL}
+                onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
+                className="amoled-banner-email font-black underline decoration-[#8B5CF6]"
+                style={{ color: '#C4B5FD' }}
+              >
+                <strong>{SUPPORT_EMAIL}</strong>
+              </a>{' '}
+              for manual activation.
+            </p>
           </div>
-          <ExternalLink size={13} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
-        </a>
+        </div>
 
         {/* Dismiss & Block for 5 Sessions Controls */}
         <div className="flex flex-col sm:flex-row gap-2 pt-1 border-t border-zinc-900">

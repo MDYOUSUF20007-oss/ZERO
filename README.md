@@ -15,7 +15,7 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 - **Latest Android APKs:** [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest) ([All Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases))
   - **`ZERO-v<version>.apk` (Standard Edition — Direct Install):** Uses Usage Access + Display Over Other Apps without Accessibility permissions for quick browser/file-manager sideloading.
   - **`ZERO-requires-adb-v<version>.apk` (Strict Accessibility Edition — Full Kiosk Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service (`adb install -r` / Shizuku or Allow Restricted Settings on Android 14–16).
-  - *Seamless In-Place Updates:* Releases from `v1.0.19+` are permanently signed with ZERO's release keystore so future APKs update directly over previous versions. *(If migrating from an older `v1.0.18` debug preview, open **Rules → Export Backup** once, uninstall the old preview, install the new signed APK, and tap **Restore File**.)*
+  - *Seamless In-Place Updates:* Releases from `v1.0.19+` are permanently signed with ZERO's release keystore (`v1.0.23+` includes explicit **V1 + V2 + V3 APK signing**) so future APKs update directly over previous versions. *(If migrating from an older `v1.0.18` debug preview, save a backup in **Settings → Export Backup** or **Cloud Auto-Backup**, uninstall the old preview, install the new signed APK, and restore in 1 tap.)*
 - **Web / PWA Preview:** [mdyousuf20007-oss.github.io/ZERO](https://mdyousuf20007-oss.github.io/ZERO/)
 
 ---
@@ -69,16 +69,29 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 - **GitHub-Style Contribution Heatmap & Tag Breakdown:** 16-week focus intensity grid and tag chart.
 - **Immutable Escape Ticket Ledger:** Chronological record of +1 Earned/Gift milestones and -1 Escape uses.
 
-### 4. Themes, Schedules, Cloud Auto-Backup, Rules & Support
+### 4. Themes, Schedules, Cloud Auto-Backup, Settings & Support
 - **Auto-Pilot Recurring Schedules:** Unlimited schedules with day-of-week selectors and 5-minute heads-up warnings.
 - **Theme Studio:** Full customization for AMOLED Gradients, Paper like Kindle custom colors, and Matte Studio custom colors.
+- **Donor Perks & Badges (Settings & Support):** Check your Golden `ZERO-SUPPORTER` crest and Escape Ticket gift status, enter a signed `ZDON1...` / `ZBAK1...` unlock token, or contact support directly for Ko-fi receipt verification.
 - **Universal Cloud Auto-Backup (`zero-backup.zbak`):**
   - **Signed & Tamper-Proof:** Compacts stats, donor badges, remaining Escape Tickets, preset Bags, and profile into a Base64/XOR obfuscated archive sealed with **SHA-256 HMAC** (`ZBAK1`) so tickets cannot be forged manually.
   - **Mode A (Android SAF Persistable Auto-Sync):** Native Capacitor `CloudAutoBackupPlugin` acquires `takePersistableUriPermission` across **Google Drive, OneDrive, JioDrive, Dropbox, or Local Storage** and silently overwrites `zero-backup.zbak` whenever a session finishes, a Bag changes, or badges/tickets update.
   - **Mode B (Weekly 1-Tap Reminder):** If Auto-Backup is off and >7 days pass since `lastBackupTimestamp`, displays a pure AMOLED black/purple (`#8B5CF6`) home banner with **1-Tap Upload** and **Turn On Auto-Backup**.
   - **1-Tap Reinstall Restore:** **"Restore Backup from Cloud (Drive / OneDrive / JioDrive)"** on Welcome & Settings verifies the `.zbak` HMAC signature, restores stats/badges/tickets/Bags, sets `onboardingComplete = true`, and skips directly to the Dashboard.
-- **Support Zero:** Ethical links ([Ko-fi](https://ko-fi.com/mdyousuf2620), UPI ID `md.y2007@ptaxis`, QR code) plus [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases).
+- **OS Permissions & Green Restricted Settings Fix Guide:** Enforces exact priority setup order (**1. Allow Restricted Settings Check + Zero App Info Shortcut -> 2. Usage Access (Find Zero) / Accessibility -> 3. Display Over Other Apps -> 4. Notifications**) with green step-by-step Android 13–16 Restricted Settings unlock instructions right underneath permission prompts.
 - **Data Portability:** Complete JSON + signed `.zbak` export/import, clipboard copy/paste, and factory reset.
+
+---
+
+## Support & Donor Verification
+
+Zero is 100% free and open-source with zero paywalls. If you choose to support development and unlock the Golden **`ZERO-SUPPORTER`** crest & `+1 Free Emergency Escape Ticket (🎫)` gift:
+
+- **Ko-fi:** [https://ko-fi.com/mdyousuf2620](https://ko-fi.com/mdyousuf2620)
+- **UPI (No minimum limit for regular tips; 1st tip of ₹50+ unlocks Supporter perks):** `md.y2007@ptaxis`
+- **Support Email (Manual Ko-fi Verification):** **mdyousuf982007@proton.me**
+
+Donated on Ko-fi but haven't received your badge, ticket bundle, or signed unlock token yet? Send a screenshot of your Ko-fi receipt and your account email to **mdyousuf982007@proton.me** for manual verification and activation via **Settings → Donor Perks & Badges**.
 
 ---
 

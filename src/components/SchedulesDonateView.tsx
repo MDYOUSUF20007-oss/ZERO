@@ -26,6 +26,7 @@ import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ThemeSelectorCard } from './ThemeSelectorCard';
+import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import {
   Plus,
   Trash2,
@@ -93,6 +94,7 @@ interface SchedulesDonateViewProps {
   onResetTipPromptBlock?: () => void;
   profile?: ZeroProfile | null;
   isZeroSupporter?: boolean;
+  remainingEscapeTickets?: number;
   hasClaimedFirstTimeParachute?: boolean;
   hasClaimedFirstDonationParachute?: boolean;
   onOpenProfileModal?: () => void;
@@ -132,6 +134,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onResetTipPromptBlock,
   profile = null,
   isZeroSupporter,
+  remainingEscapeTickets = 0,
   hasClaimedFirstTimeParachute = false,
   hasClaimedFirstDonationParachute = false,
   onOpenProfileModal,
@@ -256,10 +259,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {/* View Header */}
       <div>
         <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
-          <span>THEMES, RULES &amp; OS</span>
+          <span>THEMES, SETTINGS &amp; OS</span>
         </h1>
         <p className="text-xs font-mono text-zinc-400">
-          Auto-Pilot Schedules, Theme Studio &amp; Ethical Support
+          Auto-Pilot Schedules, Theme Studio, Donor Perks &amp; Ethical Support
         </p>
       </div>
 
@@ -293,7 +296,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          Rules
+          Settings
         </button>
         <button
           onClick={() => setActiveSection('os_security')}
@@ -634,6 +637,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               Customize →
             </span>
           </button>
+
+          {/* DONOR PERKS & BADGES (STATUS, SIGNED TOKEN & KO-FI MANUAL SUPPORT) */}
+          <DonorPerksBadgesCard
+            isZeroSupporter={supporterBadgeUnlocked}
+            hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
+            remainingEscapeTickets={remainingEscapeTickets}
+            cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
+            onClaimFirstDonationBonus={onClaimFirstDonationBonus}
+            onImportData={onImportData}
+            onRestoreSuccess={onRestoreSuccess}
+          />
 
           {/* UNIVERSAL CLOUD AUTO-BACKUP & 1-TAP RESTORE (.zbak SAF) */}
           <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-2xl space-y-3 font-mono">
@@ -1202,7 +1216,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             {appBuildInfo && !appBuildInfo.isOfficialReleaseKey ? (
               <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-600/70 text-amber-200 text-[10px] leading-relaxed">
                 This device is running an older preview/debug key build. Save a Cloud{' '}
-                <code>.zbak</code> backup in <strong>Rules</strong>,{' '}
+                <code>.zbak</code> backup in <strong>Settings</strong>,{' '}
                 <strong>Uninstall (for all users)</strong> once, and install the newest signed{' '}
                 <code>ZERO-v*.apk</code> so all future updates install cleanly in-place!
               </div>
@@ -1489,6 +1503,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </div>
               <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
             </a>
+
+            {/* Donor Perks & Badges (Manual Ko-fi Verification & Signed Token) */}
+            <DonorPerksBadgesCard
+              isZeroSupporter={supporterBadgeUnlocked}
+              hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
+              remainingEscapeTickets={remainingEscapeTickets}
+              cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
+              onClaimFirstDonationBonus={onClaimFirstDonationBonus}
+              onImportData={onImportData}
+              onRestoreSuccess={onRestoreSuccess}
+            />
 
             {tipSkipRemaining > 0 && (
               <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between gap-2 font-mono text-[11px]">

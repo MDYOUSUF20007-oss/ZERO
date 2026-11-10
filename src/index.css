@@ -199,6 +199,18 @@ body {
   color: #E9D5FF !important;
 }
 
+[data-amoled-banner="true"] .amoled-banner-accent,
+[data-zero-theme="kindle"] [data-amoled-banner="true"] .amoled-banner-accent,
+[data-zero-theme="matte"] [data-amoled-banner="true"] .amoled-banner-accent {
+  color: #8B5CF6 !important;
+}
+
+[data-amoled-banner="true"] .amoled-banner-email,
+[data-zero-theme="kindle"] [data-amoled-banner="true"] .amoled-banner-email,
+[data-zero-theme="matte"] [data-amoled-banner="true"] .amoled-banner-email {
+  color: #C4B5FD !important;
+}
+
 [data-zero-theme="kindle"] .border-zinc-900,
 [data-zero-theme="kindle"] .border-zinc-850,
 [data-zero-theme="kindle"] .border-zinc-800,

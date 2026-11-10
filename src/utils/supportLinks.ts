@@ -1,6 +1,8 @@
 import type React from 'react';
 
 export const KOFI_URL = 'https://ko-fi.com/mdyousuf2620';
+export const SUPPORT_EMAIL = 'mdyousuf982007@proton.me';
+export const SUPPORT_MAILTO_URL = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('ZERO Ko-fi Donor Verification')}`;
 export const RELEASES_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO/releases';
 export const SOURCE_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO';
 export const UPI_ID = 'md.y2007@ptaxis';

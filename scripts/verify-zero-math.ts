@@ -45,6 +45,11 @@ import {
   evaluatePermissionPriority,
   normalizeRestrictedSettingsStatus,
 } from '../src/utils/permissionPriority.ts';
+import {
+  encodeDonorUnlockToken,
+  verifyDonorUnlockToken,
+} from '../src/utils/donorUnlockToken.ts';
+import { KOFI_URL, SUPPORT_EMAIL } from '../src/utils/supportLinks.ts';
 import type { NativePermissionStatus, SessionRecord, ZeroZbakPayload } from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
@@ -648,5 +653,45 @@ failIf(
   'Granted Usage Access implies Restricted Settings is allowed when field omitted'
 );
 console.log('PASS: Permission Priority (Restricted Check -> Usage -> Overlay -> Notifications) Verified');
+
+console.log('\n=== TEST 14: Signed Donor Unlock Token & Manual Ko-fi Verification Support ===');
+failIf(
+  SUPPORT_EMAIL === 'mdyousuf982007@proton.me',
+  'Support email must point to mdyousuf982007@proton.me'
+);
+failIf(
+  KOFI_URL === 'https://ko-fi.com/mdyousuf2620',
+  'Ko-fi URL must point to https://ko-fi.com/mdyousuf2620'
+);
+
+const donorToken = encodeDonorUnlockToken({
+  email: 'Supporter@Example.com',
+  receiptRef: 'KOFI-9912',
+  minInr: 100,
+});
+failIf(donorToken.startsWith('ZDON1.'), 'Donor unlock token must use ZDON1 prefix');
+
+const donorVerifyOk = verifyDonorUnlockToken(donorToken);
+failIf(donorVerifyOk.ok === true, 'Valid signed ZDON1 token must verify cleanly');
+if (donorVerifyOk.ok) {
+  failIf(
+    donorVerifyOk.payload.email === 'supporter@example.com' &&
+      donorVerifyOk.payload.minInr === 100 &&
+      donorVerifyOk.payload.tier === 'zero_supporter',
+    'Verified donor token must normalize email and preserve supporter tier'
+  );
+}
+
+const tokenParts = donorToken.split('.');
+const flippedSig = `${tokenParts[2].slice(0, -1)}${tokenParts[2].slice(-1) === '0' ? '1' : '0'}`;
+failIf(
+  verifyDonorUnlockToken(`${tokenParts[0]}.${tokenParts[1]}.${flippedSig}`).ok === false,
+  'Tampered donor token HMAC signature must be rejected'
+);
+failIf(
+  verifyDonorUnlockToken('').ok === false,
+  'Empty donor token input must be rejected'
+);
+console.log('PASS: Signed Donor Unlock Token & Ko-fi Verification Support Details Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');
