@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type {
   SessionTag,
   SessionRecord,
@@ -6,7 +6,6 @@ import type {
   OccasionBag,
   NativePermissionStatus,
   ZeroProfile,
-  DashboardWidgetsConfig,
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
@@ -14,15 +13,9 @@ import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar'
 import { ObsidianCard } from './ObsidianCard';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
-import {
-  computeMiniWeekHeatmap,
-  sanitizeWidgetsConfig,
-  DEFAULT_WIDGETS_CONFIG,
-} from '../utils/heatmapAnalytics';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import {
   ShieldAlert,
-  ShieldCheck,
   Clock,
   Flame,
   ChevronRight,
@@ -49,7 +42,6 @@ interface LockDialViewProps {
   profile: ZeroProfile | null;
   isZeroSupporter: boolean;
   sessions: SessionRecord[];
-  widgetsConfig?: DashboardWidgetsConfig;
   hasClaimedFirstTimeParachute: boolean;
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
@@ -58,53 +50,12 @@ interface LockDialViewProps {
   onOneTapUpload?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onTurnOnAutoBackup?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onExportZbakData?: () => string;
-  onOpenDashboard: () => void;
+  onOpenTicketModal: () => void;
   onOpenBagDrawer: () => void;
   onOpenPermissionGate: () => void;
   onOpenProfileModal: () => void;
   onOpenThemes: () => void;
   onOpenManualBackup?: () => void;
-}
-
-function getMiniHeatmapCellStyle(
-  level: 0 | 1 | 2 | 3 | 4,
-  isToday: boolean
-): CSSProperties {
-  const ringShadow = isToday ? ', 0 0 0 1.5px rgba(255, 255, 255, 0.78)' : '';
-  switch (level) {
-    case 1:
-      return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.18)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.36)',
-        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
-      };
-    case 2:
-      return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.4)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.58)',
-        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
-      };
-    case 3:
-      return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.66)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.85)',
-        boxShadow: `0 0 8px rgba(var(--accent-rgb, 245, 158, 11), 0.28)${ringShadow}`,
-      };
-    case 4:
-      return {
-        background:
-          'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.98)',
-        boxShadow: `0 0 10px rgba(var(--accent-rgb, 245, 158, 11), 0.45)${ringShadow}`,
-      };
-    case 0:
-    default:
-      return {
-        background: 'rgba(9, 9, 11, 0.84)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
-      };
-  }
 }
 
 const PRESET_DURATIONS = [
@@ -131,7 +82,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   profile,
   isZeroSupporter,
   sessions,
-  widgetsConfig,
   hasClaimedFirstTimeParachute,
   todayReclaimedHours,
   justEarnedParachute,
@@ -140,7 +90,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   onOneTapUpload,
   onTurnOnAutoBackup,
   onExportZbakData,
-  onOpenDashboard,
+  onOpenTicketModal,
   onOpenBagDrawer,
   onOpenPermissionGate,
   onOpenProfileModal,
@@ -317,14 +267,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       }),
     [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
   );
-  const resolvedWidgets = useMemo(
-    () => sanitizeWidgetsConfig(widgetsConfig ?? DEFAULT_WIDGETS_CONFIG),
-    [widgetsConfig]
-  );
-  const miniWeek = useMemo(
-    () => computeMiniWeekHeatmap(sessions, profile?.dailyGoalHours || 4),
-    [sessions, profile?.dailyGoalHours]
-  );
   const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
@@ -332,23 +274,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   const dailyGoalPct = profile
     ? Math.min(100, Math.round((todayReclaimedHours / Math.max(1, profile.dailyGoalHours)) * 100))
     : 0;
-  const balanceBadgeText =
-    parachuteMetrics.bonusParachutes > 0
-      ? parachuteMetrics.lifetimeEarnedParachutes === parachuteMetrics.bonusParachutes
-        ? 'Starter Gift Ready'
-        : `+${parachuteMetrics.bonusParachutes} Bonus + Earned`
-      : 'Earned-Only';
 
   return (
     <div className="flex-1 flex flex-col items-center justify-between px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
-      {/* Interactive Profile Strip + 1-Tap Theme Studio Shortcut */}
-      <div className="w-full flex items-stretch gap-2">
+      {/* Interactive Profile Strip + Compact Escape Ticket + 1-Tap Theme Studio Shortcut */}
+      <div className="w-full flex items-stretch gap-1.5">
         {profile ? (
           <ObsidianCard
             accent={profileAccentKey}
             fullWidth={false}
             className="flex-1 min-w-0"
-            headerClassName="p-2.5 flex items-center justify-between gap-2.5"
+            headerClassName="p-2.5 flex items-center justify-between gap-2"
             headerContent={
               <>
                 <ProfileAvatar
@@ -360,7 +296,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenProfileModal}
-                  className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
+                  className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-1.5"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -386,8 +322,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-8 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="w-7 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden hidden sm:block">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
@@ -411,34 +347,69 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             fullWidth={false}
             onClick={onOpenProfileModal}
             className="flex-1 min-w-0"
-            headerClassName="p-2.5 px-3 flex items-center justify-between gap-2 font-mono"
+            headerClassName="p-2.5 flex items-center justify-between gap-2 font-mono"
             headerContent={
               <>
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0" style={{ color: 'var(--accent-hex, #F59E0B)' }}>
-                    {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
+                    {hasClaimedFirstTimeParachute ? <UserPlus size={14} /> : <Gift size={14} />}
                   </div>
                   <div className="text-left min-w-0">
                     <div className="text-xs font-bold text-white truncate">
-                      {hasClaimedFirstTimeParachute
-                        ? 'Create Profile'
-                        : 'Make Profile • +1 Free 🎫'}
+                      {hasClaimedFirstTimeParachute ? 'Create Profile' : 'Profile • +1 🎫'}
                     </div>
                     <div className="text-[10px] text-amber-200/80 truncate">
-                      {hasClaimedFirstTimeParachute
-                        ? 'Emblem, daily goal & pledge'
-                        : 'Free starter Escape Ticket'}
+                      {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
                     </div>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg obsidian-pill-active text-[10px] font-black uppercase shrink-0">
-                  <Sparkles size={11} />
-                  <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg obsidian-pill-active text-[10px] font-black uppercase shrink-0">
+                  <Sparkles size={10} />
+                  <span>{hasClaimedFirstTimeParachute ? 'Set' : 'Claim'}</span>
                 </span>
               </>
             }
           />
         )}
+
+        {/* Compact Escape Ticket Shortcut (left of Theme) */}
+        <ObsidianCard
+          accent={profileAccentKey}
+          asButton
+          fullWidth={false}
+          onClick={() => {
+            haptics.tick(860);
+            onOpenTicketModal();
+          }}
+          className={`shrink-0 ${
+            justEarnedParachute ? 'ring-2 ring-amber-400/60 animate-parachute-card-pop' : ''
+          }`}
+          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white"
+          title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
+          aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
+          headerContent={
+            <>
+              <div className="h-6 px-1.5 rounded-lg obsidian-icon-box flex items-center justify-center gap-1">
+                <span
+                  className={`text-xs leading-none ${
+                    justEarnedParachute ? 'animate-parachute-float inline-block' : ''
+                  }`}
+                >
+                  🎫
+                </span>
+                <span
+                  className="text-[11px] font-black leading-none"
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                >
+                  {parachuteMetrics.currentBalance}
+                </span>
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-wider leading-none">
+                {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
+              </span>
+            </>
+          }
+        />
 
         <ObsidianCard
           accent={profileAccentKey}
@@ -457,88 +428,16 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               <div className="w-6 h-6 rounded-lg obsidian-icon-box flex items-center justify-center">
                 <Palette size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
               </div>
-              <span className="text-[9px] font-bold uppercase tracking-wider">Theme</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider leading-none">
+                Theme
+              </span>
             </>
           }
         />
       </div>
 
-      {/* Top Banner: Escape Ticket Balance & Milestone Progress (Two-Tier ObsidianCard) */}
-      <ObsidianCard
-        asButton
-        accent={profileAccentKey}
-        onClick={onOpenDashboard}
-        className={
-          justEarnedParachute
-            ? 'ring-2 ring-amber-400/50 animate-parachute-card-pop'
-            : ''
-        }
-        overlays={
-          justEarnedParachute ? (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
-            />
-          ) : undefined
-        }
-        headerClassName="p-3.5 flex items-center justify-between gap-2 group"
-        footerClassName="px-3.5 py-2 flex items-center justify-between gap-2 text-[11px] font-mono text-zinc-400"
-        headerContent={
-          <>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className={`w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center font-mono text-base shrink-0 transition-transform ${
-                  justEarnedParachute ? 'scale-105' : ''
-                }`}
-              >
-                <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
-                  🎫
-                </span>
-              </div>
-              <div className="text-left min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-mono font-bold text-sm text-zinc-100">
-                    {parachuteMetrics.currentBalance}{' '}
-                    {parachuteMetrics.currentBalance === 1 ? 'Escape Ticket' : 'Escape Tickets'}
-                  </span>
-                  <span
-                    className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
-                      justEarnedParachute || parachuteMetrics.bonusParachutes > 0
-                        ? 'obsidian-inset text-amber-300'
-                        : 'obsidian-inset-neutral text-zinc-300'
-                    }`}
-                  >
-                    {balanceBadgeText}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 text-zinc-400 group-hover:text-zinc-200 shrink-0">
-              <div className="w-12 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${parachuteMetrics.progressPercentage}%`,
-                    background: 'var(--accent-badge-gradient, #F59E0B)',
-                  }}
-                />
-              </div>
-              <ChevronRight size={16} />
-            </div>
-          </>
-        }
-        footerContent={
-          <>
-            <span>{parachuteMetrics.hoursUntilNextParachute}h to next (+1 per 20h milestone)</span>
-            <span className="font-bold" style={{ color: 'var(--accent-hex, #F59E0B)' }}>
-              {parachuteMetrics.progressPercentage}%
-            </span>
-          </>
-        }
-      />
-
-      {/* Native Android Strict Permission Banner */}
-      {permissions.isNativeAndroid && (
+      {/* Native Android Strict Permission Banner — only shown when permissions are NOT armed yet */}
+      {permissions.isNativeAndroid && !permissions.strictReady && (
         <ObsidianCard
           asButton
           onClick={onOpenPermissionGate}
@@ -547,47 +446,24 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           headerContent={
             <>
               <div className="flex items-center gap-2 min-w-0">
-                {permissions.strictReady ? (
-                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-                ) : (
-                  <ShieldAlert
-                    size={14}
-                    style={{ color: 'var(--accent-hex, #F59E0B)' }}
-                    className="shrink-0"
-                  />
-                )}
+                <ShieldAlert
+                  size={14}
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                  className="shrink-0"
+                />
                 <span className="font-bold truncate text-zinc-100">
-                  {permissions.strictReady
-                    ? !permissions.hasNotificationPermission
-                      ? 'Guard Armed • Optional Notifications'
-                      : permissions.isStrictAccessibilityBuild
-                      ? 'Strict Accessibility Guard: Armed'
-                      : 'Overlay + Usage Guard: Armed'
-                    : 'Permissions Required Before Locking'}
+                  Permissions Required Before Locking
                 </span>
               </div>
-              {permissions.strictReady ? (
-                <span
-                  className="text-[10px] font-bold shrink-0 ml-2"
-                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
-                >
-                  Check
-                </span>
-              ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded-lg obsidian-pill-active font-black uppercase tracking-wider shrink-0 ml-2">
-                  Grant Now
-                </span>
-              )}
+              <span className="text-[10px] px-2 py-0.5 rounded-lg obsidian-pill-active font-black uppercase tracking-wider shrink-0 ml-2">
+                Grant Now
+              </span>
             </>
           }
           footerContent={
-            permissions.strictReady && permissions.hasNotificationPermission ? undefined : (
-              <span>
-                {permissions.strictReady
-                  ? 'Tap to enable lock countdown & 5-minute schedule alerts.'
-                  : 'Order: Usage / Accessibility -> App Info (if denied) -> Overlay'}
-              </span>
-            )
+            <span>
+              Order: Usage / Accessibility -&gt; App Info (if denied) -&gt; Overlay
+            </span>
           }
         />
       )}
@@ -744,85 +620,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             >
               Make sure to upload <code>zero-backup.zbak</code> to Drive, OneDrive, or JioDrive via 1-Tap Upload.
             </div>
-          }
-        />
-      )}
-
-      {/* Optional Compact 7-Day Discipline Widget Strip (Toggled in Insights -> Widgets) */}
-      {resolvedWidgets.showDialWidget && (
-        <ObsidianCard
-          asButton
-          accent={profileAccentKey}
-          onClick={onOpenDashboard}
-          className="font-mono"
-          headerClassName="p-3 flex items-center justify-between gap-2.5"
-          footerClassName="px-3 py-1.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
-          headerContent={
-            <>
-              <div className="flex-1 min-w-0 space-y-1.5 text-left">
-                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                  <span>7-Day Discipline</span>
-                  <span style={{ color: 'var(--accent-hex, #F59E0B)' }}>
-                    {miniWeek.goalMetDays}/7 Goal
-                  </span>
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {miniWeek.weekCells.map((cell) => (
-                    <div
-                      key={cell.dateStr}
-                      style={getMiniHeatmapCellStyle(cell.level, cell.isToday)}
-                      className="h-7 rounded-lg flex flex-col items-center justify-center"
-                      title={cell.detailLabel}
-                    >
-                      <span
-                        className="text-[8px] font-black leading-none"
-                        style={{
-                          color:
-                            cell.level === 4
-                              ? 'var(--accent-badge-text, #09090B)'
-                              : cell.isToday
-                              ? '#FFFFFF'
-                              : '#A1A1AA',
-                        }}
-                      >
-                        {cell.dayShort[0]}
-                      </span>
-                      <span
-                        className="text-[7px] font-bold leading-none mt-0.5"
-                        style={{
-                          color:
-                            cell.level === 4
-                              ? 'var(--accent-badge-text, #09090B)'
-                              : cell.seconds > 0
-                              ? '#E4E4E7'
-                              : '#52525B',
-                        }}
-                      >
-                        {cell.seconds > 0 ? `${cell.hours}h` : '·'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="px-2.5 py-2 rounded-xl obsidian-inset flex flex-col items-center justify-center shrink-0 min-w-[66px]">
-                <span
-                  className="text-sm font-black leading-none"
-                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
-                >
-                  {miniWeek.weekTotalHours}h
-                </span>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 mt-1">
-                  WEEK
-                </span>
-              </div>
-            </>
-          }
-          footerContent={
-            <>
-              <span>Weekly discipline pulse</span>
-              <span className="font-bold text-zinc-300">Daily / Monthly / All &rarr;</span>
-            </>
           }
         />
       )}

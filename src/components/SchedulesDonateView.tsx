@@ -77,6 +77,7 @@ interface SchedulesDonateViewProps {
     section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
     key: number;
   } | null;
+  viewMode?: 'all' | 'settings_os' | 'support';
   sleepFarmingMode: SleepFarmingMode;
   onSleepFarmingModeChange: (mode: SleepFarmingMode) => void;
   onBuildBackupJson: () => string;
@@ -120,6 +121,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   themeConfig,
   onThemeConfigChange,
   sectionOverride = null,
+  viewMode = 'all',
   sleepFarmingMode,
   onSleepFarmingModeChange,
   onBuildBackupJson,
@@ -160,6 +162,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       setActiveSection(sectionOverride.section);
     }
   }, [sectionOverride?.key, sectionOverride?.section]);
+
+  const effectiveSection =
+    viewMode === 'support'
+      ? 'support'
+      : viewMode === 'settings_os' && activeSection === 'support'
+      ? 'schedules'
+      : activeSection;
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState<string>('');
@@ -265,71 +274,90 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   return (
     <div className="flex flex-col gap-5 px-4 py-4 max-w-md mx-auto w-full select-none pb-24">
       {/* View Header */}
-      <div>
-        <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
-          <span>THEMES, SETTINGS &amp; OS</span>
-        </h1>
-        <p className="text-xs font-mono text-zinc-400">
-          Auto-Pilot Schedules, Theme Studio, Donor Perks &amp; Ethical Support
-        </p>
-      </div>
+      {viewMode === 'support' ? (
+        <div>
+          <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
+            <span>KEEP ZERO FREE</span>
+          </h1>
+          <p className="text-xs font-mono text-zinc-400">
+            100% FOSS • Voluntary UPI / Ko-fi Support &amp; Donor Perks
+          </p>
+        </div>
+      ) : (
+        <div>
+          <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
+            <span>SETTINGS &amp; OS</span>
+          </h1>
+          <p className="text-xs font-mono text-zinc-400">
+            Auto-Pilot Schedules, Theme Studio, Backups &amp; Android Guards
+          </p>
+        </div>
+      )}
 
       {/* Frosted Obsidian Sub-Nav Pill */}
-      <div className="grid grid-cols-5 gap-1 p-1 obsidian-shell-bar rounded-2xl text-[10px] font-mono">
-        <button
-          onClick={() => setActiveSection('schedules')}
-          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
-            activeSection === 'schedules'
-              ? 'obsidian-pill-active font-black'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
+      {viewMode !== 'support' && (
+        <div
+          className={`grid ${
+            viewMode === 'settings_os' ? 'grid-cols-4' : 'grid-cols-5'
+          } gap-1 p-1 obsidian-shell-bar rounded-2xl text-[10px] font-mono`}
         >
-          Schedules
-        </button>
-        <button
-          onClick={() => setActiveSection('themes')}
-          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
-            activeSection === 'themes'
-              ? 'obsidian-pill-active font-black'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Themes
-        </button>
-        <button
-          onClick={() => setActiveSection('settings')}
-          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
-            activeSection === 'settings'
-              ? 'obsidian-pill-active font-black'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Settings
-        </button>
-        <button
-          onClick={() => setActiveSection('os_security')}
-          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
-            activeSection === 'os_security'
-              ? 'obsidian-pill-active font-black'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          OS
-        </button>
-        <button
-          onClick={() => setActiveSection('support')}
-          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
-            activeSection === 'support'
-              ? 'obsidian-pill-active font-black'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Support
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveSection('schedules')}
+            className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+              effectiveSection === 'schedules'
+                ? 'obsidian-pill-active font-black'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Schedules
+          </button>
+          <button
+            onClick={() => setActiveSection('themes')}
+            className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+              effectiveSection === 'themes'
+                ? 'obsidian-pill-active font-black'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Themes
+          </button>
+          <button
+            onClick={() => setActiveSection('settings')}
+            className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+              effectiveSection === 'settings'
+                ? 'obsidian-pill-active font-black'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Settings
+          </button>
+          <button
+            onClick={() => setActiveSection('os_security')}
+            className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+              effectiveSection === 'os_security'
+                ? 'obsidian-pill-active font-black'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            OS
+          </button>
+          {viewMode === 'all' && (
+            <button
+              onClick={() => setActiveSection('support')}
+              className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+                effectiveSection === 'support'
+                  ? 'obsidian-pill-active font-black'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Support
+            </button>
+          )}
+        </div>
+      )}
 
       {/* SECTION 0: THEME STUDIO (AMOLED + GRADIENTS, PAPER LIKE KINDLE, MATTE STUDIO) */}
-      {activeSection === 'themes' && (
+      {effectiveSection === 'themes' && (
         <div className="space-y-4">
           <ThemeSelectorCard
             themeConfig={themeConfig}
@@ -360,7 +388,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       )}
 
       {/* SECTION 1: AUTO-PILOT RECURRING SCHEDULES */}
-      {activeSection === 'schedules' && (
+      {effectiveSection === 'schedules' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold">
@@ -480,7 +508,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       )}
 
       {/* SECTION 2: BACKUP & RESTORE EVERYTHING, DISCIPLINE RULES & PROFILE */}
-      {activeSection === 'settings' && (
+      {effectiveSection === 'settings' && (
         <div className="space-y-4">
           {/* CONSOLIDATED CARD #1: BACKUP & RESTORE EVERYTHING (Storage Auto-Sync on Session Start/End + 1-Tap Cloud Upload + Manual .ZBAK/.JSON + Reset) */}
           <ObsidianCard
@@ -1133,7 +1161,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       )}
 
       {/* SECTION 3: ANDROID OS-LEVEL ENFORCEMENT & ARCHITECTURE */}
-      {activeSection === 'os_security' && (
+      {effectiveSection === 'os_security' && (
         <div className="space-y-4">
           <ObsidianCard
             ambientGlow
@@ -1571,7 +1599,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       )}
 
       {/* SECTION 4: KEEP ZERO FREE (ETHICAL SUPPORT & DONATE) */}
-      {activeSection === 'support' && (
+      {effectiveSection === 'support' && (
         <div className="space-y-4">
           <ObsidianCard
             accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}

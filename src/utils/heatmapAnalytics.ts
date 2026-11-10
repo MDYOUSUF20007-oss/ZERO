@@ -44,7 +44,7 @@ export const DEFAULT_WIDGETS_CONFIG: DashboardWidgetsConfig = {
   order: [...WIDGET_ORDER_DEFAULT],
   defaultTimeframe: 'weekly',
   syncOverviewWithTimeframe: false,
-  showDialWidget: true,
+  showDialWidget: false,
 };
 
 const VALID_TIMEFRAMES: HeatmapTimeframe[] = ['daily', 'weekly', 'monthly', 'merged_all'];

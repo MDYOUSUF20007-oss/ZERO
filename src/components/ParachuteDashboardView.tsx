@@ -68,6 +68,7 @@ interface ParachuteDashboardViewProps {
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
   onOpenProfileModal: () => void;
+  onOpenTicketModal?: () => void;
 }
 
 const HEATMAP_TIMEFRAME_OPTIONS: Array<{
@@ -153,6 +154,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   todayReclaimedHours,
   justEarnedParachute,
   onOpenProfileModal,
+  onOpenTicketModal,
 }) => {
   const [localWidgetsFallback, setLocalWidgetsFallback] = useState<DashboardWidgetsConfig>(
     () => sanitizeWidgetsConfig(widgetsConfig ?? DEFAULT_WIDGETS_CONFIG)
@@ -1211,7 +1213,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* Dynamic Sync & Dial Widget Toggles */}
+              {/* Dynamic Timeframe Sync Toggle */}
               <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
@@ -1244,38 +1246,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }`}
                   >
                     {safeWidgets.syncOverviewWithTimeframe ? 'ON' : 'OFF'}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptics.tick(800);
-                    commitWidgetsConfig({
-                      ...safeWidgets,
-                      showDialWidget: !safeWidgets.showDialWidget,
-                    });
-                  }}
-                  className={`p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition-all ${
-                    safeWidgets.showDialWidget ? 'obsidian-inset' : 'obsidian-inset-neutral'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-white">
-                      Compact 7-Day Widget on Dial Screen
-                    </div>
-                    <div className="text-[9px] text-zinc-400">
-                      Pin your live weekly discipline strip above the Dial wheel
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase shrink-0 ${
-                      safeWidgets.showDialWidget
-                        ? 'obsidian-pill-active'
-                        : 'bg-zinc-900 border border-white/10 text-zinc-400'
-                    }`}
-                  >
-                    {safeWidgets.showDialWidget ? 'PINNED' : 'HIDDEN'}
                   </span>
                 </button>
               </div>
@@ -1455,6 +1425,15 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {/* Hero 20-Hour Escape Ticket Progression Card */}
       <ObsidianCard
         accent={profileAccentKey}
+        asButton={Boolean(onOpenTicketModal)}
+        onClick={
+          onOpenTicketModal
+            ? () => {
+                haptics.tick(860);
+                onOpenTicketModal();
+              }
+            : undefined
+        }
         ambientGlow
         className={justEarnedParachute ? 'animate-parachute-card-pop' : ''}
         overlays={
@@ -1549,14 +1528,16 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           <>
             <div className="flex items-center gap-1.5">
               <Moon size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0" />
-              <span>Anti-Sleep Rule:</span>
+              <span>
+                {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
+                  ? '0.25x Sleep'
+                  : parachuteMetrics.sleepFarmingMode === 'daytime_only'
+                  ? 'Daytime Only'
+                  : '1.0x Sleep'}
+              </span>
             </div>
             <span className="font-bold" style={{ color: 'var(--accent-hex, #F59E0B)' }}>
-              {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
-                ? '0.25x Sleep Rate'
-                : parachuteMetrics.sleepFarmingMode === 'daytime_only'
-                ? 'Daytime Only'
-                : 'Full 1.0x Rate'}
+              {onOpenTicketModal ? 'View Ticket ->' : '20h Milestone'}
             </span>
           </>
         }

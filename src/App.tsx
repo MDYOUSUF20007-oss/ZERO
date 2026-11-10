@@ -10,13 +10,14 @@ import { TipAfterSessionModal } from './components/TipAfterSessionModal';
 import { ProfileModal } from './components/ProfileModal';
 import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation';
 import { ShareStatsModal } from './components/ShareStatsModal';
+import { EscapeTicketModal } from './components/EscapeTicketModal';
 import { ObsidianCard } from './components/ObsidianCard';
 import { haptics } from './utils/haptics';
-import { Clock, Heart, BellRing, X } from 'lucide-react';
+import { Clock, Heart, BellRing, Settings, X } from 'lucide-react';
 
 export function App() {
   const store = useZeroStore();
-  const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules'>('dial');
+  const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules' | 'support'>('dial');
   const [rulesSectionOverride, setRulesSectionOverride] = useState<{
     section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
     key: number;
@@ -24,6 +25,7 @@ export function App() {
   const [showBagModal, setShowBagModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showTicketModal, setShowTicketModal] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<'welcome' | 'edit'>('welcome');
   const [showSessionFlexModal, setShowSessionFlexModal] = useState(false);
   const hasAutoPromptedRef = useRef(false);
@@ -196,7 +198,6 @@ export function App() {
             profile={store.profile}
             isZeroSupporter={store.isZeroSupporter}
             sessions={store.sessions}
-            widgetsConfig={store.widgetsConfig}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
@@ -205,7 +206,7 @@ export function App() {
             onOneTapUpload={store.oneTapCloudUpload}
             onTurnOnAutoBackup={store.enableCloudAutoBackup}
             onExportZbakData={store.exportZbakData}
-            onOpenDashboard={() => setActiveTab('dashboard')}
+            onOpenTicketModal={() => setShowTicketModal(true)}
             onOpenBagDrawer={() => {
               store.refreshInstalledApps();
               setShowBagModal(true);
@@ -239,10 +240,11 @@ export function App() {
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
             onOpenProfileModal={openInteractiveProfile}
+            onOpenTicketModal={() => setShowTicketModal(true)}
           />
         )}
 
-        {activeTab === 'schedules' && (
+        {(activeTab === 'schedules' || activeTab === 'support') && (
           <SchedulesDonateView
             schedules={store.schedules}
             permissions={store.permissions}
@@ -256,6 +258,7 @@ export function App() {
             themeConfig={store.themeConfig}
             onThemeConfigChange={store.setThemeConfig}
             sectionOverride={rulesSectionOverride}
+            viewMode={activeTab === 'support' ? 'support' : 'settings_os'}
             sleepFarmingMode={store.sleepFarmingMode}
             onSleepFarmingModeChange={store.setSleepFarmingMode}
             onBuildBackupJson={store.buildBackupJson}
@@ -355,10 +358,32 @@ export function App() {
         onDismiss={store.dismissParachuteRewardAnimation}
       />
 
+      <EscapeTicketModal
+        isOpen={showTicketModal}
+        parachuteMetrics={store.parachuteMetrics}
+        profile={store.profile}
+        isZeroSupporter={store.isZeroSupporter}
+        hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+        hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
+        onClose={() => setShowTicketModal(false)}
+        onOpenProfile={() => {
+          setShowTicketModal(false);
+          openInteractiveProfile();
+        }}
+        onOpenSupport={() => {
+          setShowTicketModal(false);
+          setActiveTab('support');
+        }}
+        onOpenInsights={() => {
+          setShowTicketModal(false);
+          setActiveTab('dashboard');
+        }}
+      />
+
       {/* Frosted Two-Tier Obsidian Bottom Navigation Dock */}
       <nav
         data-frosted-chrome="true"
-        className="fixed bottom-0 left-0 right-0 z-40 obsidian-shell-bar backdrop-blur-md border-t pt-2 px-4"
+        className="fixed bottom-0 left-0 right-0 z-40 obsidian-shell-bar backdrop-blur-md border-t pt-2 px-2 sm:px-3"
         style={{
           paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
           borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
@@ -373,24 +398,24 @@ export function App() {
             opacity: 0.75,
           }}
         />
-        <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
+        <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
           <button
             onClick={() => {
               haptics.tick(900);
               setActiveTab('dial');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
               activeTab === 'dial'
                 ? 'obsidian-inset font-bold text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
             <Clock
-              size={18}
+              size={17}
               style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             />
             <span
-              className="text-[10px] font-mono mt-1 tracking-wider uppercase"
+              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
               style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
             >
               Dial
@@ -402,14 +427,14 @@ export function App() {
               haptics.tick(900);
               setActiveTab('dashboard');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all relative ${
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all relative ${
               activeTab === 'dashboard'
                 ? 'obsidian-inset font-bold text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
             <div className="relative">
-              <span className="text-sm">🎫</span>
+              <span className="text-sm leading-none">🎫</span>
               {store.parachuteMetrics.currentBalance > 0 && (
                 <span className="absolute -top-1.5 -right-3 text-[9px] font-mono px-1 rounded-full font-black obsidian-pill-active">
                   {store.parachuteMetrics.currentBalance}
@@ -417,7 +442,7 @@ export function App() {
               )}
             </div>
             <span
-              className="text-[10px] font-mono mt-0.5 tracking-wider uppercase"
+              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
               style={
                 activeTab === 'dashboard' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
               }
@@ -431,23 +456,48 @@ export function App() {
               haptics.tick(900);
               setActiveTab('schedules');
             }}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
               activeTab === 'schedules'
                 ? 'obsidian-inset font-bold text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
-            <Heart
-              size={18}
-              style={activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            <Settings
+              size={17}
+              style={
+                activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+              }
             />
             <span
-              className="text-[10px] font-mono mt-1 tracking-wider uppercase"
+              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-normal uppercase whitespace-nowrap"
               style={
                 activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
               }
             >
               Settings &amp; OS
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              haptics.tick(900);
+              setActiveTab('support');
+            }}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
+              activeTab === 'support'
+                ? 'obsidian-inset font-bold text-white shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            }`}
+          >
+            <Heart
+              size={17}
+              style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            />
+            <span
+              className="text-[9px] sm:text-[10px] font-mono mt-1 tracking-tight sm:tracking-wider uppercase whitespace-nowrap"
+              style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            >
+              Support
             </span>
           </button>
         </div>
