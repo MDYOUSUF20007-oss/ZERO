@@ -136,7 +136,17 @@ jobs:
       - name: Run Android Unit Tests (Standard & Strict)
         run: |
           cd android
-          ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest --no-daemon --stacktrace
+          set -o pipefail
+          if ! ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest --no-daemon --stacktrace 2>&1 | tee gradle-test.log; then
+            echo "### Android Unit Test / Compile Failure Log" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 gradle-test.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "error:|e: |FAILED|AssertionError|Exception|What went wrong" gradle-test.log | head -n 20 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done || true
+            exit 1
+          fi
 
       - name: Compile Signed Release APKs (v${{ env.ZERO_VERSION_NAME }} / code ${{ env.ZERO_VERSION_CODE }})
         if: steps.keystore.outputs.signed == 'true'

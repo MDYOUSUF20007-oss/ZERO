@@ -224,7 +224,7 @@ class BagStore(private val context: Context) {
     private fun queryIntentPackages(intent: Intent): List<String> {
         val pm = context.packageManager
         val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0L))
         } else {
             @Suppress("DEPRECATION")
             pm.queryIntentActivities(intent, 0)

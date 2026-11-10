@@ -277,7 +277,7 @@ class ZeroNativeBridge(
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
         val resolveList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0))
+            pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
         } else {
             @Suppress("DEPRECATION")
             pm.queryIntentActivities(mainIntent, 0)
