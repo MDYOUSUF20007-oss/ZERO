@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
+import {
+  KOFI_URL,
+  RELEASES_URL,
+  SOURCE_URL,
+  UPI_ID,
+  UPI_PAY_URL,
+  copyTextSafely,
+  handleOpenExternalUrl,
+} from '../utils/supportLinks';
 import type {
   RecurringSchedule,
   SessionTag,
@@ -45,15 +54,12 @@ interface SchedulesDonateViewProps {
   onExportData: () => string;
   onImportData: (rawJson: string) => { ok: boolean; message: string };
   onResetData: () => void;
+  tipSkipRemaining?: number;
+  onResetTipPromptBlock?: () => void;
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TAGS: SessionTag[] = ['Deep Work', 'Study', 'Sleep', 'Detox', 'Family'];
-const KOFI_URL = 'https://ko-fi.com/mdyousuf2620';
-const RELEASES_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO/releases';
-const SOURCE_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO';
-const UPI_ID = 'md.y2007@ptaxis';
-const UPI_PAY_URL = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Zero FOSS')}&cu=INR`;
 
 export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
@@ -71,6 +77,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onExportData,
   onImportData,
   onResetData,
+  tipSkipRemaining = 0,
+  onResetTipPromptBlock,
 }) => {
   const [activeSection, setActiveSection] = useState<'schedules' | 'support' | 'settings' | 'os_security'>('schedules');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -140,28 +148,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   };
 
   const handleOpenExternal = (e: React.MouseEvent, url: string) => {
-    if (window.ZeroNative?.openExternalUrl) {
-      e.preventDefault();
-      window.ZeroNative.openExternalUrl(url);
-    }
+    handleOpenExternalUrl(e, url);
   };
 
   const handleCopy = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-      } finally {
-        document.body.removeChild(textarea);
-      }
-    }
+    await copyTextSafely(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -844,28 +835,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               Support the Project
             </span>
 
-            {/* Buy Me a Coffee via Ko-fi */}
-            <a
-              href={KOFI_URL}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => handleOpenExternal(e, KOFI_URL)}
-              className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <Coffee size={18} />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-mono font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
-                  <div className="text-[11px] font-mono text-zinc-400 truncate">ko-fi.com/mdyousuf2620</div>
-                </div>
+            {/* UPI ID & Scannable QR (Best Offer • No Minimum Limit) */}
+            <div className="p-3.5 bg-amber-500/10 border-2 border-amber-400/60 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="px-2 py-0.5 rounded-md bg-amber-400 text-black font-mono text-[10px] font-black uppercase tracking-wider">
+                  Best Offer • Best Option
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-700/70 text-emerald-300 font-mono text-[10px] font-bold">
+                  NO MINIMUM LIMIT
+                </span>
               </div>
-              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
-            </a>
 
-            {/* UPI ID & Scannable QR */}
-            <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold text-xs shrink-0">
@@ -873,7 +853,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                   <div className="min-w-0">
                     <div className="font-mono font-bold text-xs text-white">UPI / Instant Pay</div>
-                    <div className="text-[11px] font-mono text-zinc-400 truncate">{UPI_ID}</div>
+                    <div className="text-[11px] font-mono text-amber-200 truncate">{UPI_ID}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -902,8 +882,21 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </div>
               </div>
 
+              <p className="text-[11px] font-mono text-zinc-300 leading-relaxed">
+                UPI has <strong>no minimum limit</strong> — tip even ₹1 or any amount you want with zero platform fees.
+              </p>
+
+              <a
+                href={UPI_PAY_URL}
+                onClick={(e) => handleOpenExternal(e, UPI_PAY_URL)}
+                className="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <span>Open UPI App</span>
+                <ExternalLink size={12} />
+              </a>
+
               {showUPIQR && (
-                <div className="p-3.5 bg-zinc-900 rounded-xl flex flex-col items-center justify-center text-center space-y-2.5 border border-zinc-800">
+                <div className="p-3.5 bg-zinc-900 rounded-xl flex flex-col items-center justify-center text-center space-y-2 border border-zinc-800">
                   {upiQrUrl ? (
                     <div className="bg-white p-2 rounded-xl shadow-md">
                       <img
@@ -917,23 +910,52 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       Generating QR...
                     </div>
                   )}
-                  <div className="space-y-0.5">
-                    <div className="text-[11px] font-mono font-bold text-zinc-200">{UPI_ID}</div>
-                    <div className="text-[10px] font-mono text-zinc-400">
-                      Scan via Google Pay, PhonePe, Paytm, or BHIM
-                    </div>
+                  <div className="text-[11px] font-mono font-bold text-zinc-200">{UPI_ID}</div>
+                  <div className="text-[10px] font-mono text-zinc-400">
+                    Scan via Google Pay, PhonePe, Paytm, or BHIM
                   </div>
-                  <a
-                    href={UPI_PAY_URL}
-                    onClick={(e) => handleOpenExternal(e, UPI_PAY_URL)}
-                    className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-200 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                  >
-                    <span>Open UPI App</span>
-                    <ExternalLink size={12} />
-                  </a>
                 </div>
               )}
             </div>
+
+            {/* Buy Me a Coffee via Ko-fi */}
+            <a
+              href={KOFI_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => handleOpenExternal(e, KOFI_URL)}
+              className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all group active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Coffee size={18} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-mono font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
+                  <div className="text-[11px] font-mono text-zinc-400 truncate">ko-fi.com/mdyousuf2620</div>
+                </div>
+              </div>
+              <ExternalLink size={14} className="text-zinc-500 group-hover:text-zinc-200 shrink-0 ml-2" />
+            </a>
+
+            {tipSkipRemaining > 0 && (
+              <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between gap-2 font-mono text-[11px]">
+                <span className="text-zinc-400">
+                  Post-session tip popup blocked for{' '}
+                  <strong className="text-white">{tipSkipRemaining}</strong> more completed{' '}
+                  {tipSkipRemaining === 1 ? 'session' : 'sessions'}.
+                </span>
+                {onResetTipPromptBlock && (
+                  <button
+                    type="button"
+                    onClick={onResetTipPromptBlock}
+                    className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 hover:text-white font-bold shrink-0"
+                  >
+                    Unblock
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

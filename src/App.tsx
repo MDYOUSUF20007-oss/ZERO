@@ -6,6 +6,7 @@ import { ParachuteDashboardView } from './components/ParachuteDashboardView';
 import { SchedulesDonateView } from './components/SchedulesDonateView';
 import { BagDrawerModal } from './components/BagDrawerModal';
 import { PermissionGateModal } from './components/PermissionGateModal';
+import { TipAfterSessionModal } from './components/TipAfterSessionModal';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, X } from 'lucide-react';
 
@@ -131,6 +132,8 @@ export function App() {
             onExportData={store.exportData}
             onImportData={store.importData}
             onResetData={store.resetAllData}
+            tipSkipRemaining={store.tipSkipRemaining}
+            onResetTipPromptBlock={store.resetTipPromptBlock}
           />
         )}
       </main>
@@ -154,6 +157,12 @@ export function App() {
         onClose={() => setShowPermissionModal(false)}
         onRefresh={store.refreshPermissions}
         onProceedReady={() => setShowPermissionModal(false)}
+      />
+
+      <TipAfterSessionModal
+        completedSession={store.postSessionTipPrompt}
+        onDismiss={store.dismissPostSessionTipPrompt}
+        onBlockFiveSessions={store.blockTipPromptForFiveSessions}
       />
 
       {/* Neo-Brutalist Bottom Navigation Bar */}

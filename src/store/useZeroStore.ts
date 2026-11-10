@@ -15,6 +15,11 @@ import type {
 } from '../types';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
+import {
+  TIP_SNOOZE_SESSIONS,
+  evaluatePostSessionTipPrompt,
+  normalizeTipSkipCount,
+} from '../utils/tipPromptPolicy';
 
 export const SECONDS_PER_PARACHUTE = 72000; // 20 Hours exactly
 export const MAX_BAG_APPS = 3; // BlockIt-inspired 3-app cap per Bag
@@ -33,6 +38,7 @@ const STORAGE_KEYS = {
   THEME: 'zero_active_theme_v3',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   SEED_PURGE_FLAG: 'zero_seed_purged_v4',
+  TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
 };
 
 const DEFAULT_SCHEDULES: RecurringSchedule[] = [
@@ -208,6 +214,11 @@ export function useZeroStore() {
     return (localStorage.getItem(STORAGE_KEYS.SLEEP_FARMING_MODE) as SleepFarmingMode) || 'quarter_credit';
   });
 
+  const [tipSkipRemaining, setTipSkipRemaining] = useState<number>(() => {
+    return normalizeTipSkipCount(localStorage.getItem(STORAGE_KEYS.TIP_SKIP_REMAINING));
+  });
+  const [postSessionTipPrompt, setPostSessionTipPrompt] = useState<SessionRecord | null>(null);
+
   // Real Zero metrics — starts honestly at 0 (no fake seed data!)
   const [cumulativeSeconds, setCumulativeSeconds] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS);
@@ -290,6 +301,27 @@ export function useZeroStore() {
       }
     }
     return WEB_FALLBACK_APPS;
+  });
+
+  const [expiredLockOnBoot] = useState<ActiveLockSession | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_LOCK);
+      if (saved) {
+        const parsed = JSON.parse(saved) as ActiveLockSession;
+        const now = Date.now();
+        if (parsed.isLocked && parsed.targetEndTime > 0 && parsed.targetEndTime <= now) {
+          return {
+            ...parsed,
+            isLocked: true,
+            elapsedSeconds: parsed.durationSeconds,
+            remainingSeconds: 0,
+          };
+        }
+      }
+    } catch {
+      // Ignore parse error
+    }
+    return null;
   });
 
   const [activeLock, setActiveLock] = useState<ActiveLockSession>(() => {
@@ -384,6 +416,10 @@ export function useZeroStore() {
   }, [sleepFarmingMode]);
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, String(tipSkipRemaining));
+  }, [tipSkipRemaining]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS, cumulativeSeconds.toString());
   }, [cumulativeSeconds]);
 
@@ -474,7 +510,21 @@ export function useZeroStore() {
   const cumulativeSecondsRef = useRef(cumulativeSeconds);
   cumulativeSecondsRef.current = cumulativeSeconds;
 
+  const tipSkipRemainingRef = useRef(tipSkipRemaining);
+  useEffect(() => {
+    tipSkipRemainingRef.current = tipSkipRemaining;
+  }, [tipSkipRemaining]);
+
+  const finalizingLockStartRef = useRef<number | null>(null);
+  const bootRecoveryHandledRef = useRef(false);
+
   const handleSessionCompletion = useCallback((finishedLock: ActiveLockSession) => {
+    if (!finishedLock.isLocked || finalizingLockStartRef.current === finishedLock.startTime) {
+      return;
+    }
+    finalizingLockStartRef.current = finishedLock.startTime;
+    activeLockRef.current = { ...finishedLock, isLocked: false };
+
     haptics.milestoneChime();
     const duration = finishedLock.durationSeconds;
     const now = Date.now();
@@ -554,9 +604,23 @@ export function useZeroStore() {
     } catch {
       // Ignore in web mode
     }
+
+    const tipDecision = evaluatePostSessionTipPrompt(tipSkipRemainingRef.current);
+    tipSkipRemainingRef.current = tipDecision.nextSkipRemaining;
+    setTipSkipRemaining(tipDecision.nextSkipRemaining);
+    localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, String(tipDecision.nextSkipRemaining));
+    if (tipDecision.shouldShow) {
+      setPostSessionTipPrompt(newSession);
+    }
   }, []);
 
   const applyParachuteAbort = useCallback((current: ActiveLockSession) => {
+    if (!current.isLocked || finalizingLockStartRef.current === current.startTime) {
+      return;
+    }
+    finalizingLockStartRef.current = current.startTime;
+    activeLockRef.current = { ...current, isLocked: false };
+
     haptics.parachuteDeploy();
     const now = Date.now();
     const dateStr = new Date(now).toISOString().split('T')[0];
@@ -601,46 +665,76 @@ export function useZeroStore() {
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_LOCK);
   }, []);
 
+  // Finalize a session whose timer completed while the WebView process was killed/closed
+  useEffect(() => {
+    if (!expiredLockOnBoot || bootRecoveryHandledRef.current) return;
+    const timer = setTimeout(() => {
+      if (bootRecoveryHandledRef.current) return;
+      bootRecoveryHandledRef.current = true;
+      try {
+        if (window.ZeroNative) {
+          const raw = window.ZeroNative.getNativeStateJson();
+          const nativeState = JSON.parse(raw) as {
+            isLocked: boolean;
+            deployedCount: number;
+          };
+          if (!nativeState.isLocked && nativeState.deployedCount > usedParachutesRef.current) {
+            applyParachuteAbort(expiredLockOnBoot);
+            return;
+          }
+        }
+      } catch {
+        // Fallback to completion if targetEndTime elapsed
+      }
+      handleSessionCompletion(expiredLockOnBoot);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [expiredLockOnBoot, handleSessionCompletion, applyParachuteAbort]);
+
   useEffect(() => {
     if (!activeLock.isLocked) return;
 
-    const syncWithNative = () => {
+    const syncWithNative = (): boolean => {
       try {
-        if (!window.ZeroNative) return;
         const current = activeLockRef.current;
-        if (!current.isLocked) return;
-        const raw = window.ZeroNative.getNativeStateJson();
-        const nativeState = JSON.parse(raw) as {
-          isLocked: boolean;
-          cumulativeSeconds: number;
-          deployedCount: number;
-        };
-        if (!nativeState.isLocked && nativeState.deployedCount > usedParachutesRef.current) {
-          applyParachuteAbort(current);
+        if (!current.isLocked) return true;
+
+        if (window.ZeroNative) {
+          const raw = window.ZeroNative.getNativeStateJson();
+          const nativeState = JSON.parse(raw) as {
+            isLocked: boolean;
+            cumulativeSeconds: number;
+            deployedCount: number;
+          };
+          if (!nativeState.isLocked && nativeState.deployedCount > usedParachutesRef.current) {
+            applyParachuteAbort(current);
+            return true;
+          }
+        }
+
+        if (Date.now() >= current.targetEndTime) {
+          handleSessionCompletion(current);
+          return true;
         }
       } catch {
         // Ignore bridge errors
       }
+      return false;
     };
 
     const interval = setInterval(() => {
+      if (syncWithNative()) return;
       const now = Date.now();
       const current = activeLockRef.current;
       if (!current.isLocked) return;
 
-      syncWithNative();
-
-      if (now >= current.targetEndTime) {
-        handleSessionCompletion(current);
-      } else {
-        const remaining = Math.max(0, Math.floor((current.targetEndTime - now) / 1000));
-        const elapsed = Math.floor((now - current.startTime) / 1000);
-        setActiveLock((prev) => ({
-          ...prev,
-          remainingSeconds: remaining,
-          elapsedSeconds: elapsed,
-        }));
-      }
+      const remaining = Math.max(0, Math.floor((current.targetEndTime - now) / 1000));
+      const elapsed = Math.floor((now - current.startTime) / 1000);
+      setActiveLock((prev) => ({
+        ...prev,
+        remainingSeconds: remaining,
+        elapsedSeconds: elapsed,
+      }));
     }, 1000);
 
     window.addEventListener('focus', syncWithNative);
@@ -921,6 +1015,9 @@ export function useZeroStore() {
     setSchedules(DEFAULT_SCHEDULES);
     setBags(DEFAULT_BAGS);
     setActiveBagId(DEFAULT_BAGS[0].id);
+    setTipSkipRemaining(0);
+    tipSkipRemainingRef.current = 0;
+    setPostSessionTipPrompt(null);
     setActiveLock({
       isLocked: false,
       tag: 'Deep Work',
@@ -935,6 +1032,23 @@ export function useZeroStore() {
     } catch {
       // Ignore
     }
+  };
+
+  const dismissPostSessionTipPrompt = () => {
+    setPostSessionTipPrompt(null);
+  };
+
+  const blockTipPromptForFiveSessions = () => {
+    tipSkipRemainingRef.current = TIP_SNOOZE_SESSIONS;
+    setTipSkipRemaining(TIP_SNOOZE_SESSIONS);
+    localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, String(TIP_SNOOZE_SESSIONS));
+    setPostSessionTipPrompt(null);
+  };
+
+  const resetTipPromptBlock = () => {
+    tipSkipRemainingRef.current = 0;
+    setTipSkipRemaining(0);
+    localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, '0');
   };
 
   return {
@@ -958,6 +1072,11 @@ export function useZeroStore() {
     permissions,
     refreshPermissions,
     preLockAlert,
+    postSessionTipPrompt,
+    tipSkipRemaining,
+    dismissPostSessionTipPrompt,
+    blockTipPromptForFiveSessions,
+    resetTipPromptBlock,
     igniteSession,
     deployParachute,
     simulateReboot,

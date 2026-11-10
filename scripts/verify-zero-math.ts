@@ -4,7 +4,13 @@
  * 2. Anti-Sleep-Farming Rule (0.25x Parachute credit vs 0.0x daytime only)
  * 3. Aborted Session Penalty (0 credit for parachuted sessions, forfeited progress)
  * 4. Anti-Tamper Reboot Timestamp Recovery
+ * 5. Post-Session Tip Prompt Policy (shows on completion, blockable for 5 sessions)
  */
+import {
+  TIP_SNOOZE_SESSIONS,
+  evaluatePostSessionTipPrompt,
+  normalizeTipSkipCount,
+} from '../src/utils/tipPromptPolicy.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -150,5 +156,38 @@ console.assert(rebootNow < target, 'Reboot mid-session detected');
 const remainingSec = (target - rebootNow) / 1000;
 console.assert(remainingSec === 5400, 'Remaining time resumes accurately');
 console.log('PASS: Anti-Tamper Reboot Watchdog Logic');
+
+console.log('\n=== TEST 8: Post-Session Tip Prompt & 5-Session Block Policy ===');
+const failIf = (cond: boolean, msg: string) => {
+  if (!cond) throw new Error(msg);
+};
+
+// First completed session (skipRemaining = 0) shows the tip popup
+let skipCount = normalizeTipSkipCount(null);
+failIf(skipCount === 0, 'Initial skip count should normalize to 0');
+let decision = evaluatePostSessionTipPrompt(skipCount);
+failIf(decision.shouldShow === true && decision.nextSkipRemaining === 0, 'Popup should show when skip=0');
+
+// User clicks "Block for 5 Sessions"
+skipCount = TIP_SNOOZE_SESSIONS;
+failIf(skipCount === 5, 'TIP_SNOOZE_SESSIONS must equal 5');
+
+for (let sessionNum = 1; sessionNum <= 5; sessionNum++) {
+  decision = evaluatePostSessionTipPrompt(skipCount);
+  failIf(
+    decision.shouldShow === false,
+    `Session ${sessionNum} after blocking should keep Tip Popup hidden`
+  );
+  failIf(
+    decision.nextSkipRemaining === 5 - sessionNum,
+    `Session ${sessionNum} should leave ${5 - sessionNum} skipped sessions`
+  );
+  skipCount = decision.nextSkipRemaining;
+}
+
+// 6th completed session should allow the Tip Popup again
+decision = evaluatePostSessionTipPrompt(skipCount);
+failIf(decision.shouldShow === true && decision.nextSkipRemaining === 0, '6th completed session should show popup again');
+console.log('PASS: Post-Session Tip Prompt & Exact 5-Session Block Countdown Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');
