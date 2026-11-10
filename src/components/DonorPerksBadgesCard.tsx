@@ -381,7 +381,10 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 isBespoke ? 'text-[11px]' : 'text-[10px] font-bold'
               }`}
             >
-              <KeyRound size={12} style={{ color: isBespoke ? '#3B82F6' : '#8B5CF6' }} />
+              <KeyRound
+                size={12}
+                style={{ color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }}
+              />
               <span>Enter Signed Unlock Token</span>
             </label>
             <div className="flex gap-2">
@@ -399,7 +402,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 className={
                   isBespoke
                     ? 'flex-1 min-w-0 obsidian-input focus:border-blue-500 rounded-md px-3 py-2 text-xs font-mono text-white outline-none'
-                    : 'flex-1 min-w-0 obsidian-input focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none'
+                    : 'flex-1 min-w-0 obsidian-input rounded-xl px-3 py-2 text-[11px] text-white outline-none'
                 }
               />
               <button
@@ -407,15 +410,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 className={
                   isBespoke
                     ? 'px-3.5 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide shrink-0 transition-colors duration-75'
-                    : 'px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-all'
-                }
-                style={
-                  isBespoke
-                    ? undefined
-                    : {
-                        backgroundColor: '#8B5CF6',
-                        color: '#FFFFFF',
-                      }
+                    : 'px-3 py-2 rounded-xl obsidian-pill-active font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-all'
                 }
               >
                 Activate
