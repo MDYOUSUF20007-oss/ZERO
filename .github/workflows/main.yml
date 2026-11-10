@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -68,11 +68,15 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # ─── JOB 3: Build Installable Android Release APKs ────────────────────────
+  # ─── JOB 3: Build Signed Update-Compatible Android Release APKs ───────────
   build-android-apk:
     name: Build Android APK
     needs: build-web
     runs-on: ubuntu-latest
+    env:
+      ZERO_VERSION_CODE: ${{ 100 + github.run_number }}
+      ZERO_VERSION_NAME: 1.0.${{ github.run_number }}
+      EXPECTED_CERT_SHA256: A1:4A:36:1E:D4:B7:F7:D6:6E:57:69:92:99:9D:02:8A:05:32:65:85:0A:6C:A4:AF:EE:4F:C1:2F:29:48:CE:11
 
     steps:
       - name: Checkout Repository
@@ -107,40 +111,94 @@ jobs:
       - name: Grant Executable Permissions to Gradlew
         run: chmod +x android/gradlew
 
-      - name: Generate Release Signing Keystore
-        run: |
-          keytool -genkeypair -v \
-            -keystore "${{ runner.temp }}/zero-release.jks" \
-            -alias zero_release \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass zero_foss_2026 \
-            -keypass zero_foss_2026 \
-            -dname "CN=Zero Digital Detox FOSS, OU=OpenSource, O=Zero, L=Global, C=US"
-
-      - name: Compile Standard & Strict Release APKs
+      - name: Decode Persistent Release Signing Keystore
         env:
-          ZERO_KEYSTORE_PATH: ${{ runner.temp }}/zero-release.jks
-          ZERO_KEYSTORE_PASS: zero_foss_2026
-          ZERO_KEYSTORE_ALIAS: zero_release
+          KEYSTORE_B64: ${{ secrets.ZERO_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ZERO_KEYSTORE_PASS }}
+          KS_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KS_ALIAS" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              echo "::error::Missing persistent signing secrets (ZERO_KEYSTORE_BASE64, ZERO_KEYSTORE_PASS, ZERO_KEYSTORE_ALIAS). Refusing to generate disposable keys so user updates never require uninstalling."
+              exit 1
+            else
+              echo "PR build without secrets: skipping release signing."
+              exit 0
+            fi
+          fi
+          echo "$KEYSTORE_B64" | tr -d '\r\n ' | base64 -d > "${{ runner.temp }}/zero-release.p12"
+          keytool -list -v -storetype PKCS12 \
+            -keystore "${{ runner.temp }}/zero-release.p12" \
+            -storepass "$KS_PASS" \
+            -alias "$KS_ALIAS" | grep -E "Alias name:|SHA256:"
+
+      - name: Compile Standard & Strict Release APKs (v${{ env.ZERO_VERSION_NAME }} / code ${{ env.ZERO_VERSION_CODE }})
+        env:
+          ZERO_KEYSTORE_PATH: ${{ runner.temp }}/zero-release.p12
+          ZERO_KEYSTORE_TYPE: PKCS12
+          ZERO_KEYSTORE_PASS: ${{ secrets.ZERO_KEYSTORE_PASS }}
+          ZERO_KEYSTORE_KEY_PASS: ${{ secrets.ZERO_KEYSTORE_KEY_PASS }}
+          ZERO_KEYSTORE_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
         run: |
           cd android
-          ./gradlew testStandardReleaseUnitTest assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
-          ls -lh app/build/outputs/apk/*/*/*.apk
+          ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
 
-      - name: Upload Standard APK (Direct Install / Sideload-Safe)
+      - name: Verify APK Signing Certificate & Stage Release Assets
+        if: secrets.ZERO_KEYSTORE_BASE64 != ''
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
+          mkdir -p release-assets
+          cp android/app/build/outputs/apk/strict/release/app-strict-release.apk "release-assets/Zero-v${ZERO_VERSION_NAME}-strict-accessibility.apk"
+          cp android/app/build/outputs/apk/standard/release/app-standard-release.apk "release-assets/Zero-v${ZERO_VERSION_NAME}-standard-sideload.apk"
+
+          EXPECTED_CLEAN=$(echo "$EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          for apk in release-assets/*.apk; do
+            echo "Verifying $apk..."
+            "$APKSIGNER" verify --print-certs "$apk"
+            CERT_HEX=$("$APKSIGNER" verify --print-certs "$apk" | grep "SHA-256 digest" | head -n1 | awk '{print $NF}' | tr '[:upper:]' '[:lower:]')
+            if [ "$CERT_HEX" != "$EXPECTED_CLEAN" ]; then
+              echo "::error::Certificate mismatch for $apk! Expected $EXPECTED_CLEAN got $CERT_HEX"
+              exit 1
+            fi
+          done
+
+          (cd release-assets && sha256sum *.apk > SHA256SUMS.txt)
+          cat release-assets/SHA256SUMS.txt
+
+      - name: Upload Strict Accessibility APK Artifact (Full BlockIt Mode)
+        if: secrets.ZERO_KEYSTORE_BASE64 != ''
         uses: actions/upload-artifact@v4
         with:
-          name: Zero-v1.0.0-standard-apk
-          path: android/app/build/outputs/apk/standard/release/app-standard-release.apk
+          name: Zero-strict-accessibility-apk
+          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility.apk
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload Strict Accessibility APK (ADB Edition)
+      - name: Upload Standard Sideload APK Artifact (Usage Access + Overlay)
+        if: secrets.ZERO_KEYSTORE_BASE64 != ''
         uses: actions/upload-artifact@v4
         with:
-          name: Zero-v1.0.0-strict-adb-apk
-          path: android/app/build/outputs/apk/strict/release/app-strict-release.apk
+          name: Zero-standard-sideload-apk
+          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish Direct Download GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.ZERO_KEYSTORE_BASE64 != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.ZERO_VERSION_NAME }}
+          name: Zero v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            release-assets/*.apk
+            release-assets/SHA256SUMS.txt
+          body: |
+            ### Zero Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+
+            **Seamless In-Place Updates:** Signed with Zero's permanent release certificate (`SHA-256: ${{ env.EXPECTED_CERT_SHA256 }}`). Future updates install directly over previous releases without losing Parachutes, Bags, or history.
+
+            #### Which APK should I install?
+            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility.apk` (Recommended — Full BlockIt Mode):** Uses Android Accessibility Service to lock the notification drawer, Settings, Recents, and all apps outside your active Bag. *(On Android 14–16 devices with Play Protect sideload restrictions, install via `adb install -r` or Shizuku / "Install with Options", then allow Restricted Settings if prompted.)*
+            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload.apk` (Direct Browser/File Manager Install):** Omits `BIND_ACCESSIBILITY_SERVICE` for clean sideloading and enforces focus via **Usage Access + Display Over Other Apps** watchdog.

@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import type { RecurringSchedule, SessionTag, ThemeStyle, SleepFarmingMode } from '../types';
+import React, { useState, useRef } from 'react';
+import type {
+  RecurringSchedule,
+  SessionTag,
+  ThemeStyle,
+  SleepFarmingMode,
+  NativePermissionStatus,
+} from '../types';
 import {
   Plus,
   Trash2,
@@ -9,6 +15,7 @@ import {
   Copy,
   Check,
   Download,
+  Upload,
   RotateCcw,
   ExternalLink,
   Palette,
@@ -18,10 +25,13 @@ import {
   Smartphone,
   Terminal,
   ShieldAlert,
+  HelpCircle,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
   schedules: RecurringSchedule[];
+  permissions: NativePermissionStatus;
+  onRefreshPermissions: () => void;
   onToggleSchedule: (id: string) => void;
   onAddSchedule: (sched: Omit<RecurringSchedule, 'id'>) => void;
   onDeleteSchedule: (id: string) => void;
@@ -30,7 +40,9 @@ interface SchedulesDonateViewProps {
   onThemeChange: (theme: ThemeStyle) => void;
   sleepFarmingMode: SleepFarmingMode;
   onSleepFarmingModeChange: (mode: SleepFarmingMode) => void;
-  onExportData: () => void;
+  onBuildBackupJson: () => string;
+  onExportData: () => string;
+  onImportData: (rawJson: string) => { ok: boolean; message: string };
   onResetData: () => void;
 }
 
@@ -39,6 +51,8 @@ const TAGS: SessionTag[] = ['Deep Work', 'Study', 'Sleep', 'Detox', 'Family'];
 
 export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
+  permissions,
+  onRefreshPermissions,
   onToggleSchedule,
   onAddSchedule,
   onDeleteSchedule,
@@ -47,27 +61,27 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onThemeChange,
   sleepFarmingMode,
   onSleepFarmingModeChange,
+  onBuildBackupJson,
   onExportData,
+  onImportData,
   onResetData,
 }) => {
   const [activeSection, setActiveSection] = useState<'schedules' | 'support' | 'settings' | 'os_security'>('schedules');
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
-  const [, setNativeTick] = useState(0);
+  const [showPasteRestore, setShowPasteRestore] = useState(false);
+  const [pasteJsonInput, setPasteJsonInput] = useState('');
+  const [backupNotice, setBackupNotice] = useState<{ ok: boolean; message: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const hasNativeBridge = typeof window !== 'undefined' && Boolean(window.ZeroNative);
-  const isStrictBuild = hasNativeBridge ? Boolean(window.ZeroNative?.isStrictAccessibilityBuild()) : false;
-  const hasOverlayPerm = hasNativeBridge ? Boolean(window.ZeroNative?.hasOverlayPermission()) : false;
-  const isDeviceOwner = hasNativeBridge ? Boolean(window.ZeroNative?.isDeviceOwner()) : false;
-  const isAccessibilityOn = hasNativeBridge && isStrictBuild ? Boolean(window.ZeroNative?.isAccessibilityEnabled()) : false;
-
-  React.useEffect(() => {
-    if (!hasNativeBridge) return;
-    const refresh = () => setNativeTick((t) => t + 1);
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, [hasNativeBridge]);
+  const hasNativeBridge = permissions.isNativeAndroid;
+  const isStrictBuild = permissions.isStrictAccessibilityBuild;
+  const hasOverlayPerm = permissions.hasOverlayPermission;
+  const hasUsagePerm = permissions.hasUsageStatsPermission;
+  const hasNotifPerm = permissions.hasNotificationPermission;
+  const isDeviceOwner = permissions.isDeviceOwner;
+  const isAccessibilityOn = permissions.isAccessibilityEnabled;
 
   // New Schedule Form State
   const [newName, setNewName] = useState('Afternoon Focus');
@@ -75,6 +89,31 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [newStartTime, setNewStartTime] = useState('14:00');
   const [newEndTime, setNewEndTime] = useState('16:30');
   const [newTag, setNewTag] = useState<SessionTag>('Deep Work');
+
+  const handleFileRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = typeof reader.result === 'string' ? reader.result : '';
+      const result = onImportData(content);
+      setBackupNotice(result);
+    };
+    reader.onerror = () => {
+      setBackupNotice({ ok: false, message: 'Failed to read selected backup file.' });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handlePasteRestore = () => {
+    const res = onImportData(pasteJsonInput);
+    setBackupNotice(res);
+    if (res.ok) {
+      setPasteJsonInput('');
+      setShowPasteRestore(false);
+    }
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -405,23 +444,112 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </div>
           </div>
 
-          {/* Data Management: Export & Reset */}
-          <div className="space-y-2">
-            <button
-              onClick={onExportData}
-              className="w-full p-3.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-center gap-2 text-xs font-mono text-zinc-200 transition-colors shadow-sm"
-            >
-              <Download size={14} />
-              <span>Export Full JSON Ledger & Sessions Backup</span>
-            </button>
+          {/* Data Management: Full Export, Restore & Reset */}
+          <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-2xl space-y-3 font-mono">
+            <div className="text-xs text-zinc-200 font-bold uppercase tracking-wider">
+              Backup &amp; Restore Everything
+            </div>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              Save all sessions, 20h Parachute progress, streaks, schedules, and all 4 Bags to a local <code>.json</code> file so you can restore cleanly across phones or reinstalls.
+            </p>
+
+            {backupNotice && (
+              <div
+                className={`p-2.5 rounded-xl text-[11px] border ${
+                  backupNotice.ok
+                    ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
+                    : 'bg-red-950/50 border-red-700 text-red-200'
+                }`}
+              >
+                {backupNotice.message}
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFileRestore}
+              className="hidden"
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onExportData();
+                  setBackupNotice({
+                    ok: true,
+                    message: hasNativeBridge
+                      ? 'Backup generated. Choose Save to Files / Drive or Share.'
+                      : 'Backup .json file downloaded.',
+                  });
+                }}
+                className="p-3 bg-zinc-200 hover:bg-white text-black font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors"
+              >
+                <Download size={14} />
+                <span>Export Backup</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors"
+              >
+                <Upload size={14} />
+                <span>Restore File</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleCopy(onBuildBackupJson(), 'backup_json');
+                  setBackupNotice({ ok: true, message: 'Full JSON backup copied to clipboard.' });
+                }}
+                className="flex-1 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[11px] text-zinc-300 flex items-center justify-center gap-1.5"
+              >
+                {copiedId === 'backup_json' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                <span>Copy JSON Backup</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPasteRestore(!showPasteRestore)}
+                className="flex-1 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[11px] text-zinc-300"
+              >
+                {showPasteRestore ? 'Hide Paste Box' : 'Paste JSON to Restore'}
+              </button>
+            </div>
+
+            {showPasteRestore && (
+              <div className="space-y-2 pt-1">
+                <textarea
+                  rows={4}
+                  value={pasteJsonInput}
+                  onChange={(e) => setPasteJsonInput(e.target.value)}
+                  placeholder="Paste your Zero JSON backup text here..."
+                  className="w-full bg-black border border-zinc-700 rounded-xl p-2.5 text-[11px] text-zinc-200 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handlePasteRestore}
+                  className="w-full py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase"
+                >
+                  Restore Pasted Backup
+                </button>
+              </div>
+            )}
 
             <button
               onClick={() => {
-                if (window.confirm('Reset all Zero data to factory defaults? This clears your Parachutes and streaks.')) {
+                if (window.confirm('Reset all Zero data to factory defaults? This clears your Parachutes, bags, and streaks.')) {
                   onResetData();
+                  setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
                 }
               }}
-              className="w-full p-3.5 bg-zinc-950 border border-red-950/80 hover:border-red-800 text-red-400 hover:text-red-300 rounded-2xl flex items-center justify-center gap-2 text-xs font-mono transition-colors"
+              className="w-full p-3 bg-zinc-950 border border-red-950/80 hover:border-red-800 text-red-400 hover:text-red-300 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
             >
               <RotateCcw size={14} />
               <span>Factory Reset App State</span>
@@ -439,37 +567,84 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <Smartphone size={16} className="text-emerald-400" />
                 <span>OS-LEVEL ENFORCEMENT</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
-                {hasNativeBridge ? (isStrictBuild ? 'STRICT ADB' : 'PLAY-PROTECT SAFE') : 'WEB PREVIEW'}
-              </span>
+              <button
+                type="button"
+                onClick={onRefreshPermissions}
+                className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300"
+              >
+                {hasNativeBridge ? (isStrictBuild ? 'STRICT EDITION' : 'STANDARD EDITION') : 'WEB PREVIEW'}
+              </button>
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Zero is 100% local-first and offline (zero cloud sync, telemetry, or trackers) and enforces focus locks via Android native OS primitives:
+              Zero never relies on soft manual Screen Pinning unless Device Owner is active. Instead, it uses Accessibility / Usage Access + Display Over Other Apps to enforce your selected Bag.
             </p>
 
-            {/* Feature 1: LockTaskMode / Device Owner */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1.5">
+            {/* 1: Accessibility Service */}
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>1. LockTaskMode Kiosk Pinning</span>
+                <span>1. Accessibility Service</span>
                 <span
                   className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                    isDeviceOwner
+                    isAccessibilityOn
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
                       : 'bg-zinc-950 text-zinc-400 border-zinc-800'
                   }`}
                 >
-                  {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'PINNING READY'}
+                  {isStrictBuild ? (isAccessibilityOn ? 'GRANTED' : 'REQUIRED') : 'STRICT APK ONLY'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Uses <code>DevicePolicyManager.setLockTaskPackages()</code> and <code>startLockTask()</code> to lock Home, Recent Apps, and notifications inside The Void.
+                Instantly blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps without Screen Pinning prompts.
               </p>
+              {hasNativeBridge && isStrictBuild && !isAccessibilityOn && (
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={() => window.ZeroNative?.openAccessibilitySettings()}
+                    className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                  >
+                    Enable Accessibility Service
+                  </button>
+                  <button
+                    onClick={() => window.ZeroNative?.openAppSettingsDetails()}
+                    className="w-full py-1.5 bg-zinc-950 border border-zinc-700 text-zinc-300 text-[10px] rounded-xl flex items-center justify-center gap-1"
+                  >
+                    <HelpCircle size={12} /> Greyed out? Allow Restricted Settings
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Feature 2: Foreground Watchdog + SYSTEM_ALERT_WINDOW */}
+            {/* 2: Usage Access */}
             <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>2. Overlay Guard & Watchdog</span>
+                <span>2. Usage Access Guard</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                    hasUsagePerm
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-amber-950 text-amber-300 border-amber-800'
+                  }`}
+                >
+                  {hasNativeBridge ? (hasUsagePerm ? 'GRANTED' : 'MISSING') : 'FOREGROUND MONITOR'}
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                Lets Standard Sideload Edition enforce your 4 Bags + Phone/SMS and snap The Void over disallowed apps every 350ms.
+              </p>
+              {hasNativeBridge && !hasUsagePerm && (
+                <button
+                  onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
+                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                >
+                  Grant Usage Access
+                </button>
+              )}
+            </div>
+
+            {/* 3: SYSTEM_ALERT_WINDOW */}
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
+                <span>3. Display Over Other Apps</span>
                 <span
                   className={`text-[9px] px-1.5 py-0.5 rounded border ${
                     hasOverlayPerm
@@ -481,55 +656,58 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Uses <code>SYSTEM_ALERT_WINDOW</code> + <code>LockForegroundService</code> (500ms watchdog) to snap The Void immediately back on top if minimized — without needing flagged Accessibility permissions.
+                Required on Android 10–16 so Zero can bring The Void back on top of any app from background services.
               </p>
               {hasNativeBridge && !hasOverlayPerm && (
                 <button
                   onClick={() => window.ZeroNative?.requestOverlayPermission()}
-                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                  className="w-full py-2 bg-white hover:bg-zinc-200 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
                 >
                   Grant Display Over Other Apps
                 </button>
               )}
             </div>
 
-            {/* Feature 3: Strict Accessibility Service (Strict flavor or optional note) */}
+            {/* 4: Notifications */}
             <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>3. Strict Accessibility Guard</span>
+                <span>4. Lock &amp; Pre-Lock Notifications</span>
                 <span
                   className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                    isAccessibilityOn
+                    hasNotifPerm
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
                       : 'bg-zinc-950 text-zinc-400 border-zinc-800'
                   }`}
                 >
-                  {isStrictBuild ? (isAccessibilityOn ? 'ENABLED' : 'AVAILABLE') : 'STRICT APK ONLY'}
+                  {hasNativeBridge ? (hasNotifPerm ? 'GRANTED' : 'NOT GRANTED') : 'ALERT READY'}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400">
-                Optional <code>Strict Edition</code> APK adds <code>ZeroAccessibilityService</code> to collapse status-bar drawers on ADB-installed devices. Excluded from Standard APK for clean Play Protect compatibility.
-              </p>
-              {hasNativeBridge && isStrictBuild && !isAccessibilityOn && (
+              {hasNativeBridge && !hasNotifPerm && (
                 <button
-                  onClick={() => window.ZeroNative?.openAccessibilitySettings()}
-                  className="w-full py-2 bg-zinc-200 hover:bg-white text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                  onClick={() => window.ZeroNative?.requestNotificationPermission()}
+                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-[11px] rounded-xl"
                 >
-                  Enable Accessibility Service
+                  Allow Notifications
                 </button>
               )}
             </div>
 
-            {/* Feature 4: Priority 999 BootReceiver */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1">
+            {/* 5: LockTaskMode / Device Owner */}
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>4. Anti-Tamper BootReceiver</span>
-                <span className="text-[9px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800">
-                  REBOOT WATCHDOG
+                <span>5. Hardware Kiosk (Optional ADB)</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                    isDeviceOwner
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-800'
+                  }`}
+                >
+                  {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'OPTIONAL'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Catches <code>ACTION_BOOT_COMPLETED</code> at system startup. If the target timestamp has not expired, The Void re-launches before the user can unlock.
+                When provisioned via ADB Device Owner, <code>LockTaskMode</code> engages unbreakable system kiosk mode while still permitting your packed Bag apps.
               </p>
             </div>
           </div>
@@ -558,7 +736,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               adb shell dpm set-device-owner org.zero.detox/.receiver.ZeroDeviceAdminReceiver
             </pre>
             <p className="text-zinc-500 text-[10px] leading-relaxed">
-              Enables permanent kiosk mode without showing the standard Android unpinning confirmation prompt.
+              Also check latest APK releases anytime for seamless in-place updates.
             </p>
           </div>
         </div>
@@ -567,7 +745,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {/* SECTION 4: KEEP ZERO FREE (ETHICAL SUPPORT & DONATE) */}
       {activeSection === 'support' && (
         <div className="space-y-4">
-          {/* Manifesto Card */}
           <div className="bg-zinc-950 border-2 border-zinc-800 rounded-3xl p-5 shadow-brutal space-y-3">
             <div className="flex items-center gap-2 text-white font-mono font-bold text-sm">
               <Heart size={16} className="text-red-500 fill-red-500" />
@@ -582,10 +759,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               Emergency Parachutes can never be purchased; they are strictly earned by staying
               focused.
             </p>
-            <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400">
-              <span>License: GPLv3 / MIT</span>
+            <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400 gap-2">
               <a
-                href="https://github.com/zero-detox/zero"
+                href="https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest"
+                target="_blank"
+                rel="noreferrer"
+                className="text-amber-300 hover:underline font-bold"
+              >
+                Check Updates
+              </a>
+              <a
+                href="https://github.com/MDYOUSUF20007-oss/ZERO"
                 target="_blank"
                 rel="noreferrer"
                 className="text-white hover:underline flex items-center gap-1 font-bold"

@@ -4,8 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.core.content.ContextCompat
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.service.LockForegroundService
 import org.zero.detox.ui.TheVoidActivity
 
 /**
@@ -31,15 +33,27 @@ class BootReceiver : BroadcastReceiver() {
         val now = System.currentTimeMillis()
 
         if (now < targetEndTime) {
-            // Lock is still active! Immediately re-surface The Void
+            // Lock is still active! Immediately restart Watchdog Service & The Void
+            val tag = prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work"
             Log.w("ZeroAntiTamper", "Device rebooted mid-session! Re-engaging The Void. Remaining: ${(targetEndTime - now)/1000}s")
+            try {
+                val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
+                    action = LockForegroundService.ACTION_START_LOCK
+                    putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
+                    putExtra("EXTRA_TAG", tag)
+                }
+                ContextCompat.startForegroundService(context, serviceIntent)
+            } catch (_: Exception) {}
+
             val voidIntent = Intent(context, TheVoidActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
                         Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             }
-            context.startActivity(voidIntent)
+            try {
+                context.startActivity(voidIntent)
+            } catch (_: Exception) {}
         } else {
             // Lock expired during reboot / shutdown
             Log.i("ZeroAntiTamper", "Session completed while powered down. Crediting cumulative hours.")

@@ -4,12 +4,17 @@ apply plugin: 'kotlin-android'
 android {
     namespace = "org.zero.detox"
     compileSdk = rootProject.ext.compileSdkVersion
+    def envVersionCode = System.getenv("ZERO_VERSION_CODE")
+    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 100
+    def envVersionName = System.getenv("ZERO_VERSION_NAME")
+    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.0"
+
     defaultConfig {
         applicationId "org.zero.detox"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode resolvedVersionCode
+        versionName resolvedVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -17,22 +22,29 @@ android {
     }
     flavorDimensions "edition"
     productFlavors {
-        standard {
-            dimension "edition"
-        }
         strict {
             dimension "edition"
             versionNameSuffix "-strict"
+        }
+        standard {
+            dimension "edition"
         }
     }
     signingConfigs {
         release {
             def ksPath = System.getenv("ZERO_KEYSTORE_PATH")
             if (ksPath != null && !ksPath.trim().isEmpty() && file(ksPath).exists()) {
+                def ksType = System.getenv("ZERO_KEYSTORE_TYPE")
+                if (ksType != null && !ksType.trim().isEmpty()) {
+                    storeType ksType
+                } else if (ksPath.toLowerCase().endsWith(".p12") || ksPath.toLowerCase().endsWith(".pfx")) {
+                    storeType "PKCS12"
+                }
                 storeFile file(ksPath)
                 storePassword System.getenv("ZERO_KEYSTORE_PASS")
                 keyAlias System.getenv("ZERO_KEYSTORE_ALIAS")
-                keyPassword System.getenv("ZERO_KEYSTORE_PASS")
+                def keyPass = System.getenv("ZERO_KEYSTORE_KEY_PASS")
+                keyPassword (keyPass != null && !keyPass.trim().isEmpty() ? keyPass : System.getenv("ZERO_KEYSTORE_PASS"))
             }
         }
     }

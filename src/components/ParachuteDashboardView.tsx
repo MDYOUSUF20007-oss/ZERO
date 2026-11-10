@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import type { ParachuteMetrics, ParachuteLedgerEntry, SessionRecord } from '../types';
-import { SECONDS_PER_PARACHUTE } from '../store/useZeroStore';
+import { ShareStatsModal } from './ShareStatsModal';
 import {
   Flame,
   Award,
   Clock,
   TrendingUp,
   Calendar,
-  Sparkles,
+  Share2,
   CheckCircle2,
   AlertOctagon,
   Moon,
@@ -17,18 +17,16 @@ interface ParachuteDashboardViewProps {
   parachuteMetrics: ParachuteMetrics;
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
-  onFastForward: (seconds: number) => void;
 }
 
 export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   parachuteMetrics,
   ledger,
   sessions,
-  onFastForward,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'sessions'>('overview');
+  const [showShareModal, setShowShareModal] = useState(false);
 
-  // Compute Core Metrics
   const totalParachuteHours = parachuteMetrics.totalCumulativeHours;
   const totalReclaimedHours = parachuteMetrics.totalReclaimedHours;
 
@@ -36,7 +34,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   const completedSessions = sessions.filter((s) => s.status === 'completed').length;
   const parachutedSessions = sessions.filter((s) => s.status === 'parachuted').length;
   const completionRate =
-    totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 100;
+    totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
   const avgSessionMins = useMemo(() => {
     if (completedSessions === 0) return 0;
@@ -46,17 +44,16 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     return Math.round(sum / completedSessions / 60);
   }, [sessions, completedSessions]);
 
-  // Daily Streak calculation
+  // Honest Daily Streak (0 when no completed sessions)
   const currentStreak = useMemo(() => {
-    if (sessions.length === 0) return 0;
-    const completedDates = new Set(
-      sessions.filter((s) => s.status === 'completed').map((s) => s.dateStr)
-    );
+    const completed = sessions.filter((s) => s.status === 'completed');
+    if (completed.length === 0) return 0;
+    const completedDates = new Set(completed.map((s) => s.dateStr));
     let streak = 0;
-    const checkDate = new Date();
-    for (let i = 0; i < 60; i++) {
-      const d = new Date();
-      d.setDate(checkDate.getDate() - i);
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
       const str = d.toISOString().split('T')[0];
       if (completedDates.has(str)) {
         streak++;
@@ -66,10 +63,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         break;
       }
     }
-    return Math.max(1, streak);
+    return streak;
   }, [sessions]);
 
-  // Breakdown by Tag
   const tagBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
     sessions
@@ -87,7 +83,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     }));
   }, [sessions]);
 
-  // GitHub-style contribution heatmap (past 16 weeks = 112 days)
   const heatmapData = useMemo(() => {
     const dailyHoursMap: Record<string, number> = {};
     sessions
@@ -99,7 +94,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     const days = [];
     const today = new Date();
     for (let i = 111; i >= 0; i--) {
-      const d = new Date();
+      const d = new Date(today);
       d.setDate(today.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
       const hours = dailyHoursMap[dateStr] || 0;
@@ -121,25 +116,24 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
   return (
     <div className="flex flex-col gap-5 px-4 py-4 max-w-md mx-auto w-full select-none pb-24">
-      {/* View Title */}
-      <div className="flex items-center justify-between">
+      {/* Header + Shareable Flex Stats Card Trigger */}
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
-            <span>PARACHUTE & METRICS</span>
+            <span>PARACHUTE &amp; METRICS</span>
           </h1>
           <p className="text-xs font-mono text-zinc-400">
-            Earned-Only Emergency Unlocks & Focus Analytics
+            100% Real Focus Metrics • Zero Fake Data
           </p>
         </div>
 
-        {/* Debug Test Helper Button */}
         <button
-          onClick={() => onFastForward(SECONDS_PER_PARACHUTE)}
-          title="Simulate 20 hours of completed blockage to test Parachute reward and progression rollover"
-          className="px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-[10px] font-mono text-amber-300 flex items-center gap-1 active:scale-95 transition-all"
+          type="button"
+          onClick={() => setShowShareModal(true)}
+          className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
         >
-          <Sparkles size={11} />
-          <span>+20h Sim</span>
+          <Share2 size={13} />
+          <span>Flex Stats</span>
         </button>
       </div>
 
@@ -167,11 +161,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </div>
           </div>
           <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-semibold">
-            NON-COMMERCIAL
+            EARNED-ONLY
           </span>
         </div>
 
-        {/* 20-Hour Progress Bar & Rollover Formula */}
+        {/* 20-Hour Progress Bar */}
         <div className="space-y-2 mt-4 pt-3 border-t border-zinc-900">
           <div className="flex items-center justify-between text-xs font-mono">
             <span className="text-zinc-300 font-semibold">Next Parachute Progress</span>
@@ -180,10 +174,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </span>
           </div>
 
-          <div className="w-full bg-zinc-900 rounded-full h-3 p-0.5 border border-zinc-800">
+          <div className="w-full bg-zinc-900 rounded-full h-3 p-0.5 border border-zinc-800 overflow-hidden">
             <div
               className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-              style={{ width: `${Math.max(3, parachuteMetrics.progressPercentage)}%` }}
+              style={{ width: `${parachuteMetrics.progressPercentage}%` }}
             />
           </div>
 
@@ -193,7 +187,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Anti-Sleep-Farming Badge Indicator */}
         <div className="mt-4 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-850 flex items-center justify-between text-[11px] font-mono text-zinc-300">
           <div className="flex items-center gap-1.5">
             <Moon size={13} className="text-amber-400 shrink-0" />
@@ -209,7 +202,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Tabs: Overview Analytics | Parachute Ledger | Session History */}
+      {/* Tabs */}
       <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
         <button
           onClick={() => setActiveTab('overview')}
@@ -243,10 +236,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </button>
       </div>
 
-      {/* TAB 1: OVERVIEW & ANALYTICS */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-          {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
               <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
@@ -269,7 +260,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="font-mono text-2xl font-black text-white">
                 {currentStreak} Days
               </div>
-              <span className="text-[10px] font-mono text-zinc-400">Consistent discipline</span>
+              <span className="text-[10px] font-mono text-zinc-400">
+                {currentStreak > 0 ? 'Consistent discipline' : 'Complete a session today'}
+              </span>
             </div>
 
             <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
@@ -332,7 +325,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               })}
             </div>
             <div className="text-[10px] font-mono text-zinc-400 mt-2 text-right">
-              {sessions.filter((s) => s.status === 'completed').length} completed sessions across 112 days
+              {completedSessions} completed sessions across 112 days
             </div>
           </div>
 
@@ -341,27 +334,32 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <div className="text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">
               Focus Time by Tag
             </div>
-            <div className="space-y-2.5">
-              {tagBreakdown.map((item) => (
-                <div key={item.tag} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-300 font-medium">#{item.tag}</span>
-                    <span className="text-zinc-400 font-bold">{item.hours} hrs</span>
+            {tagBreakdown.length === 0 ? (
+              <p className="text-[11px] font-mono text-zinc-500 py-2">
+                No completed sessions yet. Lock your phone on the Dial tab to start tracking real focus hours.
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {tagBreakdown.map((item) => (
+                  <div key={item.tag} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-zinc-300 font-medium">#{item.tag}</span>
+                      <span className="text-zinc-400 font-bold">{item.hours} hrs</span>
+                    </div>
+                    <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
+                      <div
+                        className="bg-zinc-300 h-full rounded-full transition-all"
+                        style={{ width: `${item.pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
-                    <div
-                      className="bg-zinc-300 h-full rounded-full transition-all"
-                      style={{ width: `${item.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 2: PARACHUTE LEDGER */}
       {activeTab === 'ledger' && (
         <div className="space-y-3">
           <div className="text-xs font-mono text-zinc-400">
@@ -420,68 +418,81 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </div>
       )}
 
-      {/* TAB 3: SESSION HISTORY */}
       {activeTab === 'sessions' && (
         <div className="space-y-2.5">
           <div className="text-xs font-mono text-zinc-400">
             Recent blocking sessions. Parachuted sessions award 0 parachute seconds (Anti-Exploit).
           </div>
 
-          <div className="space-y-2 max-h-[460px] overflow-y-auto no-scrollbar pr-0.5">
-            {sessions.map((sess) => {
-              const isSleep = sess.tag === 'Sleep';
-              const isAborted = sess.status === 'parachuted';
+          {sessions.length === 0 ? (
+            <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-8 text-center text-zinc-500 font-mono text-xs">
+              No completed sessions yet. Your real detox history will appear here once you lock in.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[460px] overflow-y-auto no-scrollbar pr-0.5">
+              {sessions.map((sess) => {
+                const isSleep = sess.tag === 'Sleep';
+                const isAborted = sess.status === 'parachuted';
 
-              return (
-                <div
-                  key={sess.id}
-                  className="bg-zinc-950 border border-zinc-850 p-3 rounded-2xl flex items-center justify-between font-mono text-xs hover:border-zinc-700 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    {sess.status === 'completed' ? (
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertOctagon size={16} className="text-amber-400 shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-zinc-200 font-bold flex items-center gap-1.5">
-                        <span>#{sess.tag} — {Math.round(sess.durationSeconds / 60)} min</span>
-                        {isSleep && sess.weightMultiplier < 1.0 && (
-                          <span className="text-[9px] px-1 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 rounded">
-                            {sess.weightMultiplier}x sleep
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-zinc-500">
-                        {sess.dateStr} • {sess.status === 'completed' ? 'Completed' : 'Aborted with Parachute'}
+                return (
+                  <div
+                    key={sess.id}
+                    className="bg-zinc-950 border border-zinc-850 p-3 rounded-2xl flex items-center justify-between font-mono text-xs hover:border-zinc-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {sess.status === 'completed' ? (
+                        <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      ) : (
+                        <AlertOctagon size={16} className="text-amber-400 shrink-0" />
+                      )}
+                      <div>
+                        <div className="text-zinc-200 font-bold flex items-center gap-1.5">
+                          <span>#{sess.tag} — {Math.round(sess.durationSeconds / 60)} min</span>
+                          {isSleep && sess.weightMultiplier < 1.0 && (
+                            <span className="text-[9px] px-1 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 rounded">
+                              {sess.weightMultiplier}x sleep
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-zinc-500">
+                          {sess.dateStr} • {sess.status === 'completed' ? 'Completed' : 'Aborted with Parachute'}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="text-right">
-                    <div
-                      className={`font-bold ${
-                        isAborted
-                          ? 'text-red-400'
-                          : isSleep
-                          ? 'text-amber-300'
-                          : 'text-zinc-200'
-                      }`}
-                    >
-                      {isAborted
-                        ? '0h (Voided)'
-                        : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
+                    <div className="text-right">
+                      <div
+                        className={`font-bold ${
+                          isAborted
+                            ? 'text-red-400'
+                            : isSleep
+                            ? 'text-amber-300'
+                            : 'text-zinc-200'
+                        }`}
+                      >
+                        {isAborted
+                          ? '0h (Voided)'
+                          : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
+                      </div>
+                      <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
+                        {sess.status}
+                      </span>
                     </div>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                      {sess.status}
-                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
+
+      <ShareStatsModal
+        isOpen={showShareModal}
+        sessions={sessions}
+        parachuteMetrics={parachuteMetrics}
+        currentStreak={currentStreak}
+        onClose={() => setShowShareModal(false)}
+      />
     </div>
   );
 };

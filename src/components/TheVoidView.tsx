@@ -1,30 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import type { ActiveLockSession, ParachuteMetrics } from '../types';
-import { Phone, AlertTriangle, ShieldCheck, RefreshCw, FastForward, Battery, Wifi, Flame } from 'lucide-react';
+import type { ActiveLockSession, ParachuteMetrics, OccasionBag } from '../types';
+import { MAX_BAG_APPS } from '../store/useZeroStore';
+import {
+  Phone,
+  AlertTriangle,
+  ShieldCheck,
+  Battery,
+  Wifi,
+  Flame,
+  Briefcase,
+  MessageSquare,
+} from 'lucide-react';
 
 interface TheVoidViewProps {
   activeLock: ActiveLockSession;
   parachuteMetrics: ParachuteMetrics;
+  activeBag: OccasionBag;
   onDeployParachute: () => boolean;
-  onSimulateReboot: () => void;
-  onFastForward: (seconds: number) => void;
 }
 
 export const TheVoidView: React.FC<TheVoidViewProps> = ({
   activeLock,
   parachuteMetrics,
+  activeBag,
   onDeployParachute,
-  onSimulateReboot,
-  onFastForward,
 }) => {
   const [currentTimeStr, setCurrentTimeStr] = useState<string>('');
-  const [batteryPct, setBatteryPct] = useState<number>(84);
+  const [batteryPct, setBatteryPct] = useState<number>(100);
   const [showEmergencyModal, setShowEmergencyModal] = useState<boolean>(false);
   const [showParachuteConfirm, setShowParachuteConfirm] = useState<boolean>(false);
   const [emergencyNumber, setEmergencyNumber] = useState<string>('');
   const [tamperWarning, setTamperWarning] = useState<string | null>(null);
 
-  // Format countdown HH:MM:SS
   const formatCountdown = (totalSec: number) => {
     const hours = Math.floor(totalSec / 3600);
     const mins = Math.floor((totalSec % 3600) / 60);
@@ -32,7 +39,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Live system clock & real Battery API if supported
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -43,8 +49,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     updateTime();
     const interval = setInterval(updateTime, 1000);
 
-    // Battery API
-    if ('getBattery' in navigator) {
+    if (window.ZeroNative) {
+      try {
+        setBatteryPct(window.ZeroNative.getBatteryPercentage());
+      } catch {
+        // Ignore
+      }
+    } else if ('getBattery' in navigator) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (navigator as any).getBattery().then((battery: any) => {
         setBatteryPct(Math.round(battery.level * 100));
@@ -57,7 +68,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Anti-escape keyboard interception (Escape, Backspace, Tab)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -79,7 +89,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between items-center p-6 select-none overflow-hidden bg-dot-matrix">
-      {/* Top OS Status Bar Simulator */}
+      {/* Top Status Bar */}
       <div className="w-full max-w-md flex items-center justify-between text-xs font-mono text-zinc-300 pt-2 border-b border-zinc-900 pb-3">
         <div className="flex items-center gap-2">
           <span className="font-bold text-white tracking-wider">{currentTimeStr}</span>
@@ -99,7 +109,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       </div>
 
-      {/* Anti-Tamper Notice Banner */}
+      {/* Anti-Tamper Banner */}
       {tamperWarning && (
         <div className="absolute top-16 left-6 right-6 max-w-md mx-auto bg-red-950/90 border border-red-500 text-red-200 text-xs font-mono px-4 py-2.5 rounded-xl shadow-brutal-red flex items-center gap-2 animate-bounce">
           <AlertTriangle size={16} className="text-red-400 shrink-0" />
@@ -107,23 +117,20 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       )}
 
-      {/* Center Void Display: Focus Session Info & Giant Monospace Countdown */}
+      {/* Center Void Countdown & Active Bag Status */}
       <div className="flex flex-col items-center justify-center my-auto w-full max-w-md text-center">
-        {/* Subtle pulsating void emblem */}
-        <div className="relative mb-6">
-          <div className="w-24 h-24 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center shadow-2xl relative">
+        <div className="relative mb-5">
+          <div className="w-20 h-20 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center shadow-2xl relative">
             <div className="absolute inset-0 rounded-full border border-white/10 animate-ping opacity-25" />
-            <span className="font-mono text-3xl font-black text-zinc-400">0</span>
+            <span className="font-mono text-2xl font-black text-zinc-400">0</span>
           </div>
         </div>
 
-        {/* Tag Pill */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs uppercase tracking-wider mb-4 font-semibold">
           <Flame size={12} className="text-amber-400" />
           <span>LOCKED IN #{activeLock.tag}</span>
         </div>
 
-        {/* Big Monospace Countdown Timer */}
         <div className="font-mono text-5xl sm:text-6xl font-black tracking-tighter text-white mb-2 drop-shadow-[0_4px_24px_rgba(255,255,255,0.15)]">
           {formatCountdown(activeLock.remainingSeconds)}
         </div>
@@ -132,38 +139,58 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           "The obstacle is the way. Put your phone facedown."
         </p>
 
-        {/* Anti-Tamper Watchdog Indicator & Debug Controls */}
-        <div className="mt-8 flex flex-col items-center gap-2 w-full">
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-300 bg-zinc-950 px-3 py-1.5 rounded-xl border border-zinc-850">
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span>Anti-Tamper Watchdog Armed</span>
+        {/* Active Bag Card */}
+        <div className="mt-6 w-full bg-zinc-950/90 border border-zinc-800 rounded-2xl p-3.5 text-left font-mono space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-zinc-400">
+            <span className="flex items-center gap-1.5 font-bold text-zinc-200">
+              <Briefcase size={13} /> Bag: {activeBag.name}
+            </span>
+            <span>
+              {activeBag.apps.length}/{MAX_BAG_APPS} apps
+            </span>
           </div>
 
-          {/* Interactive Simulation Pills (proves reboot persistence and testability) */}
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={onSimulateReboot}
-              title="Simulates restarting phone or browser reload to test persistent lock recovery"
-              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-[11px] font-mono rounded-lg text-zinc-200 flex items-center gap-1.5 transition-colors"
-            >
-              <RefreshCw size={12} />
-              <span>Simulate Reboot</span>
-            </button>
-            <button
-              onClick={() => onFastForward(600)}
-              title="Fast-forward timer by 10 minutes for testing"
-              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-[11px] font-mono rounded-lg text-zinc-200 flex items-center gap-1.5 transition-colors"
-            >
-              <FastForward size={12} />
-              <span>Fast-Forward 10m</span>
-            </button>
+          <div className="flex flex-wrap gap-1.5">
+            {activeBag.allowCalls && (
+              <a
+                href="tel:"
+                className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+              >
+                <Phone size={11} /> Normal Calls
+              </a>
+            )}
+            {activeBag.allowSms && (
+              <a
+                href="sms:"
+                className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+              >
+                <MessageSquare size={11} /> Normal SMS
+              </a>
+            )}
+            {activeBag.apps.map((app) => (
+              <span
+                key={app.packageName}
+                className="px-2.5 py-1.5 rounded-xl bg-zinc-200 text-black text-[11px] font-bold"
+              >
+                {app.appName}
+              </span>
+            ))}
+            {!activeBag.allowCalls && !activeBag.allowSms && activeBag.apps.length === 0 && (
+              <span className="text-[11px] text-zinc-500">
+                Monk Mode: No apps allowed in this Bag.
+              </span>
+            )}
           </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
+          <ShieldCheck size={14} className="text-emerald-400" />
+          <span>Strict Guard Active • Unbagged Apps Sealed</span>
         </div>
       </div>
 
-      {/* Bottom Actions: Emergency Dial & Deploy Parachute */}
+      {/* Bottom Actions */}
       <div className="w-full max-w-md flex flex-col gap-3 pb-4">
-        {/* Parachute Unlock Button */}
         {parachuteMetrics.currentBalance > 0 ? (
           <button
             onClick={() => setShowParachuteConfirm(true)}
@@ -199,7 +226,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         )}
 
-        {/* Emergency Call Button */}
         <button
           onClick={() => setShowEmergencyModal(true)}
           className="w-full h-12 bg-zinc-950 hover:bg-zinc-900 active:scale-[0.98] border border-zinc-800 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs text-zinc-400 hover:text-zinc-200 transition-all"
@@ -209,7 +235,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </button>
       </div>
 
-      {/* Emergency Call Modal */}
       {showEmergencyModal && (
         <div className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-zinc-950 border-2 border-zinc-700 rounded-2xl p-5 shadow-2xl font-mono text-left">
@@ -269,7 +294,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       )}
 
-      {/* Parachute Deployment Confirmation Dialog */}
       {showParachuteConfirm && (
         <div className="fixed inset-0 z-60 bg-black/95 flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-zinc-950 border-2 border-amber-500/80 rounded-2xl p-6 shadow-brutal font-mono text-left">

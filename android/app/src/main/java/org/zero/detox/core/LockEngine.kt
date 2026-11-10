@@ -66,13 +66,15 @@ class LockEngine(private val context: Context, private val parachuteStore: Parac
             remainingSeconds = durationSeconds
         )
 
-        // Start Foreground Guard Service
-        val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
-            action = LockForegroundService.ACTION_START_LOCK
-            putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
-            putExtra("EXTRA_TAG", tag)
-        }
-        ContextCompat.startForegroundService(context, serviceIntent)
+        // Start Foreground Guard Service (guarded for Android 14+ background launch constraints)
+        try {
+            val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
+                action = LockForegroundService.ACTION_START_LOCK
+                putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
+                putExtra("EXTRA_TAG", tag)
+            }
+            ContextCompat.startForegroundService(context, serviceIntent)
+        } catch (_: Exception) {}
 
         // Launch The Void lock overlay
         val voidIntent = Intent(context, TheVoidActivity::class.java).apply {

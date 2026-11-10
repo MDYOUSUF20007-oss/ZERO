@@ -63,6 +63,48 @@ export interface ActiveLockSession {
   remainingSeconds: number;
 }
 
+export interface BagApp {
+  packageName: string;
+  appName: string;
+  category?: 'calls' | 'messages' | 'custom';
+}
+
+export interface OccasionBag {
+  id: string;
+  name: string;
+  occasionLabel: string;
+  apps: BagApp[]; // Strictly capped at 3 custom apps
+  allowCalls: boolean;
+  allowSms: boolean;
+}
+
+export interface NativePermissionStatus {
+  isNativeAndroid: boolean;
+  isStrictAccessibilityBuild: boolean;
+  isAccessibilityEnabled: boolean;
+  hasOverlayPermission: boolean;
+  hasUsageStatsPermission: boolean;
+  hasNotificationPermission: boolean;
+  isDeviceOwner: boolean;
+  strictReady: boolean;
+}
+
+export interface ZeroBackupPayload {
+  schemaVersion: number;
+  appName: 'Zero';
+  exportedAt: string;
+  cumulativeSeconds: number;
+  totalReclaimedSeconds: number;
+  usedParachutes: number;
+  sleepFarmingMode: SleepFarmingMode;
+  ledger: ParachuteLedgerEntry[];
+  sessions: SessionRecord[];
+  schedules: RecurringSchedule[];
+  bags: OccasionBag[];
+  activeBagId: string;
+  theme: ThemeStyle;
+}
+
 export type ThemeStyle = 'monochrome' | 'oled' | 'amber' | 'emerald';
 
 export interface ZeroNativeBridgeInterface {
@@ -70,16 +112,30 @@ export interface ZeroNativeBridgeInterface {
   isDeviceOwner(): boolean;
   hasOverlayPermission(): boolean;
   requestOverlayPermission(): void;
+  hasUsageStatsPermission(): boolean;
+  requestUsageStatsPermission(): void;
+  hasNotificationPermission(): boolean;
+  requestNotificationPermission(): void;
   isAccessibilityEnabled(): boolean;
   openAccessibilitySettings(): void;
+  openAppSettingsDetails(): void;
+  getPermissionStatusJson(): string;
+  getInstalledAppsJson(): string;
+  setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
+  getBagStateJson(): string;
+  shareImageBase64(base64Png: string, fileName: string, caption: string): void;
+  exportBackupJson(jsonContent: string, fileName: string): void;
   startLockTaskMode(): void;
   stopLockTaskMode(): void;
-  syncLedgerState(cumulativeSeconds: number, deployedCount: number): void;
+  syncLedgerState(cumulativeSeconds: number, deployedCount: IntOrNum): void;
   igniteSession(durationSeconds: number, tag: string): void;
   deployParachute(): boolean;
   getBatteryPercentage(): number;
   getNativeStateJson(): string;
 }
+
+type StringOrStr = string;
+type IntOrNum = number;
 
 declare global {
   interface Window {

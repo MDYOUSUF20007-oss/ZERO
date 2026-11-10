@@ -1,15 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useZeroStore } from './store/useZeroStore';
 import { LockDialView } from './components/LockDialView';
 import { TheVoidView } from './components/TheVoidView';
 import { ParachuteDashboardView } from './components/ParachuteDashboardView';
 import { SchedulesDonateView } from './components/SchedulesDonateView';
+import { BagDrawerModal } from './components/BagDrawerModal';
+import { PermissionGateModal } from './components/PermissionGateModal';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, X } from 'lucide-react';
 
 export function App() {
   const store = useZeroStore();
   const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules'>('dial');
+  const [showBagModal, setShowBagModal] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const hasAutoPromptedRef = useRef(false);
+
+  // Ask for required Android permissions upfront on first launch if not armed yet
+  useEffect(() => {
+    if (
+      !hasAutoPromptedRef.current &&
+      !store.activeLock.isLocked &&
+      store.permissions.isNativeAndroid &&
+      !store.permissions.strictReady
+    ) {
+      hasAutoPromptedRef.current = true;
+      setShowPermissionModal(true);
+    }
+  }, [
+    store.activeLock.isLocked,
+    store.permissions.isNativeAndroid,
+    store.permissions.strictReady,
+  ]);
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -17,9 +39,8 @@ export function App() {
       <TheVoidView
         activeLock={store.activeLock}
         parachuteMetrics={store.parachuteMetrics}
+        activeBag={store.activeBag}
         onDeployParachute={store.deployParachute}
-        onSimulateReboot={store.simulateReboot}
-        onFastForward={store.fastForwardSeconds}
       />
     );
   }
@@ -55,7 +76,17 @@ export function App() {
           <LockDialView
             onIgnite={store.igniteSession}
             parachuteMetrics={store.parachuteMetrics}
+            activeBag={store.activeBag}
+            permissions={store.permissions}
             onOpenDashboard={() => setActiveTab('dashboard')}
+            onOpenBagDrawer={() => {
+              store.refreshInstalledApps();
+              setShowBagModal(true);
+            }}
+            onOpenPermissionGate={() => {
+              store.refreshPermissions();
+              setShowPermissionModal(true);
+            }}
           />
         )}
 
@@ -64,13 +95,14 @@ export function App() {
             parachuteMetrics={store.parachuteMetrics}
             ledger={store.ledger}
             sessions={store.sessions}
-            onFastForward={store.fastForwardSeconds}
           />
         )}
 
         {activeTab === 'schedules' && (
           <SchedulesDonateView
             schedules={store.schedules}
+            permissions={store.permissions}
+            onRefreshPermissions={store.refreshPermissions}
             onToggleSchedule={store.toggleSchedule}
             onAddSchedule={store.addSchedule}
             onDeleteSchedule={store.deleteSchedule}
@@ -79,16 +111,38 @@ export function App() {
             onThemeChange={store.setTheme}
             sleepFarmingMode={store.sleepFarmingMode}
             onSleepFarmingModeChange={store.setSleepFarmingMode}
+            onBuildBackupJson={store.buildBackupJson}
             onExportData={store.exportData}
+            onImportData={store.importData}
             onResetData={store.resetAllData}
           />
         )}
       </main>
 
+      {/* Modals */}
+      <BagDrawerModal
+        isOpen={showBagModal}
+        bags={store.bags}
+        activeBagId={store.activeBagId}
+        installedApps={store.installedApps}
+        onClose={() => setShowBagModal(false)}
+        onSelectActiveBag={store.setActiveBagId}
+        onUpdateBag={store.updateBag}
+        onToggleBagApp={store.toggleBagApp}
+        onRefreshInstalledApps={store.refreshInstalledApps}
+      />
+
+      <PermissionGateModal
+        isOpen={showPermissionModal}
+        permissions={store.permissions}
+        onClose={() => setShowPermissionModal(false)}
+        onRefresh={store.refreshPermissions}
+        onProceedReady={() => setShowPermissionModal(false)}
+      />
+
       {/* Neo-Brutalist Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-t border-zinc-900 py-2 px-4">
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
-          {/* Tab 1: Lock Dial */}
           <button
             onClick={() => {
               haptics.tick(900);
@@ -104,7 +158,6 @@ export function App() {
             <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Dial</span>
           </button>
 
-          {/* Tab 2: Parachute & Metrics */}
           <button
             onClick={() => {
               haptics.tick(900);
@@ -124,10 +177,9 @@ export function App() {
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-mono mt-0.5 tracking-wider uppercase">Parachute</span>
+            <span className="text-[10px] font-mono mt-0.5 tracking-wider uppercase">Insights</span>
           </button>
 
-          {/* Tab 3: Schedules & Donate */}
           <button
             onClick={() => {
               haptics.tick(900);
@@ -140,7 +192,7 @@ export function App() {
             }`}
           >
             <Heart size={18} className={activeTab === 'schedules' ? 'text-red-500' : ''} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Rules & OS</span>
+            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Rules &amp; OS</span>
           </button>
         </div>
       </nav>

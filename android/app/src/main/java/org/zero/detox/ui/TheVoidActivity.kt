@@ -15,11 +15,16 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import org.zero.detox.core.LockEngine
+import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import java.text.SimpleDateFormat
@@ -28,8 +33,10 @@ import java.util.Locale
 
 /**
  * TheVoidActivity:
- * The ultra-minimalist, distraction-free screen lock overlay ("The Void").
- * Enforces Kiosk / LockTaskMode pinning, handles emergency calls, and validates Parachute deployment.
+ * Full-screen distraction-free focus shield ("The Void").
+ * - Enforces Device Owner LockTaskMode ONLY when provisioned via ADB (never weak manual Screen Pinning)
+ * - Relies on AccessibilityService / UsageStats + Overlay Watchdog for tamper-proof enforcement
+ * - Displays packed Bag apps + optional Normal Phone/SMS buttons & Emergency SOS dialer
  */
 class TheVoidActivity : AppCompatActivity() {
 
@@ -39,10 +46,17 @@ class TheVoidActivity : AppCompatActivity() {
 
         @Volatile
         var dialerGraceUntilMillis: Long = 0L
+
+        @Volatile
+        var bagLaunchGraceUntilMillis: Long = 0L
+
+        @Volatile
+        var activeBagPackage: String? = null
     }
 
     private lateinit var lockEngine: LockEngine
     private lateinit var parachuteStore: ParachuteStore
+    private lateinit var bagStore: BagStore
     private var countDownTimer: CountDownTimer? = null
 
     private lateinit var textRemainingTime: TextView
@@ -52,12 +66,12 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var btnEmergencyCall: Button
     private lateinit var btnDeployParachute: Button
     private lateinit var textParachuteBalance: TextView
+    private lateinit var bagContainer: LinearLayout
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // OS-level flags: Wake, Keep Screen, Show over Keyguard
         window.addFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
                     WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
@@ -65,12 +79,19 @@ class TheVoidActivity : AppCompatActivity() {
                     WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
         )
 
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Back navigation & predictive back swipes are intentionally disabled inside The Void
+            }
+        })
+
         hideSystemUI()
 
         parachuteStore = ParachuteStore(this)
+        bagStore = BagStore(this)
         lockEngine = LockEngine(this, parachuteStore)
 
-        tryPinScreen()
+        tryDeviceOwnerPinning()
         buildViewHierarchy()
         startTickers()
     }
@@ -87,15 +108,24 @@ class TheVoidActivity : AppCompatActivity() {
                 )
     }
 
-    private fun tryPinScreen() {
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    /**
+     * Enables OS Kiosk LockTaskMode strictly when Zero is Device Owner via ADB.
+     * Never triggers Android's soft Screen Pinning fallback (which can be unpinned by holding Back).
+     */
+    private fun tryDeviceOwnerPinning() {
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return
         val adminComponent = ComponentName(this, ZeroDeviceAdminReceiver::class.java)
-
         if (dpm.isDeviceOwnerApp(packageName)) {
-            dpm.setLockTaskPackages(adminComponent, arrayOf(packageName, "com.android.dialer"))
-            startLockTask()
-        } else {
+            val allowed = mutableListOf(packageName)
+            allowed.addAll(bagStore.getBagApps().map { it.packageName })
+            if (bagStore.isCallsAllowed()) {
+                allowed.addAll(bagStore.getAllowedDialerPackages())
+            }
+            if (bagStore.isSmsAllowed()) {
+                allowed.addAll(bagStore.getAllowedSmsPackages())
+            }
             try {
+                dpm.setLockTaskPackages(adminComponent, allowed.distinct().toTypedArray())
                 startLockTask()
             } catch (_: Exception) {}
         }
@@ -105,8 +135,14 @@ class TheVoidActivity : AppCompatActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.BLACK)
-            setPadding(48, 48, 48, 48)
+            setPadding(48, 72, 48, 48)
             gravity = Gravity.CENTER_HORIZONTAL
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(48, maxOf(72, sys.top + 32), 48, maxOf(48, sys.bottom + 24))
+            insets
         }
 
         // Top Status Bar: Clock & Battery
@@ -116,7 +152,7 @@ class TheVoidActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 80 }
+            ).apply { bottomMargin = 40 }
         }
 
         textCurrentTime = TextView(this).apply {
@@ -155,7 +191,7 @@ class TheVoidActivity : AppCompatActivity() {
             textSize = 13f
             typeface = Typeface.MONOSPACE
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
+            setPadding(0, 0, 0, 20)
         }
 
         textRemainingTime = TextView(this).apply {
@@ -164,7 +200,7 @@ class TheVoidActivity : AppCompatActivity() {
             textSize = 48f
             typeface = Typeface.MONOSPACE
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 32)
+            setPadding(0, 0, 0, 24)
         }
 
         val textQuote = TextView(this).apply {
@@ -173,11 +209,25 @@ class TheVoidActivity : AppCompatActivity() {
             textSize = 12f
             typeface = Typeface.MONOSPACE
             gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 32)
         }
+
+        // Packed Bag Card (Normal Calls / Texts + Up to 3 Custom Bag Apps)
+        bagContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0D0D0D"))
+            setPadding(28, 24, 28, 24)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        populateBagSection()
 
         centerBox.addView(textSessionTag)
         centerBox.addView(textRemainingTime)
         centerBox.addView(textQuote)
+        centerBox.addView(bagContainer)
         root.addView(centerBox)
 
         // Bottom Controls
@@ -194,7 +244,7 @@ class TheVoidActivity : AppCompatActivity() {
             textSize = 11f
             typeface = Typeface.MONOSPACE
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 16)
+            setPadding(0, 12, 0, 14)
         }
 
         btnDeployParachute = Button(this).apply {
@@ -206,7 +256,7 @@ class TheVoidActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 20 }
+            ).apply { bottomMargin = 16 }
             setOnClickListener { handleDeployParachute() }
         }
 
@@ -221,7 +271,7 @@ class TheVoidActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             setOnClickListener {
-                dialerGraceUntilMillis = System.currentTimeMillis() + 30_000L
+                dialerGraceUntilMillis = System.currentTimeMillis() + 45_000L
                 startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
             }
         }
@@ -233,6 +283,128 @@ class TheVoidActivity : AppCompatActivity() {
 
         setContentView(root)
         updateParachuteStatus()
+    }
+
+    private fun populateBagSection() {
+        bagContainer.removeAllViews()
+        val bagName = bagStore.getActiveBagName().uppercase(Locale.US)
+        val allowCalls = bagStore.isCallsAllowed()
+        val allowSms = bagStore.isSmsAllowed()
+        val apps = bagStore.getBagApps()
+
+        val header = TextView(this).apply {
+            text = "BAG: $bagName (${apps.size}/3 APPS)"
+            setTextColor(Color.parseColor("#A1A1AA"))
+            textSize = 11f
+            typeface = Typeface.MONOSPACE
+            setPadding(0, 0, 0, 16)
+        }
+        bagContainer.addView(header)
+
+        if (!allowCalls && !allowSms && apps.isEmpty()) {
+            val emptyMsg = TextView(this).apply {
+                text = "Monk Mode: Empty Bag. All normal apps, calls & texts are sealed."
+                setTextColor(Color.parseColor("#71717A"))
+                textSize = 11f
+                typeface = Typeface.MONOSPACE
+            }
+            bagContainer.addView(emptyMsg)
+            return
+        }
+
+        val scroll = ScrollView(this)
+        val btnStack = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        if (allowCalls) {
+            val btnPhone = Button(this).apply {
+                text = "PHONE (NORMAL CALLS)"
+                setTextColor(Color.WHITE)
+                setBackgroundColor(Color.parseColor("#18181B"))
+                typeface = Typeface.MONOSPACE
+                textSize = 11f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 10 }
+                setOnClickListener {
+                    val pkg = bagStore.getPrimaryDialerPackage()
+                    if (pkg != null) {
+                        launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
+                    } else {
+                        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3000L
+                        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
+                    }
+                }
+            }
+            btnStack.addView(btnPhone)
+        }
+
+        if (allowSms) {
+            val btnSms = Button(this).apply {
+                text = "MESSAGES (NORMAL SMS)"
+                setTextColor(Color.WHITE)
+                setBackgroundColor(Color.parseColor("#18181B"))
+                typeface = Typeface.MONOSPACE
+                textSize = 11f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 10 }
+                setOnClickListener {
+                    val pkg = bagStore.getPrimarySmsPackage()
+                    if (pkg != null) {
+                        launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
+                    } else {
+                        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3000L
+                        startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
+                    }
+                }
+            }
+            btnStack.addView(btnSms)
+        }
+
+        for (app in apps) {
+            val btnApp = Button(this).apply {
+                text = app.appName.uppercase(Locale.US)
+                setTextColor(Color.BLACK)
+                setBackgroundColor(Color.parseColor("#E4E4E7"))
+                typeface = Typeface.MONOSPACE
+                textSize = 11f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 10 }
+                setOnClickListener {
+                    launchAllowedBagPackage(app.packageName, null)
+                }
+            }
+            btnStack.addView(btnApp)
+        }
+
+        scroll.addView(btnStack)
+        bagContainer.addView(scroll)
+    }
+
+    private fun launchAllowedBagPackage(targetPackage: String, fallbackIntent: Intent?) {
+        if (!bagStore.isPackageAllowedDuringLock(targetPackage)) {
+            Toast.makeText(this, "App not permitted in your active Bag.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        activeBagPackage = targetPackage
+        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3_500L
+        try {
+            val launch = packageManager.getLaunchIntentForPackage(targetPackage) ?: fallbackIntent
+            if (launch != null) {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(launch)
+            } else {
+                Toast.makeText(this, "Unable to launch $targetPackage", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Launch error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleDeployParachute() {
@@ -249,6 +421,7 @@ class TheVoidActivity : AppCompatActivity() {
                 val success = lockEngine.deployParachute()
                 if (success) {
                     isInForeground = false
+                    activeBagPackage = null
                     try { stopLockTask() } catch (_: Exception) {}
                     finish()
                 }
@@ -280,13 +453,14 @@ class TheVoidActivity : AppCompatActivity() {
                 textRemainingTime.text = String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
                 textCurrentTime.text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date())
 
-                val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-                val batteryPct = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                val bm = getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+                val batteryPct = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
                 textBattery.text = "$batteryPct%"
             }
 
             override fun onFinish() {
                 isInForeground = false
+                activeBagPackage = null
                 lockEngine.completeSession()
                 try { stopLockTask() } catch (_: Exception) {}
                 Toast.makeText(this@TheVoidActivity, "Lock Completed. Focus Reclaimed!", Toast.LENGTH_LONG).show()
@@ -298,6 +472,7 @@ class TheVoidActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isInForeground = true
+        activeBagPackage = null
         hideSystemUI()
     }
 

@@ -1,10 +1,13 @@
 package org.zero.detox.service
 
+import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -12,16 +15,19 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.Process
 import androidx.core.app.NotificationCompat
 import org.zero.detox.core.LockEngine
+import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.ui.TheVoidActivity
 
 /**
  * LockForegroundService:
- * Keeps the focus lock persistent in OS memory and runs a non-intrusive Watchdog loop
- * (requiring zero AccessibilityService permissions) that re-surfaces The Void if minimized
- * prior to targetEndTimeMillis.
+ * Keeps Zero active in OS memory and runs a 350ms Bag-aware foreground guard.
+ * Uses UsageStatsManager (when granted) + SYSTEM_ALERT_WINDOW BAL exemption so users
+ * can seamlessly use apps packed in their Bag (and allowed Phone/SMS), while immediately
+ * snapping TheVoidActivity back over Settings, Launcher, or any disallowed app.
  */
 class LockForegroundService : Service() {
 
@@ -30,11 +36,13 @@ class LockForegroundService : Service() {
         const val ACTION_STOP_LOCK = "org.zero.detox.STOP_LOCK"
         const val CHANNEL_ID = "zero_void_channel"
         const val NOTIFICATION_ID = 1001
-        private const val WATCHDOG_INTERVAL_MS = 500L
+        private const val WATCHDOG_INTERVAL_MS = 350L
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var isWatchdogActive = false
+    private lateinit var bagStore: BagStore
+    private var lastKnownForegroundPkg: String? = null
 
     private val watchdogRunnable = object : Runnable {
         override fun run() {
@@ -56,24 +64,92 @@ class LockForegroundService : Service() {
                 return
             }
 
-            if (!TheVoidActivity.isInForeground && now > TheVoidActivity.dialerGraceUntilMillis) {
-                val voidIntent = Intent(this@LockForegroundService, TheVoidActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            // Skip enforcement while in emergency 911/112 grace or active Bag launch grace
+            val inEmergencyGrace = now <= TheVoidActivity.dialerGraceUntilMillis
+            val inBagTransitionGrace = now <= TheVoidActivity.bagLaunchGraceUntilMillis
+
+            if (!TheVoidActivity.isInForeground && !inEmergencyGrace && !inBagTransitionGrace) {
+                val fgPkg = detectForegroundPackage(now)
+                val allowedByBag = if (fgPkg != null) {
+                    bagStore.isPackageAllowedDuringLock(fgPkg)
+                } else {
+                    // Fallback if Usage Access isn't granted: allow temporarily if user intentionally opened a Bag app
+                    TheVoidActivity.activeBagPackage != null
                 }
-                try {
-                    startActivity(voidIntent)
-                } catch (_: Exception) {}
+
+                if (!allowedByBag) {
+                    TheVoidActivity.activeBagPackage = null
+                    snapBackToVoid()
+                }
+            } else if (TheVoidActivity.isInForeground) {
+                lastKnownForegroundPkg = packageName
+                TheVoidActivity.activeBagPackage = null
             }
 
             handler.postDelayed(this, WATCHDOG_INTERVAL_MS)
         }
     }
 
+    private fun hasUsageStatsAccess(): Boolean {
+        return try {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), packageName)
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), packageName)
+            }
+            mode == AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun detectForegroundPackage(now: Long): String? {
+        if (!hasUsageStatsAccess()) return null
+        return try {
+            val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return null
+            val events = usm.queryEvents(now - 30_000L, now)
+            val event = UsageEvents.Event()
+            var latestTime = 0L
+            var latestPkg: String? = null
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                val isResumed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    event.eventType == UsageEvents.Event.ACTIVITY_RESUMED
+                } else {
+                    @Suppress("DEPRECATION")
+                    event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
+                }
+                if (isResumed && event.timeStamp >= latestTime) {
+                    latestTime = event.timeStamp
+                    latestPkg = event.packageName
+                }
+            }
+            if (!latestPkg.isNullOrBlank()) {
+                lastKnownForegroundPkg = latestPkg
+            }
+            lastKnownForegroundPkg
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun snapBackToVoid() {
+        val voidIntent = Intent(this@LockForegroundService, TheVoidActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        }
+        try {
+            startActivity(voidIntent)
+        } catch (_: Exception) {}
+    }
+
     override fun onCreate() {
         super.onCreate()
+        bagStore = BagStore(this)
         createNotificationChannel()
     }
 
@@ -128,7 +204,7 @@ class LockForegroundService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Zero — The Void is Active")
-            .setContentText("Locked in $tag session. Focus mode engaged.")
+            .setContentText("Locked in #$tag. Non-Bag apps & distractions are blocked.")
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MAX)

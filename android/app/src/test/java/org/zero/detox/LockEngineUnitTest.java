@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
 import org.zero.detox.core.LockEngine;
+import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
 
 public class LockEngineUnitTest {
@@ -95,5 +96,38 @@ public class LockEngineUnitTest {
         store.syncLedgerState(72_000L + 18_000L, 0);
         assertEquals(1, store.getParachuteBalance());
         assertEquals(5.0, store.getMetrics().getCurrentProgressHours(), 0.01);
+    }
+
+    @Test
+    public void bagStore_enforcesThreeAppCapAndPackageIsolation() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public String getPackageName() {
+                return "org.zero.detox";
+            }
+
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        BagStore bagStore = new BagStore(fakeContext);
+        String fourApps = "["
+            + "{\"packageName\":\"com.spotify.music\",\"appName\":\"Spotify\"},"
+            + "{\"packageName\":\"com.google.android.apps.maps\",\"appName\":\"Maps\"},"
+            + "{\"packageName\":\"md.obsidian\",\"appName\":\"Obsidian\"},"
+            + "{\"packageName\":\"com.instagram.android\",\"appName\":\"Instagram\"}"
+            + "]";
+        bagStore.saveActiveBag("Commute", fourApps, false, false);
+
+        assertEquals("Commute", bagStore.getActiveBagName());
+        assertEquals(3, bagStore.getBagApps().size());
+        assertTrue(bagStore.isPackageAllowedDuringLock("org.zero.detox"));
+        assertTrue(bagStore.isPackageAllowedDuringLock("com.spotify.music"));
+        assertTrue(bagStore.isPackageAllowedDuringLock("md.obsidian"));
+        assertFalse(bagStore.isPackageAllowedDuringLock("com.instagram.android"));
+        assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
     }
 }

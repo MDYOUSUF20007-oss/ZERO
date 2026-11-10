@@ -1,12 +1,31 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import type { SessionTag, ParachuteMetrics } from '../types';
+import type {
+  SessionTag,
+  ParachuteMetrics,
+  OccasionBag,
+  NativePermissionStatus,
+} from '../types';
+import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
-import { ShieldAlert, Clock, Flame, ChevronRight } from 'lucide-react';
+import {
+  ShieldAlert,
+  ShieldCheck,
+  Clock,
+  Flame,
+  ChevronRight,
+  Briefcase,
+  Phone,
+  MessageSquare,
+} from 'lucide-react';
 
 interface LockDialViewProps {
   onIgnite: (durationSeconds: number, tag: SessionTag) => void;
   parachuteMetrics: ParachuteMetrics;
+  activeBag: OccasionBag;
+  permissions: NativePermissionStatus;
   onOpenDashboard: () => void;
+  onOpenBagDrawer: () => void;
+  onOpenPermissionGate: () => void;
 }
 
 const PRESET_DURATIONS = [
@@ -26,9 +45,13 @@ const SESSION_TAGS: SessionTag[] = ['Deep Work', 'Study', 'Family', 'Sleep', 'De
 export const LockDialView: React.FC<LockDialViewProps> = ({
   onIgnite,
   parachuteMetrics,
+  activeBag,
+  permissions,
   onOpenDashboard,
+  onOpenBagDrawer,
+  onOpenPermissionGate,
 }) => {
-  const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60); // Default 45m
+  const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
   const [customTagInput, setCustomTagInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -40,17 +63,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   const holdStartTimeRef = useRef<number | null>(null);
   const holdAnimFrameRef = useRef<number | null>(null);
 
-  // Scrubbable dial angle / drag state
   const dialRef = useRef<HTMLDivElement>(null);
   const isDraggingDial = useRef<boolean>(false);
 
-  // Compute unlock preview time
   const targetTimeStr = React.useMemo(() => {
     const d = new Date(Date.now() + durationSeconds * 1000);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }, [durationSeconds]);
 
-  // Format Duration display
   const formatDialTime = (secs: number) => {
     const hours = Math.floor(secs / 3600);
     const mins = Math.floor((secs % 3600) / 60);
@@ -59,7 +79,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     return `${mins} min`;
   };
 
-  // Convert duration to wheel rotation (from 5 mins = 0 deg up to 24 hrs = 360 deg)
   const MIN_SECS = 5 * 60;
   const MAX_SECS = 24 * 3600;
 
@@ -68,7 +87,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     return Math.min(360, Math.max(0, pct * 360));
   }, [durationSeconds]);
 
-  // Scrubbable wheel interaction
   const handleDialMove = useCallback(
     (clientX: number, clientY: number) => {
       if (!dialRef.current) return;
@@ -78,10 +96,9 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       const dx = clientX - centerX;
       const dy = clientY - centerY;
 
-      let theta = Math.atan2(dy, dx) * (180 / Math.PI) + 90; // Start at top
+      let theta = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
       if (theta < 0) theta += 360;
 
-      // Map theta 0..360 to 5 mins..24 hours with 5-minute stepping
       const rawSecs = MIN_SECS + (theta / 360) * (MAX_SECS - MIN_SECS);
       const steppedMins = Math.round(rawSecs / 300) * 5;
       const clampedSecs = Math.min(MAX_SECS, Math.max(MIN_SECS, steppedMins * 60));
@@ -127,7 +144,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     };
   }, [handleDialMove]);
 
-  // Hold-to-lock execution (3.0 seconds duration)
   const HOLD_DURATION_MS = 3000;
 
   const triggerIgnition = useCallback(() => {
@@ -135,8 +151,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     setHoldProgress(0);
     holdStartTimeRef.current = null;
     if (holdAnimFrameRef.current) cancelAnimationFrame(holdAnimFrameRef.current);
+
+    if (permissions.isNativeAndroid && !permissions.strictReady) {
+      onOpenPermissionGate();
+      return;
+    }
+
     onIgnite(durationSeconds, selectedTag);
-  }, [durationSeconds, selectedTag, onIgnite]);
+  }, [durationSeconds, selectedTag, onIgnite, permissions.isNativeAndroid, permissions.strictReady, onOpenPermissionGate]);
 
   const updateHold = useCallback(() => {
     if (!holdStartTimeRef.current) return;
@@ -153,6 +175,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
 
   const startHold = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
+    if (permissions.isNativeAndroid && !permissions.strictReady) {
+      haptics.tick(500);
+      onOpenPermissionGate();
+      return;
+    }
     setIsHolding(true);
     setHoldProgress(0);
     holdStartTimeRef.current = Date.now();
@@ -170,7 +197,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     }
   };
 
-  // Add custom tag
   const handleAddCustomTag = (e: React.FormEvent) => {
     e.preventDefault();
     if (customTagInput.trim()) {
@@ -185,7 +211,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4 py-4 max-w-md mx-auto w-full select-none">
+    <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
       {/* Top Banner: Parachute Balance & Milestone Progress */}
       <button
         onClick={onOpenDashboard}
@@ -220,17 +246,46 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         </div>
       </button>
 
+      {/* Native Android Strict Permission Banner */}
+      {permissions.isNativeAndroid && (
+        <button
+          type="button"
+          onClick={onOpenPermissionGate}
+          className={`w-full px-3.5 py-2 rounded-2xl border font-mono text-[11px] flex items-center justify-between transition-all ${
+            permissions.strictReady
+              ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300'
+              : 'bg-amber-950/40 border-amber-500/70 text-amber-200 animate-pulse'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {permissions.strictReady ? (
+              <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+            ) : (
+              <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+            )}
+            <span className="font-bold truncate">
+              {permissions.strictReady
+                ? permissions.isStrictAccessibilityBuild
+                  ? 'Strict Accessibility Guard: Armed'
+                  : 'Overlay + Usage Guard: Armed'
+                : 'Permissions Required Before Locking'}
+            </span>
+          </div>
+          <span className="text-[10px] underline shrink-0 ml-2">
+            {permissions.strictReady ? 'Check' : 'Grant Now'}
+          </span>
+        </button>
+      )}
+
       {/* Center: Tactile Duration Dial Wheel */}
-      <div className="my-auto flex flex-col items-center justify-center relative w-full py-4">
-        {/* Circular Dial Wheel with scrub action */}
+      <div className="my-auto flex flex-col items-center justify-center relative w-full py-2">
         <div
           ref={dialRef}
           onMouseDown={startDialScrub}
           onTouchStart={startDialScrub}
-          className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full border-2 border-zinc-800/80 bg-zinc-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl transition-shadow hover:border-zinc-700"
+          className="relative w-60 h-60 sm:w-68 sm:h-68 rounded-full border-2 border-zinc-800/80 bg-zinc-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl transition-shadow hover:border-zinc-700"
           style={{ touchAction: 'none' }}
         >
-          {/* Subtle Outer Dot Ring */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 288 288">
             <circle
               cx="144"
@@ -241,7 +296,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               strokeWidth="12"
               strokeDasharray="2 10"
             />
-            {/* Active Arc Indicator */}
             <circle
               cx="144"
               cy="144"
@@ -256,7 +310,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             />
           </svg>
 
-          {/* Rotating Scrub Notch Hand */}
           <div
             className="absolute w-full h-full pointer-events-none transition-transform duration-75"
             style={{ transform: `rotate(${currentAngle}deg)` }}
@@ -264,15 +317,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] border border-black" />
           </div>
 
-          {/* Center Readout */}
           <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
             <span className="text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1 font-semibold">
               Lock Duration
             </span>
-            <div className="font-mono text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow">
+            <div className="font-mono text-4xl font-black tracking-tight text-white drop-shadow">
               {formatDialTime(durationSeconds)}
             </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-mono text-zinc-400">
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs font-mono text-zinc-400">
               <Clock size={12} className="text-zinc-500" />
               <span>Until {targetTimeStr}</span>
             </div>
@@ -280,7 +332,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         </div>
 
         {/* Quick-Preset Chips */}
-        <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-sm mt-5">
+        <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-sm mt-4">
           {PRESET_DURATIONS.map((preset) => (
             <button
               key={preset.label}
@@ -300,11 +352,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         </div>
       </div>
 
-      {/* Bottom Area: Tags & 3-Second Hold to Ignite */}
-      <div className="w-full flex flex-col items-center gap-4 mt-auto">
+      {/* Bottom Area: The 4-Bag Selector, Tags & Hold to Lock */}
+      <div className="w-full flex flex-col items-center gap-3 mt-auto">
         {/* Session Tags */}
         <div className="w-full">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
               Session Focus Tag
             </span>
@@ -317,7 +369,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           </div>
 
           {isAddingTag ? (
-            <form onSubmit={handleAddCustomTag} className="flex gap-2 mb-2">
+            <form onSubmit={handleAddCustomTag} className="flex gap-2 mb-1">
               <input
                 type="text"
                 value={customTagInput}
@@ -335,7 +387,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               </button>
             </form>
           ) : (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {allTags.map((tag) => (
                 <button
                   key={tag}
@@ -356,6 +408,45 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           )}
         </div>
 
+        {/* Active Bag Card (4 Occasion Bags x Max 3 Apps + Calls/SMS) */}
+        <button
+          type="button"
+          onClick={onOpenBagDrawer}
+          className="w-full p-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all text-left font-mono group active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white shrink-0">
+              <Briefcase size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white truncate">
+                  Bag: {activeBag.name}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 shrink-0">
+                  {activeBag.apps.length}/{MAX_BAG_APPS} apps
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5 flex-wrap">
+                <span className={activeBag.allowCalls ? 'text-emerald-400 flex items-center gap-0.5' : 'flex items-center gap-0.5'}>
+                  <Phone size={10} /> {activeBag.allowCalls ? 'Calls ON' : 'Calls Off'}
+                </span>
+                <span className={activeBag.allowSms ? 'text-emerald-400 flex items-center gap-0.5' : 'flex items-center gap-0.5'}>
+                  <MessageSquare size={10} /> {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
+                </span>
+                {activeBag.apps.length > 0 && (
+                  <span className="text-zinc-300 truncate max-w-[140px]">
+                    • {activeBag.apps.map((a) => a.appName).join(', ')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5">
+            Pack <ChevronRight size={14} />
+          </span>
+        </button>
+
         {/* 3-Second Hold to Ignite Button */}
         <div className="w-full flex flex-col items-center">
           <button
@@ -365,14 +456,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchStart={startHold}
             onTouchEnd={cancelHold}
             onTouchCancel={cancelHold}
-            className={`relative w-full h-16 rounded-2xl border-2 font-mono font-black text-sm tracking-wider uppercase overflow-hidden transition-all select-none shadow-brutal flex items-center justify-center ${
+            className={`relative w-full h-15 py-4 rounded-2xl border-2 font-mono font-black text-sm tracking-wider uppercase overflow-hidden transition-all select-none shadow-brutal flex items-center justify-center ${
               isHolding
                 ? 'border-white bg-zinc-900 text-white scale-[0.99]'
                 : 'border-zinc-700 bg-zinc-950 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-900 active:scale-[0.99]'
             }`}
             style={{ touchAction: 'none' }}
           >
-            {/* SVG Progress Fill Bar from left to right */}
             <div
               className="absolute left-0 top-0 bottom-0 bg-white transition-all pointer-events-none"
               style={{
@@ -381,7 +471,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               }}
             />
 
-            {/* Button Content */}
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors ${
                 holdProgress > 0.5 ? 'text-black font-extrabold' : 'text-zinc-100'
@@ -390,24 +479,21 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               {isHolding ? (
                 <>
                   <Flame size={18} className="animate-bounce" />
-                  <span>
-                    Arming... {Math.ceil((1 - holdProgress) * 3)}s
-                  </span>
+                  <span>Arming... {Math.ceil((1 - holdProgress) * 3)}s</span>
+                </>
+              ) : permissions.isNativeAndroid && !permissions.strictReady ? (
+                <>
+                  <ShieldAlert size={18} className="text-amber-400" />
+                  <span>Grant Permissions to Lock</span>
                 </>
               ) : (
                 <>
                   <ShieldAlert size={18} />
                   <span>Hold 3s to Lock</span>
-                  <span className="text-[10px] font-normal opacity-70 px-1 py-0.5 border border-current rounded ml-1">
-                    No Accidents
-                  </span>
                 </>
               )}
             </div>
           </button>
-          <span className="text-[11px] font-mono text-zinc-400 mt-2">
-            Blocks app drawers, status bar, and notifications.
-          </span>
         </div>
       </div>
     </div>
