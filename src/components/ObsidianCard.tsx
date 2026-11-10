@@ -61,8 +61,8 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
     : {};
 
   const borderExpr = resolvedAccent
-    ? `1px solid rgba(${resolvedAccent.rgb}, 0.42)`
-    : '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.42)';
+    ? `1.5px solid rgba(${resolvedAccent.rgb}, 0.45)`
+    : '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.45)';
 
   const shadowExpr = resolvedAccent
     ? `0 0 28px -4px rgba(${resolvedAccent.rgb}, 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)`

@@ -68,6 +68,14 @@ import {
   verifyDonorUnlockToken,
 } from '../src/utils/donorUnlockToken.ts';
 import { KOFI_URL, SUPPORT_EMAIL } from '../src/utils/supportLinks.ts';
+import {
+  DEFAULT_FOCUS_RECEIPT_MOTTO,
+  FOCUS_RECEIPT_PERIOD_ORDER,
+  computeReceiptPeriodStats,
+  formatReceiptDuration,
+  formatReceiptHandle,
+  formatReceiptMotto,
+} from '../src/utils/focusReceipt.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
 import type {
   NativeEnvironmentSecurity,
@@ -1341,5 +1349,53 @@ failIf(
   'Active accent token helper must preserve Profile accent in Pure AMOLED and derive finish accent on Gradient themes'
 );
 console.log('PASS: Void Pixelated Gradient Clock & WhatsApp-Style Brand Bag Visuals Verified');
+
+console.log('\n=== TEST 20: Frosted Obsidian Focus Receipt Formatting & Period Metrics ===');
+failIf(
+  FOCUS_RECEIPT_PERIOD_ORDER.length === 5 &&
+    DEFAULT_FOCUS_RECEIPT_MOTTO === 'Put your phone facedown. Reclaim your hours.',
+  'Focus receipt period tabs & default motto must stay locked'
+);
+failIf(
+  formatReceiptDuration(300) === '5m' &&
+    formatReceiptDuration(3600) === '1h' &&
+    formatReceiptDuration(5100) === '1h 25m',
+  'Focus receipt duration formatter must produce compact 5m / 1h / 1h 25m labels'
+);
+failIf(
+  formatReceiptHandle(null) === '@anonymous' &&
+    formatReceiptHandle({ handle: '@@MDYOUSUF', displayName: 'Yousuf' }) === '@mdyousuf' &&
+    formatReceiptHandle({ handle: 'mdyousuf', displayName: 'Yousuf' }) === '@mdyousuf',
+  'Focus receipt handle formatter must normalize @ prefix cleanly without @@ duplication'
+);
+failIf(
+  formatReceiptMotto(null) === '"Put your phone facedown. Reclaim your hours."' &&
+    formatReceiptMotto({ motto: 'Stay phone-free.' }) === '"Stay phone-free."',
+  'Focus receipt motto formatter must quote default pledge or custom user motto'
+);
+
+const receiptNowMs = Date.UTC(2026, 10, 10, 18, 0, 0);
+const receiptToday = computeReceiptPeriodStats(heatmapSessions, 'today', 14.0, receiptNowMs);
+failIf(
+  receiptToday.formattedTime === '2h 30m' &&
+    receiptToday.completedCount === 1 &&
+    receiptToday.completionRate === 50 &&
+    receiptToday.topTag === '#Detox',
+  'Today Focus Receipt stats must include completed 2.5h session, 50% completion vs aborted lock, and top tag #Detox'
+);
+const receiptWeek = computeReceiptPeriodStats(heatmapSessions, 'week', 14.0, receiptNowMs);
+failIf(
+  receiptWeek.formattedTime === '9h' &&
+    receiptWeek.completedCount === 3 &&
+    receiptWeek.completionRate === 75 &&
+    receiptWeek.topTag === '#Deep Work',
+  'Week Focus Receipt stats must sum completed blocks (9h), compute 75% rate, and pick #Deep Work'
+);
+const receiptAllFallback = computeReceiptPeriodStats([], 'all', 1.5, receiptNowMs);
+failIf(
+  receiptAllFallback.formattedTime === '1h 30m' && receiptAllFallback.topTag === '#MonkMode',
+  'All-time Focus Receipt must fallback cleanly to totalReclaimedHours and #MonkMode when sessions list is empty'
+);
+console.log('PASS: Frosted Obsidian Focus Receipt Formatting & Period Metrics Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');
