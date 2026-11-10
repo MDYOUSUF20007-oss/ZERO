@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.zero.detox.bridge.PermissionStatusHelper;
+import org.zero.detox.core.EndpointSecurityPolicy;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
@@ -407,5 +408,76 @@ public class LockEngineUnitTest {
         assertEquals("md.obsidian", bagStore.getBagApps().get(0).getPackageName());
         assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
         assertFalse(bagStore.isPackageAllowedDuringLock("com.google.android.packageinstaller"));
+    }
+
+    @Test
+    public void endpointSecurityPolicy_enforcesSafUrisAndBlocksExfiltration() {
+        // Hardcoded SAF cloud & local storage URIs allowed
+        assertTrue(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://com.google.android.apps.docs.storage/document/acc%3D1%3Bdoc%3D123",
+                "org.zero.detox"
+            )
+        );
+        assertTrue(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://com.microsoft.skydrive.content.StorageAccessProvider/document/zero-backup.zbak",
+                "org.zero.detox"
+            )
+        );
+        assertTrue(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://com.ril.jio.jiodrive.provider/document/zero-backup.zbak",
+                "org.zero.detox"
+            )
+        );
+        assertTrue(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fzero-backup.zbak",
+                "org.zero.detox"
+            )
+        );
+
+        // External webhooks, HTTP, file:// paths, self-package FileProvider & system settings blocked
+        assertFalse(EndpointSecurityPolicy.validateSafDocumentUriString("https://webhook.site/abc", "org.zero.detox"));
+        assertFalse(EndpointSecurityPolicy.validateSafDocumentUriString("http://10.0.0.5/backup", "org.zero.detox"));
+        assertFalse(EndpointSecurityPolicy.validateSafDocumentUriString("file:///sdcard/Download/zero.zbak", "org.zero.detox"));
+        assertFalse(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://org.zero.detox.fileprovider/backups/zero.zbak",
+                "org.zero.detox"
+            )
+        );
+        assertFalse(
+            EndpointSecurityPolicy.validateSafDocumentUriString(
+                "content://com.android.providers.settings/system",
+                "org.zero.detox"
+            )
+        );
+
+        // External link & email redirection guards
+        assertNotNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("https://ko-fi.com/mdyousuf2620"));
+        assertNotNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("https://github.com/MDYOUSUF20007-oss/ZERO/releases"));
+        assertNotNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("mailto:mdyousuf982007@proton.me?subject=Receipt"));
+        assertNotNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("upi://pay?pa=md.y2007@ptaxis&am=50&cu=INR"));
+
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("http://ko-fi.com/mdyousuf2620"));
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("https://webhook.site/exfiltrate"));
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("https://ko-fi.com/someoneelse"));
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("mailto:attacker@evil.com?subject=Steal"));
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("mailto:mdyousuf982007@proton.me?bcc=attacker@evil.com"));
+        assertNull(EndpointSecurityPolicy.parseAndValidateExternalUrl("upi://pay?pa=attacker@okaxis&am=500"));
+
+        // WebView subresource allowlist
+        assertTrue(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("https://localhost/assets/index.js"));
+        assertTrue(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("https://fonts.googleapis.com/css2?family=Inter"));
+        assertTrue(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("https://fonts.gstatic.com/s/inter/v1/font.woff2"));
+        assertTrue(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("data:image/png;base64,iVBORw0KGgo="));
+        assertFalse(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("http://localhost/assets/index.js"));
+        assertFalse(EndpointSecurityPolicy.isAllowedWebViewRequestUrl("https://evil.com/leak?hours=100"));
+
+        // Path traversal filename sanitization
+        assertEquals("passwd", EndpointSecurityPolicy.sanitizeBackupFileName("../../etc/passwd"));
+        assertEquals("zero-backup.zbak", EndpointSecurityPolicy.sanitizeBackupFileName(".."));
     }
 }

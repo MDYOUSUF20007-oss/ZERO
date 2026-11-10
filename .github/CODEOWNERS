@@ -5,7 +5,11 @@
 /android/app/src/main/java/**          @MDYOUSUF20007-oss
 /android/app/src/strict/java/**        @MDYOUSUF20007-oss
 /android/app/src/*/AndroidManifest.xml @MDYOUSUF20007-oss
+/android/app/src/main/res/xml/network_security_config.xml @MDYOUSUF20007-oss
 /android/app/build.gradle              @MDYOUSUF20007-oss
+/index.html                            @MDYOUSUF20007-oss
 /src/core/integrity/**                 @MDYOUSUF20007-oss
+/src/plugins/cloudAutoBackup.ts        @MDYOUSUF20007-oss
+/src/utils/supportLinks.ts             @MDYOUSUF20007-oss
 /scripts/verify-integrity.mjs          @MDYOUSUF20007-oss
 /.github/workflows/**                  @MDYOUSUF20007-oss

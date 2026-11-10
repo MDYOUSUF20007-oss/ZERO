@@ -1,6 +1,9 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { IntegrityEngine } from '../core/integrity/IntegrityEngine';
 import type { CloudAutoBackupStatus } from '../types';
 import { ZBAK_FILE_NAME } from '../utils/zbakCodec';
+
+export const ALLOWED_CLOUD_DESTINATIONS = IntegrityEngine.HARDCODED_CLOUD_SAF_DESTINATIONS;
 
 export interface CloudAutoBackupPluginInterface {
   enableAutoBackup(options: {
@@ -105,6 +108,12 @@ export async function enableUniversalCloudAutoBackup(
         fileName: ZBAK_FILE_NAME,
         data: initialZbakContent,
       });
+      if (!IntegrityEngine.isAllowedBackupUri(res.uri)) {
+        return {
+          ok: false,
+          message: 'Blocked unverified backup destination. Only Android SAF content:// providers are allowed.',
+        };
+      }
       const provider = res.providerLabel || 'Cloud Storage';
       const fileLabel = res.displayName || ZBAK_FILE_NAME;
       return {
@@ -192,12 +201,26 @@ export async function writeUniversalCloudAutoBackup(
   permissionRevoked?: boolean;
   error?: string;
 }> {
+  if (persistedUri && !IntegrityEngine.isAllowedBackupUri(persistedUri)) {
+    return {
+      ok: false,
+      permissionRevoked: true,
+      error: 'Blocked unverified backup destination. Only Android SAF content:// providers are allowed.',
+    };
+  }
   if (isNativeAndroidCloudPluginAvailable()) {
     try {
+      // Never pass mutable or external upload URLs from JS; native layer reads strictly from persisted SAF SharedPreferences.
       const res = await NativeCloudAutoBackup.writeAutoBackup({
         data: zbakContent,
-        ...(persistedUri ? { uri: persistedUri } : {}),
       });
+      if (!IntegrityEngine.isAllowedBackupUri(res.uri)) {
+        return {
+          ok: false,
+          permissionRevoked: true,
+          error: 'Blocked non-SAF backup response destination.',
+        };
+      }
       return {
         ok: Boolean(res.ok),
         timestamp: res.timestamp || Date.now(),
@@ -206,7 +229,8 @@ export async function writeUniversalCloudAutoBackup(
       const e = err as { code?: string; message?: string };
       return {
         ok: false,
-        permissionRevoked: e?.code === 'PERMISSION_REVOKED' || e?.code === 'NO_URI',
+        permissionRevoked:
+          e?.code === 'PERMISSION_REVOKED' || e?.code === 'NO_URI' || e?.code === 'UNTRUSTED_URI',
         error: e?.message || 'Background auto-backup write failed.',
       };
     }
@@ -231,13 +255,14 @@ export async function fetchUniversalCloudAutoBackupStatus(): Promise<Partial<Clo
   if (!isNativeAndroidCloudPluginAvailable()) return null;
   try {
     const res = await NativeCloudAutoBackup.getAutoBackupStatus();
+    const safeUri = IntegrityEngine.isAllowedBackupUri(res.uri) ? res.uri : null;
     return {
       supported: true,
-      enabled: Boolean(res.enabled),
-      uri: res.uri || null,
-      displayName: res.displayName || null,
-      providerLabel: res.providerLabel || null,
-      hasPersistedPermission: Boolean(res.hasPersistedPermission),
+      enabled: Boolean(res.enabled && safeUri),
+      uri: safeUri,
+      displayName: safeUri ? res.displayName || null : null,
+      providerLabel: safeUri ? res.providerLabel || null : null,
+      hasPersistedPermission: Boolean(safeUri && res.hasPersistedPermission),
       lastBackupTimestamp: Number(res.lastBackupTimestamp) || 0,
     };
   } catch {

@@ -25,6 +25,22 @@ const PERIOD_LABELS: Record<FlexPeriod, { title: string; subtitle: string; daysB
   all: { title: 'ALL TIME', subtitle: 'Lifetime Reclaimed', daysBack: null },
 };
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const commaIdx = dataUrl.indexOf(',');
+  if (commaIdx === -1) {
+    throw new Error('Invalid PNG data URL');
+  }
+  const header = dataUrl.slice(0, commaIdx);
+  const mimeMatch = /^data:([^;]+);base64$/i.exec(header);
+  const mimeType = mimeMatch?.[1] || 'image/png';
+  const binary = atob(dataUrl.slice(commaIdx + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
 function formatHumanDuration(totalSeconds: number): string {
   const mins = Math.round(totalSeconds / 60);
   if (mins < 60) return `${mins}m`;
@@ -455,8 +471,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     }
 
     try {
-      const res = await fetch(cardDataUrl);
-      const blob = await res.blob();
+      const blob = dataUrlToBlob(cardDataUrl);
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({

@@ -5,9 +5,9 @@ android {
     namespace = "org.zero.detox"
     compileSdk = rootProject.ext.compileSdkVersion
     def envVersionCode = System.getenv("ZERO_VERSION_CODE")
-    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 125
+    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 126
     def envVersionName = System.getenv("ZERO_VERSION_NAME")
-    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.25"
+    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.26"
 
     defaultConfig {
         applicationId "org.zero.detox"

@@ -32,6 +32,10 @@ ZERO's value depends on strict, tamper-resistant phone blockage and honest disci
    - Never add `android:debuggable="true"` to any `AndroidManifest.xml` or enable `debuggable true` on release `buildTypes` in `android/app/build.gradle`.
    - Never alter `applicationId "org.zero.detox"`, strip V1+V2+V3 signing flags, or replace the official release signing workflow so users always receive seamless in-place APK updates.
 
+5. **No Data Exfiltration or Endpoint Tampering:**
+   - All Cloud Auto-Backup writes must strictly use OS-granted Android SAF `content://` URIs (`ACTION_CREATE_DOCUMENT`, `ACTION_OPEN_DOCUMENT`, `ACTION_SEND` `FileProvider`). Never add dynamic upload URLs, webhooks, HTTP clients, `fetch()`, `XMLHttpRequest`, `WebSocket`, or `navigator.sendBeacon()`.
+   - Never weaken `android/app/src/main/res/xml/network_security_config.xml` (`cleartextTrafficPermitted="false"`), `index.html` Content-Security-Policy (`connect-src`, `form-action`), or `EndpointSecurityPolicy.kt` destination allowlists (support `mailto:mdyousuf982007@proton.me`, `ko-fi.com/mdyousuf2620`, `github.com/MDYOUSUF20007-oss/ZERO`).
+
 ---
 
 ## Local Verification Before Opening a PR

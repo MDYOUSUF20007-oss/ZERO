@@ -25,6 +25,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import org.zero.detox.core.EndpointSecurityPolicy
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
@@ -490,7 +491,14 @@ class ZeroNativeBridge(
             val bytes = Base64.decode(cleanB64, Base64.DEFAULT)
             val shareDir = File(activity.cacheDir, "shared")
             if (!shareDir.exists()) shareDir.mkdirs()
-            val outFile = File(shareDir, fileName.ifBlank { "zero-focus-card.png" })
+            val safeFileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+                fileName,
+                "zero-focus-card.png"
+            )
+            val outFile = File(shareDir, safeFileName)
+            if (!outFile.canonicalPath.startsWith(shareDir.canonicalPath)) {
+                throw SecurityException("Invalid share image path.")
+            }
             outFile.writeBytes(bytes)
 
             val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", outFile)
@@ -515,7 +523,14 @@ class ZeroNativeBridge(
         try {
             val backupDir = File(activity.cacheDir, "backups")
             if (!backupDir.exists()) backupDir.mkdirs()
-            val outFile = File(backupDir, fileName.ifBlank { "zero-backup.json" })
+            val safeFileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+                fileName,
+                "zero-backup.json"
+            )
+            val outFile = File(backupDir, safeFileName)
+            if (!outFile.canonicalPath.startsWith(backupDir.canonicalPath)) {
+                throw SecurityException("Invalid backup export path.")
+            }
             outFile.writeText(jsonContent, Charsets.UTF_8)
 
             val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", outFile)
@@ -537,36 +552,30 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun openExternalUrl(url: String) {
-        val trimmed = url.trim()
-        val parsed = try {
-            Uri.parse(trimmed)
-        } catch (_: Exception) {
-            null
-        } ?: return
-
-        val scheme = parsed.scheme?.lowercase() ?: return
-        if (scheme != "https" && scheme != "http" && scheme != "upi" && scheme != "mailto") {
+        val validated = EndpointSecurityPolicy.parseAndValidateExternalUrl(url)
+        if (validated == null) {
+            activity.runOnUiThread {
+                Toast.makeText(
+                    activity,
+                    "Blocked unverified external link or email destination.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             return
         }
+
+        val scheme = validated.scheme
+        val parsed = Uri.parse(validated.normalizedUrl)
 
         activity.runOnUiThread {
             try {
                 val intent = if (scheme == "mailto") {
-                    val ssp = parsed.schemeSpecificPart ?: ""
-                    val targetEmail = ssp.substringBefore('?').trim()
-                    val queryPart = ssp.substringAfter('?', "")
-                    val subjectParam = queryPart
-                        .split('&')
-                        .firstOrNull { it.startsWith("subject=") }
-                        ?.substringAfter("subject=")
-                        ?.let { Uri.decode(it) }
+                    val officialEmail = EndpointSecurityPolicy.OFFICIAL_SUPPORT_EMAIL
                     Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:$targetEmail")
-                        if (targetEmail.isNotEmpty()) {
-                            putExtra(Intent.EXTRA_EMAIL, arrayOf(targetEmail))
-                        }
-                        if (!subjectParam.isNullOrBlank()) {
-                            putExtra(Intent.EXTRA_SUBJECT, subjectParam)
+                        data = Uri.parse("mailto:$officialEmail")
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf(officialEmail))
+                        if (!validated.mailtoSubject.isNullOrBlank()) {
+                            putExtra(Intent.EXTRA_SUBJECT, validated.mailtoSubject)
                         }
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }

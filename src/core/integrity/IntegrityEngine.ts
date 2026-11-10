@@ -1649,6 +1649,182 @@ function canAcceptNativeStateSync(perms: NativePermissionStatus): boolean {
 }
 
 // ============================================================================
+// HARDCODED ALLOWED DESTINATIONS (ANTI-EXFILTRATION & ENDPOINT ALLOWLIST)
+// ============================================================================
+
+export const OFFICIAL_KOFI_URL = 'https://ko-fi.com/mdyousuf2620';
+export const OFFICIAL_SUPPORT_EMAIL = 'mdyousuf982007@proton.me';
+export const OFFICIAL_GITHUB_REPO_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO';
+export const OFFICIAL_GITHUB_RELEASES_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO/releases';
+export const OFFICIAL_PAGES_URL = 'https://mdyousuf20007-oss.github.io/ZERO';
+export const OFFICIAL_UPI_ID = 'md.y2007@ptaxis';
+
+export const HARDCODED_CLOUD_SAF_DESTINATIONS = Object.freeze([
+  Object.freeze({
+    id: 'google_drive',
+    label: 'Google Drive',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.google.android.apps.docs',
+  }),
+  Object.freeze({
+    id: 'onedrive',
+    label: 'Microsoft OneDrive',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.microsoft.skydrive',
+  }),
+  Object.freeze({
+    id: 'jiodrive',
+    label: 'JioDrive / JioCloud',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.ril.jio',
+  }),
+  Object.freeze({
+    id: 'dropbox',
+    label: 'Dropbox',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.dropbox.android',
+  }),
+  Object.freeze({
+    id: 'local_external_storage',
+    label: 'Device Storage (SAF)',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.android.externalstorage.documents',
+  }),
+  Object.freeze({
+    id: 'local_downloads',
+    label: 'Downloads (SAF)',
+    intentAction: 'android.intent.action.CREATE_DOCUMENT',
+    authorityPrefix: 'com.android.providers.downloads.documents',
+  }),
+  Object.freeze({
+    id: 'web_file_handle',
+    label: 'Local Browser File Handle',
+    intentAction: 'showSaveFilePicker',
+    authorityPrefix: 'web-handle://',
+  }),
+]);
+
+const BLOCKED_SAF_AUTHORITIES = new Set([
+  'settings',
+  'com.android.providers.settings',
+  'contacts',
+  'com.android.contacts',
+  'telephony',
+  'sms',
+  'mms',
+  'mms-sms',
+  'call_log',
+  'icc',
+  'media_playback',
+  'org.zero.detox',
+  'org.zero.detox.fileprovider',
+]);
+
+export function isAllowedBackupUri(rawUri: string | null | undefined): boolean {
+  if (typeof rawUri !== 'string') return false;
+  const trimmed = rawUri.trim();
+  if (!trimmed || /[\r\n\t]/.test(trimmed) || trimmed.includes('..')) {
+    return false;
+  }
+
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('web-handle://')) {
+    const rest = trimmed.slice('web-handle://'.length);
+    return rest.length > 0 && !rest.includes('http://') && !rest.includes('https://');
+  }
+
+  if (!lower.startsWith('content://')) {
+    return false;
+  }
+
+  const withoutScheme = trimmed.slice('content://'.length);
+  const slashIdx = withoutScheme.indexOf('/');
+  if (slashIdx <= 0) return false;
+  const authority = withoutScheme.slice(0, slashIdx);
+  const docPath = withoutScheme.slice(slashIdx + 1);
+  if (
+    !authority ||
+    !docPath.trim() ||
+    authority.includes('@') ||
+    !/^[A-Za-z0-9._:-]+$/.test(authority)
+  ) {
+    return false;
+  }
+
+  const lowerAuth = authority.toLowerCase();
+  if (lowerAuth.startsWith('org.zero.detox') || BLOCKED_SAF_AUTHORITIES.has(lowerAuth)) {
+    return false;
+  }
+
+  const lowerPath = docPath.toLowerCase();
+  if (lowerPath.includes('http://') || lowerPath.includes('https://')) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isAllowedExternalUrl(rawUrl: string | null | undefined): boolean {
+  if (typeof rawUrl !== 'string') return false;
+  const trimmed = rawUrl.trim();
+  if (!trimmed || /[\r\n]/.test(trimmed)) return false;
+
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('https://')) {
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.username || parsed.password || parsed.port) return false;
+      const host = parsed.hostname.toLowerCase();
+      const path = parsed.pathname || '';
+      if (host === 'ko-fi.com') {
+        const lp = path.toLowerCase();
+        return lp === '/mdyousuf2620' || lp.startsWith('/mdyousuf2620/');
+      }
+      if (host === 'github.com') {
+        const lp = path.toLowerCase();
+        return lp === '/mdyousuf20007-oss/zero' || lp.startsWith('/mdyousuf20007-oss/zero/');
+      }
+      if (host === 'mdyousuf20007-oss.github.io') {
+        const lp = path.toLowerCase();
+        return lp === '/zero' || lp.startsWith('/zero/');
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  if (lower.startsWith('mailto:')) {
+    const ssp = trimmed.slice('mailto:'.length);
+    const qIdx = ssp.indexOf('?');
+    const recipient = (qIdx >= 0 ? ssp.slice(0, qIdx) : ssp).trim();
+    if (recipient.includes(',') || recipient.includes(';')) return false;
+    if (recipient.toLowerCase() !== OFFICIAL_SUPPORT_EMAIL) return false;
+    if (qIdx >= 0) {
+      const query = ssp.slice(qIdx + 1);
+      for (const pair of query.split('&')) {
+        if (!pair) continue;
+        const eqIdx = pair.indexOf('=');
+        const key = (eqIdx >= 0 ? pair.slice(0, eqIdx) : pair).trim().toLowerCase();
+        if (key === 'to' || key === 'cc' || key === 'bcc') {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  if (lower.startsWith('upi://pay?')) {
+    const withoutScheme = trimmed.slice('upi://pay?'.length);
+    if (withoutScheme.includes('@') === false) return false;
+    const params = new URLSearchParams(withoutScheme);
+    return params.get('pa') === OFFICIAL_UPI_ID;
+  }
+
+  return false;
+}
+
+// ============================================================================
 // FROZEN READ-ONLY SINGLETON EXPORT — ZERO PUBLIC SETTERS EXPOSED TO UI
 // ============================================================================
 
@@ -1660,6 +1836,15 @@ export const IntegrityEngine = Object.freeze({
   ZBAK_PREFIX,
   ZDON_PREFIX,
   WEEKLY_BACKUP_INTERVAL_MS,
+  OFFICIAL_KOFI_URL,
+  OFFICIAL_SUPPORT_EMAIL,
+  OFFICIAL_GITHUB_REPO_URL,
+  OFFICIAL_GITHUB_RELEASES_URL,
+  OFFICIAL_PAGES_URL,
+  OFFICIAL_UPI_ID,
+  HARDCODED_CLOUD_SAF_DESTINATIONS,
+  isAllowedBackupUri,
+  isAllowedExternalUrl,
   loadState: loadProtectedState,
   commitNativeSessionCompletions,
   commitWebPreviewSessionCompletion,

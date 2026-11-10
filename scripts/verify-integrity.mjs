@@ -300,7 +300,9 @@ if (
   !codeowners.includes('@MDYOUSUF20007-oss') ||
   !codeowners.includes('/android/app/src/main/java/**') ||
   !codeowners.includes('/src/core/integrity/**') ||
-  !codeowners.includes('/.github/workflows/**')
+  !codeowners.includes('/.github/workflows/**') ||
+  !codeowners.includes('/android/app/src/main/res/xml/network_security_config.xml') ||
+  !codeowners.includes('/index.html')
 ) {
   fail(
     'D1',
@@ -336,6 +338,168 @@ if (!buildWorkflow || !buildWorkflow.includes('node scripts/verify-integrity.mjs
   );
 }
 
+// ============================================================================
+// CHECK E: Anti-Exfiltration, Hardcoded Backup URIs, Network Security & CSP
+// ============================================================================
+const netSecRel = 'android/app/src/main/res/xml/network_security_config.xml';
+const netSecXmlRaw = readText(netSecRel);
+if (!netSecXmlRaw) {
+  fail('E1', `Missing Android network security config at ${netSecRel}.`);
+} else {
+  const netSecXml = stripXmlComments(netSecXmlRaw);
+  if (!/<base-config[^>]*cleartextTrafficPermitted\s*=\s*["']false["']/i.test(netSecXml)) {
+    fail('E1', `${netSecRel} must restrict cleartext HTTP via <base-config cleartextTrafficPermitted="false">.`);
+  }
+  if (/cleartextTrafficPermitted\s*=\s*["']true["']/i.test(netSecXml)) {
+    fail('E1', `${netSecRel} must NEVER set cleartextTrafficPermitted="true".`);
+  }
+  if (/<certificates\s+[^>]*src\s*=\s*["']user["']/i.test(netSecXml)) {
+    fail('E1', `${netSecRel} must not trust user-installed certificates in release builds.`);
+  }
+  if (/<domain[^>]*>\s*\*\s*<\/domain>/i.test(netSecXml)) {
+    fail('E1', `${netSecRel} must not declare wildcard domains.`);
+  }
+}
+
+const mainManifest = stripXmlComments(readText('android/app/src/main/AndroidManifest.xml') || '');
+if (
+  !/android:networkSecurityConfig\s*=\s*["']@xml\/network_security_config["']/.test(mainManifest) ||
+  !/android:usesCleartextTraffic\s*=\s*["']false["']/.test(mainManifest)
+) {
+  fail(
+    'E2',
+    'android/app/src/main/AndroidManifest.xml must bind @xml/network_security_config and android:usesCleartextTraffic="false".'
+  );
+}
+
+const indexHtml = readText('index.html');
+if (!indexHtml) {
+  fail('E3', 'Missing root index.html.');
+} else {
+  const cspMatch = /<meta\s+[^>]*http-equiv\s*=\s*["']Content-Security-Policy["'][^>]*content\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(
+    indexHtml
+  );
+  if (!cspMatch) {
+    fail('E3', 'index.html must define a strict Content-Security-Policy meta tag.');
+  } else {
+    const csp = cspMatch[1] ?? cspMatch[2] ?? '';
+    const directives = new Map();
+    for (const part of csp.split(';')) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const tokens = trimmed.split(/\s+/);
+      directives.set(tokens[0].toLowerCase(), tokens.slice(1));
+    }
+
+    const ALLOWED_CONNECT = new Set(["'self'", 'https://mdyousuf20007-oss.github.io', 'content:']);
+    const ALLOWED_FORM = new Set(["'self'", 'https://mdyousuf20007-oss.github.io', 'content:']);
+
+    const defaultSrc = directives.get('default-src') || [];
+    if (!defaultSrc.includes("'self'") || defaultSrc.includes('*')) {
+      fail('E3', 'CSP default-src in index.html must strictly enforce self.');
+    }
+
+    const scriptSrc = directives.get('script-src') || [];
+    if (
+      !scriptSrc.includes("'self'") ||
+      scriptSrc.includes("'unsafe-inline'") ||
+      scriptSrc.includes("'unsafe-eval'") ||
+      scriptSrc.includes('*')
+    ) {
+      fail('E3', 'CSP script-src in index.html must forbid unsafe-inline/unsafe-eval/wildcards.');
+    }
+
+    const connectSrc = directives.get('connect-src') || [];
+    if (
+      connectSrc.length === 0 ||
+      connectSrc.some((tok) => !ALLOWED_CONNECT.has(tok)) ||
+      !connectSrc.includes("'self'") ||
+      !connectSrc.includes('content:')
+    ) {
+      fail(
+        'E3',
+        `CSP connect-src contains unauthorized tokens or misses required restrictions: [${connectSrc.join(' ')}].`
+      );
+    }
+
+    const formAction = directives.get('form-action') || [];
+    if (
+      formAction.length === 0 ||
+      formAction.some((tok) => !ALLOWED_FORM.has(tok)) ||
+      !formAction.includes("'self'")
+    ) {
+      fail(
+        'E3',
+        `CSP form-action contains unauthorized tokens: [${formAction.join(' ')}].`
+      );
+    }
+  }
+}
+
+const cloudPluginKtRel = 'android/app/src/main/java/org/zero/detox/plugin/CloudAutoBackupPlugin.kt';
+const cloudPluginKt = stripJsComments(readText(cloudPluginKtRel) || '');
+if (
+  !cloudPluginKt ||
+  !cloudPluginKt.includes('Intent.ACTION_CREATE_DOCUMENT') ||
+  !cloudPluginKt.includes('Intent.ACTION_OPEN_DOCUMENT') ||
+  !cloudPluginKt.includes('EndpointSecurityPolicy.validateSafDocumentUriString') ||
+  !cloudPluginKt.includes('UNTRUSTED_URI')
+) {
+  fail('E4', `${cloudPluginKtRel} must enforce system SAF intents and EndpointSecurityPolicy validation.`);
+} else if (
+  /(HttpURLConnection|OkHttpClient|Retrofit|java\.net\.URL|https?:\/\/|\bwebhook\b)/i.test(
+    cloudPluginKt
+  )
+) {
+  fail('E4', `${cloudPluginKtRel} must not contain HTTP clients, webhooks, or external network URLs.`);
+}
+
+const cloudBackupTsRel = 'src/plugins/cloudAutoBackup.ts';
+const cloudBackupTs = stripJsComments(readText(cloudBackupTsRel) || '');
+if (
+  !cloudBackupTs ||
+  !cloudBackupTs.includes('IntegrityEngine.isAllowedBackupUri') ||
+  /(https?:\/\/|\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|sendBeacon|\bwebhook\b)/i.test(
+    cloudBackupTs
+  )
+) {
+  fail(
+    'E4',
+    `${cloudBackupTsRel} must enforce IntegrityEngine.isAllowedBackupUri and contain zero network upload endpoints or webhooks.`
+  );
+}
+
+const endpointPolicyRel = 'android/app/src/main/java/org/zero/detox/core/EndpointSecurityPolicy.kt';
+const endpointPolicy = stripJsComments(readText(endpointPolicyRel) || '');
+const nativeBridgeKt = stripJsComments(
+  readText('android/app/src/main/java/org/zero/detox/bridge/ZeroNativeBridge.kt') || ''
+);
+const mainActivityJava = stripJsComments(
+  readText('android/app/src/main/java/org/zero/detox/MainActivity.java') || ''
+);
+if (
+  !endpointPolicy ||
+  !endpointPolicy.includes('"mdyousuf982007@proton.me"') ||
+  !endpointPolicy.includes('"https://ko-fi.com/mdyousuf2620"') ||
+  !nativeBridgeKt.includes('EndpointSecurityPolicy.parseAndValidateExternalUrl') ||
+  !mainActivityJava.includes('EndpointSecurityPolicy.isAllowedWebViewRequestUrl')
+) {
+  fail(
+    'E5',
+    'EndpointSecurityPolicy.kt must lock official destinations/email and be enforced in ZeroNativeBridge.kt & MainActivity.java.'
+  );
+}
+
+for (const relFile of srcCodeFiles) {
+  const code = stripJsComments(readText(relFile) || '');
+  if (/\bfetch\s*\(|\bXMLHttpRequest\b|\bnew\s+WebSocket\b|navigator\.sendBeacon\s*\(/.test(code)) {
+    fail(
+      'E6',
+      `Unauthorized network exfiltration primitive (fetch/XHR/WebSocket/sendBeacon) found in ${relFile}.`
+    );
+  }
+}
+
 if (failures.length > 0) {
   console.error('\n[INTEGRITY CHECK FAILED] Violations detected:\n');
   for (const f of failures) {
@@ -350,4 +514,5 @@ console.log('[PASS] ZERO Core Productivity Integrity verification succeeded:');
 console.log('  - AndroidManifest debuggable & V1+V2+V3 release update signing: OK');
 console.log('  - Native SystemClock.elapsedRealtime() & Settings protection: OK');
 console.log('  - IntegrityEngine isolation & zero raw stat/donor bypasses: OK');
+console.log('  - Anti-exfiltration (hardcoded URIs, network_security_config, strict CSP): OK');
 console.log('  - CODEOWNERS, CONTRIBUTING policy & release continuity: OK');

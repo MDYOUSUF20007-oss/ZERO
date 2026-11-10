@@ -903,4 +903,67 @@ failIf(
 );
 console.log('PASS: IntegrityEngine Isolation, Monotonic Proofs & Anti-Cheat Guards Verified');
 
+console.log('\n=== TEST 16: Hardcoded Destinations & Anti-Exfiltration Allowlists ===');
+// Allowed Android SAF & local backup URIs (Google Drive, OneDrive, JioDrive, Dropbox, External Storage)
+failIf(
+  IntegrityEngine.isAllowedBackupUri(
+    'content://com.google.android.apps.docs.storage/document/acc%3D1%3Bdoc%3Dencoded%3D123'
+  ) === true,
+  'Google Drive SAF content:// URI must be permitted'
+);
+failIf(
+  IntegrityEngine.isAllowedBackupUri(
+    'content://com.microsoft.skydrive.content.StorageAccessProvider/document/zero-backup.zbak'
+  ) === true,
+  'OneDrive SAF content:// URI must be permitted'
+);
+failIf(
+  IntegrityEngine.isAllowedBackupUri(
+    'content://com.ril.jio.jiodrive.provider/document/zero-backup.zbak'
+  ) === true,
+  'JioDrive SAF content:// URI must be permitted'
+);
+failIf(
+  IntegrityEngine.isAllowedBackupUri(
+    'content://com.android.externalstorage.documents/document/primary%3ADownload%2Fzero-backup.zbak'
+  ) === true,
+  'Local External Storage SAF URI must be permitted'
+);
+failIf(
+  IntegrityEngine.isAllowedBackupUri('web-handle://zero-backup.zbak') === true,
+  'Local File System Access handle URI must be permitted in desktop preview'
+);
+
+// Reject arbitrary HTTP/HTTPS webhooks, self-package FileProvider, system settings, and file:// paths
+failIf(
+  IntegrityEngine.isAllowedBackupUri('https://webhook.site/steal-backup') === false &&
+    IntegrityEngine.isAllowedBackupUri('http://192.168.1.50/upload') === false &&
+    IntegrityEngine.isAllowedBackupUri('file:///sdcard/Download/zero.zbak') === false &&
+    IntegrityEngine.isAllowedBackupUri('content://org.zero.detox.fileprovider/backups/secret.zbak') === false &&
+    IntegrityEngine.isAllowedBackupUri('content://com.android.providers.settings/system') === false,
+  'HTTP/HTTPS webhooks, file:// URIs, self-provider URIs & system settings must be blocked as backup destinations'
+);
+
+// Official external URLs, support email & UPI allowlist vs tampering/redirection attempts
+failIf(
+  IntegrityEngine.isAllowedExternalUrl('https://ko-fi.com/mdyousuf2620') === true &&
+    IntegrityEngine.isAllowedExternalUrl('https://github.com/MDYOUSUF20007-oss/ZERO') === true &&
+    IntegrityEngine.isAllowedExternalUrl('https://github.com/MDYOUSUF20007-oss/ZERO/releases') === true &&
+    IntegrityEngine.isAllowedExternalUrl('https://mdyousuf20007-oss.github.io/ZERO/') === true &&
+    IntegrityEngine.isAllowedExternalUrl('mailto:mdyousuf982007@proton.me?subject=ZERO%20Ko-fi%20Donor%20Verification') === true &&
+    IntegrityEngine.isAllowedExternalUrl('upi://pay?pa=md.y2007@ptaxis&pn=Zero%20FOSS&am=50&cu=INR') === true,
+  'Official ZERO links, official Ko-fi, official Proton support email & official UPI ID must pass'
+);
+failIf(
+  IntegrityEngine.isAllowedExternalUrl('http://ko-fi.com/mdyousuf2620') === false &&
+    IntegrityEngine.isAllowedExternalUrl('https://evil.com/phishing') === false &&
+    IntegrityEngine.isAllowedExternalUrl('https://github.com/attacker/ZERO') === false &&
+    IntegrityEngine.isAllowedExternalUrl('https://ko-fi.com/otheruser') === false &&
+    IntegrityEngine.isAllowedExternalUrl('mailto:attacker@evil.com?subject=steal') === false &&
+    IntegrityEngine.isAllowedExternalUrl('mailto:mdyousuf982007@proton.me?bcc=attacker@evil.com') === false &&
+    IntegrityEngine.isAllowedExternalUrl('upi://pay?pa=scammer@okaxis&am=500') === false,
+  'Cleartext HTTP, third-party websites, spoofed email recipients/BCC, and tampered UPI VPAs must be rejected'
+);
+console.log('PASS: Hardcoded SAF Cloud Destinations & Endpoint Tampering Guards Verified');
+
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

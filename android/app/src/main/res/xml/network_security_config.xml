@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      ZERO Strict Network Security Policy:
+      1. Block ALL cleartext (HTTP) traffic globally across the entire app.
+      2. Trust ONLY official system CAs (reject user-installed MITM certs in release builds).
+    -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+      Permit TLS/HTTPS ONLY for official ZERO endpoints, font stylesheets,
+      and trusted cloud storage provider API domains (cleartext still strictly false).
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- Capacitor Local Bundle Asset Server -->
+        <domain includeSubdomains="false">localhost</domain>
+
+        <!-- Official ZERO Distribution & Supporter Destinations -->
+        <domain includeSubdomains="false">mdyousuf20007-oss.github.io</domain>
+        <domain includeSubdomains="false">github.com</domain>
+        <domain includeSubdomains="true">githubusercontent.com</domain>
+        <domain includeSubdomains="false">ko-fi.com</domain>
+
+        <!-- Google Fonts Typography -->
+        <domain includeSubdomains="false">fonts.googleapis.com</domain>
+        <domain includeSubdomains="false">fonts.gstatic.com</domain>
+
+        <!-- Trusted System / Cloud Storage Provider Domains (SAF-paired) -->
+        <domain includeSubdomains="false">drive.google.com</domain>
+        <domain includeSubdomains="false">docs.google.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="false">onedrive.live.com</domain>
+        <domain includeSubdomains="false">api.onedrive.com</domain>
+        <domain includeSubdomains="false">graph.microsoft.com</domain>
+        <domain includeSubdomains="true">jiocloud.com</domain>
+        <domain includeSubdomains="false">jiodrive.jio.com</domain>
+        <domain includeSubdomains="false">dropbox.com</domain>
+        <domain includeSubdomains="true">dropboxapi.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

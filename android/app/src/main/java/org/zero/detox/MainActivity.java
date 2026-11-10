@@ -1,16 +1,25 @@
 package org.zero.detox;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
+import java.io.ByteArrayInputStream;
+import java.util.Collections;
 import org.zero.detox.bridge.ZeroNativeBridge;
+import org.zero.detox.core.EndpointSecurityPolicy;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
@@ -50,11 +59,81 @@ public class MainActivity extends BridgeActivity {
         super.load();
 
         try {
-            if (getBridge() != null && getBridge().getWebView() != null && nativeBridge != null) {
-                getBridge().getWebView().addJavascriptInterface(nativeBridge, "ZeroNative");
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                WebView webView = getBridge().getWebView();
+                if (nativeBridge != null) {
+                    webView.addJavascriptInterface(nativeBridge, "ZeroNative");
+                }
+                hardenWebViewSecurity(webView);
             }
         } catch (Throwable t) {
             Log.e("ZeroMainActivity", "Post-load ZeroNative attach failed", t);
+        }
+    }
+
+    private void hardenWebViewSecurity(WebView webView) {
+        WebSettings settings = webView.getSettings();
+        settings.setAllowFileAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setGeolocationEnabled(false);
+
+        if (getBridge() != null) {
+            getBridge().setWebViewClient(new BridgeWebViewClient(getBridge()) {
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    Uri reqUri = request != null ? request.getUrl() : null;
+                    String urlStr = reqUri != null ? reqUri.toString() : "";
+                    if (!EndpointSecurityPolicy.isAllowedWebViewRequestUrl(urlStr)) {
+                        return new WebResourceResponse(
+                            "text/plain",
+                            "utf-8",
+                            403,
+                            "Blocked by ZERO Security Policy",
+                            Collections.emptyMap(),
+                            new ByteArrayInputStream(new byte[0])
+                        );
+                    }
+                    return super.shouldInterceptRequest(view, request);
+                }
+
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    Uri target = request != null ? request.getUrl() : null;
+                    if (target == null) return true;
+                    String scheme = target.getScheme() != null ? target.getScheme().toLowerCase() : "";
+                    String host = target.getHost() != null ? target.getHost().toLowerCase() : "";
+
+                    if ("https".equals(scheme) && EndpointSecurityPolicy.CAPACITOR_LOCAL_ORIGIN_HOST.equals(host)) {
+                        return super.shouldOverrideUrlLoading(view, request);
+                    }
+
+                    EndpointSecurityPolicy.ValidatedExternalTarget validated =
+                        EndpointSecurityPolicy.parseAndValidateExternalUrl(target.toString());
+                    if (validated == null) {
+                        Log.w("ZeroMainActivity", "Blocked unapproved external navigation: " + target);
+                        return true;
+                    }
+
+                    if ("mailto".equals(validated.getScheme())) {
+                        try {
+                            String email = EndpointSecurityPolicy.OFFICIAL_SUPPORT_EMAIL;
+                            Intent mailIntent = new Intent(Intent.ACTION_SENDTO);
+                            mailIntent.setData(Uri.parse("mailto:" + email));
+                            mailIntent.putExtra(Intent.EXTRA_EMAIL, new String[] { email });
+                            if (validated.getMailtoSubject() != null && !validated.getMailtoSubject().isEmpty()) {
+                                mailIntent.putExtra(Intent.EXTRA_SUBJECT, validated.getMailtoSubject());
+                            }
+                            mailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(mailIntent);
+                        } catch (Throwable ignored) {}
+                        return true;
+                    }
+
+                    return super.shouldOverrideUrlLoading(view, request);
+                }
+            });
         }
     }
 

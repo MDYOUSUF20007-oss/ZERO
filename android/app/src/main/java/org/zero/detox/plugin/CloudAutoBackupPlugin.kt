@@ -1,6 +1,7 @@
 package org.zero.detox.plugin
 
 import android.app.Activity
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,6 +15,7 @@ import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import org.json.JSONObject
+import org.zero.detox.core.EndpointSecurityPolicy
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.Executors
@@ -22,6 +24,13 @@ import java.util.concurrent.Executors
  * CloudAutoBackupPlugin:
  * 100% serverless Capacitor plugin for Universal Cloud Auto-Backup using Android SAF
  * (Google Drive, Microsoft OneDrive, JioDrive/JioCloud, Dropbox, or Local Storage).
+ *
+ * Security Invariants:
+ * - Only system Storage Access Framework intents (ACTION_CREATE_DOCUMENT,
+ *   ACTION_OPEN_DOCUMENT, and ACTION_SEND FileProvider chooser) are used.
+ * - Dynamically supplied HTTP/HTTPS/webhook upload URLs are strictly rejected.
+ * - Background writes only write to the OS-picker-granted persisted content:// URI
+ *   stored in MODE_PRIVATE SharedPreferences.
  */
 @CapacitorPlugin(name = "CloudAutoBackup")
 class CloudAutoBackupPlugin : Plugin() {
@@ -43,9 +52,10 @@ class CloudAutoBackupPlugin : Plugin() {
 
     @PluginMethod
     fun enableAutoBackup(call: PluginCall) {
-        val fileName = call.getString("fileName")
-            ?.takeIf { it.isNotBlank() }
-            ?: "zero-backup.zbak"
+        val fileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+            call.getString("fileName"),
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        )
 
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -71,6 +81,15 @@ class CloudAutoBackupPlugin : Plugin() {
             return
         }
 
+        val uriStr = resultUri.toString()
+        if (!EndpointSecurityPolicy.validateSafDocumentUriString(uriStr, context.packageName)) {
+            call.reject(
+                "Blocked unverified backup destination. Only Android SAF content:// providers are allowed.",
+                "UNTRUSTED_URI"
+            )
+            return
+        }
+
         val cr = context.contentResolver
         try {
             cr.takePersistableUriPermission(
@@ -87,13 +106,16 @@ class CloudAutoBackupPlugin : Plugin() {
             // Ignore non-fatal flag edge cases across OEM document providers
         }
 
-        val displayName = resolveDisplayName(resultUri) ?: "zero-backup.zbak"
-        val providerLabel = detectProviderLabel(resultUri)
-        val persistedNow = hasPersistedWritePermission(resultUri.toString())
+        val displayName = EndpointSecurityPolicy.sanitizeBackupFileName(
+            resolveDisplayName(resultUri),
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        )
+        val providerLabel = EndpointSecurityPolicy.resolveSafProviderLabel(resultUri.authority)
+        val persistedNow = hasPersistedWritePermission(uriStr)
 
         getPrefs().edit()
             .putBoolean(KEY_ENABLED, true)
-            .putString(KEY_URI, resultUri.toString())
+            .putString(KEY_URI, uriStr)
             .putString(KEY_DISPLAY_NAME, displayName)
             .putString(KEY_PROVIDER_LABEL, providerLabel)
             .apply()
@@ -139,24 +161,48 @@ class CloudAutoBackupPlugin : Plugin() {
         }
 
         val prefs = getPrefs()
-        val uriString = call.getString("uri")?.takeIf { it.isNotBlank() }
-            ?: prefs.getString(KEY_URI, null)
-
-        if (uriString.isNullOrBlank()) {
+        val storedUriString = prefs.getString(KEY_URI, null)
+        if (storedUriString.isNullOrBlank()) {
             call.reject("No persisted cloud backup URI configured.", "NO_URI")
             return
         }
 
+        // Prohibit dynamic or caller-substituted upload destinations:
+        // caller must never redirect persisted SAF writes to a different URL or endpoint.
+        val callerUriString = call.getString("uri")?.takeIf { it.isNotBlank() }
+        if (callerUriString != null && callerUriString != storedUriString) {
+            call.reject(
+                "Blocked dynamic destination override. Backups may only target your OS-selected SAF URI.",
+                "UNTRUSTED_URI"
+            )
+            return
+        }
+
+        if (!EndpointSecurityPolicy.validateSafDocumentUriString(storedUriString, context.packageName)) {
+            call.reject("Stored backup URI failed SAF content:// policy check.", "UNTRUSTED_URI")
+            return
+        }
+
         val uri = try {
-            Uri.parse(uriString)
+            Uri.parse(storedUriString)
         } catch (e: Exception) {
             call.reject("Invalid persisted backup URI: ${e.localizedMessage}", "INVALID_URI")
             return
         }
 
-        val displayName = prefs.getString(KEY_DISPLAY_NAME, "zero-backup.zbak") ?: "zero-backup.zbak"
-        val providerLabel = prefs.getString(KEY_PROVIDER_LABEL, detectProviderLabel(uri))
-            ?: detectProviderLabel(uri)
+        if (uri.scheme?.lowercase() != ContentResolver.SCHEME_CONTENT) {
+            call.reject("Blocked non-SAF backup scheme.", "UNTRUSTED_URI")
+            return
+        }
+
+        val displayName = prefs.getString(
+            KEY_DISPLAY_NAME,
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        ) ?: EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        val providerLabel = prefs.getString(
+            KEY_PROVIDER_LABEL,
+            EndpointSecurityPolicy.resolveSafProviderLabel(uri.authority)
+        ) ?: EndpointSecurityPolicy.resolveSafProviderLabel(uri.authority)
 
         ioExecutor.execute {
             try {
@@ -168,7 +214,7 @@ class CloudAutoBackupPlugin : Plugin() {
                     JSObject().apply {
                         put("ok", true)
                         put("timestamp", ts)
-                        put("uri", uriString)
+                        put("uri", storedUriString)
                         put("displayName", displayName)
                         put("providerLabel", providerLabel)
                         put("bytesWritten", bytesWritten)
@@ -192,7 +238,9 @@ class CloudAutoBackupPlugin : Plugin() {
     fun getAutoBackupStatus(call: PluginCall) {
         val prefs = getPrefs()
         val uriStr = prefs.getString(KEY_URI, null)
-        val hasPerm = uriStr != null && hasPersistedWritePermission(uriStr)
+        val validSaf = uriStr != null &&
+            EndpointSecurityPolicy.validateSafDocumentUriString(uriStr, context.packageName)
+        val hasPerm = validSaf && hasPersistedWritePermission(uriStr!!)
         call.resolve(buildStatusObject(hasPerm))
     }
 
@@ -237,15 +285,19 @@ class CloudAutoBackupPlugin : Plugin() {
             call.reject("Missing .zbak payload to share.", "INVALID_DATA")
             return
         }
-        val fileName = call.getString("fileName")
-            ?.takeIf { it.isNotBlank() }
-            ?: "zero-backup.zbak"
+        val fileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+            call.getString("fileName"),
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        )
 
         ioExecutor.execute {
             try {
                 val backupDir = File(context.cacheDir, "backups")
                 if (!backupDir.exists()) backupDir.mkdirs()
                 val outFile = File(backupDir, fileName)
+                if (!outFile.canonicalPath.startsWith(backupDir.canonicalPath)) {
+                    throw SecurityException("Invalid backup output path.")
+                }
                 outFile.writeText(data, Charsets.UTF_8)
 
                 val contentUri = FileProvider.getUriForFile(
@@ -321,7 +373,19 @@ class CloudAutoBackupPlugin : Plugin() {
             return
         }
 
-        val fileName = resolveDisplayName(uri) ?: "zero-backup.zbak"
+        val uriStr = uri.toString()
+        if (!EndpointSecurityPolicy.validateSafDocumentUriString(uriStr, context.packageName)) {
+            call.reject(
+                "Blocked non-SAF backup restore URI. Select a file via Google Drive, OneDrive, JioDrive, or Files.",
+                "UNTRUSTED_URI"
+            )
+            return
+        }
+
+        val fileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+            resolveDisplayName(uri),
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        )
         ioExecutor.execute {
             try {
                 val content = context.contentResolver.openInputStream(uri)?.use { stream ->
@@ -336,8 +400,8 @@ class CloudAutoBackupPlugin : Plugin() {
                     JSObject().apply {
                         put("data", content)
                         put("fileName", fileName)
-                        put("uri", uri.toString())
-                        put("providerLabel", detectProviderLabel(uri))
+                        put("uri", uriStr)
+                        put("providerLabel", EndpointSecurityPolicy.resolveSafProviderLabel(uri.authority))
                     }
                 )
             } catch (e: Exception) {
@@ -347,6 +411,9 @@ class CloudAutoBackupPlugin : Plugin() {
     }
 
     private fun writeContentToUri(uri: Uri, content: String): Int {
+        if (uri.scheme?.lowercase() != ContentResolver.SCHEME_CONTENT) {
+            throw SecurityException("Only SAF content:// destinations are permitted for backup writes.")
+        }
         val bytes = content.toByteArray(Charsets.UTF_8)
         val cr = context.contentResolver
         val stream: OutputStream = try {
@@ -393,34 +460,23 @@ class CloudAutoBackupPlugin : Plugin() {
         }
     }
 
-    private fun detectProviderLabel(uri: Uri): String {
-        val auth = (uri.authority ?: "").lowercase()
-        return when {
-            auth.contains("google.android.apps.docs") -> "Google Drive"
-            auth.contains("onedrive") || auth.contains("skydrive") -> "Microsoft OneDrive"
-            auth.contains("jio") -> "JioDrive / JioCloud"
-            auth.contains("dropbox") -> "Dropbox"
-            auth.contains("nextcloud") || auth.contains("owncloud") -> "Nextcloud / OwnCloud"
-            auth.contains("externalstorage") || auth.contains("downloads") || auth.contains("media") ->
-                "Device Storage"
-            else -> "Cloud Storage"
-        }
-    }
-
     private fun buildStatusObject(hasPersistedPermission: Boolean): JSObject {
         val prefs = getPrefs()
         val enabled = prefs.getBoolean(KEY_ENABLED, false)
         val uri = prefs.getString(KEY_URI, null)
+        val validUri = uri?.takeIf {
+            EndpointSecurityPolicy.validateSafDocumentUriString(it, context.packageName)
+        }
         val displayName = prefs.getString(KEY_DISPLAY_NAME, null)
         val providerLabel = prefs.getString(KEY_PROVIDER_LABEL, null)
         val lastTs = prefs.getLong(KEY_LAST_BACKUP_TS, 0L)
 
         return JSObject().apply {
-            put("enabled", enabled && !uri.isNullOrBlank())
-            put("uri", uri ?: JSONObject.NULL)
+            put("enabled", enabled && validUri != null)
+            put("uri", validUri ?: JSONObject.NULL)
             put("displayName", displayName ?: JSONObject.NULL)
             put("providerLabel", providerLabel ?: JSONObject.NULL)
-            put("hasPersistedPermission", hasPersistedPermission)
+            put("hasPersistedPermission", validUri != null && hasPersistedPermission)
             put("lastBackupTimestamp", lastTs)
         }
     }
