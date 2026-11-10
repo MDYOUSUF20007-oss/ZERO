@@ -9,6 +9,7 @@ import { PermissionGateModal } from './components/PermissionGateModal';
 import { TipAfterSessionModal } from './components/TipAfterSessionModal';
 import { ProfileModal } from './components/ProfileModal';
 import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation';
+import { ShareStatsModal } from './components/ShareStatsModal';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export function App() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<'welcome' | 'edit'>('welcome');
+  const [showSessionFlexModal, setShowSessionFlexModal] = useState(false);
   const hasAutoPromptedRef = useRef(false);
   const hasAutoShownWelcomeRef = useRef(false);
 
@@ -128,6 +130,8 @@ export function App() {
             activeBag={store.activeBag}
             permissions={store.permissions}
             profile={store.profile}
+            isZeroSupporter={store.isZeroSupporter}
+            sessions={store.sessions}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
@@ -150,6 +154,7 @@ export function App() {
             ledger={store.ledger}
             sessions={store.sessions}
             profile={store.profile}
+            isZeroSupporter={store.isZeroSupporter}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
@@ -177,6 +182,7 @@ export function App() {
             tipSkipRemaining={store.tipSkipRemaining}
             onResetTipPromptBlock={store.resetTipPromptBlock}
             profile={store.profile}
+            isZeroSupporter={store.isZeroSupporter}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
             onOpenProfileModal={openInteractiveProfile}
@@ -210,8 +216,22 @@ export function App() {
         completedSession={store.postSessionTipPrompt}
         hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
         onClaimFirstDonationBonus={store.claimFirstDonationBonus}
+        onShareResults={() => {
+          store.dismissPostSessionTipPrompt();
+          setShowSessionFlexModal(true);
+        }}
         onDismiss={store.dismissPostSessionTipPrompt}
         onBlockFiveSessions={store.blockTipPromptForFiveSessions}
+      />
+
+      <ShareStatsModal
+        isOpen={showSessionFlexModal}
+        sessions={store.sessions}
+        parachuteMetrics={store.parachuteMetrics}
+        currentStreak={store.currentStreak}
+        profile={store.profile}
+        isZeroSupporter={store.isZeroSupporter}
+        onClose={() => setShowSessionFlexModal(false)}
       />
 
       <ProfileModal
@@ -219,6 +239,8 @@ export function App() {
         mode={profileModalMode}
         initialProfile={store.profile}
         hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+        isZeroSupporter={store.isZeroSupporter}
+        sessions={store.sessions}
         totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
         onSaveProfile={store.saveProfileAndClaimGift}
         onClose={() => {

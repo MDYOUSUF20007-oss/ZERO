@@ -8,6 +8,12 @@ import type {
 import { ShareStatsModal } from './ShareStatsModal';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
+import { evaluateBadges, type AchievementBadgeId } from '../utils/achievements';
+import {
+  AchievementBadgeCard,
+  AchievementBadgePill,
+  ZeroSupporterGoldenBadge,
+} from './AchievementBadgeChip';
 import {
   Flame,
   Award,
@@ -21,6 +27,7 @@ import {
   Gift,
   Sparkles,
   SlidersHorizontal,
+  Trophy,
 } from 'lucide-react';
 
 interface ParachuteDashboardViewProps {
@@ -28,6 +35,7 @@ interface ParachuteDashboardViewProps {
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
   profile: ZeroProfile | null;
+  isZeroSupporter: boolean;
   hasClaimedFirstTimeParachute: boolean;
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
@@ -39,6 +47,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   ledger,
   sessions,
   profile,
+  isZeroSupporter,
   hasClaimedFirstTimeParachute,
   todayReclaimedHours,
   justEarnedParachute,
@@ -46,6 +55,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'sessions'>('overview');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedBadgeId, setSelectedBadgeId] = useState<AchievementBadgeId | null>(null);
 
   const totalParachuteHours = parachuteMetrics.totalCumulativeHours;
   const totalReclaimedHours = parachuteMetrics.totalReclaimedHours;
@@ -134,6 +144,19 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     return days;
   }, [sessions]);
 
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, totalReclaimedHours, isZeroSupporter]
+  );
+  const unlockedFocusBadges = badgeSummary.unlockedBadges.filter(
+    (b) => b.id !== 'zero_supporter'
+  );
+
   const profileRank = getZeroRankFromHours(totalReclaimedHours);
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
@@ -192,6 +215,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     {profileRank.title}
                   </span>
+                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
                 </div>
                 <div className="text-[11px] text-zinc-400 truncate">
                   {profile.handle} • #{profile.primaryMission}
@@ -222,6 +246,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               />
             </div>
           </div>
+
+          {unlockedFocusBadges.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-900">
+              {unlockedFocusBadges.map((b) => (
+                <AchievementBadgePill key={b.id} badge={b} />
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-400 pt-1 border-t border-zinc-900">
             <span className="italic truncate">&ldquo;{profile.motto}&rdquo;</span>
@@ -441,6 +473,46 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </div>
           </div>
 
+          {/* Badges & Focus Achievements */}
+          <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-3xl space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-white font-black uppercase tracking-wider">
+                <Trophy size={14} className="text-amber-400" />
+                <span>Badges &amp; Achievements</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(true)}
+                  className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-zinc-200 hover:text-amber-300 transition-colors"
+                >
+                  Flex
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[10px] font-mono text-zinc-400">
+              Tap any badge to inspect unlock criteria. All earned badges &amp; the Golden{' '}
+              <strong className="text-amber-300">ZERO-SUPPORTER</strong> crest appear on your shared Flex Receipt card.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {badgeSummary.badges.map((badge) => (
+                <AchievementBadgeCard
+                  key={badge.id}
+                  badge={badge}
+                  isSelected={selectedBadgeId === badge.id}
+                  onSelect={() =>
+                    setSelectedBadgeId((prev) => (prev === badge.id ? null : badge.id))
+                  }
+                />
+              ))}
+            </div>
+          </div>
+
           {/* GitHub-Style Contribution Heatmap */}
           <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl">
             <div className="flex items-center justify-between mb-3">
@@ -643,6 +715,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         parachuteMetrics={parachuteMetrics}
         currentStreak={currentStreak}
         profile={profile}
+        isZeroSupporter={isZeroSupporter}
         onClose={() => setShowShareModal(false)}
       />
     </div>

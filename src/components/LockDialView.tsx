@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type {
   SessionTag,
+  SessionRecord,
   ParachuteMetrics,
   OccasionBag,
   NativePermissionStatus,
@@ -10,6 +11,8 @@ import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
+import { evaluateBadges } from '../utils/achievements';
+import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -22,6 +25,7 @@ import {
   Gift,
   Sparkles,
   UserPlus,
+  Trophy,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -30,6 +34,8 @@ interface LockDialViewProps {
   activeBag: OccasionBag;
   permissions: NativePermissionStatus;
   profile: ZeroProfile | null;
+  isZeroSupporter: boolean;
+  sessions: SessionRecord[];
   hasClaimedFirstTimeParachute: boolean;
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
@@ -59,6 +65,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   activeBag,
   permissions,
   profile,
+  isZeroSupporter,
+  sessions,
   hasClaimedFirstTimeParachute,
   todayReclaimedHours,
   justEarnedParachute,
@@ -230,6 +238,15 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   };
 
   const profileRank = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours);
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
+  );
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
     : ACCENT_STYLES.amber;
@@ -262,7 +279,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
           >
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-bold text-xs text-white truncate">
                   {profile.displayName}
                 </span>
@@ -271,9 +288,18 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 >
                   {profileRank.title}
                 </span>
+                {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
               </div>
-              <div className="text-[10px] text-zinc-400 truncate mt-0.5">
-                Today {todayReclaimedHours}h / {profile.dailyGoalHours}h goal • #{profile.primaryMission}
+              <div className="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
+                <span>
+                  {todayReclaimedHours}h / {profile.dailyGoalHours}h • #{profile.primaryMission}
+                </span>
+                {badgeSummary.unlockedBadges.length > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-amber-300 font-bold shrink-0">
+                    <Trophy size={9} />
+                    {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">

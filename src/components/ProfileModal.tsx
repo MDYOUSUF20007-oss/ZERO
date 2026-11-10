@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import type { ProfileAccent, ProfileAvatarId, ZeroProfile } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { ProfileAccent, ProfileAvatarId, SessionRecord, ZeroProfile } from '../types';
 import {
   ACCENT_STYLES,
   AVATAR_OPTIONS,
@@ -9,6 +9,8 @@ import {
   getZeroRankFromHours,
   normalizeProfileHandle,
 } from '../utils/parachuteRewardsPolicy';
+import { evaluateBadges } from '../utils/achievements';
+import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { haptics } from '../utils/haptics';
 import { Sparkles, X, Gift, UserCheck, Flame } from 'lucide-react';
 
@@ -17,6 +19,8 @@ interface ProfileModalProps {
   mode: 'welcome' | 'edit';
   initialProfile: ZeroProfile | null;
   hasClaimedFirstTimeParachute: boolean;
+  isZeroSupporter: boolean;
+  sessions: SessionRecord[];
   totalReclaimedHours: number;
   onSaveProfile: (draft: {
     displayName: string;
@@ -49,6 +53,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   mode,
   initialProfile,
   hasClaimedFirstTimeParachute,
+  isZeroSupporter,
+  sessions,
   totalReclaimedHours,
   onSaveProfile,
   onClose,
@@ -80,8 +86,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setErrorMsg('');
   }, [isOpen, initialProfile]);
 
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, totalReclaimedHours, isZeroSupporter]
+  );
+
   if (!isOpen) return null;
 
+  const unlockedFocusBadges = badgeSummary.unlockedBadges.filter(
+    (b) => b.id !== 'zero_supporter'
+  );
   const rank = getZeroRankFromHours(totalReclaimedHours);
   const accentStyle = ACCENT_STYLES[accentColor] || ACCENT_STYLES.amber;
   const previewName = displayName.trim() || 'Zero Monk';
@@ -174,6 +193,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   >
                     {rank.title}
                   </span>
+                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
                 </div>
                 <div className="text-[11px] text-zinc-400 truncate">
                   {previewHandle} • #{primaryMission}
@@ -190,6 +210,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div className="text-[9px] text-zinc-500 uppercase">Target</div>
             </div>
           </div>
+
+          {/* Unlocked Badges Preview Strip */}
+          {unlockedFocusBadges.length > 0 && (
+            <div className="mt-2.5 pt-2.5 border-t border-zinc-900 flex flex-wrap gap-1.5">
+              {unlockedFocusBadges.map((b) => (
+                <AchievementBadgePill key={b.id} badge={b} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Name & Handle */}

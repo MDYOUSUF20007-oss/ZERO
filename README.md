@@ -23,7 +23,8 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 ## 1. Vision & Core Philosophy
 
 - **Zero Paywalls:** Every single feature—unlimited recurring schedules, deep analytics heatmaps, strict OS kiosk locks, interactive profiles, and themes—is completely free for all users from day one.
-- **Earned & Gift Parachutes:** Emergency Parachutes cannot be purchased outright. Users earn **1 Parachute for every 20 cumulative hours (72,000 seconds) of completed phone blockage**, plus a **one-time free starter Parachute (+1)** when creating an interactive profile on first launch, and a **one-time thank-you bonus (+1)** on a user's first ₹50+ donation.
+- **Earned & Gift Parachutes + Badges:** Emergency Parachutes cannot be purchased outright. Users earn **1 Parachute for every 20 cumulative hours (72,000 seconds) of completed phone blockage**, plus a **one-time free starter Parachute (+1)** when creating an interactive profile on first launch, and a **one-time thank-you bonus (+1 Parachute & Golden `ZERO-SUPPORTER` Profile Badge)** on a user's first ₹50+ donation.
+- **Badges & Achievements Showcase:** Unlock collectible focus milestone badges (`GETTING STARTED` for your 1st 1h completed session, `WOO NICE!` at 50h, `LONG WAY` at 100h, `GETTING DISCIPLINED` at 250h, `FULL CONTROL !` at 500h, `CAME SO FAR` at 1000h) plus the Golden **`ZERO-SUPPORTER`** crest — displayed on your Interactive Profile and rendered onto shareable **Flex Your Focus Card** PNG receipts.
 - **The Anti-Sleep-Farming Rule:** To keep Parachutes a genuine badge of daytime focus, sleep blocks earn **0.25x parachute progression** by default (or Daytime-Only 0.0x mode). An 8-hour sleep lock contributes 2.0 hours toward the next parachute instead of allowing users to farm a parachute every 2.5 nights.
 - **Aborted Session Penalty (Anti-Exploit):** If a user deploys a Parachute mid-session, 1 Parachute is consumed and **all elapsed time in that aborted session is permanently voided**, never counting toward the next 20-hour milestone. If you lock for 4 hours and pull the parachute at hour 3, you lose 1 Parachute and gain 0 hours.
 - **Ethical Support Model:** Clean, non-intrusive "Keep Zero Free" section in Settings ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis` with no minimum limit) plus an optional post-session tip prompt highlighting UPI as the best zero-fee option (including the one-time 1st ₹50+ tip free Parachute bonus; dismissible or blockable for 5 sessions at a time) with zero advertisements.
@@ -67,6 +68,7 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
   - Daily Streak counter.
   - Session Completion Rate (Completed vs. Parachuted %).
   - Average Session Duration.
+- **Interactive Profile & Achievement Badges:** Personalize your emblem, mission, and daily goal; inspect unlock progress for all 7 badges (`ZERO-SUPPORTER`, `GETTING STARTED`, `WOO NICE!`, `LONG WAY`, `GETTING DISCIPLINED`, `FULL CONTROL !`, `CAME SO FAR`), and export a **1080×1350 Focus Receipt PNG** with your earned badges via **Flex Stats** or right after a session.
 - **GitHub-Style Contribution Heatmap:** 16-week monochrome calendar grid mapping daily focus intensity.
 - **Focus Time by Tag:** Visual horizontal breakdown across tags.
 - **Immutable Parachute Ledger:** Chronological record of +1 Earned milestones and -1 Deployed aborts.

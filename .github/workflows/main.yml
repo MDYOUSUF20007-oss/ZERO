@@ -232,10 +232,10 @@ jobs:
             - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Uses Android Accessibility Service to block Notification shade, Quick Settings, Settings, Recents, and unbagged apps. *(On Android 14–16 devices, install via `adb install -r` or Shizuku / "Install with Options", or tap **App Info → Allow restricted settings**.)*
 
             #### What's New
-            - **First-Timer Profile & Free Starter Parachute (+1 🪂):** First-time launch popup lets you build your Interactive Profile and claim **1 free starter Parachute**.
-            - **Interactive Profile System:** Customize your callsign, `@handle`, geometric emblem, color accent, focus mission, daily goal hours, and personal lock pledge.
-            - **Animated Parachute Card & Celebration:** Animated Parachute reward modal and shimmering Parachute Card highlight whenever you unlock a Parachute (starter gift, 20h milestone, or supporter bonus).
-            - **1st ₹50+ Tip Bonus (+1 Free 🪂):** Highlighted right inside the post-session Tip popup alongside **UPI (`md.y2007@ptaxis`) — Best Offer, No Minimum Limit** (still blockable for 5 sessions).
+            - **Golden `ZERO-SUPPORTER` Profile Badge:** Supporting Zero with a ₹50+ tip unlocks the **Golden `ZERO-SUPPORTER`** crest on your Interactive Profile alongside `+1 Free Parachute`.
+            - **Focus Achievement Badges:** Earn collectible badges across real focus milestones — **`GETTING STARTED`** (1st 1h session), **`WOO NICE!`** (50h), **`LONG WAY`** (100h), **`GETTING DISCIPLINED`** (250h), **`FULL CONTROL !`** (500h), and **`CAME SO FAR`** (1000h).
+            - **Flex Receipt Badges Showcase:** Earned achievements & your Golden **`ZERO-SUPPORTER`** badge now render right inside your shareable **`Flex Your Focus Card`** (`1080×1350` PNG receipt), with a 1-tap **Flex Session Results** button after sessions complete.
+            - **First-Timer Profile & Free Starter Parachute (+1 🪂):** Build your Interactive Profile, claim **1 free starter Parachute**, and enjoy animated Parachute Card celebrations.
 
       - name: Publish Direct Download GitHub Release (Debug-Signed Preview)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed != 'true'
@@ -259,6 +259,6 @@ jobs:
             - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}-preview.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Full Accessibility Service lock blocking Notification shade, Settings, Recents, and unbagged apps (use `adb install -r`, Shizuku, or Allow Restricted Settings on Android 14–16).
 
             #### What's New
-            - **First-Timer Profile & Free Starter Parachute (+1 🪂)** + **Interactive Profile** customization.
-            - **Animated Parachute Card & Reward Modal** whenever earning a Parachute.
-            - **1st ₹50+ Tip Bonus (+1 Free 🪂)** inside the post-session UPI Tip popup (**Best Offer • No Minimum Limit**).
+            - **Golden `ZERO-SUPPORTER` Profile Badge** + 6 Focus Achievement Badges (**`GETTING STARTED`**, **`WOO NICE!`**, **`LONG WAY`**, **`GETTING DISCIPLINED`**, **`FULL CONTROL !`**, **`CAME SO FAR`**).
+            - **Flex Receipt Badges Showcase:** All earned badges + Golden **`ZERO-SUPPORTER`** crest render right on the shareable Focus Receipt PNG card.
+            - **Animated Parachute Card & 1st ₹50+ Tip Bonus (+1 Free 🪂)** inside the post-session UPI Tip popup (**Best Offer • No Minimum Limit**).

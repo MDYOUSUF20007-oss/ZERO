@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { evaluateBadges } from '../utils/achievements';
 import type {
   SessionTag,
   SessionRecord,
@@ -1132,10 +1133,10 @@ export function useZeroStore() {
       id: `txn_supporter_${now}`,
       timestamp: now,
       type: 'EARNED',
-      description: `First ₹${FIRST_DONATION_BONUS_INR}+ Supporter Bonus (+1 Free Parachute)`,
+      description: `First ₹${FIRST_DONATION_BONUS_INR}+ Supporter Bonus (+1 Free Parachute & Gold Badge)`,
       delta: 1,
       tag: 'Support',
-      note: 'One-time gratitude bonus for supporting free & open-source Zero',
+      note: 'One-time gratitude reward: +1 Parachute & Golden ZERO-SUPPORTER Badge unlocked',
     };
     setLedger((prev) => [entry, ...prev]);
     setPostSessionTipPrompt(null);
@@ -1145,7 +1146,7 @@ export function useZeroStore() {
       delta: 1,
       newBalance,
       title: 'Thank-You Parachute Unlocked!',
-      subtitle: `Thank you for supporting Zero with ₹${FIRST_DONATION_BONUS_INR}+! +1 bonus Parachute has been added.`,
+      subtitle: `Thank you for supporting Zero with ₹${FIRST_DONATION_BONUS_INR}+! +1 bonus Parachute & the Golden ZERO-SUPPORTER Badge are unlocked on your profile.`,
     });
 
     return true;
@@ -1363,12 +1364,48 @@ export function useZeroStore() {
     localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, '0');
   };
 
+  const isZeroSupporter = hasClaimedFirstDonationParachute;
+
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
+  );
+
+  const currentStreak = useMemo(() => {
+    const completed = sessions.filter((s) => s.status === 'completed');
+    if (completed.length === 0) return 0;
+    const completedDates = new Set(completed.map((s) => s.dateStr));
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const str = d.toISOString().split('T')[0];
+      if (completedDates.has(str)) {
+        streak++;
+      } else if (i === 0) {
+        continue;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [sessions]);
+
   return {
     theme,
     setTheme: setThemeState,
     sleepFarmingMode,
     setSleepFarmingMode,
     profile,
+    isZeroSupporter,
+    badgeSummary,
+    currentStreak,
     hasClaimedFirstTimeParachute,
     hasClaimedFirstDonationParachute,
     hasDismissedWelcomeModal,

@@ -20,6 +20,7 @@ import type {
   ZeroProfile,
 } from '../types';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import {
   Plus,
   Trash2,
@@ -65,6 +66,7 @@ interface SchedulesDonateViewProps {
   tipSkipRemaining?: number;
   onResetTipPromptBlock?: () => void;
   profile?: ZeroProfile | null;
+  isZeroSupporter?: boolean;
   hasClaimedFirstTimeParachute?: boolean;
   hasClaimedFirstDonationParachute?: boolean;
   onOpenProfileModal?: () => void;
@@ -93,11 +95,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   tipSkipRemaining = 0,
   onResetTipPromptBlock,
   profile = null,
+  isZeroSupporter,
   hasClaimedFirstTimeParachute = false,
   hasClaimedFirstDonationParachute = false,
   onOpenProfileModal,
   onClaimFirstDonationBonus,
 }) => {
+  const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
   const [activeSection, setActiveSection] = useState<'schedules' | 'support' | 'settings' | 'os_security'>('schedules');
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -491,8 +495,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       interactive
                     />
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate">
-                        {profile.displayName} ({profile.handle})
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-white truncate">
+                          {profile.displayName} ({profile.handle})
+                        </span>
+                        {supporterBadgeUnlocked && <ZeroSupporterGoldenBadge compact />}
                       </div>
                       <div
                         className={`text-[10px] truncate ${
@@ -884,7 +891,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             <p className="text-xs font-mono text-zinc-400 leading-relaxed">
               We believe your attention belongs to you—not to algorithms or paywalled apps.
               Emergency Parachutes can never be purchased outright; earn 1 every 20 focus hours,
-              plus one-time free gifts (+1 starter on first profile, +1 thank-you on first ₹{FIRST_DONATION_BONUS_INR}+ tip).
+              plus one-time free gifts (+1 starter on first profile, +1 thank-you &amp; Golden{' '}
+              <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge on first ₹
+              {FIRST_DONATION_BONUS_INR}+ tip).
             </p>
             <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400 gap-2">
               <a
@@ -972,10 +981,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
                   <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-mono font-black uppercase">
                     <Gift size={13} className="text-emerald-400 shrink-0" />
-                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 Free Parachute 🪂</span>
+                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 🪂 &amp; Gold Badge</span>
                   </div>
                   <p className="text-[10px] font-mono text-zinc-300 leading-relaxed">
-                    Your very first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> support donation gifts a one-time thank-you <strong>+1 Parachute</strong>.
+                    Your very first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> support donation gifts a one-time thank-you{' '}
+                    <strong>+1 Parachute</strong> &amp; unlocks the Golden{' '}
+                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Profile Badge.
                   </p>
                   {!confirmingDonationClaim ? (
                     <div className="flex flex-col sm:flex-row gap-2">
@@ -987,7 +998,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         }}
                         className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                       >
-                        <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂)</span>
+                        <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂 &amp; Gold)</span>
                         <ExternalLink size={12} />
                       </a>
                       {onClaimFirstDonationBonus && (
@@ -1003,7 +1014,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   ) : (
                     <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2 font-mono">
                       <div className="text-[10px] text-emerald-200">
-                        Confirm your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> tip to unlock your one-time <strong>+1 Free Parachute</strong>:
+                        Confirm your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> tip to unlock your{' '}
+                        <strong>+1 Free Parachute</strong> &amp; Golden{' '}
+                        <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge:
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -1014,7 +1027,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           }}
                           className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider"
                         >
-                          Claim +1 Free 🪂
+                          Claim +1 🪂 &amp; Gold Badge
                         </button>
                         <button
                           type="button"
@@ -1028,12 +1041,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between text-[10px] font-mono text-emerald-300">
+                <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] font-mono text-emerald-300">
                   <span className="flex items-center gap-1.5 font-bold">
                     <CheckCircle2 size={12} />
-                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Parachute Bonus Claimed</span>
+                    <span>₹{FIRST_DONATION_BONUS_INR}+ Bonus Claimed</span>
                   </span>
-                  <span className="text-zinc-400">Thank you!</span>
+                  <ZeroSupporterGoldenBadge compact />
                 </div>
               )}
 

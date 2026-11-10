@@ -19,6 +19,11 @@ import {
   getZeroRankFromHours,
   sanitizeZeroProfile,
 } from '../src/utils/parachuteRewardsPolicy.ts';
+import {
+  ACHIEVEMENT_DEFINITIONS,
+  evaluateBadges,
+} from '../src/utils/achievements.ts';
+import type { SessionRecord } from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -236,5 +241,126 @@ failIf(savedProfile !== null && savedProfile.handle === '@yousuf2007', 'Handle s
 failIf(savedProfile !== null && savedProfile.dailyGoalHours === 12, 'Daily goal hours should clamp to max 12h');
 failIf(getZeroRankFromHours(0).title === 'Initiate' && getZeroRankFromHours(55).title === 'Void Master', 'Rank progression must map accurately');
 console.log('PASS: One-Time Parachute Gifts, Balance Integrity & Profile Policies Verified');
+
+console.log('\n=== TEST 10: ZERO-SUPPORTER Golden Badge & Focus Achievement Milestones ===');
+const expectedTitles = [
+  'ZERO-SUPPORTER',
+  'GETTING STARTED',
+  'WOO NICE!',
+  'LONG WAY',
+  'GETTING DISCIPLINED',
+  'FULL CONTROL !',
+  'CAME SO FAR',
+];
+failIf(
+  ACHIEVEMENT_DEFINITIONS.length === expectedTitles.length &&
+    expectedTitles.every((t, idx) => ACHIEVEMENT_DEFINITIONS[idx].title === t),
+  'Achievement badge titles must match exact user specification'
+);
+
+const abortedTwoHours: SessionRecord = {
+  id: 'sess_abort_test',
+  startTime: 0,
+  endTime: 7200000,
+  durationSeconds: 7200,
+  earnedParachuteSeconds: 0,
+  weightMultiplier: 1,
+  tag: 'Deep Work',
+  status: 'parachuted',
+  dateStr: '2026-11-10',
+};
+const emptyOrAbortedEval = evaluateBadges({
+  sessions: [abortedTwoHours],
+  totalReclaimedHours: 0,
+  isZeroSupporter: false,
+});
+failIf(
+  emptyOrAbortedEval.unlockedBadges.length === 0,
+  'Aborted sessions alone must unlock 0 badges'
+);
+
+const fiftyNineMins: SessionRecord = {
+  ...abortedTwoHours,
+  id: 'sess_59m',
+  durationSeconds: 3540,
+  earnedParachuteSeconds: 3540,
+  status: 'completed',
+};
+failIf(
+  evaluateBadges({
+    sessions: [fiftyNineMins],
+    totalReclaimedHours: 0.9,
+    isZeroSupporter: false,
+  }).unlockedBadges.length === 0,
+  '59m completed session must not unlock GETTING STARTED'
+);
+
+const oneHourCompleted: SessionRecord = {
+  ...abortedTwoHours,
+  id: 'sess_1h',
+  durationSeconds: 3600,
+  earnedParachuteSeconds: 3600,
+  status: 'completed',
+};
+const startedEval = evaluateBadges({
+  sessions: [oneHourCompleted],
+  totalReclaimedHours: 1,
+  isZeroSupporter: false,
+});
+failIf(
+  startedEval.unlockedBadges.length === 1 &&
+    startedEval.unlockedBadges[0].title === 'GETTING STARTED',
+  '1st completed 1h session must unlock GETTING STARTED'
+);
+
+const milestoneChecks: Array<[number, string]> = [
+  [50, 'WOO NICE!'],
+  [100, 'LONG WAY'],
+  [250, 'GETTING DISCIPLINED'],
+  [500, 'FULL CONTROL !'],
+  [1000, 'CAME SO FAR'],
+];
+for (const [hours, title] of milestoneChecks) {
+  const below = evaluateBadges({
+    sessions: [oneHourCompleted],
+    totalReclaimedHours: hours - 0.1,
+    isZeroSupporter: false,
+  });
+  failIf(
+    below.unlockedBadges.some((b) => b.title === title) === false,
+    `${hours - 0.1}h must not unlock ${title}`
+  );
+  const atBoundary = evaluateBadges({
+    sessions: [oneHourCompleted],
+    totalReclaimedHours: hours,
+    isZeroSupporter: false,
+  });
+  failIf(
+    atBoundary.unlockedBadges.some((b) => b.title === title) === true,
+    `${hours}h must unlock ${title}`
+  );
+}
+
+const supporterOnly = evaluateBadges({
+  sessions: [],
+  totalReclaimedHours: 0,
+  isZeroSupporter: true,
+});
+failIf(
+  supporterOnly.unlockedBadges.length === 1 &&
+    supporterOnly.unlockedBadges[0].title === 'ZERO-SUPPORTER',
+  '₹50+ supporter gift must unlock ZERO-SUPPORTER golden badge'
+);
+
+const allSeven = evaluateBadges({
+  sessions: [oneHourCompleted],
+  totalReclaimedHours: 1000,
+  isZeroSupporter: true,
+});
+failIf(
+  allSeven.unlockedBadges.length === 7,
+  'All 7 badges must unlock when all criteria are satisfied'
+);
+console.log('PASS: Golden ZERO-SUPPORTER & All 6 Achievement Milestone Badges Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

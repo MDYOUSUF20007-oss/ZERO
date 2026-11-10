@@ -11,6 +11,7 @@ import {
   handleOpenExternalUrl,
 } from '../utils/supportLinks';
 import { TIP_SNOOZE_SESSIONS } from '../utils/tipPromptPolicy';
+import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import {
   Sparkles,
   X,
@@ -22,12 +23,14 @@ import {
   EyeOff,
   CheckCircle2,
   Gift,
+  Share2,
 } from 'lucide-react';
 
 interface TipAfterSessionModalProps {
   completedSession: SessionRecord | null;
   hasClaimedFirstDonationParachute: boolean;
   onClaimFirstDonationBonus: () => boolean;
+  onShareResults?: () => void;
   onDismiss: () => void;
   onBlockFiveSessions: () => void;
 }
@@ -44,6 +47,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
   completedSession,
   hasClaimedFirstDonationParachute,
   onClaimFirstDonationBonus,
+  onShareResults,
   onDismiss,
   onBlockFiveSessions,
 }) => {
@@ -117,6 +121,30 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
           </button>
         </div>
 
+        {/* Flex Completed Session & Badges Banner */}
+        {onShareResults && (
+          <button
+            type="button"
+            onClick={onShareResults}
+            className="w-full p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-amber-400/70 flex items-center justify-between gap-2 transition-all active:scale-[0.99]"
+          >
+            <div className="text-left min-w-0">
+              <div className="text-xs font-black text-white flex items-center gap-1.5">
+                <Share2 size={13} className="text-amber-400 shrink-0" />
+                <span>Flex Session Results &amp; Badges</span>
+              </div>
+              <div className="text-[10px] text-zinc-400 truncate mt-0.5">
+                {completedSession.durationSeconds >= 3600
+                  ? '1h+ lock completed — GETTING STARTED badge active!'
+                  : 'Generate a shareable PNG Focus Receipt with your badges'}
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+              Flex
+            </span>
+          </button>
+        )}
+
         {/* Grateful FOSS Note */}
         <p className="text-xs text-zinc-300 leading-relaxed">
           Zero is 100% free &amp; open-source with zero ads or paywalls. If staying distraction-free
@@ -151,11 +179,12 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
               <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-black uppercase tracking-wide">
                 <Gift size={13} className="text-emerald-400 shrink-0" />
-                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 Free Parachute 🪂</span>
+                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 🪂 &amp; Gold Badge</span>
               </div>
               <p className="text-[10px] text-zinc-300 leading-relaxed">
                 As a thank-you, your <strong>very first ₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
-                donation (UPI or Ko-fi) unlocks <strong>+1 bonus Parachute</strong> once per profile.
+                donation (UPI or Ko-fi) unlocks <strong>+1 bonus Parachute</strong> &amp; the Golden{' '}
+                <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge on your Profile &amp; Flex cards.
               </p>
 
               {!confirmingDonationClaim ? (
@@ -168,7 +197,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     }}
                     className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                   >
-                    <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂)</span>
+                    <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂 &amp; Gold)</span>
                     <ExternalLink size={12} />
                   </a>
                   <button
@@ -183,7 +212,8 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                 <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2">
                   <div className="text-[10px] text-emerald-200 leading-relaxed">
                     Confirm you completed your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
-                    donation to claim your one-time <strong>+1 Free Parachute</strong>:
+                    donation to claim your <strong>+1 Free Parachute</strong> &amp; Golden{' '}
+                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge:
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -194,7 +224,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                       }}
                       className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all"
                     >
-                      Claim +1 Free 🪂 Now
+                      Claim +1 🪂 &amp; Gold Badge
                     </button>
                     <button
                       type="button"
@@ -208,12 +238,12 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               )}
             </div>
           ) : (
-            <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between text-[10px] text-emerald-300">
+            <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] text-emerald-300">
               <span className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={12} />
-                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Bonus Parachute Claimed</span>
+                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Bonus Claimed</span>
               </span>
-              <span className="text-zinc-400">Thank you!</span>
+              <ZeroSupporterGoldenBadge compact />
             </div>
           )}
 

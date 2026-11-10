@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { SessionRecord, ParachuteMetrics, ZeroProfile } from '../types';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
-import { X, Share2, Download, Sparkles } from 'lucide-react';
+import { evaluateBadges, type BadgeTierColor } from '../utils/achievements';
+import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { X, Share2, Download, Sparkles, Award } from 'lucide-react';
 
 interface ShareStatsModalProps {
   isOpen: boolean;
@@ -9,6 +11,7 @@ interface ShareStatsModalProps {
   parachuteMetrics: ParachuteMetrics;
   currentStreak: number;
   profile?: ZeroProfile | null;
+  isZeroSupporter?: boolean;
   onClose: () => void;
 }
 
@@ -30,17 +33,137 @@ function formatHumanDuration(totalSeconds: number): string {
   return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
 }
 
+const CANVAS_BADGE_COLORS: Record<
+  BadgeTierColor,
+  {
+    bgStart: string;
+    bgEnd: string;
+    border: string;
+    text: string;
+    icon: string;
+    glow?: string;
+  }
+> = {
+  gold: {
+    bgStart: '#FDE68A',
+    bgEnd: '#D97706',
+    border: '#FEF3C7',
+    text: '#000000',
+    icon: '#000000',
+    glow: 'rgba(251, 191, 36, 0.5)',
+  },
+  emerald: {
+    bgStart: 'rgba(16, 185, 129, 0.22)',
+    bgEnd: 'rgba(6, 78, 59, 0.45)',
+    border: '#34D399',
+    text: '#6EE7B7',
+    icon: '#34D399',
+  },
+  cyan: {
+    bgStart: 'rgba(6, 182, 212, 0.22)',
+    bgEnd: 'rgba(22, 78, 99, 0.45)',
+    border: '#22D3EE',
+    text: '#67E8F9',
+    icon: '#22D3EE',
+  },
+  indigo: {
+    bgStart: 'rgba(99, 102, 241, 0.24)',
+    bgEnd: 'rgba(49, 46, 129, 0.48)',
+    border: '#818CF8',
+    text: '#C7D2FE',
+    icon: '#818CF8',
+  },
+  amber: {
+    bgStart: 'rgba(245, 158, 11, 0.22)',
+    bgEnd: 'rgba(120, 53, 15, 0.45)',
+    border: '#FBBF24',
+    text: '#FDE68A',
+    icon: '#FBBF24',
+  },
+  rose: {
+    bgStart: 'rgba(244, 63, 94, 0.22)',
+    bgEnd: 'rgba(136, 19, 55, 0.45)',
+    border: '#FB7185',
+    text: '#FECDD3',
+    icon: '#FB7185',
+  },
+  platinum: {
+    bgStart: '#FFFFFF',
+    bgEnd: '#D4D4D8',
+    border: '#FFFFFF',
+    text: '#000000',
+    icon: '#000000',
+  },
+};
+
+function drawRoundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawVectorStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  outerR: number,
+  innerR: number,
+  color: string
+) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const px = cx + Math.cos(angle) * r;
+    const py = cy + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   isOpen,
   sessions,
   parachuteMetrics,
   currentStreak,
   profile,
+  isZeroSupporter = false,
   onClose,
 }) => {
   const [period, setPeriod] = useState<FlexPeriod>('today');
   const [cardDataUrl, setCardDataUrl] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
+  );
 
   const periodStats = useMemo(() => {
     const now = Date.now();
@@ -117,8 +240,41 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     // Header Row
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 44px monospace';
-    ctx.fillText('ZERO // FOCUS RECEIPT', 96, 140);
+    ctx.font = '900 40px monospace';
+    ctx.fillText('ZERO // FOCUS RECEIPT', 96, 132);
+
+    // Top-right Golden ZERO-SUPPORTER Crest
+    if (badgeSummary.isZeroSupporter) {
+      ctx.font = '900 19px monospace';
+      const label = 'ZERO-SUPPORTER';
+      const textWidth = ctx.measureText(label).width;
+      const pillW = Math.round(textWidth + 62);
+      const pillH = 48;
+      const pillX = W - 96 - pillW;
+      const pillY = 92;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
+      ctx.shadowBlur = 16;
+      const goldGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
+      goldGrad.addColorStop(0, '#FDE68A');
+      goldGrad.addColorStop(0.5, '#FBBF24');
+      goldGrad.addColorStop(1, '#D97706');
+      ctx.fillStyle = goldGrad;
+      drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, 24);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = '#FEF3C7';
+      ctx.lineWidth = 2;
+      drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, 24);
+      ctx.stroke();
+
+      drawVectorStar(ctx, pillX + 26, pillY + pillH / 2, 10, 4.5, '#000000');
+      ctx.fillStyle = '#000000';
+      ctx.font = '900 19px monospace';
+      ctx.fillText(label, pillX + 44, pillY + 31);
+    }
 
     const dateLabel = new Date()
       .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -126,76 +282,168 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     const rankTitle = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours).title.toUpperCase();
     const headerSub = profile
       ? `${profile.handle.toUpperCase()}  •  ${rankTitle}  •  ${dateLabel}`
-      : dateLabel;
+      : `${rankTitle}  •  ${dateLabel}`;
     ctx.fillStyle = '#A1A1AA';
-    ctx.font = '600 24px monospace';
-    ctx.fillText(headerSub, 96, 185);
+    ctx.font = '600 22px monospace';
+    ctx.fillText(headerSub, 96, 178, W - 192);
 
     // Period Badge
     const badgeLabel = PERIOD_LABELS[period].title;
     ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(96, 240, 290, 56);
+    drawRoundedRectPath(ctx, 96, 220, 276, 52, 10);
+    ctx.fill();
     ctx.fillStyle = '#000000';
-    ctx.font = '900 26px monospace';
-    ctx.fillText(badgeLabel, 122, 277);
+    ctx.font = '900 25px monospace';
+    ctx.fillText(badgeLabel, 120, 255);
 
     // Giant Hero Metric (auto-scaled so long 1Y / All-Time totals fit cleanly)
     const timeText = periodStats.formattedTime;
-    const heroFontPx = timeText.length >= 8 ? 114 : timeText.length >= 6 ? 138 : 168;
+    const heroFontPx = timeText.length >= 8 ? 112 : timeText.length >= 6 ? 136 : 162;
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `900 ${heroFontPx}px monospace`;
-    ctx.fillText(timeText, 96, 515);
+    ctx.fillText(timeText, 96, 442, W - 192);
 
     ctx.fillStyle = '#D4D4D8';
-    ctx.font = '700 34px monospace';
-    ctx.fillText('DISTRACTION-FREE & PHONE-OFF', 96, 580);
+    ctx.font = '700 32px monospace';
+    ctx.fillText('DISTRACTION-FREE & PHONE-OFF', 96, 504);
 
     // Divider
     ctx.strokeStyle = '#3F3F46';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(96, 650);
-    ctx.lineTo(W - 96, 650);
+    ctx.moveTo(96, 548);
+    ctx.lineTo(W - 96, 548);
     ctx.stroke();
 
     // 4-Cell Stats Receipt Box
     const drawStat = (label: string, value: string, x: number, y: number, accent = '#FFFFFF') => {
       ctx.fillStyle = '#111113';
-      ctx.fillRect(x, y, 420, 175);
+      drawRoundedRectPath(ctx, x, y, 420, 156, 14);
+      ctx.fill();
       ctx.strokeStyle = '#27272A';
       ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, 420, 175);
+      ctx.stroke();
 
       ctx.fillStyle = '#A1A1AA';
-      ctx.font = '600 22px monospace';
-      ctx.fillText(label, x + 28, y + 52);
+      ctx.font = '600 21px monospace';
+      ctx.fillText(label, x + 28, y + 46);
 
       ctx.fillStyle = accent;
-      ctx.font = '900 54px monospace';
-      ctx.fillText(value, x + 28, y + 128);
+      ctx.font = '900 50px monospace';
+      ctx.fillText(value, x + 28, y + 116, 364);
     };
 
-    drawStat('COMPLETED BLOCKS', `${periodStats.completedCount}`, 96, 705);
-    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 564, 705, '#F59E0B');
-    drawStat('COMPLETION RATE', `${periodStats.completionRate}%`, 96, 910, '#34D399');
-    drawStat('TOP FOCUS TAG', periodStats.topTag.slice(0, 11), 564, 910);
+    drawStat('COMPLETED BLOCKS', `${periodStats.completedCount}`, 96, 578);
+    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 564, 578, '#F59E0B');
+    drawStat('COMPLETION RATE', `${periodStats.completionRate}%`, 96, 754, '#34D399');
+    drawStat('TOP FOCUS TAG', periodStats.topTag.slice(0, 11), 564, 754);
+
+    // Badges & Achievements Showcase Box
+    const badgeBoxX = 96;
+    const badgeBoxY = 932;
+    const badgeBoxW = W - 192;
+    const badgeBoxH = 204;
+
+    ctx.fillStyle = '#0D0D10';
+    drawRoundedRectPath(ctx, badgeBoxX, badgeBoxY, badgeBoxW, badgeBoxH, 16);
+    ctx.fill();
+    ctx.strokeStyle = badgeSummary.isZeroSupporter ? 'rgba(251, 191, 36, 0.45)' : '#27272A';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#A1A1AA';
+    ctx.font = '700 20px monospace';
+    ctx.fillText(
+      `BADGES & ACHIEVEMENTS (${badgeSummary.unlockedBadges.length}/${badgeSummary.badges.length})`,
+      badgeBoxX + 26,
+      badgeBoxY + 40
+    );
+
+    if (badgeSummary.unlockedBadges.length === 0) {
+      ctx.fillStyle = '#D4D4D8';
+      ctx.font = '700 22px monospace';
+      ctx.fillText('NEXT UNLOCK: COMPLETE 1H LOCK -> GETTING STARTED', badgeBoxX + 26, badgeBoxY + 104, badgeBoxW - 52);
+      ctx.fillStyle = '#FBBF24';
+      ctx.font = '600 19px monospace';
+      ctx.fillText('SUPPORTER CREST: TIP RS.50+ -> ZERO-SUPPORTER (GOLD)', badgeBoxX + 26, badgeBoxY + 148, badgeBoxW - 52);
+    } else {
+      let curX = badgeBoxX + 26;
+      let curY = badgeBoxY + 62;
+      const maxX = badgeBoxX + badgeBoxW - 26;
+      const pillH = 44;
+      const gapX = 12;
+      const gapY = 12;
+
+      for (const badge of badgeSummary.unlockedBadges) {
+        ctx.font = '900 18px monospace';
+        const pillW = Math.min(maxX - (badgeBoxX + 26), Math.round(ctx.measureText(badge.title).width + 52));
+        if (curX + pillW > maxX) {
+          curX = badgeBoxX + 26;
+          curY += pillH + gapY;
+        }
+        if (curY + pillH > badgeBoxY + badgeBoxH - 12) break;
+
+        const theme = CANVAS_BADGE_COLORS[badge.tierColor];
+        ctx.save();
+        if (theme.glow) {
+          ctx.shadowColor = theme.glow;
+          ctx.shadowBlur = 12;
+        }
+        const grad = ctx.createLinearGradient(curX, curY, curX + pillW, curY + pillH);
+        grad.addColorStop(0, theme.bgStart);
+        grad.addColorStop(1, theme.bgEnd);
+        ctx.fillStyle = grad;
+        drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = theme.border;
+        ctx.lineWidth = 2;
+        drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
+        ctx.stroke();
+
+        drawVectorStar(ctx, curX + 22, curY + pillH / 2, 8.5, 4, theme.icon);
+        ctx.fillStyle = theme.text;
+        ctx.font = '900 18px monospace';
+        ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
+
+        curX += pillW + gapX;
+      }
+    }
 
     // Footer Manifesto & Earned Parachute Badge
     ctx.fillStyle = '#18181B';
-    ctx.fillRect(96, 1135, W - 192, 115);
+    drawRoundedRectPath(ctx, 96, 1156, W - 192, 104, 14);
+    ctx.fill();
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 26px monospace';
-    ctx.fillText(`EARNED PARACHUTES: ${parachuteMetrics.currentBalance}  |  FOSS • ZERO PAYWALLS`, 128, 1190);
+    ctx.font = '700 25px monospace';
+    ctx.fillText(`EARNED PARACHUTES: ${parachuteMetrics.currentBalance}  |  FOSS • ZERO PAYWALLS`, 124, 1202);
     ctx.fillStyle = '#A1A1AA';
-    ctx.font = '500 22px monospace';
-    ctx.fillText('"The obstacle is the way. Stay phone-free."', 128, 1228);
+    ctx.font = '500 21px monospace';
+    const mottoText = profile?.motto
+      ? `"${profile.motto}"`
+      : '"The obstacle is the way. Stay phone-free."';
+    ctx.fillText(mottoText, 124, 1238, W - 248);
 
     setCardDataUrl(canvas.toDataURL('image/png'));
-  }, [isOpen, period, periodStats, currentStreak, parachuteMetrics.currentBalance, parachuteMetrics.totalReclaimedHours, profile]);
+  }, [
+    isOpen,
+    period,
+    periodStats,
+    currentStreak,
+    parachuteMetrics.currentBalance,
+    parachuteMetrics.totalReclaimedHours,
+    profile,
+    badgeSummary,
+  ]);
 
   if (!isOpen) return null;
 
-  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${PERIOD_LABELS[period].title}) using Zero Digital Detox (${currentStreak}d streak, ${periodStats.completedCount} completed locks).`;
+  const badgeCaptionSuffix =
+    badgeSummary.unlockedBadges.length > 0
+      ? ` Badges: ${badgeSummary.unlockedBadges.map((b) => b.title).join(', ')}.`
+      : '';
+  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${PERIOD_LABELS[period].title}) using Zero Digital Detox (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
 
   const handleNativeOrWebShare = async () => {
     if (!cardDataUrl) return;
@@ -292,6 +540,36 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 : 'All'}
             </button>
           ))}
+        </div>
+
+        {/* Live Badges Shown on Flex Card */}
+        <div className="p-2.5 rounded-2xl bg-black border border-zinc-800 space-y-1.5">
+          <div className="flex items-center justify-between text-[10px] text-zinc-400">
+            <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-zinc-300">
+              <Award size={11} className="text-amber-400" />
+              <span>Badges On Card</span>
+            </span>
+            <span>
+              {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
+            </span>
+          </div>
+          {badgeSummary.unlockedBadges.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {badgeSummary.unlockedBadges.map((b) =>
+                b.id === 'zero_supporter' ? (
+                  <ZeroSupporterGoldenBadge key={b.id} compact />
+                ) : (
+                  <AchievementBadgePill key={b.id} badge={b} />
+                )
+              )}
+            </div>
+          ) : (
+            <div className="text-[10px] text-zinc-500">
+              Complete a 1h lock for <span className="text-zinc-300 font-bold">GETTING STARTED</span>{' '}
+              or tip ₹50+ for the Golden{' '}
+              <span className="text-amber-300 font-bold">ZERO-SUPPORTER</span> badge.
+            </div>
+          )}
         </div>
 
         {/* Offscreen hi-res canvas + Preview Image */}
