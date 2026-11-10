@@ -27,6 +27,10 @@
   --zero-dial-stroke: #EDEDED;
   --zero-nav-bg: rgba(0, 0, 0, 0.92);
   --zero-backdrop: rgba(0, 0, 0, 0.92);
+
+  /* Dynamic Profile Accent Tokens (synced with user ProfileAccent) */
+  --accent-rgb: 245, 158, 11;
+  --accent-hex: #F59E0B;
 }
 
 body {
@@ -349,6 +353,218 @@ body {
 [data-zero-theme="kindle"] .text-red-300,
 [data-zero-theme="kindle"] .text-red-200 {
   color: #991B1B !important;
+}
+
+/* Preserve Frosted Obsidian Card dark interior contrast inside Paper Kindle & Matte Studio */
+[data-zero-theme="kindle"] [data-obsidian-card="true"],
+[data-zero-theme="matte"] [data-obsidian-card="true"] {
+  color: #FFFFFF;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-black,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-black\/80,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-black\/70,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-black,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-black\/80,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-black\/70 {
+  background-color: rgba(5, 5, 7, 0.84) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-950\/90,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-950\/80,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-950\/70,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-950,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-950\/90,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-950\/80,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-950\/70 {
+  background-color: rgba(12, 12, 15, 0.92) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/90,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/80,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/70,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/60,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/50,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-900\/40,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/90,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/80,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/70,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/60,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/50,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-900\/40 {
+  background-color: rgba(24, 24, 29, 0.78) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-800,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .bg-zinc-800 {
+  background-color: #27272A !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-700 {
+  background-color: #3F3F46 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-400 {
+  background-color: #A1A1AA !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-300 {
+  background-color: #D4D4D8 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-200,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-100,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-white:not([data-qr-surface="true"]) {
+  background-color: #F4F4F5 !important;
+  color: #09090B !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-200 .text-black,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-zinc-100 .text-black,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-white .text-black {
+  color: #09090B !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-zinc-900,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-zinc-850,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-zinc-800,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .border-zinc-900,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .border-zinc-850,
+[data-zero-theme="matte"] [data-obsidian-card="true"] .border-zinc-800 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-zinc-700,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-zinc-600 {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-white {
+  border-color: #FFFFFF !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-white,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-100 {
+  color: #FFFFFF !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-200 {
+  color: #E4E4E7 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-300 {
+  color: #D4D4D8 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-400 {
+  color: #A1A1AA !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-500,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-zinc-600 {
+  color: #71717A !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/80,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/70,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/60,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/50,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/45,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/40,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-emerald-950\/30 {
+  background-color: rgba(6, 78, 59, 0.42) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-950\/60,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-950\/40,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-950\/30,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-950\/20,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-amber-500\/10 {
+  background-color: rgba(120, 53, 15, 0.32) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-950\/90,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-950\/60,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-950\/50,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-950\/40,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-red-900\/60 {
+  background-color: rgba(127, 29, 29, 0.42) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-cyan-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-cyan-950\/40 {
+  background-color: rgba(22, 78, 99, 0.4) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-indigo-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-indigo-950\/40 {
+  background-color: rgba(49, 46, 129, 0.42) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-rose-950,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .bg-rose-950\/40 {
+  background-color: rgba(136, 19, 55, 0.4) !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-300,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-300\/90,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-300\/80 {
+  color: #FCD34D !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-200,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-200\/80 {
+  color: #FDE68A !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-400,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-amber-500 {
+  color: #FBBF24 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-emerald-300 {
+  color: #6EE7B7 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-emerald-200,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-emerald-100 {
+  color: #A7F3D0 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-emerald-400 {
+  color: #34D399 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-cyan-300 {
+  color: #67E8F9 !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-cyan-400 {
+  color: #22D3EE !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-indigo-300 {
+  color: #A5B4FC !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-rose-300 {
+  color: #FDA4AF !important;
+}
+
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-red-400,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-red-300,
+[data-zero-theme="kindle"] [data-obsidian-card="true"] .text-red-200 {
+  color: #FCA5A5 !important;
 }
 
 /* Ensure QR inner dot pattern reads cleanly */

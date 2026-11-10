@@ -9,7 +9,8 @@ import type {
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
-import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ObsidianCard } from './ObsidianCard';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
@@ -262,6 +263,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       }),
     [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
   );
+  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
     : ACCENT_STYLES.amber;
@@ -280,298 +282,360 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       {/* Interactive Profile Strip + 1-Tap Theme Studio Shortcut */}
       <div className="w-full flex items-stretch gap-2">
         {profile ? (
-          <div
-            className={`flex-1 min-w-0 bg-zinc-950/90 border rounded-2xl p-2.5 flex items-center justify-between gap-2.5 transition-all ${profileAccent.border}`}
-          >
-            <ProfileAvatar
-              avatarId={profile.avatarId}
-              accent={profile.accentColor}
-              size="sm"
-              interactive
-            />
-            <button
-              type="button"
-              onClick={onOpenProfileModal}
-              className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold text-xs text-white truncate">
-                    {profile.displayName}
-                  </span>
-                  <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`}
-                  >
-                    {profileRank.title}
-                  </span>
-                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
-                </div>
-                <div className="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
-                  <span>
-                    {todayReclaimedHours}h / {profile.dailyGoalHours}h • #{profile.primaryMission}
-                  </span>
-                  {badgeSummary.unlockedBadges.length > 0 && (
-                    <span className="inline-flex items-center gap-0.5 text-amber-300 font-bold shrink-0">
-                      <Trophy size={9} />
-                      {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+          <ObsidianCard
+            accent={profileAccentKey}
+            fullWidth={false}
+            className="flex-1 min-w-0"
+            headerClassName="p-2.5 flex items-center justify-between gap-2.5"
+            headerContent={
+              <>
+                <ProfileAvatar
+                  avatarId={profile.avatarId}
+                  accent={profile.accentColor}
+                  size="sm"
+                  interactive
+                />
+                <button
+                  type="button"
+                  onClick={onOpenProfileModal}
+                  className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-xs text-white truncate">
+                        {profile.displayName}
+                      </span>
+                      <span
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`}
+                      >
+                        {profileRank.title}
+                      </span>
+                      {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
+                      <span>
+                        {todayReclaimedHours}h / {profile.dailyGoalHours}h • #{profile.primaryMission}
+                      </span>
+                      {badgeSummary.unlockedBadges.length > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-amber-300 font-bold shrink-0">
+                          <Trophy size={9} />
+                          {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-8 bg-zinc-800 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                      <div
+                        className={`h-full rounded-full transition-all ${profileAccent.bar}`}
+                        style={{ width: `${dailyGoalPct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
+                      Edit
                     </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="w-8 bg-zinc-800 rounded-full h-1.5 overflow-hidden hidden sm:block">
-                  <div
-                    className={`h-full rounded-full transition-all ${profileAccent.bar}`}
-                    style={{ width: `${dailyGoalPct}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
-                  Edit
-                </span>
-              </div>
-            </button>
-          </div>
+                  </div>
+                </button>
+              </>
+            }
+          />
         ) : (
-          <button
-            type="button"
+          <ObsidianCard
+            accent={profileAccentKey}
+            asButton
+            fullWidth={false}
             onClick={onOpenProfileModal}
-            className="flex-1 min-w-0 bg-amber-500/10 border border-amber-400/60 hover:border-amber-300 rounded-2xl p-2.5 px-3 flex items-center justify-between gap-2 font-mono transition-all active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
-                {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
-              </div>
-              <div className="text-left min-w-0">
-                <div className="text-xs font-bold text-white truncate">
-                  {hasClaimedFirstTimeParachute
-                    ? 'Create Profile'
-                    : 'Make Profile • +1 Free 🎫'}
+            className="flex-1 min-w-0"
+            headerClassName="p-2.5 px-3 flex items-center justify-between gap-2 font-mono"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+                    {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="text-xs font-bold text-white truncate">
+                      {hasClaimedFirstTimeParachute
+                        ? 'Create Profile'
+                        : 'Make Profile • +1 Free 🎫'}
+                    </div>
+                    <div className="text-[10px] text-amber-200/80 truncate">
+                      {hasClaimedFirstTimeParachute
+                        ? 'Emblem, daily goal & pledge'
+                        : 'Free starter Escape Ticket'}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[10px] text-amber-200/80 truncate">
-                  {hasClaimedFirstTimeParachute
-                    ? 'Emblem, daily goal & pledge'
-                    : 'Free starter Escape Ticket'}
-                </div>
-              </div>
-            </div>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
-              <Sparkles size={11} />
-              <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
-            </span>
-          </button>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+                  <Sparkles size={11} />
+                  <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
+                </span>
+              </>
+            }
+          />
         )}
 
-        <button
-          type="button"
+        <ObsidianCard
+          accent={profileAccentKey}
+          asButton
+          fullWidth={false}
           onClick={() => {
             haptics.tick(820);
             onOpenThemes();
           }}
-          className="px-2.5 rounded-2xl bg-zinc-950/90 border border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white shrink-0 transition-all active:scale-95"
+          className="shrink-0"
+          headerClassName="flex-1 px-3 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white"
           title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
           aria-label="Open Theme Studio"
-        >
-          <Palette size={15} style={{ color: 'var(--zero-accent)' }} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Theme</span>
-        </button>
+          headerContent={
+            <>
+              <Palette size={15} style={{ color: 'var(--zero-accent)' }} />
+              <span className="text-[9px] font-bold uppercase tracking-wider">Theme</span>
+            </>
+          }
+        />
       </div>
 
-      {/* Top Banner: Escape Ticket Balance & Milestone Progress */}
-      <button
+      {/* Top Banner: Escape Ticket Balance & Milestone Progress (Two-Tier ObsidianCard) */}
+      <ObsidianCard
+        asButton
+        accent={profileAccentKey}
         onClick={onOpenDashboard}
-        className={`w-full bg-zinc-950/80 border rounded-2xl p-3 flex items-center justify-between transition-all group active:scale-[0.98] shadow-brutal relative overflow-hidden ${
+        className={
           justEarnedParachute
-            ? 'border-amber-400 ring-2 ring-amber-400/50 animate-parachute-card-pop'
-            : 'border-zinc-800 hover:border-zinc-600'
-        }`}
-      >
-        {justEarnedParachute && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
-          />
-        )}
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`w-9 h-9 rounded-xl bg-zinc-900 border flex items-center justify-center font-mono text-base transition-colors ${
-              justEarnedParachute
-                ? 'border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.5)]'
-                : 'border-zinc-700 group-hover:border-amber-400/50'
-            }`}
-          >
-            <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
-              🎫
-            </span>
-          </div>
-          <div className="text-left">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-mono font-bold text-sm text-zinc-100">
-                {parachuteMetrics.currentBalance}{' '}
-                {parachuteMetrics.currentBalance === 1 ? 'Escape Ticket' : 'Escape Tickets'}
-              </span>
-              <span
-                className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
-                  justEarnedParachute || parachuteMetrics.bonusParachutes > 0
-                    ? 'bg-amber-400/15 border border-amber-400/40 text-amber-300'
-                    : 'bg-zinc-800 text-zinc-300'
+            ? 'ring-2 ring-amber-400/50 animate-parachute-card-pop'
+            : ''
+        }
+        overlays={
+          justEarnedParachute ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
+            />
+          ) : undefined
+        }
+        headerClassName="p-3.5 flex items-center justify-between gap-2 group"
+        footerClassName="px-3.5 py-2 flex items-center justify-between gap-2 text-[11px] font-mono text-zinc-400"
+        headerContent={
+          <>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`w-9 h-9 rounded-xl bg-zinc-900 border flex items-center justify-center font-mono text-base shrink-0 transition-colors ${
+                  justEarnedParachute
+                    ? 'border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.5)]'
+                    : 'border-zinc-700 group-hover:border-amber-400/50'
                 }`}
               >
-                {balanceBadgeText}
-              </span>
+                <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
+                  🎫
+                </span>
+              </div>
+              <div className="text-left min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono font-bold text-sm text-zinc-100">
+                    {parachuteMetrics.currentBalance}{' '}
+                    {parachuteMetrics.currentBalance === 1 ? 'Escape Ticket' : 'Escape Tickets'}
+                  </span>
+                  <span
+                    className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
+                      justEarnedParachute || parachuteMetrics.bonusParachutes > 0
+                        ? 'bg-amber-400/15 border border-amber-400/40 text-amber-300'
+                        : 'bg-zinc-800 text-zinc-300'
+                    }`}
+                  >
+                    {balanceBadgeText}
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-zinc-400 font-mono">
-              {parachuteMetrics.hoursUntilNextParachute}h to next (+1 per 20h)
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-zinc-400 group-hover:text-zinc-200">
-          <div className="w-12 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-zinc-200 h-full rounded-full transition-all"
-              style={{ width: `${parachuteMetrics.progressPercentage}%` }}
-            />
-          </div>
-          <ChevronRight size={16} />
-        </div>
-      </button>
+            <div className="flex items-center gap-1.5 text-zinc-400 group-hover:text-zinc-200 shrink-0">
+              <div className="w-12 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-zinc-200 h-full rounded-full transition-all"
+                  style={{ width: `${parachuteMetrics.progressPercentage}%` }}
+                />
+              </div>
+              <ChevronRight size={16} />
+            </div>
+          </>
+        }
+        footerContent={
+          <>
+            <span>{parachuteMetrics.hoursUntilNextParachute}h to next (+1 per 20h milestone)</span>
+            <span className="font-bold" style={{ color: 'var(--accent-hex, #F59E0B)' }}>
+              {parachuteMetrics.progressPercentage}%
+            </span>
+          </>
+        }
+      />
 
       {/* Native Android Strict Permission Banner */}
       {permissions.isNativeAndroid && (
-        <button
-          type="button"
+        <ObsidianCard
+          asButton
           onClick={onOpenPermissionGate}
-          className={`w-full px-3.5 py-2 rounded-2xl border font-mono text-[11px] flex items-center justify-between transition-all ${
+          accentOverride={
             permissions.strictReady
-              ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300'
-              : 'bg-amber-950/40 border-amber-500/70 text-amber-200 animate-pulse'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {permissions.strictReady ? (
-              <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-            ) : (
-              <ShieldAlert size={14} className="text-amber-400 shrink-0" />
-            )}
-            <span className="font-bold truncate">
+              ? { hex: '#10B981', rgb: '16, 185, 129' }
+              : { hex: '#F59E0B', rgb: '245, 158, 11' }
+          }
+          className={!permissions.strictReady ? 'animate-pulse' : ''}
+          headerClassName="px-3.5 py-2.5 font-mono text-[11px] flex items-center justify-between gap-2"
+          footerClassName="px-3.5 py-1.5 font-mono text-[10px] text-zinc-400"
+          headerContent={
+            <>
+              <div className="flex items-center gap-2 min-w-0">
+                {permissions.strictReady ? (
+                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+                ) : (
+                  <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+                )}
+                <span
+                  className={`font-bold truncate ${
+                    permissions.strictReady ? 'text-emerald-300' : 'text-amber-200'
+                  }`}
+                >
+                  {permissions.strictReady
+                    ? !permissions.hasNotificationPermission
+                      ? 'Guard Armed • Tap for Step 4 Notifications'
+                      : permissions.isStrictAccessibilityBuild
+                      ? 'Strict Accessibility Guard: Armed'
+                      : 'Overlay + Usage Guard: Armed'
+                    : 'Permissions Required Before Locking'}
+                </span>
+              </div>
+              <span
+                className={`text-[10px] underline shrink-0 ml-2 font-bold ${
+                  permissions.strictReady ? 'text-emerald-300' : 'text-amber-300'
+                }`}
+              >
+                {permissions.strictReady ? 'Check' : 'Grant Now'}
+              </span>
+            </>
+          }
+          footerContent={
+            <span>
               {permissions.strictReady
                 ? !permissions.hasNotificationPermission
-                  ? 'Guard Armed • Tap for Step 4 Notifications'
-                  : permissions.isStrictAccessibilityBuild
-                  ? 'Strict Accessibility Guard: Armed'
-                  : 'Overlay + Usage Guard: Armed'
-                : 'Permissions Required Before Locking'}
+                  ? 'Optional Step 4: Enable lock & 5-minute schedule heads-up alerts.'
+                  : 'All mandatory Android lock guards are verified active.'
+                : 'Priority order: 1. Restricted Settings • 2. Usage/Accessibility • 3. Overlay'}
             </span>
-          </div>
-          <span className="text-[10px] underline shrink-0 ml-2">
-            {permissions.strictReady ? 'Check' : 'Grant Now'}
-          </span>
-        </button>
+          }
+        />
       )}
 
       {/* Mode B: Weekly 1-Tap Cloud Backup Reminder Banner (Pure AMOLED #000000 + Purple #8B5CF6) */}
       {(showWeeklyBackupBanner || cloudBannerMsg) && (
-        <div
+        <ObsidianCard
           data-amoled-banner="true"
-          className="w-full rounded-2xl border p-3 font-mono space-y-2.5 transition-all"
+          accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
+          headerClassName="p-3.5 font-mono space-y-2.5"
+          footerClassName="px-3.5 py-2 font-mono"
           style={{
             backgroundColor: '#000000',
             borderColor: 'rgba(139, 92, 246, 0.58)',
             boxShadow: '0 0 24px -10px rgba(139, 92, 246, 0.45)',
             color: '#FFFFFF',
           }}
-        >
-          {showWeeklyBackupBanner && (
+          headerContent={
             <>
-              <div className="flex items-start gap-2.5">
+              {showWeeklyBackupBanner && (
+                <>
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border"
+                      style={{
+                        backgroundColor: 'rgba(139, 92, 246, 0.14)',
+                        borderColor: 'rgba(139, 92, 246, 0.45)',
+                        color: '#A78BFA',
+                      }}
+                    >
+                      <CloudUpload size={14} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="amoled-banner-title text-[11px] font-black text-white leading-snug">
+                        Weekly Backup Due — Keep your donor badges &amp; stats safe
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={isCloudBusy}
+                      onClick={async () => {
+                        if (!onOneTapUpload) return;
+                        haptics.tick(860);
+                        const res = await onOneTapUpload();
+                        if (!res.cancelled && res.message) {
+                          setCloudBannerMsg(res.message);
+                          setTimeout(() => setCloudBannerMsg(''), 4500);
+                        }
+                      }}
+                      className="py-2 px-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
+                      style={{
+                        backgroundColor: '#8B5CF6',
+                        color: '#FFFFFF',
+                      }}
+                    >
+                      {isCloudBusy ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <CloudUpload size={12} />
+                      )}
+                      <span>1-Tap Upload</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isCloudBusy}
+                      onClick={async () => {
+                        if (!onTurnOnAutoBackup) return;
+                        haptics.tick(900);
+                        const res = await onTurnOnAutoBackup();
+                        if (!res.cancelled && res.message) {
+                          setCloudBannerMsg(res.message);
+                          setTimeout(() => setCloudBannerMsg(''), 4500);
+                        }
+                      }}
+                      className="amoled-banner-secondary py-2 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
+                      style={{
+                        backgroundColor: '#09090B',
+                        borderColor: 'rgba(139, 92, 246, 0.45)',
+                        color: '#E9D5FF',
+                      }}
+                    >
+                      <CloudCog size={12} />
+                      <span>Turn On Auto-Backup</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {cloudBannerMsg && (
                 <div
-                  className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border"
+                  className="text-[10px] px-2.5 py-1.5 rounded-lg border"
                   style={{
-                    backgroundColor: 'rgba(139, 92, 246, 0.14)',
-                    borderColor: 'rgba(139, 92, 246, 0.45)',
-                    color: '#A78BFA',
-                  }}
-                >
-                  <CloudUpload size={14} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="amoled-banner-title text-[11px] font-black text-white leading-snug">
-                    Weekly Backup Due — Keep your donor badges &amp; stats safe
-                  </div>
-                  <div
-                    className="amoled-banner-sub text-[10px] mt-0.5 leading-snug"
-                    style={{ color: '#C4B5FD' }}
-                  >
-                    Signed <code>zero-backup.zbak</code> saves to Drive, OneDrive, JioDrive or device storage.
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={isCloudBusy}
-                  onClick={async () => {
-                    if (!onOneTapUpload) return;
-                    haptics.tick(860);
-                    const res = await onOneTapUpload();
-                    if (!res.cancelled && res.message) {
-                      setCloudBannerMsg(res.message);
-                      setTimeout(() => setCloudBannerMsg(''), 4500);
-                    }
-                  }}
-                  className="py-2 px-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
-                  style={{
-                    backgroundColor: '#8B5CF6',
-                    color: '#FFFFFF',
-                  }}
-                >
-                  {isCloudBusy ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <CloudUpload size={12} />
-                  )}
-                  <span>1-Tap Upload</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isCloudBusy}
-                  onClick={async () => {
-                    if (!onTurnOnAutoBackup) return;
-                    haptics.tick(900);
-                    const res = await onTurnOnAutoBackup();
-                    if (!res.cancelled && res.message) {
-                      setCloudBannerMsg(res.message);
-                      setTimeout(() => setCloudBannerMsg(''), 4500);
-                    }
-                  }}
-                  className="amoled-banner-secondary py-2 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
-                  style={{
-                    backgroundColor: '#09090B',
-                    borderColor: 'rgba(139, 92, 246, 0.45)',
+                    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                    borderColor: 'rgba(139, 92, 246, 0.4)',
                     color: '#E9D5FF',
                   }}
                 >
-                  <CloudCog size={12} />
-                  <span>Turn On Auto-Backup</span>
-                </button>
-              </div>
+                  {cloudBannerMsg}
+                </div>
+              )}
             </>
-          )}
-
-          {cloudBannerMsg && (
+          }
+          footerContent={
             <div
-              className="text-[10px] px-2.5 py-1.5 rounded-lg border"
-              style={{
-                backgroundColor: 'rgba(139, 92, 246, 0.12)',
-                borderColor: 'rgba(139, 92, 246, 0.4)',
-                color: '#E9D5FF',
-              }}
+              className="amoled-banner-sub text-[10px] leading-snug"
+              style={{ color: '#C4B5FD' }}
             >
-              {cloudBannerMsg}
+              Signed <code>zero-backup.zbak</code> saves to Drive, OneDrive, JioDrive or device storage.
             </div>
-          )}
-        </div>
+          }
+        />
       )}
 
       {/* Center: Tactile Duration Dial Wheel */}
@@ -712,44 +776,56 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           )}
         </div>
 
-        {/* Active Bag Card (4 Occasion Bags x Max 3 Apps + Calls/SMS) */}
-        <button
-          type="button"
+        {/* Active Bag Card (Two-Tier Frosted Obsidian) */}
+        <ObsidianCard
+          asButton
+          accent={profileAccentKey}
           onClick={onOpenBagDrawer}
-          className="w-full p-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-600 rounded-2xl flex items-center justify-between transition-all text-left font-mono group active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white shrink-0">
-              <Briefcase size={16} />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white truncate">
-                  Bag: {activeBag.name}
-                </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 shrink-0">
-                  {activeBag.apps.length}/{MAX_BAG_APPS} apps
-                </span>
+          headerClassName="p-3.5 flex items-center justify-between gap-2 text-left font-mono group"
+          footerClassName="px-3.5 py-2 flex items-center justify-between gap-2 flex-wrap font-mono text-[10px] text-zinc-400"
+          headerContent={
+            <>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white shrink-0">
+                  <Briefcase size={16} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-white truncate">
+                      Bag: {activeBag.name}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 shrink-0">
+                      {activeBag.apps.length}/{MAX_BAG_APPS} apps
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {activeBag.occasionLabel}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5 flex-wrap">
-                <span className={activeBag.allowCalls ? 'text-emerald-400 flex items-center gap-0.5' : 'flex items-center gap-0.5'}>
+              <span className="text-[11px] font-bold text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5">
+                Pack <ChevronRight size={14} />
+              </span>
+            </>
+          }
+          footerContent={
+            <>
+              <div className="flex items-center gap-2.5">
+                <span className={activeBag.allowCalls ? 'text-emerald-400 flex items-center gap-1 font-semibold' : 'flex items-center gap-1'}>
                   <Phone size={10} /> {activeBag.allowCalls ? 'Calls ON' : 'Calls Off'}
                 </span>
-                <span className={activeBag.allowSms ? 'text-emerald-400 flex items-center gap-0.5' : 'flex items-center gap-0.5'}>
+                <span className={activeBag.allowSms ? 'text-emerald-400 flex items-center gap-1 font-semibold' : 'flex items-center gap-1'}>
                   <MessageSquare size={10} /> {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
                 </span>
-                {activeBag.apps.length > 0 && (
-                  <span className="text-zinc-300 truncate max-w-[140px]">
-                    • {activeBag.apps.map((a) => a.appName).join(', ')}
-                  </span>
-                )}
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-bold text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5">
-            Pack <ChevronRight size={14} />
-          </span>
-        </button>
+              <span className="text-zinc-300 break-words">
+                {activeBag.apps.length > 0
+                  ? activeBag.apps.map((a) => a.appName).join(', ')
+                  : 'Monk Mode (0 apps)'}
+              </span>
+            </>
+          }
+        />
 
         {/* 3-Second Hold to Ignite Button */}
         <div className="w-full flex flex-col items-center">

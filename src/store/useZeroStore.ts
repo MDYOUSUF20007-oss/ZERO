@@ -42,6 +42,10 @@ import {
   sanitizeThemeConfig,
 } from '../utils/themes';
 import {
+  ACCENT_ID_TO_KEY,
+  ACCENT_THEMES,
+} from '../components/ProfileAvatar';
+import {
   disableUniversalCloudAutoBackup,
   enableUniversalCloudAutoBackup,
   fetchUniversalCloudAutoBackupStatus,
@@ -865,6 +869,12 @@ export function useZeroStore() {
     } else {
       localStorage.removeItem(UI_STORAGE_KEYS.PROFILE);
     }
+
+    const accentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
+    const accentTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
+    const rootEl = document.documentElement;
+    rootEl.style.setProperty('--accent-rgb', accentTheme.rgb);
+    rootEl.style.setProperty('--accent-hex', accentTheme.hex);
   }, [profile]);
 
   useEffect(() => {

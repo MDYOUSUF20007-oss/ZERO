@@ -10,6 +10,7 @@ import { TipAfterSessionModal } from './components/TipAfterSessionModal';
 import { ProfileModal } from './components/ProfileModal';
 import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation';
 import { ShareStatsModal } from './components/ShareStatsModal';
+import { ObsidianCard } from './components/ObsidianCard';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, X } from 'lucide-react';
 
@@ -133,23 +134,34 @@ export function App() {
       {/* Cloud Restore Confirmation Toast */}
       {restoreToast && (
         <div
-          data-amoled-banner="true"
-          className="fixed left-4 right-4 z-50 max-w-md mx-auto p-3 rounded-2xl border shadow-2xl flex items-center justify-between font-mono text-xs"
-          style={{
-            top: 'calc(0.75rem + var(--zero-safe-top))',
-            backgroundColor: '#000000',
-            borderColor: 'rgba(139, 92, 246, 0.7)',
-            color: '#FFFFFF',
-          }}
+          className="fixed left-4 right-4 z-50 max-w-md mx-auto"
+          style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
         >
-          <span className="amoled-banner-title font-bold">{restoreToast}</span>
-          <button
-            type="button"
-            onClick={() => setRestoreToast('')}
-            className="p-1 text-zinc-400 hover:text-white"
-          >
-            <X size={14} />
-          </button>
+          <ObsidianCard
+            data-amoled-banner="true"
+            accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
+            ambientGlow
+            className="font-mono text-xs shadow-2xl"
+            headerClassName="p-3 flex items-center justify-between gap-2"
+            style={{
+              backgroundColor: '#000000',
+              borderColor: 'rgba(139, 92, 246, 0.7)',
+              color: '#FFFFFF',
+            }}
+            headerContent={
+              <>
+                <span className="amoled-banner-title font-bold">{restoreToast}</span>
+                <button
+                  type="button"
+                  onClick={() => setRestoreToast('')}
+                  className="p-1 text-zinc-400 hover:text-white shrink-0"
+                  aria-label="Dismiss Cloud Restore Notification"
+                >
+                  <X size={14} />
+                </button>
+              </>
+            }
+          />
         </div>
       )}
 

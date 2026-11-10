@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ActiveLockSession, ParachuteMetrics, OccasionBag } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
+import { ObsidianCard } from './ObsidianCard';
 import {
   Phone,
   AlertTriangle,
@@ -146,95 +147,130 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </p>
 
         {/* Active Bag Card */}
-        <div className="mt-6 w-full bg-zinc-950/90 border border-zinc-800 rounded-2xl p-3.5 text-left font-mono space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-zinc-400">
-            <span className="flex items-center gap-1.5 font-bold text-zinc-200">
-              <Briefcase size={13} /> Bag: {activeBag.name}
-            </span>
-            <span>
-              {activeBag.apps.length}/{MAX_BAG_APPS} apps
-            </span>
-          </div>
+        <ObsidianCard
+          className="mt-6 font-mono text-left"
+          headerClassName="p-4 space-y-2.5"
+          footerClassName="px-4 py-2 text-[10px] text-zinc-400 flex items-center justify-between gap-2"
+          headerContent={
+            <>
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="flex items-center gap-1.5 font-bold text-white">
+                  <Briefcase size={13} /> Bag: {activeBag.name}
+                </span>
+                <span>
+                  {activeBag.apps.length}/{MAX_BAG_APPS} apps
+                </span>
+              </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            {activeBag.allowCalls && (
-              <a
-                href="tel:"
-                className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
-              >
-                <Phone size={11} /> Normal Calls
-              </a>
-            )}
-            {activeBag.allowSms && (
-              <a
-                href="sms:"
-                className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
-              >
-                <MessageSquare size={11} /> Normal SMS
-              </a>
-            )}
-            {activeBag.apps.map((app) => (
-              <span
-                key={app.packageName}
-                className="px-2.5 py-1.5 rounded-xl bg-zinc-200 text-black text-[11px] font-bold"
-              >
-                {app.appName}
+              <div className="flex flex-wrap gap-1.5">
+                {activeBag.allowCalls && (
+                  <a
+                    href="tel:"
+                    className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/15 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                  >
+                    <Phone size={11} /> Normal Calls
+                  </a>
+                )}
+                {activeBag.allowSms && (
+                  <a
+                    href="sms:"
+                    className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/15 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                  >
+                    <MessageSquare size={11} /> Normal SMS
+                  </a>
+                )}
+                {activeBag.apps.map((app) => (
+                  <span
+                    key={app.packageName}
+                    className="px-2.5 py-1.5 rounded-xl bg-zinc-200 text-black text-[11px] font-bold"
+                  >
+                    {app.appName}
+                  </span>
+                ))}
+                {!activeBag.allowCalls && !activeBag.allowSms && activeBag.apps.length === 0 && (
+                  <span className="text-[11px] text-zinc-400">
+                    Monk Mode: No apps allowed in this Bag.
+                  </span>
+                )}
+              </div>
+            </>
+          }
+          footerContent={
+            <>
+              <span className="flex items-center gap-1.5 text-emerald-300 font-semibold">
+                <ShieldCheck size={12} className="text-emerald-400" />
+                <span>Strict Guard Active</span>
               </span>
-            ))}
-            {!activeBag.allowCalls && !activeBag.allowSms && activeBag.apps.length === 0 && (
-              <span className="text-[11px] text-zinc-500">
-                Monk Mode: No apps allowed in this Bag.
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
-          <ShieldCheck size={14} className="text-emerald-400" />
-          <span>Strict Guard Active • Unbagged Apps Sealed</span>
-        </div>
+              <span>Unbagged Apps Sealed</span>
+            </>
+          }
+        />
       </div>
 
       {/* Bottom Actions */}
       <div className="w-full max-w-md flex flex-col gap-3 pb-4">
         {parachuteMetrics.currentBalance > 0 ? (
-          <button
+          <ObsidianCard
+            asButton
             onClick={() => setShowParachuteConfirm(true)}
-            className="w-full h-14 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] border border-amber-500/50 rounded-2xl flex items-center justify-between px-4 font-mono transition-all shadow-brutal text-amber-200"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">🎫</span>
-              <div className="text-left">
-                <div className="font-bold text-sm tracking-wide">Use Emergency Escape Ticket</div>
-                <div className="text-[11px] text-amber-300/80">
-                  {parachuteMetrics.currentBalance} Available (Consumes 1 &amp; voids session)
+            accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
+            ambientGlow
+            className="font-mono"
+            headerClassName="px-4 py-3 flex items-center justify-between gap-2"
+            footerClassName="px-4 py-1.5 text-[10px] text-amber-200/80 flex items-center justify-between gap-2"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">🎫</span>
+                  <div className="text-left">
+                    <div className="font-bold text-sm tracking-wide text-amber-200">
+                      Use Emergency Escape Ticket
+                    </div>
+                    <div className="text-[11px] text-amber-300/85">
+                      {parachuteMetrics.currentBalance} Available in Vault
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="text-xs uppercase font-extrabold bg-amber-500 text-black px-2.5 py-1 rounded-lg">
-              ESCAPE
-            </div>
-          </button>
+                <div className="text-xs uppercase font-black bg-amber-400 text-black px-2.5 py-1 rounded-lg shrink-0">
+                  ESCAPE
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <span>Consumes 1 ticket &amp; voids current session</span>
+                <span className="text-amber-300 font-bold uppercase">Emergency Exit</span>
+              </>
+            }
+          />
         ) : (
-          <div className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between text-zinc-300 font-mono text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-lg opacity-40">🎫</span>
-              <div className="text-left">
-                <span className="font-semibold text-zinc-300">0 Escape Tickets Available</span>
-                <p className="text-[11px] text-zinc-400">
-                  Earn 1 per 20h completed blockage ({parachuteMetrics.hoursUntilNextParachute}h left)
-                </p>
-              </div>
-            </div>
-            <span className="px-2 py-0.5 rounded bg-zinc-900 text-[10px] text-zinc-400 font-bold border border-zinc-800">
-              LOCKED
-            </span>
-          </div>
+          <ObsidianCard
+            className="font-mono text-xs"
+            headerClassName="px-4 py-3 flex items-center justify-between gap-2"
+            footerClassName="px-4 py-2 text-[10px] text-zinc-400 flex items-center justify-between gap-2"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg opacity-50">🎫</span>
+                  <span className="font-semibold text-zinc-200">0 Escape Tickets Available</span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-zinc-900 text-[10px] text-zinc-400 font-bold border border-white/10">
+                  LOCKED
+                </span>
+              </>
+            }
+            footerContent={
+              <>
+                <span>Earn 1 ticket every 20h completed focus</span>
+                <span className="text-amber-300 font-bold">{parachuteMetrics.hoursUntilNextParachute}h left</span>
+              </>
+            }
+          />
         )}
 
         <button
           onClick={() => setShowEmergencyModal(true)}
-          className="w-full h-12 bg-zinc-950 hover:bg-zinc-900 active:scale-[0.98] border border-zinc-800 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs text-zinc-400 hover:text-zinc-200 transition-all"
+          className="w-full h-12 bg-zinc-950/90 hover:bg-zinc-900 active:scale-[0.98] border border-white/15 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs text-zinc-300 hover:text-white transition-all"
         >
           <Phone size={14} className="text-red-400" />
           <span>Emergency Call (911 / 112 / ICE)</span>
@@ -243,100 +279,120 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {showEmergencyModal && (
         <div className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-zinc-950 border-2 border-zinc-700 rounded-2xl p-5 shadow-2xl font-mono text-left">
-            <div className="flex items-center gap-2 text-red-400 font-bold text-sm mb-3">
-              <Phone size={16} />
-              <span>EMERGENCY CALL ENGINE</span>
-            </div>
-            <p className="text-xs text-zinc-400 mb-4">
-              Direct emergency lines are never restricted. Choose a line or dial below:
-            </p>
+          <ObsidianCard
+            accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}
+            ambientGlow
+            className="w-full max-w-sm font-mono text-left"
+            headerClassName="p-5 space-y-4"
+            footerClassName="p-4"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                  <Phone size={16} />
+                  <span>EMERGENCY CALL ENGINE</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Direct emergency lines are never restricted. Choose a line or dial below:
+                </p>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <a
-                href="tel:911"
-                className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href="tel:911"
+                    className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
+                  >
+                    <span>911</span>
+                    <span className="text-[10px] font-normal text-red-300">Emergency</span>
+                  </a>
+                  <a
+                    href="tel:112"
+                    className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
+                  >
+                    <span>112</span>
+                    <span className="text-[10px] font-normal text-red-300">Global SOS</span>
+                  </a>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-zinc-400 block mb-1">Custom ICE Contact:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      value={emergencyNumber}
+                      onChange={(e) => setEmergencyNumber(e.target.value)}
+                      placeholder="e.g. +1 555-0199"
+                      className="flex-1 bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    />
+                    <a
+                      href={`tel:${emergencyNumber}`}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center ${
+                        emergencyNumber ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-500 pointer-events-none'
+                      }`}
+                    >
+                      Dial
+                    </a>
+                  </div>
+                </div>
+              </>
+            }
+            footerContent={
+              <button
+                onClick={() => setShowEmergencyModal(false)}
+                className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs rounded-xl font-bold border border-white/15"
               >
-                <span>911</span>
-                <span className="text-[10px] font-normal text-red-300">Emergency</span>
-              </a>
-              <a
-                href="tel:112"
-                className="p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all"
-              >
-                <span>112</span>
-                <span className="text-[10px] font-normal text-red-300">Global SOS</span>
-              </a>
-            </div>
-
-            <div className="mb-4">
-              <label className="text-[11px] text-zinc-400 block mb-1">Custom ICE Contact:</label>
-              <div className="flex gap-2">
-                <input
-                  type="tel"
-                  value={emergencyNumber}
-                  onChange={(e) => setEmergencyNumber(e.target.value)}
-                  placeholder="e.g. +1 555-0199"
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white outline-none"
-                />
-                <a
-                  href={`tel:${emergencyNumber}`}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center ${
-                    emergencyNumber ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-500 pointer-events-none'
-                  }`}
-                >
-                  Dial
-                </a>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowEmergencyModal(false)}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 text-xs rounded-xl font-bold border border-zinc-800"
-            >
-              Return to The Void
-            </button>
-          </div>
+                Return to The Void
+              </button>
+            }
+          />
         </div>
       )}
 
       {showParachuteConfirm && (
         <div className="fixed inset-0 z-60 bg-black/95 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-zinc-950 border-2 border-amber-500/80 rounded-2xl p-6 shadow-brutal font-mono text-left">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
-              <AlertTriangle size={18} />
-              <span>USE EMERGENCY ESCAPE TICKET?</span>
-            </div>
+          <ObsidianCard
+            accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
+            ambientGlow
+            className="w-full max-w-sm font-mono text-left"
+            headerClassName="p-5 space-y-3"
+            footerClassName="p-4 flex flex-col gap-2"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                  <AlertTriangle size={18} />
+                  <span>USE EMERGENCY ESCAPE TICKET?</span>
+                </div>
 
-            <div className="space-y-3 text-xs text-zinc-300 mb-5 leading-relaxed">
-              <p>
-                You are about to use 1 of your{' '}
-                <strong className="text-white">{parachuteMetrics.currentBalance}</strong> Emergency
-                Escape Tickets.
-              </p>
-              <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-amber-200 text-[11px]">
-                <strong>Strict Anti-Exploit Rule:</strong> All elapsed time in this session ({Math.floor(activeLock.elapsedSeconds / 60)}m) will be <strong>permanently voided</strong> and will NOT count toward your next 20-hour milestone.
-              </div>
-              <p className="text-zinc-400 text-[11px]">
-                Are you sure you want to surrender this session?
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleConfirmDeploy}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all"
-              >
-                Use Escape Ticket (-1 Balance)
-              </button>
-              <button
-                onClick={() => setShowParachuteConfirm(false)}
-                className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-zinc-800"
-              >
-                Cancel &amp; Stay Focused
-              </button>
-            </div>
-          </div>
+                <div className="space-y-3 text-xs text-zinc-300 leading-relaxed">
+                  <p>
+                    You are about to use 1 of your{' '}
+                    <strong className="text-white">{parachuteMetrics.currentBalance}</strong> Emergency
+                    Escape Tickets.
+                  </p>
+                  <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-amber-200 text-[11px]">
+                    <strong>Strict Anti-Exploit Rule:</strong> All elapsed time in this session ({Math.floor(activeLock.elapsedSeconds / 60)}m) will be <strong>permanently voided</strong> and will NOT count toward your next 20-hour milestone.
+                  </div>
+                  <p className="text-zinc-400 text-[11px]">
+                    Are you sure you want to surrender this session?
+                  </p>
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <button
+                  onClick={handleConfirmDeploy}
+                  className="w-full py-3 bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all"
+                >
+                  Use Escape Ticket (-1 Balance)
+                </button>
+                <button
+                  onClick={() => setShowParachuteConfirm(false)}
+                  className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-white/15"
+                >
+                  Cancel &amp; Stay Focused
+                </button>
+              </>
+            }
+          />
         </div>
       )}
     </div>

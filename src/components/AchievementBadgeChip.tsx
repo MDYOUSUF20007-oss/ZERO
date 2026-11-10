@@ -140,14 +140,14 @@ export const AchievementBadgeCard: React.FC<{
       className={`w-full text-left p-3 rounded-2xl border transition-all font-mono space-y-2 active:scale-[0.99] ${
         badge.unlocked
           ? style.unlockedBox
-          : 'bg-zinc-950/70 border-zinc-850 hover:border-zinc-700 opacity-75'
+          : 'bg-[#101014]/90 border-white/10 hover:border-white/20 opacity-80'
       } ${isSelected ? 'ring-1 ring-white/50' : ''}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div
             className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
-              badge.unlocked ? style.iconBg : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+              badge.unlocked ? style.iconBg : 'bg-zinc-900 text-zinc-400 border border-white/10'
             }`}
           >
             {badge.unlocked ? renderBadgeIcon(badge.id, 14) : <Lock size={12} />}
@@ -155,7 +155,7 @@ export const AchievementBadgeCard: React.FC<{
           <div className="min-w-0">
             <div
               className={`text-[11px] font-black uppercase tracking-wide truncate ${
-                badge.unlocked ? style.label : 'text-zinc-400'
+                badge.unlocked ? style.label : 'text-zinc-300'
               }`}
             >
               {badge.title}
@@ -171,7 +171,7 @@ export const AchievementBadgeCard: React.FC<{
               ? badge.tierColor === 'gold'
                 ? 'bg-amber-400 text-black'
                 : 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
-              : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+              : 'bg-zinc-900 text-zinc-400 border border-white/10'
           }`}
         >
           {badge.unlocked ? 'Earned' : `${badge.progressPct}%`}
@@ -180,18 +180,18 @@ export const AchievementBadgeCard: React.FC<{
 
       {!badge.unlocked && (
         <div className="space-y-1">
-          <div className="w-full h-1.5 rounded-full bg-zinc-900 overflow-hidden border border-zinc-800">
+          <div className="w-full h-1.5 rounded-full bg-zinc-900 overflow-hidden border border-white/10">
             <div
               className={`h-full rounded-full transition-all ${style.bar}`}
               style={{ width: `${badge.progressPct}%` }}
             />
           </div>
-          <div className="text-[9px] text-zinc-500">{badge.progressText}</div>
+          <div className="text-[9px] text-zinc-400">{badge.progressText}</div>
         </div>
       )}
 
       {isSelected && (
-        <div className="text-[10px] text-zinc-300 pt-1 border-t border-white/10 leading-relaxed">
+        <div className="text-[10px] text-zinc-300 pt-1.5 border-t border-white/10 leading-relaxed">
           {badge.description}
         </div>
       )}

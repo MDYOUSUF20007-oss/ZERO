@@ -3,6 +3,7 @@ import type { SessionRecord, ParachuteMetrics, ZeroProfile } from '../types';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges, type BadgeTierColor } from '../utils/achievements';
 import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { ObsidianCard } from './ObsidianCard';
 import { X, Share2, Download, Sparkles, Award } from 'lucide-react';
 
 interface ShareStatsModalProps {
@@ -512,113 +513,122 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
       }}
     >
-      <div className="w-full max-w-md bg-zinc-950 border-2 border-zinc-700 rounded-3xl p-5 shadow-2xl font-mono space-y-4 max-h-full overflow-y-auto">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-amber-400" />
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-wider text-white">
-                Flex Your Focus Card
-              </h2>
-              <p className="text-[11px] text-zinc-400">
-                Share distraction-free time with friends
-              </p>
+      <ObsidianCard
+        ambientGlow
+        className="w-full max-w-md max-h-full font-mono"
+        headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
+        footerClassName="p-4 flex gap-2"
+        headerContent={
+          <>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-400" />
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                    Flex Your Focus Card
+                  </h2>
+                  <p className="text-[11px] text-zinc-400">
+                    Share distraction-free time with friends
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
             </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
 
-        {/* Period Picker */}
-        <div className="grid grid-cols-5 gap-1 p-1 bg-black border border-zinc-800 rounded-2xl text-[10px]">
-          {(['today', 'week', 'month', 'year', 'all'] as FlexPeriod[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={`py-2 rounded-xl font-bold transition-all ${
-                period === p ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {p === 'today'
-                ? 'Today'
-                : p === 'week'
-                ? 'Week'
-                : p === 'month'
-                ? 'Month'
-                : p === 'year'
-                ? '1 Year'
-                : 'All'}
-            </button>
-          ))}
-        </div>
+            {/* Period Picker */}
+            <div className="grid grid-cols-5 gap-1 p-1 bg-black/80 border border-white/10 rounded-2xl text-[10px]">
+              {(['today', 'week', 'month', 'year', 'all'] as FlexPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriod(p)}
+                  className={`py-2 rounded-xl font-bold transition-all ${
+                    period === p ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {p === 'today'
+                    ? 'Today'
+                    : p === 'week'
+                    ? 'Week'
+                    : p === 'month'
+                    ? 'Month'
+                    : p === 'year'
+                    ? '1 Year'
+                    : 'All'}
+                </button>
+              ))}
+            </div>
 
-        {/* Live Badges Shown on Flex Card */}
-        <div className="p-2.5 rounded-2xl bg-black border border-zinc-800 space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] text-zinc-400">
-            <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-zinc-300">
-              <Award size={11} className="text-amber-400" />
-              <span>Badges On Card</span>
-            </span>
-            <span>
-              {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
-            </span>
-          </div>
-          {badgeSummary.unlockedBadges.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {badgeSummary.unlockedBadges.map((b) =>
-                b.id === 'zero_supporter' ? (
-                  <ZeroSupporterGoldenBadge key={b.id} compact />
-                ) : (
-                  <AchievementBadgePill key={b.id} badge={b} />
-                )
+            {/* Live Badges Shown on Flex Card */}
+            <div className="p-3 rounded-2xl bg-black/80 border border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-zinc-300">
+                  <Award size={11} className="text-amber-400" />
+                  <span>Badges On Card</span>
+                </span>
+                <span>
+                  {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
+                </span>
+              </div>
+              {badgeSummary.unlockedBadges.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {badgeSummary.unlockedBadges.map((b) =>
+                    b.id === 'zero_supporter' ? (
+                      <ZeroSupporterGoldenBadge key={b.id} compact />
+                    ) : (
+                      <AchievementBadgePill key={b.id} badge={b} />
+                    )
+                  )}
+                </div>
+              ) : (
+                <div className="text-[10px] text-zinc-400">
+                  Complete a 1h lock for <span className="text-zinc-200 font-bold">GETTING STARTED</span>{' '}
+                  or make your 1st min ₹50 tip for the Golden{' '}
+                  <span className="text-amber-300 font-bold">ZERO-SUPPORTER</span> badge.
+                </div>
               )}
             </div>
-          ) : (
-            <div className="text-[10px] text-zinc-500">
-              Complete a 1h lock for <span className="text-zinc-300 font-bold">GETTING STARTED</span>{' '}
-              or make your 1st min ₹50 tip for the Golden{' '}
-              <span className="text-amber-300 font-bold">ZERO-SUPPORTER</span> badge.
-            </div>
-          )}
-        </div>
 
-        {/* Offscreen hi-res canvas + Preview Image */}
-        <canvas ref={canvasRef} className="hidden" />
-        {cardDataUrl && (
-          <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-black">
-            <img
-              src={cardDataUrl}
-              alt="Zero-Distractions Focus Receipt Preview"
-              className="w-full h-auto block"
-            />
-          </div>
-        )}
-
-        {/* Share & Download Buttons */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleNativeOrWebShare}
-            className="flex-1 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
-          >
-            <Share2 size={15} />
-            <span>Share with Friends</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleDownloadPng}
-            className="px-4 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold flex items-center justify-center"
-            title="Save PNG"
-          >
-            <Download size={15} />
-          </button>
-        </div>
-      </div>
+            {/* Offscreen hi-res canvas + Preview Image */}
+            <canvas ref={canvasRef} className="hidden" />
+            {cardDataUrl && (
+              <div className="rounded-2xl overflow-hidden border border-white/15 bg-black">
+                <img
+                  src={cardDataUrl}
+                  alt="Zero-Distractions Focus Receipt Preview"
+                  className="w-full h-auto block"
+                />
+              </div>
+            )}
+          </>
+        }
+        footerContent={
+          <>
+            <button
+              type="button"
+              onClick={handleNativeOrWebShare}
+              className="flex-1 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              <Share2 size={15} />
+              <span>Share with Friends</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadPng}
+              className="px-4 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-bold flex items-center justify-center"
+              title="Save PNG"
+            >
+              <Download size={15} />
+            </button>
+          </>
+        }
+      />
     </div>
   );
 };

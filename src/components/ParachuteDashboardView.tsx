@@ -6,7 +6,8 @@ import type {
   ZeroProfile,
 } from '../types';
 import { ShareStatsModal } from './ShareStatsModal';
-import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ObsidianCard } from './ObsidianCard';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges, type AchievementBadgeId } from '../utils/achievements';
 import {
@@ -158,6 +159,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   );
 
   const profileRank = getZeroRankFromHours(totalReclaimedHours);
+  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
     : ACCENT_STYLES.amber;
@@ -192,198 +194,240 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </button>
       </div>
 
-      {/* Interactive Zero Profile Card */}
+      {/* Interactive Zero Profile Card (Two-Tier ObsidianCard) */}
       {profile ? (
-        <div
-          className={`bg-zinc-950 border-2 rounded-3xl p-4 font-mono space-y-3 transition-all ${profileAccent.border} ${profileAccent.glow}`}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <ProfileAvatar
-                avatarId={profile.avatarId}
-                accent={profile.accentColor}
-                size="md"
-                interactive
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-black text-sm text-white truncate">
-                    {profile.displayName}
-                  </span>
-                  <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${profileAccent.badgeBg}`}
-                  >
-                    {profileRank.title}
-                  </span>
-                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+        <ObsidianCard
+          accent={profileAccentKey}
+          ambientGlow
+          className="font-mono"
+          headerClassName="p-4 space-y-3"
+          footerClassName="px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400"
+          headerContent={
+            <>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <ProfileAvatar
+                    avatarId={profile.avatarId}
+                    accent={profile.accentColor}
+                    size="md"
+                    interactive
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-black text-sm text-white truncate">
+                        {profile.displayName}
+                      </span>
+                      <span
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${profileAccent.badgeBg}`}
+                      >
+                        {profileRank.title}
+                      </span>
+                      {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 truncate">
+                      {profile.handle} • #{profile.primaryMission}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[11px] text-zinc-400 truncate">
-                  {profile.handle} • #{profile.primaryMission}
+                <button
+                  type="button"
+                  onClick={onOpenProfileModal}
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[10px] font-bold text-zinc-200 flex items-center gap-1 shrink-0"
+                >
+                  <SlidersHorizontal size={11} />
+                  <span>Edit</span>
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-zinc-400">Daily Goal Progress</span>
+                  <span className={`font-bold ${profileAccent.text}`}>
+                    {todayReclaimedHours} / {profile.dailyGoalHours}h today ({dailyGoalPct}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${profileAccent.bar}`}
+                    style={{ width: `${dailyGoalPct}%` }}
+                  />
                 </div>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenProfileModal}
-              className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[10px] font-bold text-zinc-200 flex items-center gap-1 shrink-0"
-            >
-              <SlidersHorizontal size={11} />
-              <span>Edit</span>
-            </button>
-          </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-zinc-400">Daily Goal Progress</span>
-              <span className={`font-bold ${profileAccent.text}`}>
-                {todayReclaimedHours} / {profile.dailyGoalHours}h today ({dailyGoalPct}%)
+              {unlockedFocusBadges.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
+                  {unlockedFocusBadges.map((b) => (
+                    <AchievementBadgePill key={b.id} badge={b} />
+                  ))}
+                </div>
+              )}
+            </>
+          }
+          footerContent={
+            <>
+              <span className="italic text-zinc-300 break-words">
+                &ldquo;{profile.motto}&rdquo;
               </span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${profileAccent.bar}`}
-                style={{ width: `${dailyGoalPct}%` }}
-              />
-            </div>
-          </div>
-
-          {unlockedFocusBadges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-900">
-              {unlockedFocusBadges.map((b) => (
-                <AchievementBadgePill key={b.id} badge={b} />
-              ))}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-400 pt-1 border-t border-zinc-900">
-            <span className="italic truncate">&ldquo;{profile.motto}&rdquo;</span>
-            {profileRank.nextTitle && (
-              <span className="shrink-0 text-zinc-500">
-                {profileRank.hoursToNext}h to {profileRank.nextTitle}
-              </span>
-            )}
-          </div>
-        </div>
+              {profileRank.nextTitle && (
+                <span className="shrink-0 text-zinc-400 font-semibold">
+                  {profileRank.hoursToNext}h to {profileRank.nextTitle}
+                </span>
+              )}
+            </>
+          }
+        />
       ) : (
-        <div className="bg-amber-500/10 border-2 border-amber-400/60 rounded-3xl p-4 font-mono flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
-              <Gift size={18} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-black text-white">
-                {hasClaimedFirstTimeParachute
-                  ? 'Make Your Interactive Profile'
-                  : 'Make Profile & Claim +1 Free 🎫'}
+        <ObsidianCard
+          accent="Amber"
+          ambientGlow
+          className="font-mono"
+          headerClassName="p-4 flex items-center justify-between gap-3"
+          footerClassName="px-4 py-2 text-[11px] text-zinc-400"
+          headerContent={
+            <>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+                  <Gift size={18} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-white">
+                    {hasClaimedFirstTimeParachute
+                      ? 'Make Your Interactive Profile'
+                      : 'Make Profile & Claim +1 Free 🎫'}
+                  </div>
+                  <div className="text-[10px] text-amber-200/80 mt-0.5">
+                    Personalized rank card &amp; daily target meter
+                  </div>
+                </div>
               </div>
-              <p className="text-[11px] text-zinc-300 leading-snug mt-0.5">
-                Pick an interactive emblem, daily target hours &amp; personal pledge.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenProfileModal}
-            className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 active:scale-95 transition-all"
-          >
-            <Sparkles size={12} />
-            <span>Create</span>
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={onOpenProfileModal}
+                className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 active:scale-95 transition-all"
+              >
+                <Sparkles size={12} />
+                <span>Create</span>
+              </button>
+            </>
+          }
+          footerContent={
+            <span>Pick an interactive emblem, daily target hours &amp; personal pledge.</span>
+          }
+        />
       )}
 
       {/* Hero 20-Hour Escape Ticket Progression Card */}
-      <div
-        className={`bg-zinc-950 border-2 rounded-3xl p-5 shadow-brutal relative overflow-hidden transition-all ${
+      <ObsidianCard
+        accent={profileAccentKey}
+        ambientGlow
+        className={
           justEarnedParachute
-            ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-[0_0_32px_rgba(245,158,11,0.3)] animate-parachute-card-pop'
-            : 'border-zinc-800'
-        }`}
-      >
-        {justEarnedParachute && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
-          />
-        )}
-        <div className="absolute right-3 -bottom-4 text-7xl opacity-5 pointer-events-none select-none font-mono">
-          🎫
-        </div>
-
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+            ? 'ring-2 ring-amber-400/45 animate-parachute-card-pop'
+            : ''
+        }
+        overlays={
+          <>
+            {justEarnedParachute && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
+              />
+            )}
             <div
-              className={`w-12 h-12 rounded-2xl bg-amber-500/10 border flex items-center justify-center text-2xl shadow-inner ${
-                justEarnedParachute
-                  ? 'border-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.45)]'
-                  : 'border-amber-500/40'
-              }`}
+              aria-hidden="true"
+              className="absolute right-3 bottom-9 text-7xl opacity-5 pointer-events-none select-none font-mono"
             >
-              <span className={parachuteMetrics.currentBalance > 0 ? 'animate-parachute-float inline-block' : ''}>
-                🎫
+              🎫
+            </div>
+          </>
+        }
+        headerClassName="p-5 space-y-4"
+        footerClassName="px-5 py-2.5 flex items-center justify-between text-[11px] font-mono text-zinc-300"
+        headerContent={
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-12 h-12 rounded-2xl bg-amber-500/10 border flex items-center justify-center text-2xl shadow-inner ${
+                    justEarnedParachute
+                      ? 'border-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.45)]'
+                      : 'border-amber-500/40'
+                  }`}
+                >
+                  <span
+                    className={
+                      parachuteMetrics.currentBalance > 0
+                        ? 'animate-parachute-float inline-block'
+                        : ''
+                    }
+                  >
+                    🎫
+                  </span>
+                </div>
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                    Emergency Escape Tickets
+                  </div>
+                  <div className="text-3xl font-mono font-black text-white flex items-baseline gap-2">
+                    <span>{parachuteMetrics.currentBalance}</span>
+                    <span className="text-xs font-normal text-zinc-400">
+                      {parachuteMetrics.currentBalance === 1 ? 'Ticket Ready' : 'Tickets Ready'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <span
+                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border font-semibold shrink-0 ${
+                  parachuteMetrics.bonusParachutes > 0
+                    ? 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-300'
+                }`}
+              >
+                {parachuteMetrics.bonusParachutes > 0
+                  ? `${milestoneEarnedCount} EARNED + ${parachuteMetrics.bonusParachutes} GIFT`
+                  : 'EARNED-ONLY'}
               </span>
             </div>
-            <div>
-              <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                Emergency Escape Tickets
-              </div>
-              <div className="text-3xl font-mono font-black text-white flex items-baseline gap-2">
-                <span>{parachuteMetrics.currentBalance}</span>
-                <span className="text-xs font-normal text-zinc-400">
-                  {parachuteMetrics.currentBalance === 1 ? 'Ticket Ready' : 'Tickets Ready'}
+
+            {/* 20-Hour Progress Bar */}
+            <div className="space-y-2 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-300 font-semibold">Next Escape Ticket Progress</span>
+                <span className="font-bold text-amber-400">
+                  {parachuteMetrics.currentProgressHours} / 20.0 hrs
                 </span>
               </div>
+
+              <div className="w-full bg-zinc-900 rounded-full h-3 p-0.5 border border-zinc-800 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+                  style={{ width: `${parachuteMetrics.progressPercentage}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-0.5">
+                <span>{parachuteMetrics.hoursUntilNextParachute} hours remaining</span>
+                <span>{parachuteMetrics.progressPercentage}% completed</span>
+              </div>
             </div>
-          </div>
-          <span
-            className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border font-semibold ${
-              parachuteMetrics.bonusParachutes > 0
-                ? 'bg-amber-950/60 border-amber-500/40 text-amber-300'
-                : 'bg-zinc-900 border-zinc-700 text-zinc-300'
-            }`}
-          >
-            {parachuteMetrics.bonusParachutes > 0
-              ? `${milestoneEarnedCount} EARNED + ${parachuteMetrics.bonusParachutes} GIFT`
-              : 'EARNED-ONLY'}
-          </span>
-        </div>
-
-        {/* 20-Hour Progress Bar */}
-        <div className="space-y-2 mt-4 pt-3 border-t border-zinc-900">
-          <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-zinc-300 font-semibold">Next Escape Ticket Progress</span>
-            <span className="font-bold text-amber-400">
-              {parachuteMetrics.currentProgressHours} / 20.0 hrs
+          </>
+        }
+        footerContent={
+          <>
+            <div className="flex items-center gap-1.5">
+              <Moon size={13} className="text-amber-400 shrink-0" />
+              <span>Anti-Sleep Rule:</span>
+            </div>
+            <span className="text-amber-300 font-bold">
+              {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
+                ? '0.25x Sleep Rate'
+                : parachuteMetrics.sleepFarmingMode === 'daytime_only'
+                ? 'Daytime Only'
+                : 'Full 1.0x Rate'}
             </span>
-          </div>
-
-          <div className="w-full bg-zinc-900 rounded-full h-3 p-0.5 border border-zinc-800 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-              style={{ width: `${parachuteMetrics.progressPercentage}%` }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-1">
-            <span>{parachuteMetrics.hoursUntilNextParachute} hours remaining</span>
-            <span>{parachuteMetrics.progressPercentage}% completed</span>
-          </div>
-        </div>
-
-        <div className="mt-4 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-850 flex items-center justify-between text-[11px] font-mono text-zinc-300">
-          <div className="flex items-center gap-1.5">
-            <Moon size={13} className="text-amber-400 shrink-0" />
-            <span>Anti-Sleep Rule:</span>
-          </div>
-          <span className="text-amber-300 font-bold">
-            {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
-              ? '0.25x Sleep Rate'
-              : parachuteMetrics.sleepFarmingMode === 'daytime_only'
-              ? 'Daytime Only'
-              : 'Full 1.0x Rate'}
-          </span>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Tabs */}
       <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
@@ -422,165 +466,241 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
-                <Clock size={13} className="text-zinc-300" />
-                <span>Total Reclaimed</span>
-              </div>
-              <div className="font-mono text-2xl font-black text-white">
-                {totalReclaimedHours}h
-              </div>
-              <span className="text-[10px] font-mono text-zinc-400">
-                ({totalParachuteHours}h Escape Ticket eligible)
-              </span>
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-3.5"
+              footerClassName="px-3.5 py-2"
+              headerContent={
+                <>
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
+                    <Clock size={13} className="text-zinc-300" />
+                    <span>Total Reclaimed</span>
+                  </div>
+                  <div className="font-mono text-2xl font-black text-white">
+                    {totalReclaimedHours}h
+                  </div>
+                </>
+              }
+              footerContent={
+                <span className="text-[10px] font-mono text-zinc-400 block">
+                  {totalParachuteHours}h Escape Ticket eligible
+                </span>
+              }
+            />
 
-            <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
-                <Flame size={13} className="text-amber-500" />
-                <span>Current Streak</span>
-              </div>
-              <div className="font-mono text-2xl font-black text-white">
-                {currentStreak} Days
-              </div>
-              <span className="text-[10px] font-mono text-zinc-400">
-                {currentStreak > 0 ? 'Consistent discipline' : 'Complete a session today'}
-              </span>
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-3.5"
+              footerClassName="px-3.5 py-2"
+              headerContent={
+                <>
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
+                    <Flame size={13} className="text-amber-500" />
+                    <span>Current Streak</span>
+                  </div>
+                  <div className="font-mono text-2xl font-black text-white">
+                    {currentStreak} Days
+                  </div>
+                </>
+              }
+              footerContent={
+                <span className="text-[10px] font-mono text-zinc-400 block">
+                  {currentStreak > 0 ? 'Consistent discipline' : 'Complete a session today'}
+                </span>
+              }
+            />
 
-            <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
-                <TrendingUp size={13} className="text-emerald-400" />
-                <span>Completion Rate</span>
-              </div>
-              <div className="font-mono text-2xl font-black text-white">
-                {completionRate}%
-              </div>
-              <span className="text-[10px] font-mono text-zinc-400">
-                {completedSessions} done / {parachutedSessions} aborted
-              </span>
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-3.5"
+              footerClassName="px-3.5 py-2"
+              headerContent={
+                <>
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
+                    <TrendingUp size={13} className="text-emerald-400" />
+                    <span>Completion Rate</span>
+                  </div>
+                  <div className="font-mono text-2xl font-black text-white">
+                    {completionRate}%
+                  </div>
+                </>
+              }
+              footerContent={
+                <span className="text-[10px] font-mono text-zinc-400 block">
+                  {completedSessions} done / {parachutedSessions} aborted
+                </span>
+              }
+            />
 
-            <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
-                <Award size={13} className="text-cyan-400" />
-                <span>Avg Session</span>
-              </div>
-              <div className="font-mono text-2xl font-black text-white">
-                {avgSessionMins}m
-              </div>
-              <span className="text-[10px] font-mono text-zinc-400">Mean locked duration</span>
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-3.5"
+              footerClassName="px-3.5 py-2"
+              headerContent={
+                <>
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-mono mb-1">
+                    <Award size={13} className="text-cyan-400" />
+                    <span>Avg Session</span>
+                  </div>
+                  <div className="font-mono text-2xl font-black text-white">
+                    {avgSessionMins}m
+                  </div>
+                </>
+              }
+              footerContent={
+                <span className="text-[10px] font-mono text-zinc-400 block">
+                  Mean locked duration
+                </span>
+              }
+            />
           </div>
 
           {/* Badges & Focus Achievements */}
-          <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-3xl space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-mono text-white font-black uppercase tracking-wider">
-                <Trophy size={14} className="text-amber-400" />
-                <span>Badges &amp; Achievements</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowShareModal(true)}
-                  className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-zinc-200 hover:text-amber-300 transition-colors"
-                >
-                  Flex
-                </button>
-              </div>
-            </div>
+          <ObsidianCard
+            accent={profileAccentKey}
+            headerClassName="p-4 space-y-3"
+            footerClassName="px-4 py-2.5 text-[10px] font-mono text-zinc-400 leading-relaxed"
+            headerContent={
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-white font-black uppercase tracking-wider">
+                    <Trophy size={14} className="text-amber-400" />
+                    <span>Badges &amp; Achievements</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                      {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowShareModal(true)}
+                      className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-zinc-200 hover:text-amber-300 transition-colors"
+                    >
+                      Flex
+                    </button>
+                  </div>
+                </div>
 
-            <p className="text-[10px] font-mono text-zinc-400">
-              Tap any badge to inspect unlock criteria. All earned badges &amp; the Golden{' '}
-              <strong className="text-amber-300">ZERO-SUPPORTER</strong> crest (unlocks strictly on
-              your 1st minimum ₹50 tip) appear on your Flex Receipt card.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {badgeSummary.badges.map((badge) => (
-                <AchievementBadgeCard
-                  key={badge.id}
-                  badge={badge}
-                  isSelected={selectedBadgeId === badge.id}
-                  onSelect={() =>
-                    setSelectedBadgeId((prev) => (prev === badge.id ? null : badge.id))
-                  }
-                />
-              ))}
-            </div>
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {badgeSummary.badges.map((badge) => (
+                    <AchievementBadgeCard
+                      key={badge.id}
+                      badge={badge}
+                      isSelected={selectedBadgeId === badge.id}
+                      onSelect={() =>
+                        setSelectedBadgeId((prev) => (prev === badge.id ? null : badge.id))
+                      }
+                    />
+                  ))}
+                </div>
+              </>
+            }
+            footerContent={
+              <p>
+                Tap any badge to inspect unlock criteria. All earned badges &amp; the Golden{' '}
+                <strong className="text-amber-300">ZERO-SUPPORTER</strong> crest (unlocks strictly
+                on your 1st minimum ₹50 tip) appear on your Flex Receipt card.
+              </p>
+            }
+          />
 
           {/* GitHub-Style Contribution Heatmap */}
-          <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-300 font-bold">
-                <Calendar size={13} />
-                <span>DISCIPLINE HEATMAP (PAST 16 WEEKS)</span>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] font-mono text-zinc-400">
-                <span>Less</span>
-                <span className="w-2.5 h-2.5 rounded-sm bg-zinc-900 border border-zinc-850" />
-                <span className="w-2.5 h-2.5 rounded-sm bg-zinc-700" />
-                <span className="w-2.5 h-2.5 rounded-sm bg-zinc-400" />
-                <span className="w-2.5 h-2.5 rounded-sm bg-white" />
-                <span>More</span>
-              </div>
-            </div>
+          <ObsidianCard
+            accent={profileAccentKey}
+            headerClassName="p-4"
+            footerClassName="px-4 py-2 flex items-center justify-between gap-2 text-[10px] font-mono text-zinc-400"
+            headerContent={
+              <>
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-200 font-bold">
+                    <Calendar size={13} />
+                    <span>DISCIPLINE HEATMAP (16 WEEKS)</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] font-mono text-zinc-400 shrink-0">
+                    <span>Less</span>
+                    <span className="w-2.5 h-2.5 rounded-sm bg-zinc-900 border border-zinc-850" />
+                    <span className="w-2.5 h-2.5 rounded-sm bg-zinc-700" />
+                    <span className="w-2.5 h-2.5 rounded-sm bg-zinc-400" />
+                    <span className="w-2.5 h-2.5 rounded-sm bg-white" />
+                    <span>More</span>
+                  </div>
+                </div>
 
-            <div className="grid grid-flow-col grid-rows-7 gap-1 overflow-x-auto no-scrollbar py-1">
-              {heatmapData.map((d, idx) => {
-                let bg = 'bg-zinc-900 border border-zinc-850';
-                if (d.level === 1) bg = 'bg-zinc-700 border border-zinc-600';
-                if (d.level === 2) bg = 'bg-zinc-500 border border-zinc-400';
-                if (d.level === 3) bg = 'bg-zinc-300 border border-white';
-                if (d.level === 4) bg = 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]';
+                <div className="grid grid-flow-col grid-rows-7 gap-1 overflow-x-auto no-scrollbar py-1">
+                  {heatmapData.map((d, idx) => {
+                    let bg = 'bg-zinc-900 border border-zinc-850';
+                    if (d.level === 1) bg = 'bg-zinc-700 border border-zinc-600';
+                    if (d.level === 2) bg = 'bg-zinc-500 border border-zinc-400';
+                    if (d.level === 3) bg = 'bg-zinc-300 border border-white';
+                    if (d.level === 4) bg = 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]';
 
-                return (
-                  <div
-                    key={idx}
-                    title={`${d.dateStr}: ${d.hours}h blocked`}
-                    className={`w-3 h-3 rounded-[3px] transition-all hover:scale-125 cursor-pointer ${bg}`}
-                  />
-                );
-              })}
-            </div>
-            <div className="text-[10px] font-mono text-zinc-400 mt-2 text-right">
-              {completedSessions} completed sessions across 112 days
-            </div>
-          </div>
+                    return (
+                      <div
+                        key={idx}
+                        title={`${d.dateStr}: ${d.hours}h blocked`}
+                        className={`w-3 h-3 rounded-[3px] transition-all hover:scale-125 cursor-pointer ${bg}`}
+                      />
+                    );
+                  })}
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <span>Verified Monotonic Logs</span>
+                <span className="text-zinc-300 font-semibold">
+                  {completedSessions} completed sessions across 112 days
+                </span>
+              </>
+            }
+          />
 
           {/* Tag Breakdown Bar Chart */}
-          <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl space-y-3">
-            <div className="text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">
-              Focus Time by Tag
-            </div>
-            {tagBreakdown.length === 0 ? (
-              <p className="text-[11px] font-mono text-zinc-500 py-2">
-                No completed sessions yet. Lock your phone on the Dial tab to start tracking real focus hours.
-              </p>
-            ) : (
-              <div className="space-y-2.5">
-                {tagBreakdown.map((item) => (
-                  <div key={item.tag} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-zinc-300 font-medium">#{item.tag}</span>
-                      <span className="text-zinc-400 font-bold">{item.hours} hrs</span>
-                    </div>
-                    <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
-                      <div
-                        className="bg-zinc-300 h-full rounded-full transition-all"
-                        style={{ width: `${item.pct}%` }}
-                      />
-                    </div>
+          <ObsidianCard
+            accent={profileAccentKey}
+            headerClassName="p-4 space-y-3"
+            footerClassName="px-4 py-2 flex items-center justify-between text-[10px] font-mono text-zinc-400"
+            headerContent={
+              <>
+                <div className="text-xs font-mono text-zinc-200 font-bold uppercase tracking-wider">
+                  Focus Time by Tag
+                </div>
+                {tagBreakdown.length === 0 ? (
+                  <p className="text-[11px] font-mono text-zinc-400 py-1">
+                    No completed sessions yet. Lock your phone on the Dial tab to start tracking real focus hours.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {tagBreakdown.map((item) => (
+                      <div key={item.tag} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-zinc-200 font-medium">#{item.tag}</span>
+                          <span className="text-zinc-300 font-bold">{item.hours} hrs</span>
+                        </div>
+                        <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${item.pct}%`,
+                              backgroundColor: 'var(--accent-hex, #F59E0B)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                )}
+              </>
+            }
+            footerContent={
+              <>
+                <span>Primary Focus Tag</span>
+                <span className="font-bold text-zinc-200">
+                  {tagBreakdown.length > 0 ? `#${tagBreakdown[0].tag} (${tagBreakdown[0].hours}h)` : 'None yet'}
+                </span>
+              </>
+            }
+          />
         </div>
       )}
 
@@ -591,52 +711,77 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           </div>
 
           {ledger.length === 0 ? (
-            <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-8 text-center text-zinc-500 font-mono text-xs">
-              No escape ticket transactions yet. Complete 20 hours of blockage to earn your first ticket!
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-6 text-center text-zinc-300 font-mono text-xs"
+              footerClassName="px-4 py-2 text-center text-[10px] font-mono text-zinc-400"
+              headerContent={
+                <span>
+                  No escape ticket transactions yet. Complete 20 hours of blockage to earn your first ticket!
+                </span>
+              }
+              footerContent={<span>20h monotonic focus = +1 Emergency Escape Ticket</span>}
+            />
           ) : (
-            <div className="space-y-2">
-              {ledger.map((entry) => (
-                <div
-                  key={entry.id}
-                  className={`bg-zinc-950 border rounded-2xl p-3.5 font-mono text-xs flex items-start justify-between gap-3 ${
-                    entry.type === 'EARNED'
-                      ? 'border-emerald-500/40 text-emerald-200'
-                      : 'border-amber-500/40 text-amber-200'
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5">
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs mt-0.5 ${
-                        entry.type === 'EARNED'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-amber-500/20 text-amber-400'
-                      }`}
-                    >
-                      {entry.type === 'EARNED' ? '+1' : '-1'}
-                    </div>
-                    <div>
-                      <div className="font-bold text-zinc-100">{entry.description}</div>
-                      {entry.note && (
-                        <div className="text-[10px] text-zinc-400 mt-0.5 italic">{entry.note}</div>
-                      )}
-                      <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-2">
-                        <span>{new Date(entry.timestamp).toLocaleDateString()}</span>
-                        {entry.tag && <span className="text-zinc-400">#{entry.tag}</span>}
+            <div className="space-y-2.5">
+              {ledger.map((entry) => {
+                const isEarned = entry.type === 'EARNED';
+                return (
+                  <ObsidianCard
+                    key={entry.id}
+                    accentOverride={
+                      isEarned
+                        ? { hex: '#10B981', rgb: '16, 185, 129' }
+                        : { hex: '#F59E0B', rgb: '245, 158, 11' }
+                    }
+                    className="font-mono text-xs"
+                    headerClassName="p-3.5 flex items-start justify-between gap-3"
+                    footerClassName="px-3.5 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
+                    headerContent={
+                      <>
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                              isEarned
+                                ? 'bg-emerald-500/20 text-emerald-400'
+                                : 'bg-amber-500/20 text-amber-400'
+                            }`}
+                          >
+                            {isEarned ? '+1' : '-1'}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-zinc-100 break-words">
+                              {entry.description}
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                            isEarned
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              : 'bg-amber-950 text-amber-300 border border-amber-800'
+                          }`}
+                        >
+                          {entry.type}
+                        </span>
+                      </>
+                    }
+                    footerContent={
+                      <div className="w-full space-y-1">
+                        {entry.note && (
+                          <div className="text-[10px] text-zinc-300 italic break-words">
+                            {entry.note}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                          {entry.tag && <span className="font-semibold text-zinc-300">#{entry.tag}</span>}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
-                      entry.type === 'EARNED'
-                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                        : 'bg-amber-950 text-amber-300 border border-amber-800'
-                    }`}
-                  >
-                    {entry.type}
-                  </span>
-                </div>
-              ))}
+                    }
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -649,60 +794,85 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           </div>
 
           {sessions.length === 0 ? (
-            <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-8 text-center text-zinc-500 font-mono text-xs">
-              No completed sessions yet. Your real detox history will appear here once you lock in.
-            </div>
+            <ObsidianCard
+              accent={profileAccentKey}
+              headerClassName="p-6 text-center text-zinc-300 font-mono text-xs"
+              footerClassName="px-4 py-2 text-center text-[10px] font-mono text-zinc-400"
+              headerContent={
+                <span>
+                  No completed sessions yet. Your real detox history will appear here once you lock in.
+                </span>
+              }
+              footerContent={<span>Verified via native Android monotonic clock</span>}
+            />
           ) : (
-            <div className="space-y-2 max-h-[460px] overflow-y-auto no-scrollbar pr-0.5">
+            <div className="space-y-2.5 max-h-[480px] overflow-y-auto no-scrollbar pr-0.5">
               {sessions.map((sess) => {
                 const isSleep = sess.tag === 'Sleep';
                 const isAborted = sess.status === 'parachuted';
 
                 return (
-                  <div
+                  <ObsidianCard
                     key={sess.id}
-                    className="bg-zinc-950 border border-zinc-850 p-3 rounded-2xl flex items-center justify-between font-mono text-xs hover:border-zinc-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {sess.status === 'completed' ? (
-                        <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-                      ) : (
-                        <AlertOctagon size={16} className="text-amber-400 shrink-0" />
-                      )}
-                      <div>
-                        <div className="text-zinc-200 font-bold flex items-center gap-1.5">
-                          <span>#{sess.tag} — {Math.round(sess.durationSeconds / 60)} min</span>
-                          {isSleep && sess.weightMultiplier < 1.0 && (
-                            <span className="text-[9px] px-1 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 rounded">
-                              {sess.weightMultiplier}x sleep
-                            </span>
+                    accentOverride={
+                      isAborted
+                        ? { hex: '#F59E0B', rgb: '245, 158, 11' }
+                        : { hex: '#10B981', rgb: '16, 185, 129' }
+                    }
+                    className="font-mono text-xs"
+                    headerClassName="p-3.5 flex items-center justify-between gap-2"
+                    footerClassName="px-3.5 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
+                    headerContent={
+                      <>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {sess.status === 'completed' ? (
+                            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                          ) : (
+                            <AlertOctagon size={16} className="text-amber-400 shrink-0" />
                           )}
+                          <div className="min-w-0">
+                            <div className="text-zinc-100 font-bold flex items-center gap-1.5 flex-wrap">
+                              <span>
+                                #{sess.tag} — {Math.round(sess.durationSeconds / 60)} min
+                              </span>
+                              {isSleep && sess.weightMultiplier < 1.0 && (
+                                <span className="text-[9px] px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded">
+                                  {sess.weightMultiplier}x sleep
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-zinc-500">
-                          {sess.dateStr} • {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="text-right">
-                      <div
-                        className={`font-bold ${
-                          isAborted
-                            ? 'text-red-400'
-                            : isSleep
-                            ? 'text-amber-300'
-                            : 'text-zinc-200'
-                        }`}
-                      >
-                        {isAborted
-                          ? '0h (Voided)'
-                          : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
-                      </div>
-                      <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                        {isAborted ? 'escaped' : sess.status}
-                      </span>
-                    </div>
-                  </div>
+                        <div className="text-right shrink-0">
+                          <div
+                            className={`font-bold ${
+                              isAborted
+                                ? 'text-red-400'
+                                : isSleep
+                                ? 'text-amber-300'
+                                : 'text-emerald-300'
+                            }`}
+                          >
+                            {isAborted
+                              ? '0h (Voided)'
+                              : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
+                          </div>
+                        </div>
+                      </>
+                    }
+                    footerContent={
+                      <>
+                        <span>
+                          {sess.dateStr} •{' '}
+                          {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
+                        </span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 border border-white/10 text-zinc-300 font-bold">
+                          {isAborted ? 'escaped' : sess.status}
+                        </span>
+                      </>
+                    }
+                  />
                 );
               })}
             </div>
