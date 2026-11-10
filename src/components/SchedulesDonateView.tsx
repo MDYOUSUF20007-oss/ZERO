@@ -1532,11 +1532,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <code>ZERO-v*.apk</code> so all future updates install cleanly in-place!
                 </div>
               ) : (
-                <div className="flex items-start gap-1.5 text-zinc-300">
-                  <ShieldCheck size={13} className="shrink-0 mt-0.5 text-emerald-400" />
-                  <span>
-                    Keep updating within the same edition using a higher version code. If Android ever says &ldquo;App not installed&rdquo;, check that Chrome/Files has <strong>Install unknown apps</strong> allowed and uninstall any old duplicate copy from Work Profile / Dual Apps.
-                  </span>
+                <div className="space-y-1.5 text-zinc-300">
+                  <div className="flex items-start gap-1.5">
+                    <ShieldCheck size={13} className="shrink-0 mt-0.5 text-emerald-400" />
+                    <span>
+                      Keep updating within the same edition using a higher version code. If Android ever says &ldquo;App not installed&rdquo;, check that Chrome/Files has <strong>Install unknown apps</strong> allowed and uninstall any duplicate copy from Work Profile / Dual Apps.
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400 leading-relaxed pl-5">
+                    Play Protect &ldquo;App scan recommended&rdquo; on new GitHub APK updates? Every freshly built sideload has a new binary hash not yet on Play Store &mdash; tap <strong>Scan app</strong> once to let Google verify it cleanly and continue installing.
+                  </p>
                 </div>
               )
             }
