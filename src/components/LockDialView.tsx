@@ -674,7 +674,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       }}
                     >
                       <CloudCog size={12} />
-                      <span>Turn On Auto-Backup</span>
+                      <span>Auto-Sync Storage</span>
                     </button>
                   </div>
 
@@ -715,7 +715,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                           }}
                         >
                           <HardDrive size={11} />
-                          <span>Manual Options &rarr;</span>
+                          <span>Backup Options &rarr;</span>
                         </button>
                       )}
                     </div>
@@ -742,7 +742,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               className="amoled-banner-sub text-[10px] leading-snug"
               style={{ color: '#C4B5FD' }}
             >
-              Signed <code>zero-backup.zbak</code> saves to Drive, OneDrive, JioDrive or device storage.
+              Make sure to upload <code>zero-backup.zbak</code> to Drive, OneDrive, or JioDrive via 1-Tap Upload.
             </div>
           }
         />
@@ -1001,8 +1001,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           footerContent={
             <>
               <div className="flex items-center gap-2.5">
-                <span className={activeBag.allowCalls ? 'text-emerald-400 flex items-center gap-1 font-semibold' : 'flex items-center gap-1'}>
-                  <Phone size={10} /> {activeBag.allowCalls ? 'Calls ON' : 'Calls Off'}
+                <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                  <Phone size={10} /> Calls Always ON
                 </span>
                 <span className={activeBag.allowSms ? 'text-emerald-400 flex items-center gap-1 font-semibold' : 'flex items-center gap-1'}>
                   <MessageSquare size={10} /> {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}

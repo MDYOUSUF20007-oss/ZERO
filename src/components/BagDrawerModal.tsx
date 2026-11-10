@@ -14,6 +14,7 @@ import {
   Edit3,
   Trash2,
   ShieldAlert,
+  Lock,
 } from 'lucide-react';
 
 interface BagDrawerModalProps {
@@ -89,7 +90,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                     The 4 Occasion Bags
                   </h2>
                   <p className="text-[11px] text-zinc-400">
-                    Choose Calls/SMS + up to 3 custom apps while locked
+                    Phone Calls always ON • Choose SMS + up to 3 apps
                   </p>
                 </div>
               </div>
@@ -199,35 +200,25 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 )}
               </div>
 
-              {/* Normal Calls & Texts Permissions for this Bag */}
+              {/* Normal Calls (Compulsory Always ON) & Normal Texts Toggle */}
               <div className="space-y-2">
                 <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
-                  Essential Communication in "{selectedBag.name}"
+                  Essential Communication in &ldquo;{selectedBag.name}&rdquo;
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled={bagEditingDisabled}
-                    onClick={() =>
-                      onUpdateBag(selectedBag.id, (b) => ({ ...b, allowCalls: !b.allowCalls }))
-                    }
-                    className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
-                      selectedBag.allowCalls
-                        ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
-                        : 'bg-zinc-900/50 border-white/10 text-zinc-400'
-                    }`}
+                  <div
+                    className="p-3 rounded-2xl border bg-emerald-950/35 border-emerald-500/50 text-emerald-200 text-left flex items-center justify-between gap-1.5"
+                    title="Phone Calls remain compulsory and always accessible even if not in the bag"
                   >
-                    <div className="flex items-center gap-2">
-                      <Phone size={15} />
-                      <div>
-                        <div className="text-xs font-bold">Normal Calls</div>
-                        <div className="text-[10px] opacity-80">
-                          {selectedBag.allowCalls ? 'Allowed' : 'Blocked'}
-                        </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Phone size={15} className="shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">Phone Calls</div>
+                        <div className="text-[10px] opacity-85 truncate">Compulsory • ON</div>
                       </div>
                     </div>
-                    {selectedBag.allowCalls && <Check size={14} />}
-                  </button>
+                    <Lock size={13} className="shrink-0 text-emerald-300 opacity-90" />
+                  </div>
 
                   <button
                     type="button"

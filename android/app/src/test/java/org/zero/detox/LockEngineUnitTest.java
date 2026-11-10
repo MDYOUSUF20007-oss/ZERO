@@ -152,11 +152,46 @@ public class LockEngineUnitTest {
         bagStore.saveActiveBag("Commute", fourApps, false, false);
 
         assertEquals("Commute", bagStore.getActiveBagName());
+        assertTrue("Phone calls must remain compulsory even when false is passed", bagStore.isCallsAllowed());
         assertEquals(3, bagStore.getBagApps().size());
         assertTrue(bagStore.isPackageAllowedDuringLock("org.zero.detox"));
         assertTrue(bagStore.isPackageAllowedDuringLock("com.spotify.music"));
         assertTrue(bagStore.isPackageAllowedDuringLock("md.obsidian"));
+        assertTrue(
+            "Default/core dialer packages must remain accessible during any active lock",
+            bagStore.isPackageAllowedDuringLock("com.google.android.dialer")
+        );
+        assertTrue(
+            "In-call UI must remain accessible during any active lock",
+            bagStore.isPackageAllowedDuringLock("com.android.incallui")
+        );
         assertFalse(bagStore.isPackageAllowedDuringLock("com.instagram.android"));
+        assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
+    }
+
+    @Test
+    public void bagStore_phoneCallsRemainCompulsoryEvenInEmptyMonkModeBag() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public String getPackageName() {
+                return "org.zero.detox";
+            }
+
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        BagStore bagStore = new BagStore(fakeContext);
+        bagStore.saveActiveBag("Empty Work Bag", "[]", false, false);
+
+        assertTrue(bagStore.getBagApps().isEmpty());
+        assertTrue(bagStore.isCallsAllowed());
+        assertTrue(bagStore.isPackageAllowedDuringLock("com.google.android.dialer"));
+        assertTrue(bagStore.isPackageAllowedDuringLock("com.samsung.android.dialer"));
+        assertTrue(bagStore.isPackageAllowedDuringLock("com.android.server.telecom"));
         assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
     }
 

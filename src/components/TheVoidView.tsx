@@ -167,14 +167,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               </div>
 
               <div className="flex flex-wrap gap-1.5">
-                {activeBag.allowCalls && (
-                  <a
-                    href="tel:"
-                    className="px-2.5 py-1.5 rounded-xl obsidian-inset-neutral text-emerald-300 text-[11px] font-bold flex items-center gap-1"
-                  >
-                    <Phone size={11} /> Normal Calls
-                  </a>
-                )}
+                <a
+                  href="tel:"
+                  className="px-2.5 py-1.5 rounded-xl obsidian-inset-neutral text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                >
+                  <Phone size={11} /> Phone Calls (Always ON)
+                </a>
                 {activeBag.allowSms && (
                   <a
                     href="sms:"
@@ -191,9 +189,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                     {app.appName}
                   </span>
                 ))}
-                {!activeBag.allowCalls && !activeBag.allowSms && activeBag.apps.length === 0 && (
-                  <span className="text-[11px] text-zinc-400">
-                    Monk Mode: No apps allowed in this Bag.
+                {!activeBag.allowSms && activeBag.apps.length === 0 && (
+                  <span className="text-[11px] text-zinc-400 w-full mt-1">
+                    Monk Mode Bag: Apps &amp; SMS sealed (Phone calls always allowed).
                   </span>
                 )}
               </div>

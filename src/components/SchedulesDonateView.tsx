@@ -52,15 +52,13 @@ import {
   Sparkles,
   CheckCircle2,
   UserPlus,
-  Cloud,
-  CloudCog,
   CloudUpload,
-  CloudDownload,
   RefreshCw,
   Loader2,
   KeyRound,
   ShieldCheck,
   HardDrive,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -481,10 +479,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </div>
       )}
 
-      {/* SECTION 2: MANUAL BACKUP & RESTORE, CLOUD SYNC & DISCIPLINE RULES */}
+      {/* SECTION 2: BACKUP & RESTORE EVERYTHING, DISCIPLINE RULES & PROFILE */}
       {activeSection === 'settings' && (
         <div className="space-y-4">
-          {/* CARD #1: MANUAL BACKUP & RESTORE OPTIONS (.ZBAK + .JSON EXPORT / FILE RESTORE / CLIPBOARD / RESET) */}
+          {/* CONSOLIDATED CARD #1: BACKUP & RESTORE EVERYTHING (Storage Auto-Sync on Session Start/End + 1-Tap Cloud Upload + Manual .ZBAK/.JSON + Reset) */}
           <ObsidianCard
             accent={profileAccentKey}
             ambientGlow
@@ -500,54 +498,85 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs text-white font-black uppercase tracking-wider">
-                        Manual Backup &amp; Restore
+                        Backup and Restore Everything
                       </div>
                       <div className="text-[10px] text-zinc-400 truncate">
-                        Full .ZBAK (Signed) &amp; .JSON Portable Options
+                        Auto-saves on session start &amp; end • .ZBAK &amp; .JSON
                       </div>
                     </div>
                   </div>
-                  <div className="px-2.5 py-1.5 rounded-xl obsidian-inset text-center shrink-0">
-                    <div
-                      className="text-[10px] font-extrabold leading-none"
-                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
-                    >
-                      {cloudBackupStatus?.lastBackupTimestamp &&
-                      cloudBackupStatus.lastBackupTimestamp > 0
-                        ? 'SAVED'
-                        : 'READY'}
-                    </div>
-                    <div className="mt-0.5 text-[8px] uppercase tracking-wider text-zinc-400">
-                      MANUAL
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl obsidian-inset-neutral flex items-center justify-between gap-2 text-[10px]">
-                  <span className="text-zinc-400">Last Backup Timestamp:</span>
-                  <span className="text-zinc-200 font-bold truncate">
-                    {cloudBackupStatus?.lastBackupTimestamp &&
-                    cloudBackupStatus.lastBackupTimestamp > 0
-                      ? new Date(cloudBackupStatus.lastBackupTimestamp).toLocaleString()
-                      : 'No export created yet'}
+                  <span
+                    className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
+                      cloudBackupStatus?.enabled
+                        ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300'
+                        : 'obsidian-inset-neutral text-zinc-300'
+                    }`}
+                  >
+                    {cloudBackupStatus?.enabled ? 'Auto-Sync ON' : 'Manual'}
                   </span>
                 </div>
 
-                {restoreDisabled && (
-                  <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px]">
-                    File &amp; text restore are disabled in this rooted, test-keys ROM, or debug emulator environment. Manual exports remain active.
+                {/* Required Cloud Upload Warning Banner */}
+                <div className="p-3 rounded-xl bg-amber-950/45 border border-amber-500/60 text-amber-100 flex items-start gap-2.5">
+                  <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 text-[10px] leading-relaxed">
+                    <div className="font-black text-amber-200 uppercase tracking-wide">
+                      Make sure to upload everything in cloud.
+                    </div>
+                    <div className="text-amber-100/85">
+                      Auto-Sync saves locally to Device Storage when sessions start or end. Use{' '}
+                      <strong>1-Tap Upload (.zbak)</strong> below to send a copy to Drive, OneDrive, or JioDrive.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auto-Sync Storage File Status */}
+                <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1 text-[10px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-400">Storage Sync File:</span>
+                    <span className="text-white font-bold truncate">
+                      {cloudBackupStatus?.enabled
+                        ? `${cloudBackupStatus.providerLabel || 'Device Storage'} • ${
+                            cloudBackupStatus.displayName || 'zero-backup.zbak'
+                          }`
+                        : 'Not set (create once to auto-sync)'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-400">Last Backup Saved:</span>
+                    <span className="text-zinc-200 font-bold truncate">
+                      {cloudBackupStatus?.lastBackupTimestamp &&
+                      cloudBackupStatus.lastBackupTimestamp > 0
+                        ? new Date(cloudBackupStatus.lastBackupTimestamp).toLocaleString()
+                        : 'No backup created yet'}
+                    </span>
+                  </div>
+                </div>
+
+                {cloudBackupStatus?.lastError && (
+                  <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-700/80 text-amber-200 text-[10px]">
+                    {cloudBackupStatus.lastError}
                   </div>
                 )}
 
-                {backupNotice && (
+                {restoreDisabled && (
+                  <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px] leading-relaxed flex items-start gap-2">
+                    <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Backup restore is disabled; manual exports remain active.
+                    </span>
+                  </div>
+                )}
+
+                {(cloudNotice || backupNotice) && (
                   <div
                     className={`p-2.5 rounded-xl text-[11px] border ${
-                      backupNotice.ok
+                      (cloudNotice || backupNotice)!.ok
                         ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
                         : 'bg-red-950/50 border-red-700 text-red-200'
                     }`}
                   >
-                    {backupNotice.message}
+                    {(cloudNotice || backupNotice)!.message}
                   </div>
                 )}
 
@@ -559,46 +588,100 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   className="hidden"
                 />
 
-                {/* Manual Export Buttons (.ZBAK + .JSON) */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onExportZbakData) {
-                        onExportZbakData();
-                      } else {
-                        onExportData();
-                      }
-                      setBackupNotice({
-                        ok: true,
-                        message: hasNativeBridge
-                          ? 'Signed zero-backup.zbak created. Choose Save to Files, Drive, OneDrive or JioDrive.'
-                          : 'Signed .zbak backup file downloaded.',
-                      });
-                    }}
-                    className="p-3 obsidian-pill-active font-black rounded-xl flex items-center justify-center gap-1.5 text-xs active:scale-95 transition-all"
-                  >
-                    <Download size={14} />
-                    <span>Export .ZBAK</span>
-                  </button>
+                {/* Auto-Sync File Setup / Controls */}
+                {onEnableCloudAutoBackup && (
+                  <>
+                    {!cloudBackupStatus?.enabled ? (
+                      <button
+                        type="button"
+                        disabled={isCloudBusy}
+                        onClick={async () => {
+                          setBackupNotice(null);
+                          const res = await onEnableCloudAutoBackup();
+                          if (!res.cancelled) {
+                            setCloudNotice({ ok: res.ok, message: res.message });
+                          }
+                        }}
+                        className="w-full py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60"
+                      >
+                        {isCloudBusy ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <HardDrive size={14} />
+                        )}
+                        <span>Create Auto-Sync File in Storage</span>
+                      </button>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {onSyncCloudBackupNow && (
+                          <button
+                            type="button"
+                            disabled={isCloudBusy}
+                            onClick={async () => {
+                              setBackupNotice(null);
+                              const res = await onSyncCloudBackupNow();
+                              setCloudNotice(res);
+                            }}
+                            className="py-2 px-2 rounded-xl obsidian-pill-active font-black text-[10px] uppercase flex items-center justify-center gap-1 disabled:opacity-60"
+                          >
+                            <RefreshCw size={11} className={isCloudBusy ? 'animate-spin' : ''} />
+                            <span>Sync Now</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={isCloudBusy}
+                          onClick={async () => {
+                            setBackupNotice(null);
+                            const res = await onEnableCloudAutoBackup();
+                            if (!res.cancelled) {
+                              setCloudNotice({ ok: res.ok, message: res.message });
+                            }
+                          }}
+                          className="py-2 px-2 rounded-xl obsidian-inset-neutral hover:border-white/30 text-white font-bold text-[10px] uppercase"
+                        >
+                          Change File
+                        </button>
+                        {onDisableCloudAutoBackup && (
+                          <button
+                            type="button"
+                            disabled={isCloudBusy}
+                            onClick={async () => {
+                              setBackupNotice(null);
+                              await onDisableCloudAutoBackup();
+                              setCloudNotice({
+                                ok: true,
+                                message: 'Automatic storage sync turned off. Weekly 7-day upload reminder re-armed.',
+                              });
+                            }}
+                            className="py-2 px-2 rounded-xl bg-zinc-950 border border-red-900/70 text-red-400 hover:text-red-300 font-bold text-[10px] uppercase"
+                          >
+                            Turn Off
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
 
+                {/* 1-Tap Upload to Cloud Apps (Drive / OneDrive / JioDrive via Share Sheet) */}
+                {onOneTapCloudUpload && (
                   <button
                     type="button"
-                    onClick={() => {
-                      onExportData();
-                      setBackupNotice({
-                        ok: true,
-                        message: hasNativeBridge
-                          ? 'JSON backup generated. Choose Save to Files / Drive or Share.'
-                          : 'Backup .json file downloaded.',
-                      });
+                    disabled={isCloudBusy}
+                    onClick={async () => {
+                      setBackupNotice(null);
+                      const res = await onOneTapCloudUpload();
+                      if (!res.cancelled) {
+                        setCloudNotice({ ok: res.ok, message: res.message });
+                      }
                     }}
-                    className="p-3 obsidian-shell-bar text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs hover:border-white/30 active:scale-95 transition-all"
+                    className="w-full py-2.5 px-3 rounded-xl obsidian-inset hover:border-white/30 text-white font-black text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60"
                   >
-                    <Download size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
-                    <span>Export .JSON</span>
+                    <CloudUpload size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    <span>1-Tap Upload (.zbak) to Cloud</span>
                   </button>
-                </div>
+                )}
 
                 {/* Manual File Restore Buttons */}
                 <div className={hasNativeBridge && onRestoreFromCloudPicker ? 'grid grid-cols-2 gap-2' : ''}>
@@ -607,6 +690,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       type="button"
                       disabled={isCloudBusy || restoreDisabled}
                       onClick={async () => {
+                        setCloudNotice(null);
                         const res = await onRestoreFromCloudPicker();
                         if (res.ok) {
                           setBackupNotice({ ok: true, message: res.message });
@@ -618,7 +702,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       className="p-2.5 obsidian-inset text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px] active:scale-95 transition-all disabled:opacity-45 disabled:cursor-not-allowed"
                     >
                       <Upload size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
-                      <span>Pick Cloud / Device File</span>
+                      <span>Restore File Picker</span>
                     </button>
                   )}
 
@@ -633,9 +717,52 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <Upload size={13} />
                     <span>
                       {hasNativeBridge && onRestoreFromCloudPicker
-                        ? 'Browse Local File'
+                        ? 'Browse Device File'
                         : 'Restore .ZBAK / .JSON File'}
                     </span>
+                  </button>
+                </div>
+
+                {/* Manual Export Buttons (.ZBAK + .JSON) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCloudNotice(null);
+                      if (onExportZbakData) {
+                        onExportZbakData();
+                      } else {
+                        onExportData();
+                      }
+                      setBackupNotice({
+                        ok: true,
+                        message: hasNativeBridge
+                          ? 'Signed zero-backup.zbak created. Choose Files, Drive, OneDrive, or JioDrive.'
+                          : 'Signed .zbak backup file downloaded.',
+                      });
+                    }}
+                    className="p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-100 font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px] active:scale-95 transition-all"
+                  >
+                    <Download size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    <span>Export .ZBAK</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCloudNotice(null);
+                      onExportData();
+                      setBackupNotice({
+                        ok: true,
+                        message: hasNativeBridge
+                          ? 'JSON backup generated. Choose Save to Files / Drive or Share.'
+                          : 'Backup .json file downloaded.',
+                      });
+                    }}
+                    className="p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px] active:scale-95 transition-all"
+                  >
+                    <Download size={13} />
+                    <span>Export .JSON</span>
                   </button>
                 </div>
 
@@ -645,6 +772,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
+                        setCloudNotice(null);
                         handleCopy(onBuildZbakString(), 'backup_zbak');
                         setBackupNotice({
                           ok: true,
@@ -665,6 +793,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      setCloudNotice(null);
                       handleCopy(onBuildBackupJson(), 'backup_json');
                       setBackupNotice({
                         ok: true,
@@ -722,6 +851,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         'Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.'
                       )
                     ) {
+                      setCloudNotice(null);
                       onResetData();
                       setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
                     }
@@ -736,213 +866,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerContent={
               <>
                 <span>
-                  Exports stats, 20h meter, donor badges, bags, schedules, widgets &amp; theme.
+                  Saves stats, Escape Tickets, donor badges, bags, schedules, widgets &amp; theme.
                 </span>
-                <span className="font-bold text-zinc-300">.ZBAK &amp; .JSON</span>
+                <span className="font-bold text-zinc-300">SHA-256 .ZBAK &amp; .JSON</span>
               </>
             }
           />
 
-          {/* CARD #2: UNIVERSAL CLOUD AUTO-BACKUP & 1-TAP RESTORE (.zbak SAF) */}
-          <ObsidianCard
-            accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
-            ambientGlow
-            className="font-mono"
-            headerClassName="p-4 space-y-3"
-            footerClassName="px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed"
-            headerContent={
-              <>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs text-white font-bold uppercase tracking-wider">
-                    <Cloud size={15} style={{ color: '#8B5CF6' }} />
-                    <span>Universal Cloud Auto-Backup</span>
-                  </div>
-                  <span
-                    className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                      cloudBackupStatus?.enabled
-                        ? 'bg-emerald-950/60 border-emerald-600/70 text-emerald-300'
-                        : 'bg-zinc-900 border-zinc-700 text-zinc-400'
-                    }`}
-                  >
-                    {cloudBackupStatus?.enabled ? 'Auto-Sync ON' : 'Weekly / Manual'}
-                  </span>
-                </div>
-
-                {/* Active Sync Destination Card */}
-                <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1 text-[11px]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-zinc-400">Cloud Target:</span>
-                    <span className="text-white font-bold truncate">
-                      {cloudBackupStatus?.enabled
-                        ? `${cloudBackupStatus.providerLabel || 'Cloud Storage'} • ${
-                            cloudBackupStatus.displayName || 'zero-backup.zbak'
-                          }`
-                        : 'Not linked (weekly reminder active)'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-zinc-400">Last Cloud Save:</span>
-                    <span className="text-zinc-200 font-semibold">
-                      {cloudBackupStatus?.lastBackupTimestamp &&
-                      cloudBackupStatus.lastBackupTimestamp > 0
-                        ? new Date(cloudBackupStatus.lastBackupTimestamp).toLocaleString()
-                        : 'Never synced'}
-                    </span>
-                  </div>
-                </div>
-
-                {cloudBackupStatus?.lastError && (
-                  <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-700/80 text-amber-200 text-[10px]">
-                    {cloudBackupStatus.lastError}
-                  </div>
-                )}
-
-                {cloudNotice && (
-                  <div
-                    className={`p-2.5 rounded-xl text-[11px] border ${
-                      cloudNotice.ok
-                        ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
-                        : 'bg-red-950/50 border-red-700 text-red-200'
-                    }`}
-                  >
-                    {cloudNotice.message}
-                  </div>
-                )}
-
-                {/* Mode A Controls */}
-                {onEnableCloudAutoBackup && (
-                  <>
-                    {!cloudBackupStatus?.enabled ? (
-                      <button
-                        type="button"
-                        disabled={isCloudBusy}
-                        onClick={async () => {
-                          const res = await onEnableCloudAutoBackup();
-                          if (!res.cancelled) {
-                            setCloudNotice({ ok: res.ok, message: res.message });
-                          }
-                        }}
-                        className="w-full py-2.5 px-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60"
-                        style={{
-                          backgroundColor: '#8B5CF6',
-                          color: '#FFFFFF',
-                        }}
-                      >
-                        {isCloudBusy ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <CloudCog size={14} />
-                        )}
-                        <span>Enable Automatic Cloud Backup</span>
-                      </button>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-2">
-                        {onSyncCloudBackupNow && (
-                          <button
-                            type="button"
-                            disabled={isCloudBusy}
-                            onClick={async () => {
-                              const res = await onSyncCloudBackupNow();
-                              setCloudNotice(res);
-                            }}
-                            className="py-2 px-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase flex items-center justify-center gap-1 disabled:opacity-60"
-                          >
-                            <RefreshCw size={11} className={isCloudBusy ? 'animate-spin' : ''} />
-                            <span>Sync Now</span>
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={isCloudBusy}
-                          onClick={async () => {
-                            const res = await onEnableCloudAutoBackup();
-                            if (!res.cancelled) {
-                              setCloudNotice({ ok: res.ok, message: res.message });
-                            }
-                          }}
-                          className="py-2 px-2 rounded-xl obsidian-inset-neutral hover:border-white/30 text-white font-bold text-[10px] uppercase"
-                        >
-                          Change File
-                        </button>
-                        {onDisableCloudAutoBackup && (
-                          <button
-                            type="button"
-                            disabled={isCloudBusy}
-                            onClick={async () => {
-                              await onDisableCloudAutoBackup();
-                              setCloudNotice({
-                                ok: true,
-                                message: 'Automatic Cloud Backup turned off. Weekly 7-day reminder re-armed.',
-                              });
-                            }}
-                            className="py-2 px-2 rounded-xl bg-zinc-950 border border-red-900/70 text-red-400 hover:text-red-300 font-bold text-[10px] uppercase"
-                          >
-                            Turn Off
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Mode B Manual Upload + 1-Tap Cloud Restore */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {onOneTapCloudUpload && (
-                    <button
-                      type="button"
-                      disabled={isCloudBusy}
-                      onClick={async () => {
-                        const res = await onOneTapCloudUpload();
-                        if (!res.cancelled) {
-                          setCloudNotice({ ok: res.ok, message: res.message });
-                        }
-                      }}
-                      className="py-2.5 px-3 rounded-xl obsidian-inset-neutral hover:border-white/25 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-60"
-                    >
-                      <CloudUpload size={14} style={{ color: '#A78BFA' }} />
-                      <span>1-Tap Upload (.zbak)</span>
-                    </button>
-                  )}
-
-                  {onRestoreFromCloudPicker && (
-                    <button
-                      type="button"
-                      disabled={isCloudBusy || restoreDisabled}
-                      onClick={async () => {
-                        const res = await onRestoreFromCloudPicker();
-                        if (res.ok) {
-                          setCloudNotice({ ok: true, message: res.message });
-                          onRestoreSuccess?.();
-                        } else if (!res.cancelled) {
-                          setCloudNotice({ ok: false, message: res.message });
-                        }
-                      }}
-                      className="py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <CloudDownload size={14} />
-                      <span>Restore from Cloud Picker</span>
-                    </button>
-                  )}
-                </div>
-
-                {restoreDisabled && (
-                  <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px] leading-relaxed flex items-start gap-2">
-                    <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Cloud backup restore is disabled to prevent stat or ticket tampering.
-                    </span>
-                  </div>
-                )}
-              </>
-            }
-            footerContent={
-              <p>
-                100% serverless &amp; API-key-free. Signs stats, donor badges, Escape Tickets &amp; Preset Bags into <code>zero-backup.zbak</code> (SHA-256 HMAC protected) in Google Drive, OneDrive, JioDrive, or Downloads.
-              </p>
-            }
-          />
-
-          {/* CARD #3: ANTI-SLEEP-FARMING RULE CARD */}
+          {/* CARD #2: ANTI-SLEEP-FARMING RULE CARD */}
           <ObsidianCard
             accent={profileAccentKey}
             ambientGlow

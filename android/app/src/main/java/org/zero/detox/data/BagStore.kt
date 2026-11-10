@@ -14,8 +14,9 @@ import java.net.URLEncoder
 
 /**
  * BagStore:
- * Manages the user's active "Bag" (Suitcase) of up to 3 custom allowed apps + optional Normal Calls / SMS
+ * Manages the user's active "Bag" (Suitcase) of up to 3 custom allowed apps + optional Normal SMS
  * that remain permitted during an active Zero lock session.
+ * Normal Phone Calls are compulsory and always remain accessible even in an empty Bag.
  */
 class BagStore(private val context: Context) {
 
@@ -45,7 +46,11 @@ class BagStore(private val context: Context) {
             "com.android.dialer",
             "com.android.phone",
             "com.android.server.telecom",
-            "com.oneplus.dialer"
+            "com.oneplus.dialer",
+            "com.oplus.dialer",
+            "com.coloros.dialer",
+            "com.miui.phone",
+            "com.asus.dialer"
         )
 
         val PROTECTED_SYSTEM_PACKAGES = setOf(
@@ -86,7 +91,7 @@ class BagStore(private val context: Context) {
 
         prefs.edit()
             .putString(KEY_ACTIVE_BAG_NAME, bagName.ifBlank { "Work Bag" })
-            .putBoolean(KEY_ALLOW_CALLS, allowCalls)
+            .putBoolean(KEY_ALLOW_CALLS, true)
             .putBoolean(KEY_ALLOW_SMS, allowSms)
             .putString(KEY_BAG_APPS_JSON, sanitizedJson)
             .putString(KEY_BAG_APPS_COMPACT, compact)
@@ -153,7 +158,7 @@ class BagStore(private val context: Context) {
 
     fun getActiveBagName(): String = prefs.getString(KEY_ACTIVE_BAG_NAME, "Essentials Bag") ?: "Essentials Bag"
 
-    fun isCallsAllowed(): Boolean = prefs.getBoolean(KEY_ALLOW_CALLS, false)
+    fun isCallsAllowed(): Boolean = true
 
     fun isSmsAllowed(): Boolean = prefs.getBoolean(KEY_ALLOW_SMS, false)
 
@@ -223,7 +228,8 @@ class BagStore(private val context: Context) {
         val customPkgs = getBagApps().map { it.packageName }.toSet()
         if (customPkgs.contains(pkg)) return true
 
-        if (isCallsAllowed() && getAllowedDialerPackages().contains(pkg)) return true
+        // Phone Calls are compulsory and always permitted during locks
+        if (getAllowedDialerPackages().contains(pkg)) return true
         if (isSmsAllowed() && getAllowedSmsPackages().contains(pkg)) return true
 
         return false

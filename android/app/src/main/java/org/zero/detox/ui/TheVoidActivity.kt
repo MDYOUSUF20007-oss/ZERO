@@ -119,9 +119,8 @@ class TheVoidActivity : AppCompatActivity() {
         if (dpm.isDeviceOwnerApp(packageName)) {
             val allowed = mutableListOf(packageName)
             allowed.addAll(bagStore.getBagApps().map { it.packageName })
-            if (bagStore.isCallsAllowed()) {
-                allowed.addAll(bagStore.getAllowedDialerPackages())
-            }
+            // Phone Calls are compulsory and always permitted even in an empty Bag
+            allowed.addAll(bagStore.getAllowedDialerPackages())
             if (bagStore.isSmsAllowed()) {
                 allowed.addAll(bagStore.getAllowedSmsPackages())
             }
@@ -289,7 +288,6 @@ class TheVoidActivity : AppCompatActivity() {
     private fun populateBagSection() {
         bagContainer.removeAllViews()
         val bagName = bagStore.getActiveBagName().uppercase(Locale.US)
-        val allowCalls = bagStore.isCallsAllowed()
         val allowSms = bagStore.isSmsAllowed()
         val apps = bagStore.getBagApps()
 
@@ -298,19 +296,19 @@ class TheVoidActivity : AppCompatActivity() {
             setTextColor(Color.parseColor("#A1A1AA"))
             textSize = 11f
             typeface = Typeface.MONOSPACE
-            setPadding(0, 0, 0, 16)
+            setPadding(0, 0, 0, 12)
         }
         bagContainer.addView(header)
 
-        if (!allowCalls && !allowSms && apps.isEmpty()) {
+        if (!allowSms && apps.isEmpty()) {
             val emptyMsg = TextView(this).apply {
-                text = "Monk Mode: Empty Bag. All normal apps, calls & texts are sealed."
+                text = "Monk Mode Bag: Distractions & SMS sealed. Phone calls always allowed."
                 setTextColor(Color.parseColor("#71717A"))
                 textSize = 11f
                 typeface = Typeface.MONOSPACE
+                setPadding(0, 0, 0, 12)
             }
             bagContainer.addView(emptyMsg)
-            return
         }
 
         val scroll = ScrollView(this)
@@ -318,29 +316,28 @@ class TheVoidActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
         }
 
-        if (allowCalls) {
-            val btnPhone = Button(this).apply {
-                text = "PHONE (NORMAL CALLS)"
-                setTextColor(Color.WHITE)
-                setBackgroundColor(Color.parseColor("#18181B"))
-                typeface = Typeface.MONOSPACE
-                textSize = 11f
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = 10 }
-                setOnClickListener {
-                    val pkg = bagStore.getPrimaryDialerPackage()
-                    if (pkg != null) {
-                        launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
-                    } else {
-                        bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3000L
-                        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
-                    }
+        // Compulsory Phone Calls — always available inside The Void even if not packed in Bag
+        val btnPhone = Button(this).apply {
+            text = "PHONE CALLS (ALWAYS AVAILABLE)"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#18181B"))
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 10 }
+            setOnClickListener {
+                val pkg = bagStore.getPrimaryDialerPackage()
+                if (pkg != null) {
+                    launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
+                } else {
+                    bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3000L
+                    startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
                 }
             }
-            btnStack.addView(btnPhone)
         }
+        btnStack.addView(btnPhone)
 
         if (allowSms) {
             val btnSms = Button(this).apply {

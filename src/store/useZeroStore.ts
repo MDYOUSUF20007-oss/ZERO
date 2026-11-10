@@ -124,7 +124,7 @@ export const DEFAULT_BAGS: OccasionBag[] = [
     name: 'Work Bag',
     occasionLabel: 'Deep Focus & Office',
     apps: [],
-    allowCalls: false,
+    allowCalls: true,
     allowSms: false,
   },
   {
@@ -140,7 +140,7 @@ export const DEFAULT_BAGS: OccasionBag[] = [
     name: 'Study Bag',
     occasionLabel: 'Lectures & Exam Prep',
     apps: [],
-    allowCalls: false,
+    allowCalls: true,
     allowSms: false,
   },
   {
@@ -451,7 +451,7 @@ export function useZeroStore() {
     }
   });
 
-  // 4 Custom Occasion Bags (max 3 apps each + Calls / SMS controls)
+  // 4 Custom Occasion Bags (max 3 apps each + SMS toggle; Phone Calls are compulsory Always ON)
   const [bags, setBags] = useState<OccasionBag[]>(() => {
     try {
       const saved = localStorage.getItem(UI_STORAGE_KEYS.BAGS);
@@ -461,7 +461,7 @@ export function useZeroStore() {
           return parsed.map((b) => ({
             ...b,
             apps: Array.isArray(b.apps) ? b.apps.slice(0, MAX_BAG_APPS) : [],
-            allowCalls: Boolean(b.allowCalls),
+            allowCalls: true,
             allowSms: Boolean(b.allowSms),
           }));
         }
@@ -553,6 +553,7 @@ export function useZeroStore() {
   const webStartPerfMsRef = useRef<number | null>(null);
   const justEarnedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bootRecoveryHandledRef = useRef(false);
+  const queueSilentCloudWriteRef = useRef<(() => void) | null>(null);
 
   const activeLockRef = useRef(activeLock);
   useEffect(() => {
@@ -950,7 +951,7 @@ export function useZeroStore() {
         window.ZeroNative.setBagStateJson(
           activeBag.name,
           JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-          activeBag.allowCalls,
+          true,
           activeBag.allowSms
         );
       }
@@ -1092,7 +1093,7 @@ export function useZeroStore() {
           window.ZeroNative.setBagStateJson(
             activeBag.name,
             JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-            activeBag.allowCalls,
+            true,
             activeBag.allowSms
           );
         }
@@ -1131,6 +1132,7 @@ export function useZeroStore() {
 
     setActiveLock(newLock);
     localStorage.setItem(UI_STORAGE_KEYS.ACTIVE_LOCK, JSON.stringify(newLock));
+    queueSilentCloudWriteRef.current?.();
     return true;
   };
 
@@ -1181,6 +1183,7 @@ export function useZeroStore() {
         const next = updater(b);
         return {
           ...next,
+          allowCalls: true,
           apps: next.apps.slice(0, MAX_BAG_APPS),
         };
       })
@@ -1428,7 +1431,10 @@ export function useZeroStore() {
       const nextState = outcome.state;
       const nextThemeConfig = outcome.themeConfig || DEFAULT_THEME_CONFIG;
       const nextSleepMode = outcome.sleepFarmingMode || 'quarter_credit';
-      const nextBags = outcome.bags || DEFAULT_BAGS;
+      const nextBags = (outcome.bags || DEFAULT_BAGS).map((b) => ({
+        ...b,
+        allowCalls: true,
+      }));
       const nextActiveBagId = outcome.activeBagId || nextBags[0].id;
       const nextSchedules = outcome.schedules || DEFAULT_SCHEDULES;
       const restoredNow = outcome.restoredAtMs || Date.now();
@@ -1543,6 +1549,17 @@ export function useZeroStore() {
   }, []);
 
   useEffect(() => {
+    queueSilentCloudWriteRef.current = () => {
+      if (!autoBackupEnabled) return;
+      autoWriteQueueRef.current = autoWriteQueueRef.current
+        .catch(() => {})
+        .then(async () => {
+          await performSilentCloudWrite();
+        });
+    };
+  }, [autoBackupEnabled, performSilentCloudWrite]);
+
+  useEffect(() => {
     if (!autoSyncMountedRef.current) {
       autoSyncMountedRef.current = true;
       prevAutoSyncDigestRef.current = autoSyncDigest;
@@ -1553,15 +1570,11 @@ export function useZeroStore() {
     if (!autoBackupEnabled) return;
 
     const timer = setTimeout(() => {
-      autoWriteQueueRef.current = autoWriteQueueRef.current
-        .catch(() => {})
-        .then(async () => {
-          await performSilentCloudWrite();
-        });
+      queueSilentCloudWriteRef.current?.();
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [autoSyncDigest, autoBackupEnabled, performSilentCloudWrite]);
+  }, [autoSyncDigest, autoBackupEnabled]);
 
   const enableCloudAutoBackup = useCallback(async (): Promise<{
     ok: boolean;
@@ -1617,7 +1630,7 @@ export function useZeroStore() {
       const res = await performSilentCloudWrite();
       if (res.ok) {
         haptics.thud();
-        return { ok: true, message: 'Synced latest zero-backup.zbak to your cloud folder.' };
+        return { ok: true, message: 'Synced latest zero-backup.zbak to your storage backup file.' };
       }
       return { ok: false, message: res.error || 'Could not sync zero-backup.zbak.' };
     } finally {

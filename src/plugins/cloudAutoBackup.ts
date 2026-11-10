@@ -114,11 +114,11 @@ export async function enableUniversalCloudAutoBackup(
           message: 'Blocked unverified backup destination. Only Android SAF content:// providers are allowed.',
         };
       }
-      const provider = res.providerLabel || 'Cloud Storage';
+      const provider = res.providerLabel || 'Device Storage';
       const fileLabel = res.displayName || ZBAK_FILE_NAME;
       return {
         ok: true,
-        message: `Auto-Backup linked to ${provider} (${fileLabel}). Changes now sync automatically.`,
+        message: `Auto-Save file linked (${provider} • ${fileLabel}). Zero now syncs automatically when you start or end a session.`,
         status: {
           supported: true,
           enabled: res.enabled,
@@ -297,7 +297,7 @@ export async function triggerOneTapCloudUpload(zbakContent: string): Promise<{
       return {
         ok: true,
         timestamp: res.timestamp || Date.now(),
-        message: 'Choose Google Drive, OneDrive, JioDrive, or Files to finish saving zero-backup.zbak.',
+        message: 'Choose Google Drive, OneDrive, JioDrive, or Files to upload zero-backup.zbak.',
       };
     } catch (err: unknown) {
       const e = err as { message?: string };
