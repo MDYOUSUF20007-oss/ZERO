@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import type { ParachuteRewardEvent } from '../types';
+import { haptics } from '../utils/haptics';
+import confetti from 'canvas-confetti';
+import { Sparkles, X, CheckCircle2 } from 'lucide-react';
+
+interface ParachuteRewardAnimationProps {
+  reward: ParachuteRewardEvent | null;
+  onDismiss: () => void;
+}
+
+export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> = ({
+  reward,
+  onDismiss,
+}) => {
+  const [tappedPulse, setTappedPulse] = useState(false);
+
+  if (!reward) return null;
+
+  const handleCardBoost = () => {
+    haptics.milestoneChime();
+    setTappedPulse(true);
+    setTimeout(() => setTappedPulse(false), 600);
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 65,
+        origin: { y: 0.55 },
+        colors: ['#FFFFFF', '#F59E0B', '#10B981'],
+      });
+    } catch {
+      // Ignore in headless environments
+    }
+  };
+
+  const sourceBadge =
+    reward.source === 'first_timer_profile'
+      ? 'FIRST-TIMER GIFT'
+      : reward.source === 'first_donation_50'
+      ? '₹50+ SUPPORTER BONUS'
+      : '20-HOUR MILESTONE';
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm flex items-center justify-center px-4"
+      style={{
+        paddingTop: 'calc(1rem + var(--zero-safe-top))',
+        paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+      }}
+      onClick={onDismiss}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Parachute Unlocked Celebration"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative w-full max-w-sm bg-zinc-950 border-2 border-amber-400/80 rounded-3xl p-6 font-mono text-center space-y-5 overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.35)] animate-parachute-card-pop transition-transform ${
+          tappedPulse ? 'scale-[1.03]' : ''
+        }`}
+      >
+        {/* Shimmer sweep overlay */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/15 to-transparent animate-parachute-shimmer"
+        />
+
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="absolute top-3.5 right-3.5 p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white z-10"
+          aria-label="Close Parachute Celebration"
+        >
+          <X size={15} />
+        </button>
+
+        {/* Source Badge */}
+        <div className="flex justify-center">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-widest">
+            <Sparkles size={12} />
+            <span>{sourceBadge}</span>
+          </span>
+        </div>
+
+        {/* Descending + Floating Parachute Graphic with Expanding Halo Rings */}
+        <div className="relative h-32 flex items-center justify-center">
+          <div
+            aria-hidden="true"
+            className="absolute w-28 h-28 rounded-full border border-amber-400/40 animate-ring-burst"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute w-24 h-24 rounded-full bg-amber-500/15 blur-xl"
+          />
+          <button
+            type="button"
+            onClick={handleCardBoost}
+            title="Tap to celebrate!"
+            className="relative z-10 w-24 h-24 rounded-3xl bg-zinc-900 border-2 border-amber-400/70 flex items-center justify-center shadow-[0_0_24px_rgba(245,158,11,0.4)] animate-parachute-descend active:scale-95 transition-transform cursor-pointer"
+          >
+            <span className="text-5xl animate-parachute-float select-none" aria-hidden="true">
+              🪂
+            </span>
+            <span className="absolute -top-2.5 -right-2.5 px-2 py-0.5 rounded-full bg-emerald-400 text-black text-[11px] font-black shadow-md border border-black">
+              +{reward.delta}
+            </span>
+          </button>
+        </div>
+
+        {/* Title & Explanation */}
+        <div className="space-y-1.5 relative z-10">
+          <h2 className="text-lg font-black text-white tracking-tight">
+            {reward.title}
+          </h2>
+          <p className="text-xs text-zinc-300 leading-relaxed">
+            {reward.subtitle}
+          </p>
+        </div>
+
+        {/* Animated Balance Pill */}
+        <div className="relative z-10 bg-black/80 border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between">
+          <div className="text-left">
+            <div className="text-[10px] uppercase tracking-wider text-zinc-400">
+              Parachute Balance
+            </div>
+            <div className="text-xl font-black text-amber-300 flex items-center gap-1.5">
+              <span>{reward.newBalance}</span>
+              <span className="text-xs font-normal text-zinc-400">
+                {reward.newBalance === 1 ? 'Ready' : 'Ready'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-bold bg-emerald-950/70 border border-emerald-700/60 px-2.5 py-1 rounded-xl">
+            <CheckCircle2 size={13} />
+            <span>Added to Vault</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="relative z-10 w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+        >
+          Awesome • Back to Focus
+        </button>
+      </div>
+    </div>
+  );
+};

@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import type { ParachuteMetrics, ParachuteLedgerEntry, SessionRecord } from '../types';
+import type {
+  ParachuteMetrics,
+  ParachuteLedgerEntry,
+  SessionRecord,
+  ZeroProfile,
+} from '../types';
 import { ShareStatsModal } from './ShareStatsModal';
+import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import {
   Flame,
   Award,
@@ -11,18 +18,31 @@ import {
   CheckCircle2,
   AlertOctagon,
   Moon,
+  Gift,
+  Sparkles,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface ParachuteDashboardViewProps {
   parachuteMetrics: ParachuteMetrics;
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
+  profile: ZeroProfile | null;
+  hasClaimedFirstTimeParachute: boolean;
+  todayReclaimedHours: number;
+  justEarnedParachute: boolean;
+  onOpenProfileModal: () => void;
 }
 
 export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   parachuteMetrics,
   ledger,
   sessions,
+  profile,
+  hasClaimedFirstTimeParachute,
+  todayReclaimedHours,
+  justEarnedParachute,
+  onOpenProfileModal,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'sessions'>('overview');
   const [showShareModal, setShowShareModal] = useState(false);
@@ -114,6 +134,18 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     return days;
   }, [sessions]);
 
+  const profileRank = getZeroRankFromHours(totalReclaimedHours);
+  const profileAccent = profile
+    ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
+    : ACCENT_STYLES.amber;
+  const dailyGoalPct = profile
+    ? Math.min(100, Math.round((todayReclaimedHours / Math.max(1, profile.dailyGoalHours)) * 100))
+    : 0;
+  const milestoneEarnedCount = Math.max(
+    0,
+    parachuteMetrics.lifetimeEarnedParachutes - parachuteMetrics.bonusParachutes
+  );
+
   return (
     <div className="flex flex-col gap-5 px-4 py-4 max-w-md mx-auto w-full select-none pb-24">
       {/* Header + Shareable Flex Stats Card Trigger */}
@@ -137,16 +169,127 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </button>
       </div>
 
+      {/* Interactive Zero Profile Card */}
+      {profile ? (
+        <div
+          className={`bg-zinc-950 border-2 rounded-3xl p-4 font-mono space-y-3 transition-all ${profileAccent.border} ${profileAccent.glow}`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <ProfileAvatar
+                avatarId={profile.avatarId}
+                accent={profile.accentColor}
+                size="md"
+                interactive
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-black text-sm text-white truncate">
+                    {profile.displayName}
+                  </span>
+                  <span
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${profileAccent.badgeBg}`}
+                  >
+                    {profileRank.title}
+                  </span>
+                </div>
+                <div className="text-[11px] text-zinc-400 truncate">
+                  {profile.handle} • #{profile.primaryMission}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenProfileModal}
+              className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[10px] font-bold text-zinc-200 flex items-center gap-1 shrink-0"
+            >
+              <SlidersHorizontal size={11} />
+              <span>Edit</span>
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-400">Daily Goal Progress</span>
+              <span className={`font-bold ${profileAccent.text}`}>
+                {todayReclaimedHours} / {profile.dailyGoalHours}h today ({dailyGoalPct}%)
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${profileAccent.bar}`}
+                style={{ width: `${dailyGoalPct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-400 pt-1 border-t border-zinc-900">
+            <span className="italic truncate">&ldquo;{profile.motto}&rdquo;</span>
+            {profileRank.nextTitle && (
+              <span className="shrink-0 text-zinc-500">
+                {profileRank.hoursToNext}h to {profileRank.nextTitle}
+              </span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-500/10 border-2 border-amber-400/60 rounded-3xl p-4 font-mono flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+              <Gift size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-black text-white">
+                {hasClaimedFirstTimeParachute
+                  ? 'Make Your Interactive Profile'
+                  : 'Make Profile & Claim +1 Free 🪂'}
+              </div>
+              <p className="text-[11px] text-zinc-300 leading-snug mt-0.5">
+                Pick an interactive emblem, daily target hours &amp; personal pledge.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenProfileModal}
+            className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 active:scale-95 transition-all"
+          >
+            <Sparkles size={12} />
+            <span>Create</span>
+          </button>
+        </div>
+      )}
+
       {/* Hero 20-Hour Parachute Progression Card */}
-      <div className="bg-zinc-950 border-2 border-zinc-800 rounded-3xl p-5 shadow-brutal relative overflow-hidden">
+      <div
+        className={`bg-zinc-950 border-2 rounded-3xl p-5 shadow-brutal relative overflow-hidden transition-all ${
+          justEarnedParachute
+            ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-[0_0_32px_rgba(245,158,11,0.3)] animate-parachute-card-pop'
+            : 'border-zinc-800'
+        }`}
+      >
+        {justEarnedParachute && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
+          />
+        )}
         <div className="absolute right-3 -bottom-4 text-7xl opacity-5 pointer-events-none select-none font-mono">
           🪂
         </div>
 
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-2xl shadow-inner">
-              🪂
+            <div
+              className={`w-12 h-12 rounded-2xl bg-amber-500/10 border flex items-center justify-center text-2xl shadow-inner ${
+                justEarnedParachute
+                  ? 'border-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.45)]'
+                  : 'border-amber-500/40'
+              }`}
+            >
+              <span className={parachuteMetrics.currentBalance > 0 ? 'animate-parachute-float inline-block' : ''}>
+                🪂
+              </span>
             </div>
             <div>
               <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
@@ -160,8 +303,16 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </div>
             </div>
           </div>
-          <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-semibold">
-            EARNED-ONLY
+          <span
+            className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border font-semibold ${
+              parachuteMetrics.bonusParachutes > 0
+                ? 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+                : 'bg-zinc-900 border-zinc-700 text-zinc-300'
+            }`}
+          >
+            {parachuteMetrics.bonusParachutes > 0
+              ? `${milestoneEarnedCount} EARNED + ${parachuteMetrics.bonusParachutes} GIFT`
+              : 'EARNED-ONLY'}
           </span>
         </div>
 
@@ -491,6 +642,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         sessions={sessions}
         parachuteMetrics={parachuteMetrics}
         currentStreak={currentStreak}
+        profile={profile}
         onClose={() => setShowShareModal(false)}
       />
     </div>

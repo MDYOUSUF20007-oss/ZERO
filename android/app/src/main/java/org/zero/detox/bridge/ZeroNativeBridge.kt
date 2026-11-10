@@ -454,7 +454,12 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun syncLedgerState(cumulativeSeconds: Long, deployedCount: Int) {
-        parachuteStore.syncLedgerState(cumulativeSeconds, deployedCount)
+        parachuteStore.syncLedgerState(cumulativeSeconds, deployedCount, 0)
+    }
+
+    @JavascriptInterface
+    fun syncLedgerStateWithBonus(cumulativeSeconds: Long, deployedCount: Int, bonusCount: Int) {
+        parachuteStore.syncLedgerState(cumulativeSeconds, deployedCount, bonusCount)
     }
 
     @JavascriptInterface
@@ -483,6 +488,6 @@ class ZeroNativeBridge(
         val prefs = activity.getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
         val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
         val metrics = parachuteStore.getMetrics()
-        return "{\"isLocked\":$isLocked,\"cumulativeSeconds\":${metrics.totalCumulativeSeconds},\"deployedCount\":${metrics.deployedParachutes}}"
+        return "{\"isLocked\":$isLocked,\"cumulativeSeconds\":${metrics.totalCumulativeSeconds},\"deployedCount\":${metrics.deployedParachutes},\"bonusCount\":${metrics.bonusParachutes}}"
     }
 }

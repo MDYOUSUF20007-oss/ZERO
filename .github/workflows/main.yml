@@ -166,8 +166,8 @@ jobs:
           cd android
           ./gradlew assembleStandardDebug assembleStrictDebug --no-daemon --stacktrace
           mkdir -p ../release-assets
-          cp app/build/outputs/apk/strict/debug/app-strict-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-strict-accessibility-preview.apk"
-          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-standard-sideload-preview.apk"
+          cp app/build/outputs/apk/strict/debug/app-strict-debug.apk "../release-assets/ZERO-requires-adb-v${ZERO_VERSION_NAME}-preview.apk"
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "../release-assets/ZERO-v${ZERO_VERSION_NAME}-preview.apk"
           (cd ../release-assets && sha256sum *.apk > SHA256SUMS.txt)
           cat ../release-assets/SHA256SUMS.txt
 
@@ -176,8 +176,8 @@ jobs:
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
           mkdir -p release-assets
-          cp android/app/build/outputs/apk/strict/release/app-strict-release.apk "release-assets/Zero-v${ZERO_VERSION_NAME}-strict-accessibility.apk"
-          cp android/app/build/outputs/apk/standard/release/app-standard-release.apk "release-assets/Zero-v${ZERO_VERSION_NAME}-standard-sideload.apk"
+          cp android/app/build/outputs/apk/strict/release/app-strict-release.apk "release-assets/ZERO-requires-adb-v${ZERO_VERSION_NAME}.apk"
+          cp android/app/build/outputs/apk/standard/release/app-standard-release.apk "release-assets/ZERO-v${ZERO_VERSION_NAME}.apk"
 
           EXPECTED_CLEAN=$(echo "$EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
           for apk in release-assets/*.apk; do
@@ -196,16 +196,16 @@ jobs:
       - name: Upload Strict Accessibility APK Artifact (Full BlockIt Mode)
         uses: actions/upload-artifact@v4
         with:
-          name: Zero-strict-accessibility-apk
-          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility*.apk
+          name: ZERO-requires-adb-apk
+          path: release-assets/ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}*.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload Standard Sideload APK Artifact (Usage Access + Overlay)
         uses: actions/upload-artifact@v4
         with:
-          name: Zero-standard-sideload-apk
-          path: release-assets/Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload*.apk
+          name: ZERO-apk
+          path: release-assets/ZERO-v${{ env.ZERO_VERSION_NAME }}*.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -214,7 +214,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
-          name: Zero v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          name: ZERO v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -222,26 +222,27 @@ jobs:
             release-assets/*.apk
             release-assets/SHA256SUMS.txt
           body: |
-            ### Zero Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+            ### ZERO Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
 
-            **Seamless In-Place Updates:** Signed with Zero's permanent release certificate (`SHA-256: ${{ env.EXPECTED_CERT_SHA256 }}`). Future updates install directly over previous releases without losing Parachutes, Bags, or history.
+            **Seamless In-Place Updates Fixed:** Signed with ZERO's permanent release certificate (`SHA-256: ${{ env.EXPECTED_CERT_SHA256 }}`).
+            *(One-time migration note: if you are updating from an older `v1.0.18` or earlier debug-signed preview, open **Rules → Export Backup**, uninstall the old preview once, install this release, and tap **Restore File**. All future `v${{ env.ZERO_VERSION_NAME }}+` releases will update cleanly in-place without uninstalling!)*
 
             #### Which APK should I install?
-            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility.apk` (Recommended — Full BlockIt Mode):** Uses Android Accessibility Service to lock the notification drawer, Settings, Recents, and all apps outside your active Bag. *(On Android 14–16 devices with Play Protect sideload restrictions, install via `adb install -r` or Shizuku / "Install with Options", then allow Restricted Settings if prompted.)*
-            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload.apk` (Direct Browser/File Manager Install):** Omits `BIND_ACCESSIBILITY_SERVICE` for clean sideloading and enforces focus via **Usage Access + Display Over Other Apps** watchdog.
+            - **`ZERO-v${{ env.ZERO_VERSION_NAME }}.apk` (Standard Edition — Direct Install):** Clean browser / file-manager install without `BIND_ACCESSIBILITY_SERVICE`. Enforces your Bags via **Usage Access + Display Over Other Apps** watchdog.
+            - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Uses Android Accessibility Service to block Notification shade, Quick Settings, Settings, Recents, and unbagged apps. *(On Android 14–16 devices, install via `adb install -r` or Shizuku / "Install with Options", or tap **App Info → Allow restricted settings**.)*
 
-            #### Key Features & Recent Updates
-            - **Post-Session UPI Tip Popup:** Highlights **UPI (`md.y2007@ptaxis`)** as Best Offer / Best Option with **no minimum limit** after completed focus sessions, with a **Block for 5 Sessions** snooze option (`5 → 4 → 3 → 2 → 1 → 0`).
-            - **Ethical Support & Direct Updates:** Supports **Ko-fi** (`https://ko-fi.com/mdyousuf2620`) and offline UPI QR / instant pay launch (`md.y2007@ptaxis`), plus direct **Check Updates** link to GitHub Releases.
-            - **Android Edge-to-Edge Safe Areas:** Proper status-bar and navigation-bar clearance across Android 14–16 screens and modals.
-            - **Backup, Restore & Shareable Summary:** Complete local `.json` export/copy/restore and shareable distraction-free focus summary cards.
+            #### What's New
+            - **First-Timer Profile & Free Starter Parachute (+1 🪂):** First-time launch popup lets you build your Interactive Profile and claim **1 free starter Parachute**.
+            - **Interactive Profile System:** Customize your callsign, `@handle`, geometric emblem, color accent, focus mission, daily goal hours, and personal lock pledge.
+            - **Animated Parachute Card & Celebration:** Animated Parachute reward modal and shimmering Parachute Card highlight whenever you unlock a Parachute (starter gift, 20h milestone, or supporter bonus).
+            - **1st ₹50+ Tip Bonus (+1 Free 🪂):** Highlighted right inside the post-session Tip popup alongside **UPI (`md.y2007@ptaxis`) — Best Offer, No Minimum Limit** (still blockable for 5 sessions).
 
       - name: Publish Direct Download GitHub Release (Debug-Signed Preview)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
-          name: Zero v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          name: ZERO v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -249,16 +250,15 @@ jobs:
             release-assets/*.apk
             release-assets/SHA256SUMS.txt
           body: |
-            ### Zero Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+            ### ZERO Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
 
-            > **Build Signing Note:** These preview APKs use CI debug signing because persistent release signing secrets (`ZERO_KEYSTORE_BASE64`, `ZERO_KEYSTORE_PASS`, `ZERO_KEYSTORE_ALIAS`) are not configured yet in Repository Secrets. If upgrading over an older build signed with a different key (such as `v1.0.13`), open **Rules → Export Backup** first, uninstall the previous app, install this APK, and tap **Restore File**.
+            > **Build Signing Note:** These preview APKs use CI debug signing because persistent release signing secrets (`ZERO_KEYSTORE_BASE64`, `ZERO_KEYSTORE_PASS`, `ZERO_KEYSTORE_ALIAS`) are not configured yet in Repository Secrets. Open **Rules → Export Backup** before replacing a differently signed build.
 
             #### Which APK should I install?
-            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility-preview.apk` (Recommended — Full BlockIt Mode):** Uses Android Accessibility Service to lock the notification drawer, Settings, Recents, and all apps outside your active Bag. *(On Android 14–16 devices with Restricted Settings, open App Info → **Allow restricted settings**, or install via `adb install -r` / Shizuku.)*
-            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload-preview.apk` (Direct Browser/File Manager Install):** Omits `BIND_ACCESSIBILITY_SERVICE` for clean sideloading and enforces focus via **Usage Access + Display Over Other Apps** watchdog.
+            - **`ZERO-v${{ env.ZERO_VERSION_NAME }}-preview.apk` (Standard Edition — Direct Install):** Clean sideloading without `BIND_ACCESSIBILITY_SERVICE`, enforcing Bags via **Usage Access + Display Over Other Apps**.
+            - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}-preview.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Full Accessibility Service lock blocking Notification shade, Settings, Recents, and unbagged apps (use `adb install -r`, Shizuku, or Allow Restricted Settings on Android 14–16).
 
-            #### Key Features & Recent Updates
-            - **Post-Session UPI Tip Popup:** Highlights **UPI (`md.y2007@ptaxis`)** as Best Offer / Best Option with **no minimum limit** after completed focus sessions, with a **Block for 5 Sessions** snooze option (`5 → 4 → 3 → 2 → 1 → 0`).
-            - **Ethical Support & Direct Updates:** Supports **Ko-fi** (`https://ko-fi.com/mdyousuf2620`) and offline UPI QR / instant pay launch (`md.y2007@ptaxis`), plus direct **Check Updates** link to GitHub Releases.
-            - **Android Edge-to-Edge Safe Areas:** Proper status-bar and navigation-bar clearance across Android 14–16 screens and modals.
-            - **Backup, Restore & Shareable Summary:** Complete local `.json` export/copy/restore and shareable distraction-free focus summary cards.
+            #### What's New
+            - **First-Timer Profile & Free Starter Parachute (+1 🪂)** + **Interactive Profile** customization.
+            - **Animated Parachute Card & Reward Modal** whenever earning a Parachute.
+            - **1st ₹50+ Tip Bonus (+1 Free 🪂)** inside the post-session UPI Tip popup (**Best Offer • No Minimum Limit**).

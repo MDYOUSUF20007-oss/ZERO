@@ -11,6 +11,14 @@ import {
   evaluatePostSessionTipPrompt,
   normalizeTipSkipCount,
 } from '../src/utils/tipPromptPolicy.ts';
+import {
+  FIRST_DONATION_BONUS_INR,
+  claimFirstDonationParachute,
+  claimFirstTimerProfileBonus,
+  computeParachuteBalance,
+  getZeroRankFromHours,
+  sanitizeZeroProfile,
+} from '../src/utils/parachuteRewardsPolicy.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -189,5 +197,44 @@ for (let sessionNum = 1; sessionNum <= 5; sessionNum++) {
 decision = evaluatePostSessionTipPrompt(skipCount);
 failIf(decision.shouldShow === true && decision.nextSkipRemaining === 0, '6th completed session should show popup again');
 console.log('PASS: Post-Session Tip Prompt & Exact 5-Session Block Countdown Verified');
+
+console.log('\n=== TEST 9: First-Timer Profile Bonus, First ₹50+ Donation Bonus & Profile Sanitization ===');
+failIf(FIRST_DONATION_BONUS_INR === 50, 'First donation bonus threshold must be Rs 50');
+
+// 1st-timer profile bonus grants strictly once without inflating focus hours
+const firstClaim = claimFirstTimerProfileBonus(false, 0);
+failIf(firstClaim.granted === true && firstClaim.nextBonusParachutes === 1, 'First profile creation must grant +1 Parachute');
+const repeatFirstClaim = claimFirstTimerProfileBonus(firstClaim.nextAlreadyClaimed, firstClaim.nextBonusParachutes);
+failIf(repeatFirstClaim.granted === false && repeatFirstClaim.nextBonusParachutes === 1, 'Second profile save must not grant duplicate starter Parachute');
+
+// 1st Rs 50+ donation grants strictly once
+const donationClaim = claimFirstDonationParachute(false, repeatFirstClaim.nextBonusParachutes);
+failIf(donationClaim.granted === true && donationClaim.nextBonusParachutes === 2, 'First Rs 50+ donation must grant +1 Parachute');
+const repeatDonationClaim = claimFirstDonationParachute(donationClaim.nextAlreadyClaimed, donationClaim.nextBonusParachutes);
+failIf(repeatDonationClaim.granted === false && repeatDonationClaim.nextBonusParachutes === 2, 'Repeat donation claim must stay capped at 1');
+
+// Parachute balance adds bonus gifts without forging 20h milestones, and decrements on deployment
+const bonusSnap = computeParachuteBalance({
+  cumulativeSeconds: 0,
+  bonusParachutes: repeatDonationClaim.nextBonusParachutes,
+  usedParachutes: 1,
+});
+failIf(bonusSnap.earnedFromHours === 0, 'Focus-earned milestone count must remain 0 when cumulativeSeconds=0');
+failIf(bonusSnap.lifetimeEarned === 2 && bonusSnap.currentBalance === 1, 'Bonus parachutes and deployments must compute accurately');
+
+// Interactive profile sanitization and rank mapping
+const emptyProfile = sanitizeZeroProfile({ displayName: '   ' });
+failIf(emptyProfile === null, 'Blank callsign must be rejected');
+const savedProfile = sanitizeZeroProfile({
+  displayName: 'Yousuf',
+  handle: '@@Yousuf 2007!!',
+  avatarId: 'owl',
+  accentColor: 'emerald',
+  dailyGoalHours: 99,
+});
+failIf(savedProfile !== null && savedProfile.handle === '@yousuf2007', 'Handle should normalize safely');
+failIf(savedProfile !== null && savedProfile.dailyGoalHours === 12, 'Daily goal hours should clamp to max 12h');
+failIf(getZeroRankFromHours(0).title === 'Initiate' && getZeroRankFromHours(55).title === 'Void Master', 'Rank progression must map accurately');
+console.log('PASS: One-Time Parachute Gifts, Balance Integrity & Profile Policies Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

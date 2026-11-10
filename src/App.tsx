@@ -7,6 +7,8 @@ import { SchedulesDonateView } from './components/SchedulesDonateView';
 import { BagDrawerModal } from './components/BagDrawerModal';
 import { PermissionGateModal } from './components/PermissionGateModal';
 import { TipAfterSessionModal } from './components/TipAfterSessionModal';
+import { ProfileModal } from './components/ProfileModal';
+import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, X } from 'lucide-react';
 
@@ -15,7 +17,10 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules'>('dial');
   const [showBagModal, setShowBagModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileModalMode, setProfileModalMode] = useState<'welcome' | 'edit'>('welcome');
   const hasAutoPromptedRef = useRef(false);
+  const hasAutoShownWelcomeRef = useRef(false);
 
   // Ask for required Android permissions upfront on first launch if not armed yet
   useEffect(() => {
@@ -33,6 +38,33 @@ export function App() {
     store.permissions.isNativeAndroid,
     store.permissions.strictReady,
   ]);
+
+  // First-timer special popup: make an interactive profile & claim 1 free starter Parachute
+  useEffect(() => {
+    if (
+      !hasAutoShownWelcomeRef.current &&
+      !store.activeLock.isLocked &&
+      !showPermissionModal &&
+      !store.profile &&
+      !store.hasClaimedFirstTimeParachute &&
+      !store.hasDismissedWelcomeModal
+    ) {
+      hasAutoShownWelcomeRef.current = true;
+      setProfileModalMode('welcome');
+      setShowProfileModal(true);
+    }
+  }, [
+    store.activeLock.isLocked,
+    showPermissionModal,
+    store.profile,
+    store.hasClaimedFirstTimeParachute,
+    store.hasDismissedWelcomeModal,
+  ]);
+
+  const openInteractiveProfile = () => {
+    setProfileModalMode(!store.profile && !store.hasClaimedFirstTimeParachute ? 'welcome' : 'edit');
+    setShowProfileModal(true);
+  };
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -95,6 +127,10 @@ export function App() {
             parachuteMetrics={store.parachuteMetrics}
             activeBag={store.activeBag}
             permissions={store.permissions}
+            profile={store.profile}
+            hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+            todayReclaimedHours={store.todayReclaimedHours}
+            justEarnedParachute={store.justEarnedParachute}
             onOpenDashboard={() => setActiveTab('dashboard')}
             onOpenBagDrawer={() => {
               store.refreshInstalledApps();
@@ -104,6 +140,7 @@ export function App() {
               store.refreshPermissions();
               setShowPermissionModal(true);
             }}
+            onOpenProfileModal={openInteractiveProfile}
           />
         )}
 
@@ -112,6 +149,11 @@ export function App() {
             parachuteMetrics={store.parachuteMetrics}
             ledger={store.ledger}
             sessions={store.sessions}
+            profile={store.profile}
+            hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+            todayReclaimedHours={store.todayReclaimedHours}
+            justEarnedParachute={store.justEarnedParachute}
+            onOpenProfileModal={openInteractiveProfile}
           />
         )}
 
@@ -134,6 +176,11 @@ export function App() {
             onResetData={store.resetAllData}
             tipSkipRemaining={store.tipSkipRemaining}
             onResetTipPromptBlock={store.resetTipPromptBlock}
+            profile={store.profile}
+            hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+            hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
+            onOpenProfileModal={openInteractiveProfile}
+            onClaimFirstDonationBonus={store.claimFirstDonationBonus}
           />
         )}
       </main>
@@ -161,8 +208,30 @@ export function App() {
 
       <TipAfterSessionModal
         completedSession={store.postSessionTipPrompt}
+        hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
+        onClaimFirstDonationBonus={store.claimFirstDonationBonus}
         onDismiss={store.dismissPostSessionTipPrompt}
         onBlockFiveSessions={store.blockTipPromptForFiveSessions}
+      />
+
+      <ProfileModal
+        isOpen={showProfileModal}
+        mode={profileModalMode}
+        initialProfile={store.profile}
+        hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+        totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
+        onSaveProfile={store.saveProfileAndClaimGift}
+        onClose={() => {
+          setShowProfileModal(false);
+          if (profileModalMode === 'welcome') {
+            store.dismissWelcomePrompt();
+          }
+        }}
+      />
+
+      <ParachuteRewardAnimation
+        reward={store.parachuteRewardEvent}
+        onDismiss={store.dismissParachuteRewardAnimation}
       />
 
       {/* Neo-Brutalist Bottom Navigation Bar */}

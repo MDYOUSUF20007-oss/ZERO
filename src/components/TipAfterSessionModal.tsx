@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
 import type { SessionRecord } from '../types';
 import {
+  FIRST_DONATION_BONUS_INR,
   KOFI_URL,
   UPI_ID,
   UPI_PAY_URL,
+  UPI_FIFTY_RS_PAY_URL,
   copyTextSafely,
   handleOpenExternalUrl,
 } from '../utils/supportLinks';
@@ -19,10 +21,13 @@ import {
   Coffee,
   EyeOff,
   CheckCircle2,
+  Gift,
 } from 'lucide-react';
 
 interface TipAfterSessionModalProps {
   completedSession: SessionRecord | null;
+  hasClaimedFirstDonationParachute: boolean;
+  onClaimFirstDonationBonus: () => boolean;
   onDismiss: () => void;
   onBlockFiveSessions: () => void;
 }
@@ -37,12 +42,19 @@ function formatCompletedDuration(totalSeconds: number): string {
 
 export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
   completedSession,
+  hasClaimedFirstDonationParachute,
+  onClaimFirstDonationBonus,
   onDismiss,
   onBlockFiveSessions,
 }) => {
   const [showQr, setShowQr] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [confirmingDonationClaim, setConfirmingDonationClaim] = useState(false);
+
+  useEffect(() => {
+    setConfirmingDonationClaim(false);
+  }, [completedSession]);
 
   useEffect(() => {
     if (!completedSession || !showQr || upiQrUrl) return;
@@ -111,7 +123,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
           helped you today, you can leave a small optional tip to support development.
         </p>
 
-        {/* BEST OFFER: UPI (Zero Minimum Limit) */}
+        {/* BEST OFFER: UPI (Zero Minimum Limit) + First ₹50+ Parachute Bonus */}
         <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-400/70 space-y-3 shadow-brutal">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider">
@@ -134,13 +146,84 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             </p>
           </div>
 
+          {/* 1st ₹50+ Donation Bonus Callout */}
+          {!hasClaimedFirstDonationParachute ? (
+            <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
+              <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-black uppercase tracking-wide">
+                <Gift size={13} className="text-emerald-400 shrink-0" />
+                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 Free Parachute 🪂</span>
+              </div>
+              <p className="text-[10px] text-zinc-300 leading-relaxed">
+                As a thank-you, your <strong>very first ₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
+                donation (UPI or Ko-fi) unlocks <strong>+1 bonus Parachute</strong> once per profile.
+              </p>
+
+              {!confirmingDonationClaim ? (
+                <div className="flex flex-col sm:flex-row gap-2 pt-0.5">
+                  <a
+                    href={UPI_FIFTY_RS_PAY_URL}
+                    onClick={(e) => {
+                      handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL);
+                      setConfirmingDonationClaim(true);
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  >
+                    <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂)</span>
+                    <ExternalLink size={12} />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDonationClaim(true)}
+                    className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-emerald-700/60 text-emerald-200 text-[10px] font-bold"
+                  >
+                    Already Sent ₹{FIRST_DONATION_BONUS_INR}+?
+                  </button>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2">
+                  <div className="text-[10px] text-emerald-200 leading-relaxed">
+                    Confirm you completed your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
+                    donation to claim your one-time <strong>+1 Free Parachute</strong>:
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClaimFirstDonationBonus();
+                        setConfirmingDonationClaim(false);
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all"
+                    >
+                      Claim +1 Free 🪂 Now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDonationClaim(false)}
+                      className="px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-bold"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between text-[10px] text-emerald-300">
+              <span className="flex items-center gap-1.5 font-bold">
+                <CheckCircle2 size={12} />
+                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Bonus Parachute Claimed</span>
+              </span>
+              <span className="text-zinc-400">Thank you!</span>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <a
               href={UPI_PAY_URL}
               onClick={(e) => handleOpenExternalUrl(e, UPI_PAY_URL)}
               className="flex-1 py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
             >
-              <span>Tip via UPI App</span>
+              <span>Any Amount via UPI</span>
               <ExternalLink size={13} />
             </a>
             <button

@@ -28,11 +28,37 @@ export interface ParachuteLedgerEntry {
   note?: string;
 }
 
+export type ProfileAvatarId = 'monk' | 'void' | 'shield' | 'bolt' | 'owl' | 'flame';
+
+export type ProfileAccent = 'amber' | 'emerald' | 'white' | 'cyan';
+
+export interface ZeroProfile {
+  displayName: string;
+  handle: string;
+  avatarId: ProfileAvatarId;
+  accentColor: ProfileAccent;
+  primaryMission: string;
+  dailyGoalHours: number;
+  motto: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ParachuteRewardEvent {
+  id: string;
+  source: 'first_timer_profile' | 'first_donation_50' | 'milestone_20h';
+  delta: number;
+  newBalance: number;
+  title: string;
+  subtitle: string;
+}
+
 export interface ParachuteMetrics {
   totalCumulativeSeconds: number; // Cumulative weighted seconds toward parachutes
   totalCumulativeHours: number;
   totalReclaimedHours: number; // Actual hours spent phone-free
   lifetimeEarnedParachutes: number;
+  bonusParachutes: number;
   deployedParachutes: number;
   currentBalance: number;
   currentProgressSeconds: number;
@@ -96,6 +122,10 @@ export interface ZeroBackupPayload {
   cumulativeSeconds: number;
   totalReclaimedSeconds: number;
   usedParachutes: number;
+  bonusParachutes?: number;
+  hasClaimedFirstTimeParachute?: boolean;
+  hasClaimedFirstDonationParachute?: boolean;
+  profile?: ZeroProfile | null;
   sleepFarmingMode: SleepFarmingMode;
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
@@ -130,6 +160,7 @@ export interface ZeroNativeBridgeInterface {
   startLockTaskMode(): void;
   stopLockTaskMode(): void;
   syncLedgerState(cumulativeSeconds: number, deployedCount: IntOrNum): void;
+  syncLedgerStateWithBonus?(cumulativeSeconds: number, deployedCount: IntOrNum, bonusCount: IntOrNum): void;
   igniteSession(durationSeconds: number, tag: string): boolean;
   deployParachute(): boolean;
   getBatteryPercentage(): number;

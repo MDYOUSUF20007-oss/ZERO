@@ -13,20 +13,20 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 ## Downloads & Releases
 
 - **Latest Android APKs:** [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest) ([All Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases))
-  - **`Strict Accessibility Edition` (Recommended — Full BlockIt Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service.
-  - **`Standard Sideload Edition`:** Uses Usage Access + Display Over Other Apps without Accessibility permissions for quick browser sideloading.
-  - *Tip:* Before installing a build signed with a different key, go to **Rules → Export Backup** to save your Parachutes, Bags, and sessions as `.json`.
+  - **`ZERO-v<version>.apk` (Standard Edition — Direct Install):** Uses Usage Access + Display Over Other Apps without Accessibility permissions for quick browser/file-manager sideloading.
+  - **`ZERO-requires-adb-v<version>.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service (`adb install -r` / Shizuku or Allow Restricted Settings on Android 14–16).
+  - *Seamless In-Place Updates:* Releases from `v1.0.19+` are permanently signed with ZERO's release keystore so future APKs update directly over previous versions. *(If migrating from an older `v1.0.18` debug preview, open **Rules → Export Backup** once, uninstall the old preview, install the new signed APK, and tap **Restore File**.)*
 - **Web / PWA Preview:** [mdyousuf20007-oss.github.io/ZERO](https://mdyousuf20007-oss.github.io/ZERO/)
 
 ---
 
 ## 1. Vision & Core Philosophy
 
-- **Zero Paywalls:** Every single feature—unlimited recurring schedules, deep analytics heatmaps, strict OS kiosk locks, and themes—is completely free for all users from day one.
-- **Earned-Only Parachutes:** Emergency unlocks ("Parachutes") cannot be bought. Users earn **1 Parachute for every 20 cumulative hours (72,000 seconds) of completed phone blockage**.
+- **Zero Paywalls:** Every single feature—unlimited recurring schedules, deep analytics heatmaps, strict OS kiosk locks, interactive profiles, and themes—is completely free for all users from day one.
+- **Earned & Gift Parachutes:** Emergency Parachutes cannot be purchased outright. Users earn **1 Parachute for every 20 cumulative hours (72,000 seconds) of completed phone blockage**, plus a **one-time free starter Parachute (+1)** when creating an interactive profile on first launch, and a **one-time thank-you bonus (+1)** on a user's first ₹50+ donation.
 - **The Anti-Sleep-Farming Rule:** To keep Parachutes a genuine badge of daytime focus, sleep blocks earn **0.25x parachute progression** by default (or Daytime-Only 0.0x mode). An 8-hour sleep lock contributes 2.0 hours toward the next parachute instead of allowing users to farm a parachute every 2.5 nights.
 - **Aborted Session Penalty (Anti-Exploit):** If a user deploys a Parachute mid-session, 1 Parachute is consumed and **all elapsed time in that aborted session is permanently voided**, never counting toward the next 20-hour milestone. If you lock for 4 hours and pull the parachute at hour 3, you lose 1 Parachute and gain 0 hours.
-- **Ethical Support Model:** Clean, non-intrusive "Keep Zero Free" section in Settings ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis` with no minimum limit) plus an optional post-session tip prompt highlighting UPI as the best zero-fee option (dismissible or blockable for 5 sessions at a time) with zero advertisements.
+- **Ethical Support Model:** Clean, non-intrusive "Keep Zero Free" section in Settings ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis` with no minimum limit) plus an optional post-session tip prompt highlighting UPI as the best zero-fee option (including the one-time 1st ₹50+ tip free Parachute bonus; dismissible or blockable for 5 sessions at a time) with zero advertisements.
 - **100% Local-First & Offline:** No accounts, no cloud sync, no tracking SDKs. Works fully offline with local-first persistence.
 
 ---

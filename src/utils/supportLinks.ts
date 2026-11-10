@@ -4,7 +4,9 @@ export const KOFI_URL = 'https://ko-fi.com/mdyousuf2620';
 export const RELEASES_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO/releases';
 export const SOURCE_URL = 'https://github.com/MDYOUSUF20007-oss/ZERO';
 export const UPI_ID = 'md.y2007@ptaxis';
+export const FIRST_DONATION_BONUS_INR = 50;
 export const UPI_PAY_URL = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Zero FOSS')}&cu=INR`;
+export const UPI_FIFTY_RS_PAY_URL = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Zero FOSS')}&am=${FIRST_DONATION_BONUS_INR}&cu=INR`;
 
 export function handleOpenExternalUrl(e: React.MouseEvent, url: string): void {
   if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {

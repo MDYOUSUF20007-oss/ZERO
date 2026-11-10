@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
 import {
+  FIRST_DONATION_BONUS_INR,
   KOFI_URL,
   RELEASES_URL,
   SOURCE_URL,
   UPI_ID,
   UPI_PAY_URL,
+  UPI_FIFTY_RS_PAY_URL,
   copyTextSafely,
   handleOpenExternalUrl,
 } from '../utils/supportLinks';
@@ -15,7 +17,9 @@ import type {
   ThemeStyle,
   SleepFarmingMode,
   NativePermissionStatus,
+  ZeroProfile,
 } from '../types';
+import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import {
   Plus,
   Trash2,
@@ -36,6 +40,10 @@ import {
   Terminal,
   ShieldAlert,
   HelpCircle,
+  Gift,
+  Sparkles,
+  CheckCircle2,
+  UserPlus,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -56,6 +64,11 @@ interface SchedulesDonateViewProps {
   onResetData: () => void;
   tipSkipRemaining?: number;
   onResetTipPromptBlock?: () => void;
+  profile?: ZeroProfile | null;
+  hasClaimedFirstTimeParachute?: boolean;
+  hasClaimedFirstDonationParachute?: boolean;
+  onOpenProfileModal?: () => void;
+  onClaimFirstDonationBonus?: () => boolean;
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -79,12 +92,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onResetData,
   tipSkipRemaining = 0,
   onResetTipPromptBlock,
+  profile = null,
+  hasClaimedFirstTimeParachute = false,
+  hasClaimedFirstDonationParachute = false,
+  onOpenProfileModal,
+  onClaimFirstDonationBonus,
 }) => {
   const [activeSection, setActiveSection] = useState<'schedules' | 'support' | 'settings' | 'os_security'>('schedules');
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState<string>('');
+  const [confirmingDonationClaim, setConfirmingDonationClaim] = useState(false);
   const [showPasteRestore, setShowPasteRestore] = useState(false);
   const [pasteJsonInput, setPasteJsonInput] = useState('');
   const [backupNotice, setBackupNotice] = useState<{ ok: boolean; message: string } | null>(null);
@@ -447,6 +466,68 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </div>
           </div>
 
+          {/* Interactive Profile Card */}
+          {onOpenProfileModal && (
+            <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-2xl space-y-3 font-mono">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-zinc-200 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <UserPlus size={14} className="text-amber-400" />
+                  <span>Interactive Zero Profile</span>
+                </span>
+                {!hasClaimedFirstTimeParachute && (
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-black">
+                    +1 Free 🪂 Gift
+                  </span>
+                )}
+              </div>
+
+              {profile ? (
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black border border-zinc-800">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ProfileAvatar
+                      avatarId={profile.avatarId}
+                      accent={profile.accentColor}
+                      size="sm"
+                      interactive
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate">
+                        {profile.displayName} ({profile.handle})
+                      </div>
+                      <div
+                        className={`text-[10px] truncate ${
+                          (ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber).text
+                        }`}
+                      >
+                        #{profile.primaryMission} • {profile.dailyGoalHours}h/day target
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenProfileModal}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-white shrink-0"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenProfileModal}
+                  className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <Sparkles size={14} />
+                  <span>
+                    {hasClaimedFirstTimeParachute
+                      ? 'Create Interactive Profile'
+                      : 'Make Profile & Claim +1 Free 🪂'}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Theme Palette */}
           <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl space-y-3">
             <div className="flex items-center gap-2 text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">
@@ -802,8 +883,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </p>
             <p className="text-xs font-mono text-zinc-400 leading-relaxed">
               We believe your attention belongs to you—not to algorithms or paywalled apps.
-              Emergency Parachutes can never be purchased; they are strictly earned by staying
-              focused.
+              Emergency Parachutes can never be purchased outright; earn 1 every 20 focus hours,
+              plus one-time free gifts (+1 starter on first profile, +1 thank-you on first ₹{FIRST_DONATION_BONUS_INR}+ tip).
             </p>
             <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400 gap-2">
               <a
@@ -886,12 +967,82 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 UPI has <strong>no minimum limit</strong> — tip even ₹1 or any amount you want with zero platform fees.
               </p>
 
+              {/* 1st ₹50+ Supporter Bonus */}
+              {!hasClaimedFirstDonationParachute ? (
+                <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
+                  <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-mono font-black uppercase">
+                    <Gift size={13} className="text-emerald-400 shrink-0" />
+                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 Free Parachute 🪂</span>
+                  </div>
+                  <p className="text-[10px] font-mono text-zinc-300 leading-relaxed">
+                    Your very first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> support donation gifts a one-time thank-you <strong>+1 Parachute</strong>.
+                  </p>
+                  {!confirmingDonationClaim ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <a
+                        href={UPI_FIFTY_RS_PAY_URL}
+                        onClick={(e) => {
+                          handleOpenExternal(e, UPI_FIFTY_RS_PAY_URL);
+                          setConfirmingDonationClaim(true);
+                        }}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂)</span>
+                        <ExternalLink size={12} />
+                      </a>
+                      {onClaimFirstDonationBonus && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDonationClaim(true)}
+                          className="px-3 py-2 rounded-xl bg-zinc-900 border border-emerald-700/60 text-emerald-200 font-mono text-[10px] font-bold"
+                        >
+                          Sent ₹{FIRST_DONATION_BONUS_INR}+?
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2 font-mono">
+                      <div className="text-[10px] text-emerald-200">
+                        Confirm your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> tip to unlock your one-time <strong>+1 Free Parachute</strong>:
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClaimFirstDonationBonus?.();
+                            setConfirmingDonationClaim(false);
+                          }}
+                          className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider"
+                        >
+                          Claim +1 Free 🪂
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDonationClaim(false)}
+                          className="px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-bold"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between text-[10px] font-mono text-emerald-300">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <CheckCircle2 size={12} />
+                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Parachute Bonus Claimed</span>
+                  </span>
+                  <span className="text-zinc-400">Thank you!</span>
+                </div>
+              )}
+
               <a
                 href={UPI_PAY_URL}
                 onClick={(e) => handleOpenExternal(e, UPI_PAY_URL)}
                 className="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
               >
-                <span>Open UPI App</span>
+                <span>Open UPI App (Any Amount)</span>
                 <ExternalLink size={12} />
               </a>
 

@@ -12,6 +12,10 @@ import type {
   BagApp,
   NativePermissionStatus,
   ZeroBackupPayload,
+  ZeroProfile,
+  ParachuteRewardEvent,
+  ProfileAvatarId,
+  ProfileAccent,
 } from '../types';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -20,6 +24,13 @@ import {
   evaluatePostSessionTipPrompt,
   normalizeTipSkipCount,
 } from '../utils/tipPromptPolicy';
+import {
+  FIRST_DONATION_BONUS_INR,
+  claimFirstDonationParachute,
+  claimFirstTimerProfileBonus,
+  computeParachuteBalance,
+  sanitizeZeroProfile,
+} from '../utils/parachuteRewardsPolicy';
 
 export const SECONDS_PER_PARACHUTE = 72000; // 20 Hours exactly
 export const MAX_BAG_APPS = 3; // BlockIt-inspired 3-app cap per Bag
@@ -30,6 +41,11 @@ const STORAGE_KEYS = {
   CUMULATIVE_PARACHUTE_SECONDS: 'zero_cumulative_parachute_seconds_v3',
   TOTAL_RECLAIMED_SECONDS: 'zero_total_reclaimed_seconds_v3',
   USED_PARACHUTES: 'zero_used_parachutes_v3',
+  BONUS_PARACHUTES: 'zero_bonus_parachutes_v1',
+  CLAIMED_FIRST_TIME_PARACHUTE: 'zero_claimed_first_time_parachute_v1',
+  CLAIMED_FIRST_DONATION_PARACHUTE: 'zero_claimed_first_donation_parachute_v1',
+  PROFILE: 'zero_user_profile_v1',
+  DISMISSED_WELCOME_MODAL: 'zero_dismissed_welcome_modal_v1',
   LEDGER: 'zero_parachute_ledger_v3',
   SESSIONS: 'zero_sessions_history_v3',
   SCHEDULES: 'zero_recurring_schedules_v3',
@@ -235,6 +251,35 @@ export function useZeroStore() {
     return saved !== null ? Math.max(0, Number(saved) || 0) : 0;
   });
 
+  const [bonusParachutes, setBonusParachutes] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.BONUS_PARACHUTES);
+    return saved !== null ? Math.max(0, Math.floor(Number(saved) || 0)) : 0;
+  });
+
+  const [hasClaimedFirstTimeParachute, setHasClaimedFirstTimeParachute] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE) === '1';
+  });
+
+  const [hasClaimedFirstDonationParachute, setHasClaimedFirstDonationParachute] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE) === '1';
+  });
+
+  const [hasDismissedWelcomeModal, setHasDismissedWelcomeModal] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.DISMISSED_WELCOME_MODAL) === '1';
+  });
+
+  const [profile, setProfile] = useState<ZeroProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      return saved ? sanitizeZeroProfile(JSON.parse(saved) as Partial<ZeroProfile>) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [parachuteRewardEvent, setParachuteRewardEvent] = useState<ParachuteRewardEvent | null>(null);
+  const [justEarnedParachute, setJustEarnedParachute] = useState<boolean>(false);
+
   const [ledger, setLedger] = useState<ParachuteLedgerEntry[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.LEDGER);
@@ -432,6 +477,39 @@ export function useZeroStore() {
   }, [usedParachutes]);
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.BONUS_PARACHUTES, bonusParachutes.toString());
+  }, [bonusParachutes]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE,
+      hasClaimedFirstTimeParachute ? '1' : '0'
+    );
+  }, [hasClaimedFirstTimeParachute]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE,
+      hasClaimedFirstDonationParachute ? '1' : '0'
+    );
+  }, [hasClaimedFirstDonationParachute]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.DISMISSED_WELCOME_MODAL,
+      hasDismissedWelcomeModal ? '1' : '0'
+    );
+  }, [hasDismissedWelcomeModal]);
+
+  useEffect(() => {
+    if (profile) {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PROFILE);
+    }
+  }, [profile]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LEDGER, JSON.stringify(ledger));
   }, [ledger]);
 
@@ -455,6 +533,18 @@ export function useZeroStore() {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_LOCK, JSON.stringify(activeLock));
   }, [activeLock]);
 
+  const syncNativeLedger = useCallback((cumSecs: number, usedCount: number, bonusCount: number) => {
+    try {
+      if (window.ZeroNative?.syncLedgerStateWithBonus) {
+        window.ZeroNative.syncLedgerStateWithBonus(cumSecs, usedCount, bonusCount);
+      } else {
+        window.ZeroNative?.syncLedgerState(cumSecs, usedCount);
+      }
+    } catch {
+      // Web mode
+    }
+  }, []);
+
   // Keep native BagStore & ParachuteStore synchronized seamlessly
   useEffect(() => {
     try {
@@ -472,26 +562,37 @@ export function useZeroStore() {
   }, [activeBag]);
 
   useEffect(() => {
-    try {
-      window.ZeroNative?.syncLedgerState(cumulativeSeconds, usedParachutes);
-    } catch {
-      // Web mode
-    }
-  }, [cumulativeSeconds, usedParachutes]);
+    syncNativeLedger(cumulativeSeconds, usedParachutes, bonusParachutes);
+  }, [cumulativeSeconds, usedParachutes, bonusParachutes, syncNativeLedger]);
 
   // Compute live Parachute Metrics
-  const lifetimeEarned = Math.floor(cumulativeSeconds / SECONDS_PER_PARACHUTE);
-  const currentBalance = Math.max(0, lifetimeEarned - usedParachutes);
+  const balanceSnapshot = computeParachuteBalance({
+    cumulativeSeconds,
+    bonusParachutes,
+    usedParachutes,
+  });
+  const lifetimeEarned = balanceSnapshot.lifetimeEarned;
+  const currentBalance = balanceSnapshot.currentBalance;
   const currentProgressSeconds = cumulativeSeconds % SECONDS_PER_PARACHUTE;
   const currentProgressHours = Number((currentProgressSeconds / 3600).toFixed(1));
   const hoursUntilNextParachute = Number(((SECONDS_PER_PARACHUTE - currentProgressSeconds) / 3600).toFixed(1));
   const progressPercentage = Math.min(100, Number(((currentProgressSeconds / SECONDS_PER_PARACHUTE) * 100).toFixed(1)));
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayReclaimedHours = Number(
+    (
+      sessions
+        .filter((s) => s.status === 'completed' && s.dateStr === todayStr)
+        .reduce((acc, s) => acc + s.durationSeconds, 0) / 3600
+    ).toFixed(1)
+  );
 
   const parachuteMetrics: ParachuteMetrics = {
     totalCumulativeSeconds: cumulativeSeconds,
     totalCumulativeHours: Number((cumulativeSeconds / 3600).toFixed(1)),
     totalReclaimedHours: Number((totalReclaimedSeconds / 3600).toFixed(1)),
     lifetimeEarnedParachutes: lifetimeEarned,
+    bonusParachutes,
     deployedParachutes: usedParachutes,
     currentBalance,
     currentProgressSeconds,
@@ -507,13 +608,56 @@ export function useZeroStore() {
   sleepFarmingModeRef.current = sleepFarmingMode;
   const usedParachutesRef = useRef(usedParachutes);
   usedParachutesRef.current = usedParachutes;
+  const bonusParachutesRef = useRef(bonusParachutes);
+  bonusParachutesRef.current = bonusParachutes;
   const cumulativeSecondsRef = useRef(cumulativeSeconds);
   cumulativeSecondsRef.current = cumulativeSeconds;
+  const hasClaimedFirstTimeRef = useRef(hasClaimedFirstTimeParachute);
+  hasClaimedFirstTimeRef.current = hasClaimedFirstTimeParachute;
+  const hasClaimedFirstDonationRef = useRef(hasClaimedFirstDonationParachute);
+  hasClaimedFirstDonationRef.current = hasClaimedFirstDonationParachute;
+  const justEarnedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tipSkipRemainingRef = useRef(tipSkipRemaining);
   useEffect(() => {
     tipSkipRemainingRef.current = tipSkipRemaining;
   }, [tipSkipRemaining]);
+
+  useEffect(() => {
+    return () => {
+      if (justEarnedTimerRef.current) clearTimeout(justEarnedTimerRef.current);
+    };
+  }, []);
+
+  const emitParachuteReward = useCallback(
+    (event: Omit<ParachuteRewardEvent, 'id'>) => {
+      haptics.milestoneChime();
+      try {
+        confetti({
+          particleCount: 110,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: ['#FFFFFF', '#F59E0B', '#10B981'],
+        });
+      } catch {
+        // Ignore confetti errors
+      }
+      setParachuteRewardEvent({
+        id: `rew_${Date.now()}`,
+        ...event,
+      });
+      setJustEarnedParachute(true);
+      if (justEarnedTimerRef.current) clearTimeout(justEarnedTimerRef.current);
+      justEarnedTimerRef.current = setTimeout(() => {
+        setJustEarnedParachute(false);
+      }, 4500);
+    },
+    []
+  );
+
+  const dismissParachuteRewardAnimation = useCallback(() => {
+    setParachuteRewardEvent(null);
+  }, []);
 
   const finalizingLockStartRef = useRef<number | null>(null);
   const bootRecoveryHandledRef = useRef(false);
@@ -556,37 +700,41 @@ export function useZeroStore() {
     setSessions((prev) => [newSession, ...prev]);
     setTotalReclaimedSeconds((prev) => prev + duration);
 
-    setCumulativeSeconds((prevTotal) => {
-      const newTotal = prevTotal + earnedParachuteSecs;
-      const prevMilestones = Math.floor(prevTotal / SECONDS_PER_PARACHUTE);
-      const newMilestones = Math.floor(newTotal / SECONDS_PER_PARACHUTE);
+    const prevTotal = cumulativeSecondsRef.current;
+    const newTotal = prevTotal + earnedParachuteSecs;
+    cumulativeSecondsRef.current = newTotal;
+    setCumulativeSeconds(newTotal);
 
-      if (newMilestones > prevMilestones) {
-        const delta = newMilestones - prevMilestones;
-        try {
-          confetti({
-            particleCount: 120,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#FFFFFF', '#F59E0B', '#10B981'],
-          });
-        } catch {
-          // Ignore confetti error
-        }
+    const prevMilestones = Math.floor(prevTotal / SECONDS_PER_PARACHUTE);
+    const newMilestones = Math.floor(newTotal / SECONDS_PER_PARACHUTE);
 
-        const newEntry: ParachuteLedgerEntry = {
-          id: `txn_${now}`,
-          timestamp: now,
-          type: 'EARNED',
-          description: `20-Hour Milestone reached! (+${delta} Emergency Parachute earned)`,
-          delta,
-          tag: finishedLock.tag,
-          note: isSleep ? `Completed Sleep session (credited at ${multiplier}x rate)` : 'Full daytime focus credit',
-        };
-        setLedger((l) => [newEntry, ...l]);
-      }
-      return newTotal;
-    });
+    if (newMilestones > prevMilestones) {
+      const delta = newMilestones - prevMilestones;
+      const updatedBalance = computeParachuteBalance({
+        cumulativeSeconds: newTotal,
+        bonusParachutes: bonusParachutesRef.current,
+        usedParachutes: usedParachutesRef.current,
+      }).currentBalance;
+
+      const newEntry: ParachuteLedgerEntry = {
+        id: `txn_${now}`,
+        timestamp: now,
+        type: 'EARNED',
+        description: `20-Hour Milestone reached! (+${delta} Emergency Parachute earned)`,
+        delta,
+        tag: finishedLock.tag,
+        note: isSleep ? `Completed Sleep session (credited at ${multiplier}x rate)` : 'Full daytime focus credit',
+      };
+      setLedger((l) => [newEntry, ...l]);
+
+      emitParachuteReward({
+        source: 'milestone_20h',
+        delta,
+        newBalance: updatedBalance,
+        title: delta > 1 ? `+${delta} Parachutes Earned!` : '20h Milestone Parachute!',
+        subtitle: `You completed 20 cumulative hours of phone-free discipline in #${finishedLock.tag}.`,
+      });
+    }
 
     setActiveLock({
       isLocked: false,
@@ -612,7 +760,7 @@ export function useZeroStore() {
     if (tipDecision.shouldShow) {
       setPostSessionTipPrompt(newSession);
     }
-  }, []);
+  }, [emitParachuteReward]);
 
   const applyParachuteAbort = useCallback((current: ActiveLockSession) => {
     if (!current.isLocked || finalizingLockStartRef.current === current.startTime) {
@@ -764,7 +912,11 @@ export function useZeroStore() {
           activeBag.allowCalls,
           activeBag.allowSms
         );
-        window.ZeroNative.syncLedgerState(cumulativeSecondsRef.current, usedParachutesRef.current);
+        syncNativeLedger(
+          cumulativeSecondsRef.current,
+          usedParachutesRef.current,
+          bonusParachutesRef.current
+        );
         const started = window.ZeroNative.igniteSession(durationSeconds, tag);
         if (started === false) {
           refreshPermissions();
@@ -883,14 +1035,138 @@ export function useZeroStore() {
     }, 6000);
   };
 
+  const saveProfileAndClaimGift = useCallback(
+    (draft: {
+      displayName: string;
+      handle: string;
+      avatarId: ProfileAvatarId;
+      accentColor: ProfileAccent;
+      primaryMission: string;
+      dailyGoalHours: number;
+      motto: string;
+    }): { grantedFreeParachute: boolean } => {
+      const sanitized = sanitizeZeroProfile({
+        ...draft,
+        createdAt: profile?.createdAt,
+      });
+      if (!sanitized) {
+        return { grantedFreeParachute: false };
+      }
+
+      setProfile(sanitized);
+      setHasDismissedWelcomeModal(true);
+
+      const claim = claimFirstTimerProfileBonus(
+        hasClaimedFirstTimeRef.current,
+        bonusParachutesRef.current
+      );
+
+      if (claim.granted) {
+        bonusParachutesRef.current = claim.nextBonusParachutes;
+        hasClaimedFirstTimeRef.current = claim.nextAlreadyClaimed;
+        setBonusParachutes(claim.nextBonusParachutes);
+        setHasClaimedFirstTimeParachute(claim.nextAlreadyClaimed);
+        syncNativeLedger(
+          cumulativeSecondsRef.current,
+          usedParachutesRef.current,
+          claim.nextBonusParachutes
+        );
+
+        const now = Date.now();
+        const newBalance = computeParachuteBalance({
+          cumulativeSeconds: cumulativeSecondsRef.current,
+          bonusParachutes: claim.nextBonusParachutes,
+          usedParachutes: usedParachutesRef.current,
+        }).currentBalance;
+
+        const entry: ParachuteLedgerEntry = {
+          id: `txn_welcome_${now}`,
+          timestamp: now,
+          type: 'EARNED',
+          description: 'First-Timer Profile Gift: Starter Emergency Parachute (+1 Free)',
+          delta: 1,
+          tag: 'Onboarding',
+          note: `Profile created for ${sanitized.handle}`,
+        };
+        setLedger((prev) => [entry, ...prev]);
+
+        emitParachuteReward({
+          source: 'first_timer_profile',
+          delta: 1,
+          newBalance,
+          title: 'Starter Parachute Unlocked!',
+          subtitle: `Welcome aboard, ${sanitized.displayName}! Your first free Parachute is armed in your vault.`,
+        });
+      }
+
+      return { grantedFreeParachute: claim.granted };
+    },
+    [profile?.createdAt, emitParachuteReward, syncNativeLedger]
+  );
+
+  const claimFirstDonationBonus = useCallback((): boolean => {
+    const claim = claimFirstDonationParachute(
+      hasClaimedFirstDonationRef.current,
+      bonusParachutesRef.current
+    );
+    if (!claim.granted) return false;
+
+    bonusParachutesRef.current = claim.nextBonusParachutes;
+    hasClaimedFirstDonationRef.current = claim.nextAlreadyClaimed;
+    setBonusParachutes(claim.nextBonusParachutes);
+    setHasClaimedFirstDonationParachute(claim.nextAlreadyClaimed);
+    syncNativeLedger(
+      cumulativeSecondsRef.current,
+      usedParachutesRef.current,
+      claim.nextBonusParachutes
+    );
+
+    const now = Date.now();
+    const newBalance = computeParachuteBalance({
+      cumulativeSeconds: cumulativeSecondsRef.current,
+      bonusParachutes: claim.nextBonusParachutes,
+      usedParachutes: usedParachutesRef.current,
+    }).currentBalance;
+
+    const entry: ParachuteLedgerEntry = {
+      id: `txn_supporter_${now}`,
+      timestamp: now,
+      type: 'EARNED',
+      description: `First ₹${FIRST_DONATION_BONUS_INR}+ Supporter Bonus (+1 Free Parachute)`,
+      delta: 1,
+      tag: 'Support',
+      note: 'One-time gratitude bonus for supporting free & open-source Zero',
+    };
+    setLedger((prev) => [entry, ...prev]);
+    setPostSessionTipPrompt(null);
+
+    emitParachuteReward({
+      source: 'first_donation_50',
+      delta: 1,
+      newBalance,
+      title: 'Thank-You Parachute Unlocked!',
+      subtitle: `Thank you for supporting Zero with ₹${FIRST_DONATION_BONUS_INR}+! +1 bonus Parachute has been added.`,
+    });
+
+    return true;
+  }, [emitParachuteReward, syncNativeLedger]);
+
+  const dismissWelcomePrompt = useCallback(() => {
+    setHasDismissedWelcomeModal(true);
+  }, []);
+
   const buildBackupJson = (): string => {
     const payload: ZeroBackupPayload = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       appName: 'Zero',
       exportedAt: new Date().toISOString(),
       cumulativeSeconds,
       totalReclaimedSeconds,
       usedParachutes,
+      bonusParachutes,
+      hasClaimedFirstTimeParachute,
+      hasClaimedFirstDonationParachute,
+      profile,
       sleepFarmingMode,
       ledger,
       sessions,
@@ -946,6 +1222,15 @@ export function useZeroStore() {
       const nextUsed =
         typeof parsed.usedParachutes === 'number' ? Math.max(0, Math.round(parsed.usedParachutes)) : 0;
 
+      const nextClaimedFirstTime = Boolean(parsed.hasClaimedFirstTimeParachute);
+      const nextClaimedFirstDonation = Boolean(parsed.hasClaimedFirstDonationParachute);
+      const minBonusFromFlags = (nextClaimedFirstTime ? 1 : 0) + (nextClaimedFirstDonation ? 1 : 0);
+      const nextBonus =
+        typeof parsed.bonusParachutes === 'number'
+          ? Math.min(2, Math.max(minBonusFromFlags, Math.round(parsed.bonusParachutes)))
+          : minBonusFromFlags;
+      const nextProfile = parsed.profile ? sanitizeZeroProfile(parsed.profile) : null;
+
       const nextSessions = parsed.sessions.slice(0, 5000);
       const nextLedger = parsed.ledger.slice(0, 1000);
       const nextSchedules = Array.isArray(parsed.schedules) ? parsed.schedules : DEFAULT_SCHEDULES;
@@ -968,8 +1253,17 @@ export function useZeroStore() {
       const nextSleepMode: SleepFarmingMode = parsed.sleepFarmingMode || 'quarter_credit';
 
       setCumulativeSeconds(nextCumulative);
+      cumulativeSecondsRef.current = nextCumulative;
       setTotalReclaimedSeconds(nextReclaimed);
       setUsedParachutes(nextUsed);
+      usedParachutesRef.current = nextUsed;
+      setBonusParachutes(nextBonus);
+      bonusParachutesRef.current = nextBonus;
+      setHasClaimedFirstTimeParachute(nextClaimedFirstTime || Boolean(nextProfile && nextBonus > 0));
+      hasClaimedFirstTimeRef.current = nextClaimedFirstTime || Boolean(nextProfile && nextBonus > 0);
+      setHasClaimedFirstDonationParachute(nextClaimedFirstDonation);
+      hasClaimedFirstDonationRef.current = nextClaimedFirstDonation;
+      setProfile(nextProfile);
       setSessions(nextSessions);
       setLedger(nextLedger);
       setSchedules(nextSchedules);
@@ -981,6 +1275,20 @@ export function useZeroStore() {
       localStorage.setItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS, String(nextCumulative));
       localStorage.setItem(STORAGE_KEYS.TOTAL_RECLAIMED_SECONDS, String(nextReclaimed));
       localStorage.setItem(STORAGE_KEYS.USED_PARACHUTES, String(nextUsed));
+      localStorage.setItem(STORAGE_KEYS.BONUS_PARACHUTES, String(nextBonus));
+      localStorage.setItem(
+        STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE,
+        nextClaimedFirstTime ? '1' : '0'
+      );
+      localStorage.setItem(
+        STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE,
+        nextClaimedFirstDonation ? '1' : '0'
+      );
+      if (nextProfile) {
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(nextProfile));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      }
       localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(nextSessions));
       localStorage.setItem(STORAGE_KEYS.LEDGER, JSON.stringify(nextLedger));
       localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(nextSchedules));
@@ -988,11 +1296,7 @@ export function useZeroStore() {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_BAG_ID, nextActiveBagId);
       localStorage.setItem(STORAGE_KEYS.SEED_PURGE_FLAG, '1');
 
-      try {
-        window.ZeroNative?.syncLedgerState(nextCumulative, nextUsed);
-      } catch {
-        // Ignore in web
-      }
+      syncNativeLedger(nextCumulative, nextUsed, nextBonus);
 
       const restoredHours = (nextReclaimed / 3600).toFixed(1);
       return {
@@ -1007,9 +1311,21 @@ export function useZeroStore() {
   const resetAllData = () => {
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.SEED_PURGE_FLAG, '1');
+    cumulativeSecondsRef.current = 0;
+    usedParachutesRef.current = 0;
+    bonusParachutesRef.current = 0;
+    hasClaimedFirstTimeRef.current = false;
+    hasClaimedFirstDonationRef.current = false;
     setCumulativeSeconds(0);
     setTotalReclaimedSeconds(0);
     setUsedParachutes(0);
+    setBonusParachutes(0);
+    setHasClaimedFirstTimeParachute(false);
+    setHasClaimedFirstDonationParachute(false);
+    setHasDismissedWelcomeModal(false);
+    setProfile(null);
+    setParachuteRewardEvent(null);
+    setJustEarnedParachute(false);
     setLedger([]);
     setSessions([]);
     setSchedules(DEFAULT_SCHEDULES);
@@ -1027,11 +1343,7 @@ export function useZeroStore() {
       elapsedSeconds: 0,
       remainingSeconds: 0,
     });
-    try {
-      window.ZeroNative?.syncLedgerState(0, 0);
-    } catch {
-      // Ignore
-    }
+    syncNativeLedger(0, 0, 0);
   };
 
   const dismissPostSessionTipPrompt = () => {
@@ -1056,6 +1368,17 @@ export function useZeroStore() {
     setTheme: setThemeState,
     sleepFarmingMode,
     setSleepFarmingMode,
+    profile,
+    hasClaimedFirstTimeParachute,
+    hasClaimedFirstDonationParachute,
+    hasDismissedWelcomeModal,
+    todayReclaimedHours,
+    parachuteRewardEvent,
+    justEarnedParachute,
+    dismissParachuteRewardAnimation,
+    dismissWelcomePrompt,
+    saveProfileAndClaimGift,
+    claimFirstDonationBonus,
     activeLock,
     parachuteMetrics,
     ledger,

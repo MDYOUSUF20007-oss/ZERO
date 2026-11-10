@@ -20,6 +20,7 @@ class ParachuteStore(context: Context) {
         const val PREFS_NAME = "zero_parachute_ledger"
         const val KEY_CUMULATIVE_SECONDS = "completed_blocked_seconds"
         const val KEY_DEPLOYED_COUNT = "deployed_parachutes_count"
+        const val KEY_BONUS_PARACHUTES = "bonus_parachutes_count"
         const val KEY_TRANSACTION_HISTORY = "parachute_ledger_json"
         const val SECONDS_PER_PARACHUTE = 72_000L // 20 Hours exactly
     }
@@ -31,6 +32,7 @@ class ParachuteStore(context: Context) {
         val totalCumulativeHours: Double,
         val lifetimeEarnedParachutes: Int,
         val deployedParachutes: Int,
+        val bonusParachutes: Int = 0,
         val currentBalance: Int,
         val currentProgressSeconds: Long,
         val currentProgressHours: Double,
@@ -53,8 +55,9 @@ class ParachuteStore(context: Context) {
     fun getMetrics(): ParachuteMetrics {
         val totalSeconds = prefs.getLong(KEY_CUMULATIVE_SECONDS, 0L)
         val deployed = prefs.getInt(KEY_DEPLOYED_COUNT, 0)
+        val bonus = maxOf(0, prefs.getInt(KEY_BONUS_PARACHUTES, 0))
 
-        val lifetimeEarned = (totalSeconds / SECONDS_PER_PARACHUTE).toInt()
+        val lifetimeEarned = (totalSeconds / SECONDS_PER_PARACHUTE).toInt() + bonus
         val currentBalance = maxOf(0, lifetimeEarned - deployed)
 
         val progressSeconds = totalSeconds % SECONDS_PER_PARACHUTE
@@ -67,6 +70,7 @@ class ParachuteStore(context: Context) {
             totalCumulativeHours = totalSeconds / 3600.0,
             lifetimeEarnedParachutes = lifetimeEarned,
             deployedParachutes = deployed,
+            bonusParachutes = bonus,
             currentBalance = currentBalance,
             currentProgressSeconds = progressSeconds,
             currentProgressHours = progressHours,
@@ -78,10 +82,12 @@ class ParachuteStore(context: Context) {
     fun getParachuteBalance(): Int = getMetrics().currentBalance
 
     @Synchronized
-    fun syncLedgerState(cumulativeSeconds: Long, deployedCount: Int) {
+    @JvmOverloads
+    fun syncLedgerState(cumulativeSeconds: Long, deployedCount: Int, bonusCount: Int = 0) {
         prefs.edit()
             .putLong(KEY_CUMULATIVE_SECONDS, maxOf(0L, cumulativeSeconds))
             .putInt(KEY_DEPLOYED_COUNT, maxOf(0, deployedCount))
+            .putInt(KEY_BONUS_PARACHUTES, maxOf(0, bonusCount))
             .apply()
     }
 

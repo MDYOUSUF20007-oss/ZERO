@@ -4,9 +4,12 @@ import type {
   ParachuteMetrics,
   OccasionBag,
   NativePermissionStatus,
+  ZeroProfile,
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
+import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -16,6 +19,9 @@ import {
   Briefcase,
   Phone,
   MessageSquare,
+  Gift,
+  Sparkles,
+  UserPlus,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -23,9 +29,14 @@ interface LockDialViewProps {
   parachuteMetrics: ParachuteMetrics;
   activeBag: OccasionBag;
   permissions: NativePermissionStatus;
+  profile: ZeroProfile | null;
+  hasClaimedFirstTimeParachute: boolean;
+  todayReclaimedHours: number;
+  justEarnedParachute: boolean;
   onOpenDashboard: () => void;
   onOpenBagDrawer: () => void;
   onOpenPermissionGate: () => void;
+  onOpenProfileModal: () => void;
 }
 
 const PRESET_DURATIONS = [
@@ -47,9 +58,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   parachuteMetrics,
   activeBag,
   permissions,
+  profile,
+  hasClaimedFirstTimeParachute,
+  todayReclaimedHours,
+  justEarnedParachute,
   onOpenDashboard,
   onOpenBagDrawer,
   onOpenPermissionGate,
+  onOpenProfileModal,
 }) => {
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
@@ -213,24 +229,137 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     }
   };
 
+  const profileRank = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours);
+  const profileAccent = profile
+    ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
+    : ACCENT_STYLES.amber;
+  const dailyGoalPct = profile
+    ? Math.min(100, Math.round((todayReclaimedHours / Math.max(1, profile.dailyGoalHours)) * 100))
+    : 0;
+  const balanceBadgeText =
+    parachuteMetrics.bonusParachutes > 0
+      ? parachuteMetrics.lifetimeEarnedParachutes === parachuteMetrics.bonusParachutes
+        ? 'Starter Gift Ready'
+        : `+${parachuteMetrics.bonusParachutes} Bonus + Earned`
+      : 'Earned-Only';
+
   return (
     <div className="flex-1 flex flex-col items-center justify-between px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
+      {/* Interactive Profile Strip */}
+      {profile ? (
+        <div
+          className={`w-full bg-zinc-950/90 border rounded-2xl p-2.5 flex items-center justify-between gap-2.5 transition-all ${profileAccent.border}`}
+        >
+          <ProfileAvatar
+            avatarId={profile.avatarId}
+            accent={profile.accentColor}
+            size="sm"
+            interactive
+          />
+          <button
+            type="button"
+            onClick={onOpenProfileModal}
+            className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-xs text-white truncate">
+                  {profile.displayName}
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`}
+                >
+                  {profileRank.title}
+                </span>
+              </div>
+              <div className="text-[10px] text-zinc-400 truncate mt-0.5">
+                Today {todayReclaimedHours}h / {profile.dailyGoalHours}h goal • #{profile.primaryMission}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-10 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${profileAccent.bar}`}
+                  style={{ width: `${dailyGoalPct}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
+                Edit
+              </span>
+            </div>
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpenProfileModal}
+          className="w-full bg-amber-500/10 border border-amber-400/60 hover:border-amber-300 rounded-2xl p-2.5 px-3 flex items-center justify-between gap-2 font-mono transition-all active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+              {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
+            </div>
+            <div className="text-left min-w-0">
+              <div className="text-xs font-bold text-white truncate">
+                {hasClaimedFirstTimeParachute
+                  ? 'Create Interactive Profile'
+                  : 'Make Profile & Claim +1 Free 🪂'}
+              </div>
+              <div className="text-[10px] text-amber-200/80 truncate">
+                {hasClaimedFirstTimeParachute
+                  ? 'Choose emblem, daily goal & personal lock pledge'
+                  : 'First-timer special starter Parachute waiting'}
+              </div>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+            <Sparkles size={11} />
+            <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
+          </span>
+        </button>
+      )}
+
       {/* Top Banner: Parachute Balance & Milestone Progress */}
       <button
         onClick={onOpenDashboard}
-        className="w-full bg-zinc-950/80 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-3 flex items-center justify-between transition-all group active:scale-[0.98] shadow-brutal"
+        className={`w-full bg-zinc-950/80 border rounded-2xl p-3 flex items-center justify-between transition-all group active:scale-[0.98] shadow-brutal relative overflow-hidden ${
+          justEarnedParachute
+            ? 'border-amber-400 ring-2 ring-amber-400/50 animate-parachute-card-pop'
+            : 'border-zinc-800 hover:border-zinc-600'
+        }`}
       >
+        {justEarnedParachute && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
+          />
+        )}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center font-mono text-base group-hover:border-amber-400/50 transition-colors">
-            🪂
+          <div
+            className={`w-9 h-9 rounded-xl bg-zinc-900 border flex items-center justify-center font-mono text-base transition-colors ${
+              justEarnedParachute
+                ? 'border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.5)]'
+                : 'border-zinc-700 group-hover:border-amber-400/50'
+            }`}
+          >
+            <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
+              🪂
+            </span>
           </div>
           <div className="text-left">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-mono font-bold text-sm text-zinc-100">
-                {parachuteMetrics.currentBalance} {parachuteMetrics.currentBalance === 1 ? 'Parachute' : 'Parachutes'}
+                {parachuteMetrics.currentBalance}{' '}
+                {parachuteMetrics.currentBalance === 1 ? 'Parachute' : 'Parachutes'}
               </span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-semibold">
-                Earned-Only
+              <span
+                className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
+                  justEarnedParachute || parachuteMetrics.bonusParachutes > 0
+                    ? 'bg-amber-400/15 border border-amber-400/40 text-amber-300'
+                    : 'bg-zinc-800 text-zinc-300'
+                }`}
+              >
+                {balanceBadgeText}
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-mono">

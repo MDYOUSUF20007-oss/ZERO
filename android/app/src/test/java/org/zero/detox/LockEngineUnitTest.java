@@ -99,6 +99,25 @@ public class LockEngineUnitTest {
     }
 
     @Test
+    public void bonusParachutes_addToBalanceWithoutAffectingHours() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        ParachuteStore store = new ParachuteStore(fakeContext);
+        store.syncLedgerState(0L, 0, 1);
+        assertEquals(1, store.getParachuteBalance());
+        assertEquals(0.0, store.getMetrics().getTotalCumulativeHours(), 0.01);
+
+        assertTrue(store.useParachute("Deep Work", 600L, System.currentTimeMillis()));
+        assertEquals(0, store.getParachuteBalance());
+    }
+
+    @Test
     public void bagStore_enforcesThreeAppCapAndPackageIsolation() {
         final Map<String, SharedPreferences> prefMap = new HashMap<>();
         Context fakeContext = new ContextWrapper(null) {

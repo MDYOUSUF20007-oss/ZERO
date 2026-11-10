@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { SessionRecord, ParachuteMetrics } from '../types';
+import type { SessionRecord, ParachuteMetrics, ZeroProfile } from '../types';
+import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { X, Share2, Download, Sparkles } from 'lucide-react';
 
 interface ShareStatsModalProps {
@@ -7,6 +8,7 @@ interface ShareStatsModalProps {
   sessions: SessionRecord[];
   parachuteMetrics: ParachuteMetrics;
   currentStreak: number;
+  profile?: ZeroProfile | null;
   onClose: () => void;
 }
 
@@ -33,6 +35,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   sessions,
   parachuteMetrics,
   currentStreak,
+  profile,
   onClose,
 }) => {
   const [period, setPeriod] = useState<FlexPeriod>('today');
@@ -117,9 +120,16 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.font = '900 44px monospace';
     ctx.fillText('ZERO // FOCUS RECEIPT', 96, 140);
 
+    const dateLabel = new Date()
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      .toUpperCase();
+    const rankTitle = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours).title.toUpperCase();
+    const headerSub = profile
+      ? `${profile.handle.toUpperCase()}  •  ${rankTitle}  •  ${dateLabel}`
+      : dateLabel;
     ctx.fillStyle = '#A1A1AA';
     ctx.font = '600 24px monospace';
-    ctx.fillText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(), 96, 185);
+    ctx.fillText(headerSub, 96, 185);
 
     // Period Badge
     const badgeLabel = PERIOD_LABELS[period].title;
@@ -181,7 +191,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.fillText('"The obstacle is the way. Stay phone-free."', 128, 1228);
 
     setCardDataUrl(canvas.toDataURL('image/png'));
-  }, [isOpen, period, periodStats, currentStreak, parachuteMetrics.currentBalance]);
+  }, [isOpen, period, periodStats, currentStreak, parachuteMetrics.currentBalance, parachuteMetrics.totalReclaimedHours, profile]);
 
   if (!isOpen) return null;
 

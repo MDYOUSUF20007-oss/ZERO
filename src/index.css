@@ -84,3 +84,83 @@ body {
   0%, 100% { height: 6px; }
   50% { height: 24px; }
 }
+
+/* Parachute reward animations */
+@keyframes parachute-descend {
+  0% {
+    opacity: 0;
+    transform: translateY(-42px) scale(0.75) rotate(-8deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(6px) scale(1.06) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes parachute-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+@keyframes parachute-card-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(18px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes parachute-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes ring-burst {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+.animate-parachute-descend {
+  animation: parachute-descend 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-parachute-float {
+  animation: parachute-float 3s ease-in-out infinite;
+}
+
+.animate-parachute-card-pop {
+  animation: parachute-card-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-parachute-shimmer {
+  animation: parachute-shimmer 2.2s ease-in-out infinite;
+}
+
+.animate-ring-burst {
+  animation: ring-burst 1.8s ease-out infinite;
+}
