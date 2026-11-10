@@ -168,6 +168,8 @@ jobs:
           mkdir -p ../release-assets
           cp app/build/outputs/apk/strict/debug/app-strict-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-strict-accessibility-preview.apk"
           cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "../release-assets/Zero-v${ZERO_VERSION_NAME}-standard-sideload-preview.apk"
+          (cd ../release-assets && sha256sum *.apk > SHA256SUMS.txt)
+          cat ../release-assets/SHA256SUMS.txt
 
       - name: Verify APK Signing Certificate & Stage Release Assets
         if: steps.keystore.outputs.signed == 'true'
@@ -207,14 +209,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish Direct Download GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed == 'true'
+      - name: Publish Direct Download GitHub Release (Signed)
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
           name: Zero v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
           make_latest: true
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             release-assets/*.apk
             release-assets/SHA256SUMS.txt
@@ -226,3 +229,36 @@ jobs:
             #### Which APK should I install?
             - **`Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility.apk` (Recommended — Full BlockIt Mode):** Uses Android Accessibility Service to lock the notification drawer, Settings, Recents, and all apps outside your active Bag. *(On Android 14–16 devices with Play Protect sideload restrictions, install via `adb install -r` or Shizuku / "Install with Options", then allow Restricted Settings if prompted.)*
             - **`Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload.apk` (Direct Browser/File Manager Install):** Omits `BIND_ACCESSIBILITY_SERVICE` for clean sideloading and enforces focus via **Usage Access + Display Over Other Apps** watchdog.
+
+            #### Key Features & Recent Updates
+            - **Post-Session UPI Tip Popup:** Highlights **UPI (`md.y2007@ptaxis`)** as Best Offer / Best Option with **no minimum limit** after completed focus sessions, with a **Block for 5 Sessions** snooze option (`5 → 4 → 3 → 2 → 1 → 0`).
+            - **Ethical Support & Direct Updates:** Supports **Ko-fi** (`https://ko-fi.com/mdyousuf2620`) and offline UPI QR / instant pay launch (`md.y2007@ptaxis`), plus direct **Check Updates** link to GitHub Releases.
+            - **Android Edge-to-Edge Safe Areas:** Proper status-bar and navigation-bar clearance across Android 14–16 screens and modals.
+            - **Backup, Restore & Shareable Summary:** Complete local `.json` export/copy/restore and shareable distraction-free focus summary cards.
+
+      - name: Publish Direct Download GitHub Release (Debug-Signed Preview)
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.ZERO_VERSION_NAME }}
+          name: Zero v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          make_latest: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/*.apk
+            release-assets/SHA256SUMS.txt
+          body: |
+            ### Zero Digital Detox v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+
+            > **Build Signing Note:** These preview APKs use CI debug signing because persistent release signing secrets (`ZERO_KEYSTORE_BASE64`, `ZERO_KEYSTORE_PASS`, `ZERO_KEYSTORE_ALIAS`) are not configured yet in Repository Secrets. If upgrading over an older build signed with a different key (such as `v1.0.13`), open **Rules → Export Backup** first, uninstall the previous app, install this APK, and tap **Restore File**.
+
+            #### Which APK should I install?
+            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-strict-accessibility-preview.apk` (Recommended — Full BlockIt Mode):** Uses Android Accessibility Service to lock the notification drawer, Settings, Recents, and all apps outside your active Bag. *(On Android 14–16 devices with Restricted Settings, open App Info → **Allow restricted settings**, or install via `adb install -r` / Shizuku.)*
+            - **`Zero-v${{ env.ZERO_VERSION_NAME }}-standard-sideload-preview.apk` (Direct Browser/File Manager Install):** Omits `BIND_ACCESSIBILITY_SERVICE` for clean sideloading and enforces focus via **Usage Access + Display Over Other Apps** watchdog.
+
+            #### Key Features & Recent Updates
+            - **Post-Session UPI Tip Popup:** Highlights **UPI (`md.y2007@ptaxis`)** as Best Offer / Best Option with **no minimum limit** after completed focus sessions, with a **Block for 5 Sessions** snooze option (`5 → 4 → 3 → 2 → 1 → 0`).
+            - **Ethical Support & Direct Updates:** Supports **Ko-fi** (`https://ko-fi.com/mdyousuf2620`) and offline UPI QR / instant pay launch (`md.y2007@ptaxis`), plus direct **Check Updates** link to GitHub Releases.
+            - **Android Edge-to-Edge Safe Areas:** Proper status-bar and navigation-bar clearance across Android 14–16 screens and modals.
+            - **Backup, Restore & Shareable Summary:** Complete local `.json` export/copy/restore and shareable distraction-free focus summary cards.

@@ -10,6 +10,16 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 
 ---
 
+## Downloads & Releases
+
+- **Latest Android APKs:** [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest) ([All Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases))
+  - **`Strict Accessibility Edition` (Recommended — Full BlockIt Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service.
+  - **`Standard Sideload Edition`:** Uses Usage Access + Display Over Other Apps without Accessibility permissions for quick browser sideloading.
+  - *Tip:* Before installing a build signed with a different key, go to **Rules → Export Backup** to save your Parachutes, Bags, and sessions as `.json`.
+- **Web / PWA Preview:** [mdyousuf20007-oss.github.io/ZERO](https://mdyousuf20007-oss.github.io/ZERO/)
+
+---
+
 ## 1. Vision & Core Philosophy
 
 - **Zero Paywalls:** Every single feature—unlimited recurring schedules, deep analytics heatmaps, strict OS kiosk locks, and themes—is completely free for all users from day one.
