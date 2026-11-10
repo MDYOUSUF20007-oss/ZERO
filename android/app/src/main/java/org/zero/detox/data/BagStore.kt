@@ -9,6 +9,8 @@ import android.provider.Telephony
 import android.telecom.TelecomManager
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 /**
  * BagStore:
@@ -28,7 +30,12 @@ class BagStore(private val context: Context) {
         const val KEY_ALLOW_CALLS = "allow_calls"
         const val KEY_ALLOW_SMS = "allow_sms"
         const val KEY_BAG_APPS_JSON = "bag_apps_json"
+        const val KEY_BAG_APPS_COMPACT = "bag_apps_compact"
         const val MAX_BAG_APPS = 3
+
+        private val OBJ_PATTERN = Regex("\\{([^{}]*)\\}")
+        private val PKG_PATTERN = Regex("\"packageName\"\\s*:\\s*\"([^\"]+)\"")
+        private val LABEL_PATTERN = Regex("\"appName\"\\s*:\\s*\"([^\"]*)\"")
 
         private val CORE_CALL_PACKAGES = setOf(
             "com.android.incallui",
@@ -51,31 +58,90 @@ class BagStore(private val context: Context) {
         allowCalls: Boolean,
         allowSms: Boolean
     ) {
-        val sanitized = JSONArray()
-        try {
-            val incoming = JSONArray(appsJson)
-            val count = minOf(MAX_BAG_APPS, incoming.length())
-            for (i in 0 until count) {
-                val item = incoming.optJSONObject(i) ?: continue
-                val pkg = item.optString("packageName", "").trim()
-                val label = item.optString("appName", pkg).trim()
-                if (pkg.isNotEmpty()) {
-                    sanitized.put(
-                        JSONObject().apply {
-                            put("packageName", pkg)
-                            put("appName", label)
-                        }
-                    )
-                }
+        val parsedApps = parseIncomingApps(appsJson).take(MAX_BAG_APPS)
+
+        val sanitizedJson = try {
+            val arr = JSONArray()
+            for (app in parsedApps) {
+                arr.put(
+                    JSONObject().apply {
+                        put("packageName", app.packageName)
+                        put("appName", app.appName)
+                    }
+                )
             }
-        } catch (_: Exception) {}
+            arr.toString() ?: "[]"
+        } catch (_: Exception) {
+            "[]"
+        }
+
+        val compact = serializeCompact(parsedApps)
 
         prefs.edit()
             .putString(KEY_ACTIVE_BAG_NAME, bagName.ifBlank { "Work Bag" })
             .putBoolean(KEY_ALLOW_CALLS, allowCalls)
             .putBoolean(KEY_ALLOW_SMS, allowSms)
-            .putString(KEY_BAG_APPS_JSON, sanitized.toString())
+            .putString(KEY_BAG_APPS_JSON, sanitizedJson)
+            .putString(KEY_BAG_APPS_COMPACT, compact)
             .commit()
+    }
+
+    private fun parseIncomingApps(raw: String): List<BagApp> {
+        val result = mutableListOf<BagApp>()
+        val seen = HashSet<String>()
+
+        try {
+            val incoming = JSONArray(raw)
+            val len = incoming.length()
+            if (len > 0) {
+                for (i in 0 until minOf(MAX_BAG_APPS, len)) {
+                    val item = incoming.optJSONObject(i) ?: continue
+                    val pkg = item.optString("packageName", "").trim()
+                    val label = item.optString("appName", pkg).trim().ifEmpty { pkg }
+                    if (pkg.isNotEmpty() && seen.add(pkg)) {
+                        result.add(BagApp(packageName = pkg, appName = label))
+                    }
+                }
+                if (result.isNotEmpty()) return result
+            }
+        } catch (_: Exception) {}
+
+        // Pure-Kotlin fallback (handles JVM stubbed org.json unit tests cleanly)
+        for (match in OBJ_PATTERN.findAll(raw)) {
+            if (result.size >= MAX_BAG_APPS) break
+            val block = match.groupValues[1]
+            val pkg = PKG_PATTERN.find(block)?.groupValues?.getOrNull(1)?.trim().orEmpty()
+            if (pkg.isEmpty() || !seen.add(pkg)) continue
+            val label = LABEL_PATTERN.find(block)?.groupValues?.getOrNull(1)?.trim()?.ifEmpty { pkg } ?: pkg
+            result.add(BagApp(packageName = pkg, appName = label))
+        }
+        return result
+    }
+
+    private fun serializeCompact(apps: List<BagApp>): String {
+        return apps.take(MAX_BAG_APPS).joinToString(";") { app ->
+            val encodedPkg = URLEncoder.encode(app.packageName, "UTF-8")
+            val encodedName = URLEncoder.encode(app.appName, "UTF-8")
+            "$encodedPkg=$encodedName"
+        }
+    }
+
+    private fun parseCompact(compact: String): List<BagApp> {
+        if (compact.isBlank()) return emptyList()
+        val list = mutableListOf<BagApp>()
+        for (entry in compact.split(";")) {
+            if (list.size >= MAX_BAG_APPS) break
+            val idx = entry.indexOf('=')
+            if (idx <= 0) continue
+            try {
+                val pkg = URLDecoder.decode(entry.substring(0, idx), "UTF-8").trim()
+                val label = URLDecoder.decode(entry.substring(idx + 1), "UTF-8").trim().ifEmpty { pkg }
+                if (pkg.isNotEmpty()) {
+                    list.add(BagApp(packageName = pkg, appName = label))
+                }
+            } catch (_: Exception) {}
+        }
+        return list
     }
 
     fun getActiveBagName(): String = prefs.getString(KEY_ACTIVE_BAG_NAME, "Essentials Bag") ?: "Essentials Bag"
@@ -85,20 +151,12 @@ class BagStore(private val context: Context) {
     fun isSmsAllowed(): Boolean = prefs.getBoolean(KEY_ALLOW_SMS, false)
 
     fun getBagApps(): List<BagApp> {
-        val list = mutableListOf<BagApp>()
+        val compact = prefs.getString(KEY_BAG_APPS_COMPACT, "") ?: ""
+        if (compact.isNotEmpty()) {
+            return parseCompact(compact)
+        }
         val raw = prefs.getString(KEY_BAG_APPS_JSON, "[]") ?: "[]"
-        try {
-            val arr = JSONArray(raw)
-            for (i in 0 until minOf(MAX_BAG_APPS, arr.length())) {
-                val obj = arr.optJSONObject(i) ?: continue
-                val pkg = obj.optString("packageName", "")
-                val name = obj.optString("appName", pkg)
-                if (pkg.isNotEmpty()) {
-                    list.add(BagApp(packageName = pkg, appName = name))
-                }
-            }
-        } catch (_: Exception) {}
-        return list
+        return parseIncomingApps(raw)
     }
 
     fun getAllowedDialerPackages(): Set<String> {
