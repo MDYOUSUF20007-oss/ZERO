@@ -58,7 +58,6 @@ import {
   CloudDownload,
   RefreshCw,
   Loader2,
-  Settings,
   KeyRound,
   ShieldCheck,
   HardDrive,
@@ -1206,231 +1205,266 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {activeSection === 'os_security' && (
         <div className="space-y-4">
           <ObsidianCard
-            accent={profileAccentKey}
             ambientGlow
             className="font-mono"
-            headerClassName="p-5 space-y-3"
-            footerClassName="px-5 py-2.5 text-[10px] text-zinc-400 leading-relaxed flex items-center justify-between gap-2 flex-wrap"
+            headerClassName="p-4 space-y-2.5"
+            footerClassName="px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed flex items-center justify-between gap-2 flex-wrap"
             headerContent={
               <>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 text-white font-bold text-sm">
-                    <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
-                      <Smartphone size={15} className="text-emerald-400" />
+                    <div
+                      className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
+                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                    >
+                      <Smartphone size={15} />
                     </div>
-                    <span>OS PERMISSIONS &amp; PRIORITY</span>
+                    <span>OS PERMISSIONS &amp; SETUP</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onRefreshPermissions}
-                    className="text-[10px] px-2.5 py-0.5 rounded-full obsidian-inset-neutral text-zinc-200 hover:border-white/25 transition-colors"
-                  >
-                    {hasNativeBridge ? (isStrictBuild ? 'STRICT EDITION' : 'STANDARD EDITION') : 'WEB PREVIEW'}
-                  </button>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full obsidian-inset-neutral text-zinc-300">
+                    {hasNativeBridge ? (isStrictBuild ? 'STRICT APK' : 'STANDARD APK') : 'WEB PREVIEW'}
+                  </span>
                 </div>
-                <p className="text-xs text-zinc-300 leading-relaxed">
-                  Priority setup order:{' '}
-                  <strong className="text-white">
-                    1. Restricted Settings Check &rarr; 2.{' '}
-                    {isStrictBuild ? 'Accessibility Service' : 'Usage Access (Find Zero-Distractions)'} &rarr; 3.
-                    Display Over Apps &rarr; 4. Notifications
-                  </strong>
-                  .
-                </p>
 
-                {hasNativeBridge && !permissionPriority.allRecommendedGranted && (
-                  <button
-                    type="button"
-                    onClick={() => window.ZeroNative?.requestNextMissingPermission()}
-                    className="w-full py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
-                  >
-                    {permissionPriority.nextButtonLabel}
-                  </button>
-                )}
-
-                {/* 1: Check Allow Restricted Settings + App Info Shortcut */}
-                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                    <span>1. Allow Restricted Settings Check</span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                        permissionPriority.restrictedStatus === 'allowed'
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : permissionPriority.restrictedStatus === 'blocked'
-                          ? 'bg-amber-950 text-amber-300 border-amber-700'
-                          : 'bg-emerald-950/60 text-emerald-300 border-emerald-700'
+                {/* 1: Core Guard — Usage Access (Standard) or Accessibility Service (Strict) */}
+                {(() => {
+                  const coreGranted = isStrictBuild ? isAccessibilityOn : hasUsagePerm;
+                  const isBlockedNow = permissionPriority.restrictedStatus === 'blocked';
+                  return (
+                    <div
+                      className={`rounded-xl transition-colors ${
+                        hasNativeBridge && !coreGranted
+                          ? 'p-3 obsidian-inset space-y-2'
+                          : 'p-2.5 obsidian-inset-neutral space-y-1'
                       }`}
                     >
-                      {hasNativeBridge
-                        ? permissionPriority.restrictedStatus === 'allowed'
-                          ? 'ALLOWED'
-                          : permissionPriority.restrictedStatus === 'blocked'
-                          ? 'BLOCKED — OPEN APP INFO'
-                          : 'CHECK APP INFO'
-                        : 'SIDELOAD GUARD'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Direct shortcut to Zero&rsquo;s system App Info page to toggle <strong>&#8942; &rarr; Allow restricted settings</strong> on Android 13–16.
-                  </p>
-                  {hasNativeBridge && (
-                    <button
-                      type="button"
-                      onClick={() => window.ZeroNative?.openAppSettingsDetails()}
-                      className="w-full py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                    >
-                      <Settings size={13} />
-                      <span>Open Zero App Info (Shortcut)</span>
-                      <ExternalLink size={12} />
-                    </button>
-                  )}
-                </div>
+                      <div className="flex items-center justify-between gap-2 text-xs font-bold text-zinc-100">
+                        <span>
+                          {isStrictBuild ? '1. Accessibility Service' : '1. Usage Access'}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {hasNativeBridge && coreGranted && (
+                            <button
+                              type="button"
+                              onClick={() => window.ZeroNative?.openAppSettingsDetails()}
+                              className="text-[9px] px-2 py-0.5 rounded-full obsidian-inset-neutral text-zinc-300 hover:text-white inline-flex items-center gap-1"
+                            >
+                              App Info <ExternalLink size={9} />
+                            </button>
+                          )}
+                          <span
+                            className={`text-[9px] px-2 py-0.5 rounded-full border ${
+                              coreGranted
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                                : hasNativeBridge
+                                ? 'font-black'
+                                : 'obsidian-inset-neutral text-zinc-400'
+                            }`}
+                            style={
+                              hasNativeBridge && !coreGranted
+                                ? {
+                                    background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
+                                    borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+                                    color: 'var(--accent-hex, #F59E0B)',
+                                  }
+                                : undefined
+                            }
+                          >
+                            {hasNativeBridge
+                              ? coreGranted
+                                ? 'GRANTED'
+                                : isBlockedNow
+                                ? 'BLOCKED'
+                                : 'STEP 1'
+                              : isStrictBuild
+                              ? 'STRICT APK ONLY'
+                              : 'FOREGROUND MONITOR'}
+                          </span>
+                        </div>
+                      </div>
 
-                {/* 2A: Usage Access (Standard Sideload Edition) */}
-                {!isStrictBuild && (
-                  <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                      <span>2. Usage Access Guard (Find Zero-Distractions)</span>
-                      <span
-                        className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                          hasUsagePerm
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            : 'bg-amber-950 text-amber-300 border-amber-800'
-                        }`}
-                      >
-                        {hasNativeBridge ? (hasUsagePerm ? 'GRANTED' : 'MISSING') : 'FOREGROUND MONITOR'}
-                      </span>
+                      {(!hasNativeBridge || !coreGranted) && (
+                        <p className="text-[11px] text-zinc-400 leading-snug">
+                          {isStrictBuild
+                            ? 'Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps.'
+                            : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                        </p>
+                      )}
+
+                      {hasNativeBridge && !coreGranted && (
+                        <div className="space-y-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              isStrictBuild
+                                ? window.ZeroNative?.openAccessibilitySettings()
+                                : window.ZeroNative?.requestUsageStatsPermission()
+                            }
+                            className={`w-full py-2 px-3 rounded-xl text-[11px] uppercase tracking-wider active:scale-95 transition-all ${
+                              isBlockedNow
+                                ? 'obsidian-inset text-zinc-100 font-bold'
+                                : 'obsidian-pill-active font-black'
+                            }`}
+                          >
+                            {isStrictBuild ? 'Enable Accessibility Service' : 'Grant Usage Access'}
+                          </button>
+                          <RestrictedSettingsGuideCard
+                            restrictedStatus={permissionPriority.restrictedStatus}
+                            isStrictBuild={isStrictBuild}
+                            onOpenAppInfo={() => window.ZeroNative?.openAppSettingsDetails()}
+                            compact
+                          />
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Lets Zero enforce your 4 Bags + Calls/SMS and snap The Void back over blocked distractions.
-                    </p>
-                    {hasNativeBridge && !hasUsagePerm && (
-                      <div className="space-y-2.5">
+                  );
+                })()}
+
+                {/* 2: SYSTEM_ALERT_WINDOW */}
+                {(() => {
+                  const isStep2Active =
+                    hasNativeBridge && permissionPriority.coreGuardGranted && !hasOverlayPerm;
+                  return (
+                    <div
+                      className={`rounded-xl transition-colors ${
+                        isStep2Active
+                          ? 'p-3 obsidian-inset space-y-2'
+                          : 'p-2.5 obsidian-inset-neutral space-y-1'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-xs font-bold text-zinc-100">
+                        <span>2. Display Over Other Apps</span>
+                        {hasNativeBridge ? (
+                          hasOverlayPerm ? (
+                            <span className="text-[9px] px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                              GRANTED
+                            </span>
+                          ) : isStep2Active ? (
+                            <span
+                              className="text-[9px] px-2 py-0.5 rounded-full border font-black"
+                              style={{
+                                background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
+                                borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+                                color: 'var(--accent-hex, #F59E0B)',
+                              }}
+                            >
+                              STEP 2
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => window.ZeroNative?.requestOverlayPermission()}
+                              className="px-2.5 py-1 rounded-lg obsidian-inset-neutral text-[10px] font-bold text-zinc-200 hover:text-white active:scale-95 shrink-0"
+                            >
+                              Allow
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full border obsidian-inset-neutral text-zinc-400">
+                            TOPMOST LAYER
+                          </span>
+                        )}
+                      </div>
+                      {(!hasNativeBridge || isStep2Active) && (
+                        <p className="text-[11px] text-zinc-400 leading-snug">
+                          Allows The Void to snap back on screen over blocked apps from background services.
+                        </p>
+                      )}
+                      {isStep2Active && (
                         <button
                           type="button"
-                          onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
-                          className="w-full py-2 obsidian-pill-active font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                          onClick={() => window.ZeroNative?.requestOverlayPermission()}
+                          className="w-full py-2 px-3 rounded-xl text-[11px] uppercase tracking-wider active:scale-95 transition-all obsidian-pill-active font-black"
                         >
-                          Grant Usage Access -&gt; Find Zero-Distractions
+                          Allow Display Over Other Apps
                         </button>
-                        <RestrictedSettingsGuideCard
-                          restrictedStatus={permissionPriority.restrictedStatus}
-                          isStrictBuild={false}
-                          onOpenAppInfo={() => window.ZeroNative?.openAppSettingsDetails()}
-                          compact
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2B: Accessibility Service (Strict Edition) */}
-                {isStrictBuild && (
-                  <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                      <span>2. Accessibility Service</span>
-                      <span
-                        className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                          isAccessibilityOn
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            : 'bg-amber-950 text-amber-300 border-amber-800'
-                        }`}
-                      >
-                        {hasNativeBridge ? (isAccessibilityOn ? 'GRANTED' : 'MISSING') : 'STRICT APK ONLY'}
-                      </span>
+                      )}
                     </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Instantly blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps without Screen Pinning prompts.
-                    </p>
-                    {hasNativeBridge && !isAccessibilityOn && (
-                      <div className="space-y-2.5">
+                  );
+                })()}
+
+                {/* 3: Notifications */}
+                {(() => {
+                  const isStep3Active =
+                    hasNativeBridge &&
+                    permissionPriority.coreGuardGranted &&
+                    hasOverlayPerm &&
+                    !hasNotifPerm;
+                  return (
+                    <div
+                      className={`rounded-xl transition-colors ${
+                        isStep3Active
+                          ? 'p-3 obsidian-inset space-y-2'
+                          : 'p-2.5 obsidian-inset-neutral space-y-1'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-xs font-bold text-zinc-100">
+                        <span>3. Lock &amp; Schedule Alerts</span>
+                        {hasNativeBridge ? (
+                          hasNotifPerm ? (
+                            <span className="text-[9px] px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                              GRANTED
+                            </span>
+                          ) : isStep3Active ? (
+                            <span
+                              className="text-[9px] px-2 py-0.5 rounded-full border font-black"
+                              style={{
+                                background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
+                                borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+                                color: 'var(--accent-hex, #F59E0B)',
+                              }}
+                            >
+                              OPTIONAL
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => window.ZeroNative?.requestNotificationPermission()}
+                              className="px-2.5 py-1 rounded-lg obsidian-inset-neutral text-[10px] font-bold text-zinc-300 hover:text-white active:scale-95 shrink-0"
+                            >
+                              Allow
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full border obsidian-inset-neutral text-zinc-400">
+                            ALERT READY
+                          </span>
+                        )}
+                      </div>
+                      {(!hasNativeBridge || isStep3Active) && (
+                        <p className="text-[11px] text-zinc-400 leading-snug">
+                          Live lock countdown notifications &amp; 5-minute pre-lock schedule warnings.
+                        </p>
+                      )}
+                      {isStep3Active && (
                         <button
                           type="button"
-                          onClick={() => window.ZeroNative?.openAccessibilitySettings()}
-                          className="w-full py-2 obsidian-pill-active font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                          onClick={() => window.ZeroNative?.requestNotificationPermission()}
+                          className="w-full py-2 px-3 rounded-xl text-[11px] transition-all active:scale-95 obsidian-pill-active font-black uppercase tracking-wider"
                         >
-                          Enable Accessibility Service -&gt; Find Zero-Distractions
+                          Allow Notifications
                         </button>
-                        <RestrictedSettingsGuideCard
-                          restrictedStatus={permissionPriority.restrictedStatus}
-                          isStrictBuild={true}
-                          onOpenAppInfo={() => window.ZeroNative?.openAppSettingsDetails()}
-                          compact
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  );
+                })()}
 
-                {/* 3: SYSTEM_ALERT_WINDOW */}
-                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
+                {/* 4: LockTaskMode / Device Owner */}
+                <div className="p-2.5 obsidian-inset-neutral rounded-xl space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                    <span>3. Display Over Other Apps</span>
+                    <span>4. Hardware Kiosk (Optional ADB)</span>
                     <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                        hasOverlayPerm
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : 'bg-amber-950 text-amber-300 border-amber-800'
-                      }`}
-                    >
-                      {hasNativeBridge ? (hasOverlayPerm ? 'GRANTED' : 'REQUIRED ON ANDROID') : 'TOPMOST LAYER'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Required on Android 10–16 so Zero can bring The Void back on top of any app from background services.
-                  </p>
-                  {hasNativeBridge && !hasOverlayPerm && (
-                    <button
-                      type="button"
-                      onClick={() => window.ZeroNative?.requestOverlayPermission()}
-                      className="w-full py-2 obsidian-pill-active font-bold text-[11px] rounded-xl active:scale-95 transition-all"
-                    >
-                      Grant Display Over Other Apps
-                    </button>
-                  )}
-                </div>
-
-                {/* 4: Notifications */}
-                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                    <span>4. Lock &amp; Pre-Lock Notifications</span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                        hasNotifPerm
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : 'bg-amber-950 text-amber-300 border-amber-800'
-                      }`}
-                    >
-                      {hasNativeBridge ? (hasNotifPerm ? 'GRANTED' : 'MISSING (STEP 4)') : 'ALERT READY'}
-                    </span>
-                  </div>
-                  {hasNativeBridge && !hasNotifPerm && (
-                    <button
-                      type="button"
-                      onClick={() => window.ZeroNative?.requestNotificationPermission()}
-                      className="w-full py-2 obsidian-inset text-white font-bold text-[11px] rounded-xl hover:brightness-110 transition-all"
-                    >
-                      Allow Notifications
-                    </button>
-                  )}
-                </div>
-
-                {/* 5: LockTaskMode / Device Owner */}
-                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                    <span>5. Hardware Kiosk (Optional ADB)</span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                      className={`text-[9px] px-2 py-0.5 rounded-full border ${
                         isDeviceOwner
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
                           : 'obsidian-inset-neutral text-zinc-400'
                       }`}
                     >
                       {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'OPTIONAL'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-400">
-                    When provisioned via ADB Device Owner, <code>LockTaskMode</code> engages unbreakable system kiosk mode while still permitting your packed Bag apps.
+                  <p className="text-[11px] text-zinc-400 leading-snug">
+                    With ADB Device Owner, <code>LockTaskMode</code> engages unbreakable kiosk mode while permitting Bag apps.
                   </p>
                 </div>
               </>
@@ -1439,13 +1473,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <>
                 <span>
                   {permissionPriority.allRecommendedGranted
-                    ? 'All priority Android permissions armed'
-                    : 'Follow steps 1 → 4 in order above'}
+                    ? 'All Android permissions armed'
+                    : 'Only open App Info -> ⋮ -> Allow restricted settings if blocked'}
                 </span>
                 <button
                   type="button"
                   onClick={onRefreshPermissions}
-                  className="text-emerald-300 hover:text-emerald-200 font-bold uppercase tracking-wider"
+                  className="font-bold uppercase tracking-wider hover:brightness-125"
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
                 >
                   Re-check Now
                 </button>
@@ -1455,11 +1490,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
           {/* Installed APK Build & Update Signing Key Diagnostic Card */}
           <ObsidianCard
-            accentOverride={
-              appBuildInfo && !appBuildInfo.isOfficialReleaseKey
-                ? { hex: '#F59E0B', rgb: '245, 158, 11' }
-                : { hex: '#10B981', rgb: '16, 185, 129' }
-            }
             ambientGlow
             className="font-mono text-xs"
             headerClassName="p-4 space-y-2.5"
@@ -1468,8 +1498,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-white font-bold uppercase tracking-wider">
-                    <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
-                      <KeyRound size={13} className="text-emerald-400" />
+                    <div
+                      className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
+                      style={{
+                        color:
+                          appBuildInfo && !appBuildInfo.isOfficialReleaseKey
+                            ? 'var(--accent-hex, #F59E0B)'
+                            : '#34D399',
+                      }}
+                    >
+                      <KeyRound size={13} />
                     </div>
                     <span>Installed Build &amp; Update Key</span>
                   </div>
@@ -1477,8 +1515,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <span
                       className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
                         appBuildInfo.isOfficialReleaseKey
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                          : 'bg-amber-950 text-amber-300 border-amber-700'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                          : 'obsidian-inset text-zinc-200'
                       }`}
                     >
                       {appBuildInfo.isOfficialReleaseKey ? 'Update Key Verified' : 'Debug / Preview Key'}
@@ -1500,7 +1538,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-zinc-400">Cert SHA-256:</span>
-                      <span className="text-emerald-300 font-bold truncate max-w-[190px]">
+                      <span className="text-emerald-400 font-bold truncate max-w-[190px]">
                         {appBuildInfo.signingSha256 || 'Unavailable'}
                       </span>
                     </div>
@@ -1509,7 +1547,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <span className="text-zinc-400">Runtime Environment:</span>
                         <span
                           className={`font-bold ${
-                            environmentSecurity.isCompromised ? 'text-amber-300' : 'text-emerald-300'
+                            environmentSecurity.isCompromised ? 'text-amber-300' : 'text-emerald-400'
                           }`}
                         >
                           {environmentSecurity.isCompromised
@@ -1521,21 +1559,21 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                 ) : (
                   <div className="p-2.5 rounded-xl obsidian-inset-neutral text-[11px] text-zinc-400">
-                    Permanent APK Release Key: <code className="text-emerald-300">A14A36...CE11</code> (V1+V2+V3 signed).
+                    Permanent APK Release Key: <code className="text-emerald-400">A14A36...CE11</code> (V1+V2+V3 signed).
                   </div>
                 )}
               </>
             }
             footerContent={
               appBuildInfo && !appBuildInfo.isOfficialReleaseKey ? (
-                <div className="text-amber-200">
+                <div className="text-zinc-300">
                   This device is running an older preview/debug key build. Save a Cloud{' '}
                   <code>.zbak</code> backup in <strong>Settings</strong>,{' '}
                   <strong>Uninstall (for all users)</strong> once, and install the newest signed{' '}
                   <code>ZERO-v*.apk</code> so all future updates install cleanly in-place!
                 </div>
               ) : (
-                <div className="flex items-start gap-1.5 text-emerald-300">
+                <div className="flex items-start gap-1.5 text-zinc-300">
                   <ShieldCheck size={13} className="shrink-0 mt-0.5 text-emerald-400" />
                   <span>
                     Keep updating within the same edition using a higher version code. If Android ever says &ldquo;App not installed&rdquo;, check that Chrome/Files has <strong>Install unknown apps</strong> allowed and uninstall any old duplicate copy from Work Profile / Dual Apps.
@@ -1547,7 +1585,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
           {/* ADB Command Box */}
           <ObsidianCard
-            accentOverride={{ hex: '#06B6D4', rgb: '6, 182, 212' }}
             className="font-mono text-xs"
             headerClassName="p-4 space-y-2"
             footerClassName="px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed"
@@ -1555,8 +1592,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <>
                 <div className="flex items-center justify-between text-zinc-200 font-bold uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
-                      <Terminal size={13} className="text-cyan-400" />
+                    <div
+                      className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
+                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                    >
+                      <Terminal size={13} />
                     </div>
                     <span>ADB Device Owner Setup (Optional)</span>
                   </div>
@@ -1574,7 +1614,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <span>{copiedId === 'adb_cmd' ? 'Copied' : 'Copy ADB'}</span>
                   </button>
                 </div>
-                <pre className="p-2.5 obsidian-inset-neutral rounded-xl text-[10px] text-emerald-300 overflow-x-auto no-scrollbar">
+                <pre className="p-2.5 obsidian-inset-neutral rounded-xl text-[10px] text-zinc-200 overflow-x-auto no-scrollbar">
                   adb shell dpm set-device-owner org.zero.detox/.receiver.ZeroDeviceAdminReceiver
                 </pre>
               </>
@@ -1587,7 +1627,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
-                  className="text-amber-300 hover:underline font-semibold"
+                  className="hover:underline font-semibold"
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
                 >
                   GitHub Releases
                 </a>{' '}

@@ -542,12 +542,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         <ObsidianCard
           asButton
           onClick={onOpenPermissionGate}
-          accentOverride={
-            permissions.strictReady
-              ? { hex: '#10B981', rgb: '16, 185, 129' }
-              : { hex: '#F59E0B', rgb: '245, 158, 11' }
-          }
-          className={!permissions.strictReady ? 'animate-pulse' : ''}
           headerClassName="px-3.5 py-2.5 font-mono text-[11px] flex items-center justify-between gap-2"
           footerClassName="px-3.5 py-1.5 font-mono text-[10px] text-zinc-400"
           headerContent={
@@ -556,39 +550,44 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 {permissions.strictReady ? (
                   <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
                 ) : (
-                  <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+                  <ShieldAlert
+                    size={14}
+                    style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                    className="shrink-0"
+                  />
                 )}
-                <span
-                  className={`font-bold truncate ${
-                    permissions.strictReady ? 'text-emerald-300' : 'text-amber-200'
-                  }`}
-                >
+                <span className="font-bold truncate text-zinc-100">
                   {permissions.strictReady
                     ? !permissions.hasNotificationPermission
-                      ? 'Guard Armed • Tap for Step 4 Notifications'
+                      ? 'Guard Armed • Optional Notifications'
                       : permissions.isStrictAccessibilityBuild
                       ? 'Strict Accessibility Guard: Armed'
                       : 'Overlay + Usage Guard: Armed'
                     : 'Permissions Required Before Locking'}
                 </span>
               </div>
-              <span
-                className={`text-[10px] underline shrink-0 ml-2 font-bold ${
-                  permissions.strictReady ? 'text-emerald-300' : 'text-amber-300'
-                }`}
-              >
-                {permissions.strictReady ? 'Check' : 'Grant Now'}
-              </span>
+              {permissions.strictReady ? (
+                <span
+                  className="text-[10px] font-bold shrink-0 ml-2"
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                >
+                  Check
+                </span>
+              ) : (
+                <span className="text-[10px] px-2 py-0.5 rounded-lg obsidian-pill-active font-black uppercase tracking-wider shrink-0 ml-2">
+                  Grant Now
+                </span>
+              )}
             </>
           }
           footerContent={
-            <span>
-              {permissions.strictReady
-                ? !permissions.hasNotificationPermission
-                  ? 'Optional Step 4: Enable lock & 5-minute schedule heads-up alerts.'
-                  : 'All mandatory Android lock guards are verified active.'
-                : 'Priority order: 1. Restricted Settings • 2. Usage/Accessibility • 3. Overlay'}
-            </span>
+            permissions.strictReady && permissions.hasNotificationPermission ? undefined : (
+              <span>
+                {permissions.strictReady
+                  ? 'Tap to enable lock countdown & 5-minute schedule alerts.'
+                  : 'Order: Usage / Accessibility -> App Info (if denied) -> Overlay'}
+              </span>
+            )
           }
         />
       )}

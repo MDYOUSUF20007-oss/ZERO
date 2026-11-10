@@ -1,7 +1,6 @@
 import React from 'react';
-import { Settings, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Settings, ExternalLink } from 'lucide-react';
 import type { RestrictedSettingsStatus } from '../types';
-import { ObsidianCard } from './ObsidianCard';
 
 interface RestrictedSettingsGuideCardProps {
   restrictedStatus: RestrictedSettingsStatus;
@@ -11,9 +10,11 @@ interface RestrictedSettingsGuideCardProps {
 }
 
 /**
- * Green step-by-step Android 13–16 Restricted Settings guide + direct Zero App Info shortcut.
- * Shown directly under Grant Usage Access / Grant Missing Permissions so everyone knows
- * how to unblock phones that show "For your security, this setting is unavailable".
+ * Sleek Frosted Obsidian inline guide for Android 13–16 "Restricted setting" blocks.
+ * Matches the real 3-step Android flow:
+ * 1. Tap Grant Usage Access / Accessibility first (tap OK if Google blocks on first try)
+ * 2. Open Zero App Info -> top-right ⋮ -> Allow restricted settings
+ * 3. Return & tap Grant Usage Access / Accessibility again -> Turn ON
  */
 export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardProps> = ({
   restrictedStatus,
@@ -21,78 +22,75 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
   onOpenAppInfo,
   compact = false,
 }) => {
-  const permissionLabel = isStrictBuild ? 'Accessibility' : 'Usage Access -> Find Zero-Distractions';
+  const isBlockedNow = restrictedStatus === 'blocked';
+  const actionName = isStrictBuild ? 'Enable Accessibility' : 'Grant Usage Access';
 
   return (
-    <ObsidianCard
+    <div
       data-restricted-guide="true"
-      accentOverride={{ hex: '#10B981', rgb: '16, 185, 129' }}
-      ambientGlow
-      className="font-mono"
+      className={`rounded-xl font-mono transition-colors ${
+        compact ? 'p-2.5 space-y-2' : 'p-3.5 space-y-2.5'
+      } ${isBlockedNow ? 'obsidian-inset' : 'obsidian-inset-neutral'}`}
       style={{
-        background:
-          'linear-gradient(180deg, rgba(6, 52, 39, 0.92) 0%, rgba(4, 24, 18, 0.98) 100%)',
-        borderColor: 'rgba(16, 185, 129, 0.72)',
+        background: 'rgba(6, 6, 8, 0.84)',
       }}
-      headerClassName={`${compact ? 'p-3' : 'p-3.5'} space-y-2`}
-      footerClassName={`${compact ? 'px-3 py-2.5' : 'px-3.5 py-2.5'}`}
-      headerContent={
-        <>
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-300">
-              <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-              <span>How to Fix If Phone Blocks &ldquo;Find Zero-Distractions&rdquo;</span>
-            </div>
-            <span
-              className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
-                restrictedStatus === 'allowed'
-                  ? 'bg-emerald-500 text-black border-emerald-400'
-                  : restrictedStatus === 'blocked'
-                  ? 'bg-amber-400 text-black border-amber-300'
-                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/70'
-              }`}
-            >
-              {restrictedStatus === 'allowed'
-                ? 'Unblocked'
-                : restrictedStatus === 'blocked'
-                ? 'Blocked Now'
-                : 'Green Fix Guide'}
-            </span>
-          </div>
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-200">
+          {isBlockedNow
+            ? 'Blocked by Android — Allow in App Info'
+            : 'If Google blocks first try (Android 13–16)'}
+        </span>
+        {isBlockedNow && (
+          <span
+            className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0"
+            style={{
+              background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.14)',
+              borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.42)',
+              color: 'var(--accent-hex, #F59E0B)',
+            }}
+          >
+            Unlock Now
+          </span>
+        )}
+      </div>
 
-          <ol className="text-[11px] text-emerald-300 leading-relaxed space-y-1 pl-4 list-decimal font-semibold">
-            <li>
-              If your phone does not allow turning ON <strong>{permissionLabel}</strong> at first
-              (greyed out / &ldquo;Restricted setting&rdquo;), tap <strong>OK</strong> once on that popup.
-            </li>
-            <li>
-              Tap <strong>Open Zero App Info (Shortcut)</strong> below.
-            </li>
-            <li>
-              Tap the <strong>&#8942; (3 dots)</strong> at top-right &rarr;{' '}
-              <strong>Allow restricted settings</strong> &rarr; verify PIN / fingerprint{' '}
-              <span className="font-normal text-emerald-200">
-                (Xiaomi/HyperOS: scroll to bottom of App Info).
-              </span>
-            </li>
-            <li>
-              Come back here and tap <strong>{permissionLabel}</strong> &rarr; toggle{' '}
-              <strong>Zero-Distractions ON</strong>.
-            </li>
-          </ol>
-        </>
-      }
-      footerContent={
+      <ol className="text-[10px] text-zinc-400 leading-snug space-y-1 pl-4 list-decimal">
+        <li>
+          Tap <span className="text-zinc-200 font-semibold">{actionName}</span> above{' '}
+          <span className="text-zinc-500">(if denied, tap OK)</span>.
+        </li>
+        <li>
+          Tap <span className="text-zinc-200 font-semibold">Open Zero App Info</span> &rarr;{' '}
+          <span className="text-zinc-200 font-semibold">&#8942;</span> &rarr;{' '}
+          <span className="text-zinc-200 font-semibold">Allow restricted settings</span>.
+        </li>
+        <li>
+          Return &amp; tap <span className="text-zinc-200 font-semibold">{actionName}</span> again to allow.
+        </li>
+      </ol>
+
+      <div className="pt-0.5 space-y-1">
         <button
           type="button"
           onClick={onOpenAppInfo}
-          className="w-full py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+          className={`w-full py-2 px-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition-all ${
+            isBlockedNow
+              ? 'obsidian-pill-active font-black uppercase tracking-wider'
+              : 'obsidian-inset text-zinc-100 hover:brightness-110'
+          }`}
         >
-          <Settings size={13} />
-          <span>Open Zero App Info (Shortcut)</span>
-          <ExternalLink size={12} />
+          <Settings
+            size={13}
+            style={!isBlockedNow ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+          />
+          <span>Open Zero App Info</span>
+          <ExternalLink size={11} className="opacity-75" />
         </button>
-      }
-    />
+        <p className="text-[9px] text-zinc-500 text-center">
+          Xiaomi / HyperOS: scroll to bottom of App Info.
+        </p>
+      </div>
+    </div>
   );
 };
