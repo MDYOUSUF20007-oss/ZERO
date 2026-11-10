@@ -106,7 +106,7 @@ class TheVoidActivity : AppCompatActivity() {
         private val maxHeightPx: Int
     ) : ScrollView(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val boundedSpec = MeasureSpec.makeMeasureSpec(maxHeightPx, MeasureSpec.AT_MOST)
+            val boundedSpec = View.MeasureSpec.makeMeasureSpec(maxHeightPx, View.MeasureSpec.AT_MOST)
             super.onMeasure(widthMeasureSpec, boundedSpec)
         }
     }

@@ -109,15 +109,16 @@ object VoidThemeStore {
         return (a shl 24) or (r shl 16) or (g shl 8) or b
     }
 
+    private fun linearLuminanceChannel(c: Int): Double {
+        val s = (c and 0xFF) / 255.0
+        return if (s <= 0.03928) s / 12.92 else ((s + 0.055) / 1.055).pow(2.4)
+    }
+
     @JvmStatic
     fun relativeLuminance(color: Int): Double {
-        fun linearChannel(c: Int): Double {
-            val s = (c and 0xFF) / 255.0
-            return if (s <= 0.03928) s / 12.92 else ((s + 0.055) / 1.055).pow(2.4)
-        }
-        val r = linearChannel(color ushr 16)
-        val g = linearChannel(color ushr 8)
-        val b = linearChannel(color)
+        val r = linearLuminanceChannel(color ushr 16)
+        val g = linearLuminanceChannel(color ushr 8)
+        val b = linearLuminanceChannel(color)
         return 0.2126 * r + 0.7152 * g + 0.0722 * b
     }
 
