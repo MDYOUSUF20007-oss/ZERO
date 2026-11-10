@@ -63,9 +63,11 @@ object VoidThemeStore {
     }
 
     @JvmStatic
-    fun parseHexColorSafe(hex: String?, fallbackArgb: Int = 0xFFF59E0B.toInt()): Int {
-        val normalized = normalizeHex(hex, "")
-        val raw = if (HEX6_REGEX.matches(normalized)) normalized else return fallbackArgb
+    @JvmOverloads
+    fun parseHexColorSafe(hex: String?, fallbackArgb: Int = 0xFFFFFFFF.toInt()): Int {
+        val cleaned = hex?.trim()?.uppercase(Locale.US).orEmpty()
+        val withHash = if (cleaned.startsWith("#")) cleaned else "#$cleaned"
+        val raw = if (HEX6_REGEX.matches(withHash)) withHash else return fallbackArgb
         val r = raw.substring(1, 3).toIntOrNull(16) ?: return fallbackArgb
         val g = raw.substring(3, 5).toIntOrNull(16) ?: return fallbackArgb
         val b = raw.substring(5, 7).toIntOrNull(16) ?: return fallbackArgb
