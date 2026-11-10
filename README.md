@@ -4,6 +4,10 @@
 
 Zero is a 100% free and open-source (FOSS) distraction-blocking application inspired by BlockIt. Built with an ultra-minimalist, tactile Neo-Brutalist aesthetic, zero paywalls, zero telemetry, and a revolutionary **Earned-Only Parachute** discipline economy.
 
+<a href="https://ko-fi.com/mdyousuf2620" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" width="210">
+</a>
+
 ---
 
 ## 1. Vision & Core Philosophy
