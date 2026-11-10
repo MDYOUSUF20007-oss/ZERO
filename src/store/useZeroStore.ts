@@ -115,15 +115,44 @@ const DEFAULT_WEB_PERMISSIONS: NativePermissionStatus = {
   strictReady: true,
 };
 
+function isCapacitorNativeAndroid(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as unknown as {
+    Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
+  }).Capacitor;
+  if (cap?.getPlatform?.() === 'android') return true;
+  if (cap?.isNativePlatform?.() && /Android/i.test(navigator.userAgent)) return true;
+  return Boolean(window.ZeroNative);
+}
+
 function readPermissionsFromNative(): NativePermissionStatus {
-  if (typeof window === 'undefined' || !window.ZeroNative) {
+  if (typeof window === 'undefined') {
+    return DEFAULT_WEB_PERMISSIONS;
+  }
+  if (!window.ZeroNative) {
+    if (isCapacitorNativeAndroid()) {
+      return {
+        isNativeAndroid: true,
+        isStrictAccessibilityBuild: false,
+        isAccessibilityEnabled: false,
+        hasOverlayPermission: false,
+        hasUsageStatsPermission: false,
+        hasNotificationPermission: false,
+        isDeviceOwner: false,
+        strictReady: false,
+      };
+    }
     return DEFAULT_WEB_PERMISSIONS;
   }
   try {
     const raw = window.ZeroNative.getPermissionStatusJson();
     return JSON.parse(raw) as NativePermissionStatus;
   } catch {
-    return DEFAULT_WEB_PERMISSIONS;
+    return {
+      ...DEFAULT_WEB_PERMISSIONS,
+      isNativeAndroid: isCapacitorNativeAndroid(),
+      strictReady: !isCapacitorNativeAndroid(),
+    };
   }
 }
 
@@ -319,6 +348,16 @@ export function useZeroStore() {
 
   useEffect(() => {
     refreshPermissions();
+    let tries = 0;
+    const bootPoll = setInterval(() => {
+      tries++;
+      if (window.ZeroNative || tries >= 20) {
+        refreshPermissions();
+        refreshInstalledApps();
+        clearInterval(bootPoll);
+      }
+    }, 150);
+
     const onFocus = () => refreshPermissions();
     const onVis = () => {
       if (document.visibilityState === 'visible') refreshPermissions();
@@ -327,11 +366,12 @@ export function useZeroStore() {
     window.addEventListener('zero-permissions-updated', onFocus);
     document.addEventListener('visibilitychange', onVis);
     return () => {
+      clearInterval(bootPoll);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('zero-permissions-updated', onFocus);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [refreshPermissions]);
+  }, [refreshPermissions, refreshInstalledApps]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -613,7 +653,34 @@ export function useZeroStore() {
     };
   }, [activeLock.isLocked, handleSessionCompletion, applyParachuteAbort]);
 
-  const igniteSession = (durationSeconds: number, tag: SessionTag) => {
+  const igniteSession = (durationSeconds: number, tag: SessionTag): boolean => {
+    const latestPerms = readPermissionsFromNative();
+    setPermissions(latestPerms);
+
+    if (latestPerms.isNativeAndroid && !latestPerms.strictReady) {
+      window.ZeroNative?.requestNextMissingPermission();
+      return false;
+    }
+
+    try {
+      if (window.ZeroNative && activeBag) {
+        window.ZeroNative.setBagStateJson(
+          activeBag.name,
+          JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
+          activeBag.allowCalls,
+          activeBag.allowSms
+        );
+        window.ZeroNative.syncLedgerState(cumulativeSecondsRef.current, usedParachutesRef.current);
+        const started = window.ZeroNative.igniteSession(durationSeconds, tag);
+        if (started === false) {
+          refreshPermissions();
+          return false;
+        }
+      }
+    } catch {
+      if (latestPerms.isNativeAndroid) return false;
+    }
+
     const now = Date.now();
     const targetEndTime = now + durationSeconds * 1000;
 
@@ -631,21 +698,7 @@ export function useZeroStore() {
 
     setActiveLock(newLock);
     localStorage.setItem(STORAGE_KEYS.ACTIVE_LOCK, JSON.stringify(newLock));
-
-    try {
-      if (window.ZeroNative && activeBag) {
-        window.ZeroNative.setBagStateJson(
-          activeBag.name,
-          JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-          activeBag.allowCalls,
-          activeBag.allowSms
-        );
-        window.ZeroNative.syncLedgerState(cumulativeSecondsRef.current, usedParachutesRef.current);
-        window.ZeroNative.igniteSession(durationSeconds, tag);
-      }
-    } catch {
-      // Ignore in web mode
-    }
+    return true;
   };
 
   const deployParachute = (): boolean => {

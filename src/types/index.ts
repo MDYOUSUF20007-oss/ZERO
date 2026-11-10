@@ -120,6 +120,7 @@ export interface ZeroNativeBridgeInterface {
   openAccessibilitySettings(): void;
   openAppSettingsDetails(): void;
   getPermissionStatusJson(): string;
+  requestNextMissingPermission(): void;
   getInstalledAppsJson(): string;
   setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
   getBagStateJson(): string;
@@ -128,7 +129,7 @@ export interface ZeroNativeBridgeInterface {
   startLockTaskMode(): void;
   stopLockTaskMode(): void;
   syncLedgerState(cumulativeSeconds: number, deployedCount: IntOrNum): void;
-  igniteSession(durationSeconds: number, tag: string): void;
+  igniteSession(durationSeconds: number, tag: string): boolean;
   deployParachute(): boolean;
   getBatteryPercentage(): number;
   getNativeStateJson(): string;

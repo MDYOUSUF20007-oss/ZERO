@@ -57,9 +57,20 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
           </button>
         </div>
 
-        <div className="p-3 bg-zinc-900/70 border border-zinc-800 rounded-2xl text-[11px] text-zinc-300 leading-relaxed">
-          Zero does <strong>not</strong> rely on easy Android Screen Pinning. Grant these permissions once so{' '}
-          <strong>The Void</strong> blocks unbagged apps, Quick Settings, and app switches seamlessly.
+        <div className="p-3 bg-zinc-900/70 border border-zinc-800 rounded-2xl text-[11px] text-zinc-300 leading-relaxed space-y-2.5">
+          <div>
+            Zero does <strong>not</strong> rely on easy Android Screen Pinning. Grant these permissions once so{' '}
+            <strong>The Void</strong> blocks unbagged apps, Quick Settings, and app switches seamlessly.
+          </div>
+          {!permissions.strictReady && (
+            <button
+              type="button"
+              onClick={() => window.ZeroNative?.requestNextMissingPermission()}
+              className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+            >
+              Grant Next Missing Permission →
+            </button>
+          )}
         </div>
 
         <div className="space-y-2.5">

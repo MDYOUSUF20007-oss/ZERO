@@ -113,11 +113,22 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun requestUsageStatsPermission() {
-        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+        try {
+            val directIntent = Intent(
+                Settings.ACTION_USAGE_ACCESS_SETTINGS,
+                Uri.parse("package:${activity.packageName}")
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(directIntent)
+            return
+        } catch (_: Exception) {}
+
+        val fallbackIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
-            activity.startActivity(intent)
+            activity.startActivity(fallbackIntent)
         } catch (_: Exception) {
             openAppSettingsDetails()
         }
@@ -196,6 +207,47 @@ class ZeroNativeBridge(
         activity.startActivity(intent)
     }
 
+    private fun computeStrictReady(): Boolean {
+        if (isDeviceOwner()) return true
+        return if (isStrictAccessibilityBuild()) {
+            isAccessibilityEnabled() && hasOverlayPermission()
+        } else {
+            hasOverlayPermission() && hasUsageStatsPermission()
+        }
+    }
+
+    @JavascriptInterface
+    fun requestNextMissingPermission() {
+        if (isStrictAccessibilityBuild() && !isAccessibilityEnabled()) {
+            activity.runOnUiThread {
+                Toast.makeText(
+                    activity,
+                    "Enable Zero in Accessibility Services (App Info -> Allow Restricted Settings if greyed out)",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            openAccessibilitySettings()
+            return
+        }
+        if (!isStrictAccessibilityBuild() && !hasUsageStatsPermission()) {
+            activity.runOnUiThread {
+                Toast.makeText(activity, "Allow Usage Access for Zero", Toast.LENGTH_LONG).show()
+            }
+            requestUsageStatsPermission()
+            return
+        }
+        if (!hasOverlayPermission()) {
+            activity.runOnUiThread {
+                Toast.makeText(activity, "Allow Display Over Other Apps for Zero", Toast.LENGTH_LONG).show()
+            }
+            requestOverlayPermission()
+            return
+        }
+        if (!hasNotificationPermission()) {
+            requestNotificationPermission()
+        }
+    }
+
     @JavascriptInterface
     fun getPermissionStatusJson(): String {
         val strictBuild = isStrictAccessibilityBuild()
@@ -204,11 +256,7 @@ class ZeroNativeBridge(
         val usage = hasUsageStatsPermission()
         val notifications = hasNotificationPermission()
         val owner = isDeviceOwner()
-        val strictReady = if (strictBuild) {
-            (accessibility && overlay) || owner
-        } else {
-            (overlay && usage) || owner
-        }
+        val strictReady = computeStrictReady()
 
         return JSONObject().apply {
             put("isNativeAndroid", true)
@@ -379,8 +427,13 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
-    fun igniteSession(durationSeconds: Long, tag: String) {
+    fun igniteSession(durationSeconds: Long, tag: String): Boolean {
+        if (!computeStrictReady()) {
+            requestNextMissingPermission()
+            return false
+        }
         lockEngine.igniteSession(durationSeconds, tag)
+        return true
     }
 
     @JavascriptInterface

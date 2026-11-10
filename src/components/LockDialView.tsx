@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 interface LockDialViewProps {
-  onIgnite: (durationSeconds: number, tag: SessionTag) => void;
+  onIgnite: (durationSeconds: number, tag: SessionTag) => boolean;
   parachuteMetrics: ParachuteMetrics;
   activeBag: OccasionBag;
   permissions: NativePermissionStatus;
@@ -157,7 +157,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       return;
     }
 
-    onIgnite(durationSeconds, selectedTag);
+    const started = onIgnite(durationSeconds, selectedTag);
+    if (started === false) {
+      onOpenPermissionGate();
+    }
   }, [durationSeconds, selectedTag, onIgnite, permissions.isNativeAndroid, permissions.strictReady, onOpenPermissionGate]);
 
   const updateHold = useCallback(() => {
