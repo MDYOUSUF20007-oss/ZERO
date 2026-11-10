@@ -189,7 +189,8 @@ object PixelFont5x7 {
             }
         }
         val cleaned = sb.toString().trim()
-        return cleaned.ifEmpty { "3:39 PM" }
+        val hasDigit = cleaned.any { it in '0'..'9' }
+        return if (hasDigit) cleaned else "3:39 PM"
     }
 
     @JvmStatic

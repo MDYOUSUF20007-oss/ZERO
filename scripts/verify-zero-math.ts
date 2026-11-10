@@ -1289,6 +1289,7 @@ console.log('\n=== TEST 19: Void Pixelated Gradient Clock & WhatsApp-Style Bag B
 failIf(
   normalizePixelClockText(' 3:39 pm ') === '3:39 PM' &&
     normalizePixelClockText('???') === '3:39 PM' &&
+    normalizePixelClockText('invalid') === '3:39 PM' &&
     PIXEL_GLYPHS_5X7['3'].length === 7,
   'Pixel clock normalizer must uppercase valid time chars and safely fallback on invalid strings'
 );

@@ -41,7 +41,8 @@ export function normalizePixelClockText(input: string): string {
       out += ch;
     }
   }
-  return out || '3:39 PM';
+  const cleaned = out.trim();
+  return /[0-9]/.test(cleaned) ? cleaned : '3:39 PM';
 }
 
 /**
