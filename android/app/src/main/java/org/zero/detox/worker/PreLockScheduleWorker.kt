@@ -28,7 +28,7 @@ class PreLockScheduleWorker(
         const val KEY_TAG = "tag"
     }
 
-    override fun suspend fun doWork(): Result {
+    override suspend fun doWork(): Result {
         val actionType = inputData.getString(KEY_ACTION_TYPE) ?: "WARNING"
         val scheduleName = inputData.getString(KEY_SCHEDULE_NAME) ?: "Daily Focus"
         val duration = inputData.getLong(KEY_DURATION_SECONDS, 7200L)

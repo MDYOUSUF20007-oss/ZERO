@@ -15,7 +15,6 @@ import org.zero.detox.core.LockEngine
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import org.zero.detox.service.ZeroAccessibilityService
-import org.zero.detox.ui.TheVoidActivity
 
 /**
  * ZeroNativeBridge:

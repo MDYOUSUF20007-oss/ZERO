@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="org.zero.detox">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- OS-Level System Protection & Lock Capabilities -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -16,29 +14,31 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".ZeroApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Zero"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Zero.Void">
+        android:theme="@style/AppTheme">
 
-        <!-- Main Launcher Activity (Home / Lock Dial) -->
+        <!-- Main Launcher Activity -->
         <activity
-            android:name=".ui.MainActivity"
-            android:exported="true"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustResize">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- The Void: Active Lock Screen (Screen pinning, lock task mode, full-screen overlay) -->
+        <!-- The Void: Active Lock Screen Overlay Activity -->
         <activity
             android:name=".ui.TheVoidActivity"
             android:exported="false"
@@ -51,19 +51,14 @@
             android:showOnLockScreen="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:theme="@style/Theme.Zero.TheVoid" />
+            android:theme="@style/AppTheme.NoActionBar" />
 
-        <!-- Foreground Lock Watcher Service (Keeps lock enforced with sticky foreground notification) -->
+        <!-- Foreground Lock Watcher Service -->
         <service
             android:name=".service.LockForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Strict digital detox distraction blocker engine" />
-        </service>
+            android:exported="false" />
 
-        <!-- Accessibility Service: Intercepts Notification Shade pull-down and Settings navigation -->
+        <!-- Accessibility Service: Intercepts Notification Shade pull-down and unauthorized app switches -->
         <service
             android:name=".service.ZeroAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -76,7 +71,7 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- Anti-Tamper Boot Completed Receiver: Resumes Void immediately on reboot -->
+        <!-- Anti-Tamper Boot Completed Receiver -->
         <receiver
             android:name=".receiver.BootReceiver"
             android:enabled="true"
@@ -91,7 +86,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Device Admin Receiver: Enables OS-level LockTaskMode pinning without user exit prompt -->
+        <!-- Device Admin Receiver: Enables OS-level LockTaskMode pinning -->
         <receiver
             android:name=".receiver.ZeroDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
@@ -105,5 +100,16 @@
             </intent-filter>
         </receiver>
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
+
 </manifest>

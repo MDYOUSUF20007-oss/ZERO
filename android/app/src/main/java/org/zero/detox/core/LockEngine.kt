@@ -2,7 +2,7 @@ package org.zero.detox.core
 
 import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,7 +71,7 @@ class LockEngine(private val context: Context, private val parachuteStore: Parac
             putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
             putExtra("EXTRA_TAG", tag)
         }
-        context.startForegroundService(serviceIntent)
+        ContextCompat.startForegroundService(context, serviceIntent)
 
         // Launch The Void lock overlay
         val voidIntent = Intent(context, TheVoidActivity::class.java).apply {

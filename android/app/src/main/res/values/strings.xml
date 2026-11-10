@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Zero</string>
+    <string name="title_activity_main">Zero</string>
+    <string name="package_name">org.zero.detox</string>
+    <string name="custom_url_scheme">org.zero.detox</string>
+    <string name="accessibility_description">Zero distraction blocker anti-tamper service to intercept notification drawer and app switching during focus sessions.</string>
+</resources>
