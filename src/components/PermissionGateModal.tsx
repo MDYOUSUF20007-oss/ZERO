@@ -68,9 +68,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-9 h-9 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 ${
-                      permissions.strictReady ? 'text-emerald-400' : 'text-blue-500'
-                    }`}
+                    className="w-9 h-9 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 text-blue-500"
                   >
                     {permissions.strictReady ? <CheckCircle2 size={17} /> : <ShieldAlert size={17} />}
                   </div>
@@ -104,11 +102,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-sm bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 ${
-                          coreGranted ? 'text-emerald-400' : 'text-blue-500'
-                        }`}
-                      >
+                      <div className="w-7 h-7 rounded-sm bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 text-blue-500">
                         {needsAccessibility ? <Accessibility size={14} /> : <Activity size={14} />}
                       </div>
                       <span className="truncate">
@@ -117,7 +111,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     </div>
 
                     {coreGranted ? (
-                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-emerald-400 bg-black border border-emerald-500/40 px-2 py-0.5 rounded-sm shrink-0">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-blue-400 bg-black border border-blue-500/40 px-2 py-0.5 rounded-sm shrink-0">
                         <CheckCircle2 size={10} /> GRANTED
                       </span>
                     ) : (
@@ -179,9 +173,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
                       <div
                         className={`w-7 h-7 rounded-sm bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 ${
-                          permissions.hasOverlayPermission
-                            ? 'text-emerald-400'
-                            : isStep2Active
+                          permissions.hasOverlayPermission || isStep2Active
                             ? 'text-blue-500'
                             : 'text-neutral-400'
                         }`}
@@ -192,7 +184,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     </div>
 
                     {permissions.hasOverlayPermission ? (
-                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-emerald-400 bg-black border border-emerald-500/40 px-2 py-0.5 rounded-sm shrink-0">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-blue-400 bg-black border border-blue-500/40 px-2 py-0.5 rounded-sm shrink-0">
                         <CheckCircle2 size={10} /> GRANTED
                       </span>
                     ) : isStep2Active ? (
@@ -238,9 +230,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
                       <div
                         className={`w-7 h-7 rounded-sm bg-neutral-950 border border-neutral-800 flex items-center justify-center shrink-0 ${
-                          permissions.hasNotificationPermission
-                            ? 'text-emerald-400'
-                            : isStep3Active
+                          permissions.hasNotificationPermission || isStep3Active
                             ? 'text-blue-500'
                             : 'text-neutral-400'
                         }`}
@@ -251,7 +241,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     </div>
 
                     {permissions.hasNotificationPermission ? (
-                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-emerald-400 bg-black border border-emerald-500/40 px-2 py-0.5 rounded-sm shrink-0">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-blue-400 bg-black border border-blue-500/40 px-2 py-0.5 rounded-sm shrink-0">
                         <CheckCircle2 size={10} /> GRANTED
                       </span>
                     ) : isStep3Active ? (
@@ -340,11 +330,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
               <div className="flex items-center gap-2.5">
                 <div
                   className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
-                  style={
-                    permissions.strictReady
-                      ? { color: '#34D399' }
-                      : { color: 'var(--accent-hex, #F59E0B)' }
-                  }
+                  style={{ color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {permissions.strictReady ? <CheckCircle2 size={16} /> : <ShieldAlert size={16} />}
                 </div>
@@ -378,9 +364,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                   <div className="flex items-center gap-2 text-xs font-bold text-white min-w-0">
                     <div
                       className="w-6 h-6 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0"
-                      style={{
-                        color: coreGranted ? '#34D399' : 'var(--accent-hex, #F59E0B)',
-                      }}
+                      style={{ color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       {needsAccessibility ? <Accessibility size={13} /> : <Activity size={13} />}
                     </div>
@@ -390,19 +374,30 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                   </div>
 
                   {coreGranted ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full shrink-0">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-bold border px-2 py-0.5 rounded-full shrink-0"
+                      style={{
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
+                      }}
+                    >
                       <CheckCircle2 size={10} /> GRANTED
+                    </span>
+                  ) : isBlockedNow ? (
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-red-700/70 bg-red-950/50 text-red-300 shrink-0">
+                      BLOCKED
                     </span>
                   ) : (
                     <span
                       className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0"
                       style={{
-                        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                        borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                        color: 'var(--accent-hex, #F59E0B)',
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
                       }}
                     >
-                      {isBlockedNow ? 'BLOCKED' : 'STEP 1'}
+                      STEP 1
                     </span>
                   )}
                 </div>
@@ -454,11 +449,10 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     <div
                       className="w-6 h-6 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0"
                       style={{
-                        color: permissions.hasOverlayPermission
-                          ? '#34D399'
-                          : isStep2Active
-                          ? 'var(--accent-hex, #F59E0B)'
-                          : '#A1A1AA',
+                        color:
+                          permissions.hasOverlayPermission || isStep2Active
+                            ? 'var(--accent-hex, #FFFFFF)'
+                            : '#A1A1AA',
                       }}
                     >
                       <Layers size={13} />
@@ -467,16 +461,23 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                   </div>
 
                   {permissions.hasOverlayPermission ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full shrink-0">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-bold border px-2 py-0.5 rounded-full shrink-0"
+                      style={{
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
+                      }}
+                    >
                       <CheckCircle2 size={10} /> GRANTED
                     </span>
                   ) : isStep2Active ? (
                     <span
                       className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0"
                       style={{
-                        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                        borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                        color: 'var(--accent-hex, #F59E0B)',
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
                       }}
                     >
                       STEP 2
@@ -521,11 +522,10 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     <div
                       className="w-6 h-6 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0"
                       style={{
-                        color: permissions.hasNotificationPermission
-                          ? '#34D399'
-                          : isStep3Active
-                          ? 'var(--accent-hex, #F59E0B)'
-                          : '#A1A1AA',
+                        color:
+                          permissions.hasNotificationPermission || isStep3Active
+                            ? 'var(--accent-hex, #FFFFFF)'
+                            : '#A1A1AA',
                       }}
                     >
                       <Bell size={13} />
@@ -534,16 +534,23 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                   </div>
 
                   {permissions.hasNotificationPermission ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full shrink-0">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-bold border px-2 py-0.5 rounded-full shrink-0"
+                      style={{
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
+                      }}
+                    >
                       <CheckCircle2 size={10} /> GRANTED
                     </span>
                   ) : isStep3Active ? (
                     <span
                       className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0"
                       style={{
-                        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                        borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                        color: 'var(--accent-hex, #F59E0B)',
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                        color: 'var(--accent-hex, #FFFFFF)',
                       }}
                     >
                       OPTIONAL

@@ -19,6 +19,7 @@ import android.os.SystemClock
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowManager
 import android.widget.Button
@@ -84,6 +85,13 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var btnDeployParachute: Button
     private lateinit var textParachuteBalance: TextView
     private lateinit var bagContainer: LinearLayout
+    private lateinit var centerBox: LinearLayout
+    private lateinit var centerBagSlot: FrameLayout
+    private lateinit var workSpotlightBox: LinearLayout
+    private lateinit var textWorkEyebrow: TextView
+    private lateinit var textWorkHashtag: TextView
+    private lateinit var bottomBagScroll: MaxHeightScrollView
+    private lateinit var bottomBagSlot: FrameLayout
 
     private lateinit var pixelClockCard: FrameLayout
     private lateinit var pixelClockRim: View
@@ -92,6 +100,24 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var pixelTimerCard: FrameLayout
     private lateinit var pixelTimerRim: View
     private lateinit var pixelTimerView: PixelClockView
+
+    private class MaxHeightScrollView(
+        context: Context,
+        private val maxHeightPx: Int
+    ) : ScrollView(context) {
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            val boundedSpec = MeasureSpec.makeMeasureSpec(maxHeightPx, MeasureSpec.AT_MOST)
+            super.onMeasure(widthMeasureSpec, boundedSpec)
+        }
+    }
+
+    private fun resolveReadableAccent(): Int {
+        return if (isBespokeStyle) {
+            Color.parseColor("#3B82F6")
+        } else {
+            VoidThemeStore.ensureReadableOnBlack(accentConfig.accentColor)
+        }
+    }
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
@@ -208,7 +234,7 @@ class TheVoidActivity : AppCompatActivity() {
                 if (isBespokeStyle) {
                     cornerRadius = dp(1).toFloat()
                 }
-                setColor(Color.parseColor("#10B981"))
+                setColor(resolveReadableAccent())
             }
         }
 
@@ -248,7 +274,7 @@ class TheVoidActivity : AppCompatActivity() {
             )
         }
 
-        val centerBox = LinearLayout(this).apply {
+        centerBox = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(0, dp(8), 0, dp(12))
@@ -407,7 +433,59 @@ class TheVoidActivity : AppCompatActivity() {
             setPadding(0, dp(2), 0, dp(20))
         }
 
-        // 3. WHATSAPP-STYLE BAG CARD (Replacing Plain Square Tiles)
+        // Work Bag Center Hero Hashtag Spotlight (Larger than Clock & Countdown Timer)
+        workSpotlightBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            minimumHeight = dp(136)
+            setPadding(dp(8), dp(10), dp(8), dp(10))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+            visibility = View.GONE
+        }
+
+        textWorkEyebrow = TextView(this).apply {
+            text = "WORK BAG MISSION"
+            setTextColor(Color.parseColor("#A1A1AA"))
+            textSize = 10f
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
+            letterSpacing = 0.24f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, dp(6))
+        }
+
+        textWorkHashtag = TextView(this).apply {
+            text = "#DEEP WORK"
+            isAllCaps = true
+            setTextColor(resolveReadableAccent())
+            textSize = 50f
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
+            letterSpacing = -0.02f
+            maxLines = 2
+            setLineSpacing(0f, 1.02f)
+            gravity = Gravity.CENTER
+        }
+
+        workSpotlightBox.addView(textWorkEyebrow)
+        workSpotlightBox.addView(textWorkHashtag)
+
+        centerBagSlot = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // 3. BAG CARD (Relocated to Bottom Dock when Work Bag is active)
         bagContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(14), dp(16), dp(14))
@@ -419,8 +497,10 @@ class TheVoidActivity : AppCompatActivity() {
 
         centerBox.addView(pixelClockCard)
         centerBox.addView(pixelTimerCard)
+        centerBox.addView(workSpotlightBox)
         centerBox.addView(textQuote)
-        centerBox.addView(bagContainer)
+        centerBagSlot.addView(bagContainer)
+        centerBox.addView(centerBagSlot)
         centerScroll.addView(centerBox)
         root.addView(centerScroll)
 
@@ -432,6 +512,27 @@ class TheVoidActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
+
+        val maxBagScrollPx = (resources.displayMetrics.heightPixels * 0.27f)
+            .toInt()
+            .coerceAtLeast(dp(140))
+        bottomBagScroll = MaxHeightScrollView(this, maxBagScrollPx).apply {
+            isVerticalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(4) }
+            visibility = View.GONE
+        }
+        bottomBagSlot = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        bottomBagScroll.addView(bottomBagSlot)
+        bottomBox.addView(bottomBagScroll)
 
         textParachuteBalance = TextView(this).apply {
             setTextColor(Color.parseColor("#A1A1AA"))
@@ -493,10 +594,93 @@ class TheVoidActivity : AppCompatActivity() {
         updateParachuteStatus()
     }
 
+    private fun updateWorkBagLayoutMode() {
+        val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
+        val rawTag = (prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work")
+            .trim()
+            .trimStart('#')
+            .trim()
+            .ifEmpty { "Deep Work" }
+        val workBagActive = bagStore.isWorkBagActive()
+        val readableAccent = resolveReadableAccent()
+
+        if (workBagActive) {
+            textSessionTag.text = "WORK BAG COUNTDOWN"
+
+            val tagDisplay = "#${rawTag.uppercase(Locale.US)}"
+            val tagSp = when {
+                tagDisplay.length <= 12 -> 50f
+                tagDisplay.length <= 18 -> 40f
+                else -> 32f
+            }
+            textWorkHashtag.text = tagDisplay
+            textWorkHashtag.textSize = tagSp
+            textWorkHashtag.setTextColor(readableAccent)
+            textWorkHashtag.typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
+            textWorkEyebrow.typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
+
+            workSpotlightBox.visibility = View.VISIBLE
+            centerBox.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+
+            textQuote.setPadding(dp(8), dp(10), dp(8), dp(4))
+            if (textQuote.parent !== workSpotlightBox) {
+                (textQuote.parent as? ViewGroup)?.removeView(textQuote)
+                workSpotlightBox.addView(textQuote)
+            }
+
+            if (bagContainer.parent !== bottomBagSlot) {
+                (bagContainer.parent as? ViewGroup)?.removeView(bagContainer)
+                bottomBagSlot.addView(
+                    bagContainer,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            }
+            centerBagSlot.visibility = View.GONE
+            bottomBagScroll.visibility = View.VISIBLE
+        } else {
+            textSessionTag.text = "LOCKED IN #${rawTag.uppercase(Locale.US)}"
+            workSpotlightBox.visibility = View.GONE
+            centerBox.gravity = Gravity.CENTER
+
+            textQuote.setPadding(0, dp(2), 0, dp(20))
+            if (textQuote.parent !== centerBox) {
+                (textQuote.parent as? ViewGroup)?.removeView(textQuote)
+                val bagSlotIndex = centerBox.indexOfChild(centerBagSlot)
+                if (bagSlotIndex >= 0) {
+                    centerBox.addView(textQuote, bagSlotIndex)
+                } else {
+                    centerBox.addView(textQuote)
+                }
+            }
+
+            if (bagContainer.parent !== centerBagSlot) {
+                (bagContainer.parent as? ViewGroup)?.removeView(bagContainer)
+                centerBagSlot.addView(
+                    bagContainer,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            }
+            bottomBagScroll.visibility = View.GONE
+            centerBagSlot.visibility = View.VISIBLE
+        }
+    }
+
     private fun applyAccentThemeVisuals() {
         accentConfig = VoidThemeStore.loadAccent(this)
         isBespokeStyle = VoidThemeStore.isBespokeStyle(this)
-        val accent = if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor
+        val accent = resolveReadableAccent()
 
         pixelClockCard.invalidateOutline()
         pixelTimerCard.invalidateOutline()
@@ -525,7 +709,7 @@ class TheVoidActivity : AppCompatActivity() {
             statusDot.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = dp(1).toFloat()
-                setColor(Color.parseColor("#10B981"))
+                setColor(accent)
             }
 
             textVoidActive.typeface = Typeface.SANS_SERIF
@@ -584,14 +768,14 @@ class TheVoidActivity : AppCompatActivity() {
 
             statusDot.background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#10B981"))
+                setColor(accent)
             }
 
             textVoidActive.typeface = Typeface.MONOSPACE
             textClockHeader.typeface = Typeface.MONOSPACE
             textSessionTag.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             textSessionTag.letterSpacing = 0.2f
-            textSessionTag.setTextColor(VoidThemeStore.darkenColor(accent, 0.65f))
+            textSessionTag.setTextColor(VoidThemeStore.darkenColor(accentConfig.accentColor, 0.65f))
             textQuote.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
             btnDeployParachute.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             btnEmergencyCall.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
@@ -610,6 +794,7 @@ class TheVoidActivity : AppCompatActivity() {
         pixelTimerView.setInvertedPolarity(true)
         pixelTimerView.setAccentTheme(accent)
 
+        updateWorkBagLayoutMode()
         updateParachuteStatus()
     }
 
@@ -633,7 +818,15 @@ class TheVoidActivity : AppCompatActivity() {
         val bagName = bagStore.getActiveBagName().uppercase(Locale.US)
         val allowSms = bagStore.isSmsAllowed()
         val apps = bagStore.getBagApps()
-        val accent = accentConfig.accentColor
+        val workBagActive = bagStore.isWorkBagActive()
+        val accent = resolveReadableAccent()
+
+        bagContainer.setPadding(
+            dp(if (workBagActive) 14 else 16),
+            dp(if (workBagActive) 11 else 14),
+            dp(if (workBagActive) 14 else 16),
+            dp(if (workBagActive) 11 else 14)
+        )
 
         // Header Strip: BAG: WORK BAG (X/3 APPS)  |  Monk Mode Active / Allowed Apps
         val headerRow = LinearLayout(this).apply {
@@ -642,7 +835,7 @@ class TheVoidActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(12) }
+            ).apply { bottomMargin = dp(if (workBagActive) 8 else 12) }
         }
 
         val headerLeft = TextView(this).apply {
@@ -661,15 +854,12 @@ class TheVoidActivity : AppCompatActivity() {
 
         val headerRight = TextView(this).apply {
             text = if (apps.isEmpty()) "Monk Mode Active" else "Allowed Apps"
-            setTextColor(
-                if (apps.isEmpty()) {
-                    if (isBespokeStyle) Color.parseColor("#3B82F6") else accent
-                } else {
-                    Color.parseColor("#34D399")
-                }
-            )
+            setTextColor(accent)
             textSize = 10f
-            typeface = if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE
+            typeface = Typeface.create(
+                if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
+                Typeface.BOLD
+            )
         }
 
         headerRow.addView(headerLeft)
@@ -734,24 +924,16 @@ class TheVoidActivity : AppCompatActivity() {
             }
         }
 
-        // Compulsory Phone Calls row — always available even in an empty Monk Mode Bag
-        val dialerPkg = bagStore.getPrimaryDialerPackage()
-        val dialerIcon = dialerPkg?.let { loadAppIconSafe(it) }
-        val dialerColor = VoidBrandPalette.extractBrandColorFromDrawable(
-            drawable = dialerIcon,
-            packageName = dialerPkg ?: "com.google.android.dialer",
-            appName = "Phone Calls",
-            category = "calls",
-            fallbackHex = "#16A34A"
-        )
+        // Compulsory Phone Calls row — always available even in an empty Monk Mode Bag (theme-matched accent, zero green)
         rowsStack.addView(
             createBagAppRow(
                 title = "Phone Calls",
                 subtitle = "Compulsory Dialer • Always ON",
                 badgeLabel = "ALWAYS ON",
-                brandColor = dialerColor,
-                iconDrawable = dialerIcon,
+                brandColor = accent,
+                iconDrawable = null,
                 fallbackVectorResId = android.R.drawable.stat_sys_phone_call,
+                useThemeTileTint = true,
                 onClick = {
                     val pkg = bagStore.getPrimaryDialerPackage()
                     if (pkg != null) {
@@ -767,24 +949,16 @@ class TheVoidActivity : AppCompatActivity() {
             )
         )
 
-        // Optional Normal SMS row if enabled for the Bag
+        // Optional Normal SMS row if enabled for the Bag (theme-matched accent)
         if (allowSms) {
-            val smsPkg = bagStore.getPrimarySmsPackage()
-            val smsIcon = smsPkg?.let { loadAppIconSafe(it) }
-            val smsColor = VoidBrandPalette.extractBrandColorFromDrawable(
-                drawable = smsIcon,
-                packageName = smsPkg ?: "com.google.android.apps.messaging",
-                appName = "Messages",
-                category = "messages",
-                fallbackHex = "#0284C7"
-            )
             rowsStack.addView(
                 createBagAppRow(
                     title = "Messages",
                     subtitle = "Normal Texts (SMS)",
                     badgeLabel = "ALLOWED",
-                    brandColor = smsColor,
-                    iconDrawable = smsIcon,
+                    brandColor = accent,
+                    iconDrawable = null,
+                    useThemeTileTint = true,
                     onClick = {
                         val pkg = bagStore.getPrimarySmsPackage()
                         if (pkg != null) {
@@ -825,8 +999,10 @@ class TheVoidActivity : AppCompatActivity() {
         brandColor: Int,
         iconDrawable: Drawable?,
         fallbackVectorResId: Int? = null,
+        useThemeTileTint: Boolean = false,
         onClick: () -> Unit
     ): View {
+        val accent = resolveReadableAccent()
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -844,7 +1020,7 @@ class TheVoidActivity : AppCompatActivity() {
                 createRoundedButtonBg(
                     fillColors = intArrayOf(Color.parseColor("#CC18181C"), Color.parseColor("#CC141418")),
                     strokeColor = Color.parseColor("#14FFFFFF"),
-                    rippleColor = VoidThemeStore.withAlpha(brandColor, 64),
+                    rippleColor = VoidThemeStore.withAlpha(accent, 64),
                     radiusDp = 12
                 )
             }
@@ -858,6 +1034,12 @@ class TheVoidActivity : AppCompatActivity() {
         // App Icon Tile
         val tileSize = dp(38)
         val tileCornerDp = if (isBespokeStyle) 6 else 11
+        val tileFillColor = if (useThemeTileTint) VoidThemeStore.withAlpha(accent, 36) else brandColor
+        val tileStrokeColor = if (useThemeTileTint) {
+            VoidThemeStore.withAlpha(accent, 92)
+        } else {
+            Color.parseColor(if (isBespokeStyle) "#262626" else "#33FFFFFF")
+        }
         val iconTile = FrameLayout(this).apply {
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
@@ -867,8 +1049,8 @@ class TheVoidActivity : AppCompatActivity() {
             }
             background = GradientDrawable().apply {
                 cornerRadius = dp(tileCornerDp).toFloat()
-                setColor(brandColor)
-                setStroke(dp(1), Color.parseColor(if (isBespokeStyle) "#262626" else "#33FFFFFF"))
+                setColor(tileFillColor)
+                setStroke(dp(1), tileStrokeColor)
             }
             layoutParams = LinearLayout.LayoutParams(tileSize, tileSize).apply {
                 marginEnd = dp(12)
@@ -889,7 +1071,7 @@ class TheVoidActivity : AppCompatActivity() {
         } else if (fallbackVectorResId != null) {
             val iv = ImageView(this).apply {
                 setImageResource(fallbackVectorResId)
-                setColorFilter(Color.WHITE)
+                setColorFilter(if (useThemeTileTint) accent else Color.WHITE)
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 setPadding(dp(9), dp(9), dp(9), dp(9))
                 layoutParams = FrameLayout.LayoutParams(
@@ -899,11 +1081,15 @@ class TheVoidActivity : AppCompatActivity() {
             }
             iconTile.addView(iv)
         } else {
-            val hexBg = String.format(Locale.US, "#%06X", 0xFFFFFF and brandColor)
-            val txtColor = VoidThemeStore.parseHexColorSafe(
-                VoidBrandPalette.contrastTextHexForBg(hexBg),
-                Color.WHITE
-            )
+            val txtColor = if (useThemeTileTint) {
+                accent
+            } else {
+                val hexBg = String.format(Locale.US, "#%06X", 0xFFFFFF and brandColor)
+                VoidThemeStore.parseHexColorSafe(
+                    VoidBrandPalette.contrastTextHexForBg(hexBg),
+                    Color.WHITE
+                )
+            }
             val tvInitial = TextView(this).apply {
                 text = title.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "A"
                 setTextColor(txtColor)
@@ -948,10 +1134,11 @@ class TheVoidActivity : AppCompatActivity() {
         textCol.addView(tvTitle)
         textCol.addView(tvSub)
 
-        // Right Status Tag ("ALLOWED" / "ALWAYS ON")
+        // Right Status Tag ("ALLOWED" / "ALWAYS ON") — strictly matched to active Theme Accent
+        val badgeTextColor = if (isBespokeStyle) Color.parseColor("#60A5FA") else accent
         val badgeView = TextView(this).apply {
             text = badgeLabel
-            setTextColor(Color.parseColor("#34D399"))
+            setTextColor(badgeTextColor)
             textSize = 9f
             typeface = Typeface.create(
                 if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
@@ -961,8 +1148,8 @@ class TheVoidActivity : AppCompatActivity() {
             setPadding(dp(8), dp(4), dp(8), dp(4))
             background = GradientDrawable().apply {
                 cornerRadius = dp(if (isBespokeStyle) 4 else 6).toFloat()
-                setColor(Color.parseColor(if (isBespokeStyle) "#052E16" else "#1F10B981"))
-                setStroke(dp(1), Color.parseColor("#4010B981"))
+                setColor(VoidThemeStore.withAlpha(accent, 36))
+                setStroke(dp(1), VoidThemeStore.withAlpha(accent, 90))
             }
         }
 
@@ -1043,11 +1230,16 @@ class TheVoidActivity : AppCompatActivity() {
             return
         }
 
-        val accent = accentConfig.accentColor
+        val accent = resolveReadableAccent()
         if (balance > 0) {
             val topStop = VoidThemeStore.lightenColor(accent, 0.16f)
             val botStop = VoidThemeStore.darkenColor(accent, 0.18f)
-            btnDeployParachute.setTextColor(accentConfig.badgeTextColor)
+            val buttonTextColor = if (VoidThemeStore.relativeLuminance(accent) >= 0.40) {
+                Color.parseColor("#09090B")
+            } else {
+                Color.WHITE
+            }
+            btnDeployParachute.setTextColor(buttonTextColor)
             btnDeployParachute.background = createRoundedButtonBg(
                 fillColors = intArrayOf(topStop, botStop),
                 strokeColor = VoidThemeStore.withAlpha(Color.WHITE, 46),

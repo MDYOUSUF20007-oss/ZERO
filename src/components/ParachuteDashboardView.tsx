@@ -6,10 +6,11 @@ import type {
   ParachuteMetrics,
   ParachuteLedgerEntry,
   SessionRecord,
+  ThemeConfig,
   ZeroProfile,
 } from '../types';
 import { ShareStatsModal } from './ShareStatsModal';
-import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ACCENT_THEMES, ProfileAvatar } from './ProfileAvatar';
+import { ProfileAvatar } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
@@ -63,6 +64,7 @@ interface ParachuteDashboardViewProps {
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
   profile: ZeroProfile | null;
+  themeConfig?: ThemeConfig;
   widgetsConfig?: DashboardWidgetsConfig;
   onWidgetsConfigChange?: (next: DashboardWidgetsConfig) => void;
   isZeroSupporter: boolean;
@@ -119,8 +121,8 @@ function getHeatmapCellStyle(
   switch (level) {
     case 1:
       return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.16)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.34)',
+        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.16)',
+        border: '1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.34)',
         boxShadow: isSelected
           ? '0 0 0 2px #FFFFFF'
           : isToday
@@ -129,8 +131,8 @@ function getHeatmapCellStyle(
       };
     case 2:
       return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.38)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.56)',
+        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.38)',
+        border: '1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.56)',
         boxShadow: isSelected
           ? '0 0 0 2px #FFFFFF'
           : isToday
@@ -139,16 +141,16 @@ function getHeatmapCellStyle(
       };
     case 3:
       return {
-        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.64)',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.84)',
-        boxShadow: `0 0 8px rgba(var(--accent-rgb, 245, 158, 11), 0.25)${ringShadow}`,
+        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.64)',
+        border: '1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.84)',
+        boxShadow: `0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.25)${ringShadow}`,
       };
     case 4:
       return {
         background:
-          'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
-        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.98)',
-        boxShadow: `0 0 12px rgba(var(--accent-rgb, 245, 158, 11), 0.48)${ringShadow}`,
+          'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+        border: '1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.98)',
+        boxShadow: `0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.48)${ringShadow}`,
       };
     case 0:
     default:
@@ -169,6 +171,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   ledger,
   sessions,
   profile,
+  themeConfig,
   widgetsConfig,
   onWidgetsConfigChange,
   isZeroSupporter,
@@ -304,11 +307,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   );
 
   const profileRank = getZeroRankFromHours(totalReclaimedHours);
-  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-  const profileAccentTheme = ACCENT_THEMES[profileAccentKey] || ACCENT_THEMES.Amber;
-  const profileAccent = profile
-    ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
-    : ACCENT_STYLES.amber;
   const dailyGoalPct = profile
     ? Math.min(100, Math.round((todayReclaimedHours / Math.max(1, profile.dailyGoalHours)) * 100))
     : 0;
@@ -388,7 +386,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           )}
           <div className="grid grid-cols-2 gap-3">
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
               footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
@@ -402,7 +399,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       <Clock
                         size={12}
                         className={isBespoke ? 'text-blue-500' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>{kpiSyncActive ? `${scopedSummary.scopeLabel}` : 'Reclaimed'}</span>
                     </div>
@@ -422,7 +419,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <Clock
                       size={14}
                       className={isBespoke ? 'text-blue-500' : undefined}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -441,7 +438,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             />
 
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
               footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
@@ -454,7 +450,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <Flame
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : 'text-amber-500'}
+                        className={isBespoke ? 'text-blue-500' : undefined}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Current Streak</span>
                     </div>
@@ -473,7 +470,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <Flame
                       size={14}
-                      className={isBespoke ? 'text-blue-500' : 'text-amber-400'}
+                      className={isBespoke ? 'text-blue-500' : undefined}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -490,7 +488,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             />
 
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
               footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
@@ -503,7 +500,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <TrendingUp
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : 'text-emerald-400'}
+                        className={isBespoke ? 'text-blue-500' : undefined}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Completion</span>
                     </div>
@@ -522,7 +520,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <TrendingUp
                       size={14}
-                      className={isBespoke ? 'text-blue-500' : 'text-emerald-400'}
+                      className={isBespoke ? 'text-blue-500' : undefined}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -540,7 +539,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             />
 
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
               footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
@@ -553,7 +551,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <Award
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : 'text-cyan-400'}
+                        className={isBespoke ? 'text-blue-500' : undefined}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Avg Session</span>
                     </div>
@@ -572,7 +571,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <Award
                       size={14}
-                      className={isBespoke ? 'text-blue-500' : 'text-cyan-400'}
+                      className={isBespoke ? 'text-blue-500' : undefined}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -596,7 +596,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       return (
         <ObsidianCard
           key="discipline_heatmap"
-          accent={profileAccentKey}
           ambientGlow
           className={isBespoke ? 'font-sans' : 'font-mono'}
           headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
@@ -617,7 +616,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <Calendar
                       size={16}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <div className="min-w-0">
@@ -647,7 +646,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     className={`text-xs font-mono tabular-nums leading-none ${
                       isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {heatmapView.totalHours}h
                   </div>
@@ -900,7 +899,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                                     ? cell.level >= 3
                                       ? '#FFFFFF'
                                       : '#3B82F6'
-                                    : 'var(--accent-hex, #F59E0B)',
+                                    : 'var(--accent-hex, #FFFFFF)',
                               }}
                             />
                           )}
@@ -1019,7 +1018,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         className={`text-xs font-mono tabular-nums font-semibold truncate ${
                           isBespoke ? 'text-blue-400' : ''
                         }`}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         {heatmapView.mergedBestDay
                           ? `${heatmapView.mergedBestDay.hours}h`
@@ -1036,8 +1035,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <div
                         className={`text-xs font-mono tabular-nums font-semibold ${
-                          isBespoke ? 'text-blue-400' : 'text-emerald-300 font-black'
+                          isBespoke ? 'text-blue-400' : 'font-black'
                         }`}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         {heatmapView.mergedLongestStreak}d
                       </div>
@@ -1175,7 +1175,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       return (
         <ObsidianCard
           key="badges"
-          accent={profileAccentKey}
           headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
           footerClassName={
             isBespoke
@@ -1197,7 +1196,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <Trophy
                       size={13}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <span>Badges &amp; Achievements</span>
@@ -1243,7 +1242,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           footerContent={
             <p>
               Tap any badge to inspect unlock criteria. All earned badges &amp; the{' '}
-              <strong className={isBespoke ? 'text-neutral-100' : 'text-amber-300'}>
+              <strong
+                className={isBespoke ? 'text-blue-400' : ''}
+                style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+              >
                 ZERO-SUPPORTER
               </strong>{' '}
               crest (unlocks strictly on your 1st minimum ₹50 tip) appear on your Flex Receipt card.
@@ -1257,7 +1259,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     return (
       <ObsidianCard
         key="tag_breakdown"
-        accent={profileAccentKey}
         headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
         footerClassName={
           isBespoke
@@ -1325,7 +1326,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           width: `${item.pct}%`,
                           background: isBespoke
                             ? '#2563EB'
-                            : 'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+                            : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
                         }}
                       />
                     </div>
@@ -1421,7 +1422,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {/* Collapsible Widget Options Customizer */}
       {showWidgetCustomizer && (
         <ObsidianCard
-          accent={profileAccentKey}
           ambientGlow
           className={isBespoke ? 'font-sans' : 'font-mono'}
           headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
@@ -1445,7 +1445,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <LayoutGrid
                       size={13}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <span>Widget Options</span>
@@ -1697,7 +1697,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {/* Interactive Zero Profile Card */}
       {profile ? (
         <ObsidianCard
-          accent={profileAccentKey}
           ambientGlow
           className={isBespoke ? 'font-sans' : 'font-mono'}
           headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
@@ -1729,15 +1728,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         className={
                           isBespoke
                             ? 'px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 text-[10px] font-mono font-semibold uppercase tracking-wide'
-                            : 'px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm'
-                        }
-                        style={
-                          isBespoke
-                            ? undefined
-                            : {
-                                background: profileAccentTheme.badgeGradient,
-                                color: profileAccentTheme.badgeText,
-                              }
+                            : 'px-2 py-0.5 rounded-md obsidian-pill-active text-[9px] font-black uppercase tracking-widest shadow-sm'
                         }
                       >
                         {profileRank.title}
@@ -1749,7 +1740,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       <span className="mx-1.5 text-neutral-600">•</span>
                       <span
                         className={isBespoke ? 'text-blue-400' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         #{profile.primaryMission}
                       </span>
@@ -1767,7 +1758,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     className={`text-xs font-mono tabular-nums leading-none ${
                       isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {profile.dailyGoalHours}h/day
                   </div>
@@ -1782,8 +1773,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <span className="text-neutral-400">Today&rsquo;s Progress</span>
                   <span
                     className={`font-mono tabular-nums ${
-                      isBespoke ? 'font-semibold text-blue-400' : `font-bold ${profileAccent.text}`
+                      isBespoke ? 'font-semibold text-blue-400' : 'font-bold'
                     }`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {todayReclaimedHours} / {profile.dailyGoalHours}h ({dailyGoalPct}%)
                   </span>
@@ -1805,7 +1797,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       width: `${dailyGoalPct}%`,
                       background: isBespoke
                         ? '#2563EB'
-                        : 'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+                        : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
                     }}
                   />
                 </div>
@@ -1853,7 +1845,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         />
       ) : (
         <ObsidianCard
-          accent={isBespoke ? undefined : 'Amber'}
           ambientGlow={!isBespoke}
           className={isBespoke ? 'font-sans' : 'font-mono'}
           headerClassName={
@@ -1867,8 +1858,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className={`w-11 h-11 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                    isBespoke ? 'rounded-md text-blue-500' : 'rounded-2xl text-amber-300'
+                    isBespoke ? 'rounded-md text-blue-500' : 'rounded-2xl'
                   }`}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   <Gift size={18} />
                 </div>
@@ -1905,7 +1897,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
       {/* Hero 20-Hour Escape Ticket Progression Card */}
       <ObsidianCard
-        accent={profileAccentKey}
         asButton={Boolean(onOpenTicketModal)}
         onClick={
           onOpenTicketModal
@@ -1923,7 +1914,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {justEarnedParachute && (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent animate-parachute-shimmer"
+                  className="pointer-events-none absolute inset-0 -translate-x-full animate-parachute-shimmer"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent, rgba(var(--accent-rgb, 255, 255, 255), 0.2), transparent)',
+                  }}
                 />
               )}
               <div
@@ -1991,7 +1986,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   className={`text-xs font-mono tabular-nums leading-none ${
                     isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
                   }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {parachuteMetrics.progressPercentage}%
                 </div>
@@ -2017,7 +2012,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   className={`font-mono tabular-nums font-semibold ${
                     isBespoke ? 'text-blue-400' : 'font-bold'
                   }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {parachuteMetrics.currentProgressHours} / 20.0 hrs
                 </span>
@@ -2040,10 +2035,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     width: `${parachuteMetrics.progressPercentage}%`,
                     background: isBespoke
                       ? '#2563EB'
-                      : 'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+                      : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
                     boxShadow: isBespoke
                       ? 'none'
-                      : '0 0 12px rgba(var(--accent-rgb, 245, 158, 11), 0.45)',
+                      : '0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
                   }}
                 />
               </div>
@@ -2063,7 +2058,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <Moon
                 size={13}
                 className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
-                style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
               />
               <span>
                 {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
@@ -2075,7 +2070,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </div>
             <span
               className={isBespoke ? 'font-semibold text-blue-400' : 'font-bold'}
-              style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+              style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
             >
               {onOpenTicketModal ? 'View Ticket ->' : '20h Milestone'}
             </span>
@@ -2151,7 +2146,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <div className={isBespoke ? 'space-y-5' : 'space-y-4'}>
           {visibleWidgetCount === 0 ? (
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-6 text-center space-y-3 font-sans' : 'p-6 text-center space-y-3 font-mono'}
               headerContent={
                 <>
@@ -2186,7 +2180,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
           {ledger.length === 0 ? (
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-6 text-center text-neutral-300 font-sans text-xs' : 'p-6 text-center text-zinc-300 font-mono text-xs'}
               footerClassName={isBespoke ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400' : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'}
               headerContent={
@@ -2204,11 +2197,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <ObsidianCard
                     key={entry.id}
                     accentOverride={
-                      isBespoke
-                        ? undefined
-                        : isEarned
-                        ? { hex: '#10B981', rgb: '16, 185, 129' }
-                        : { hex: '#F59E0B', rgb: '245, 158, 11' }
+                      isBespoke || isEarned ? undefined : { hex: '#EF4444', rgb: '239, 68, 68' }
                     }
                     className={isBespoke ? 'font-sans text-xs' : 'font-mono text-xs'}
                     headerClassName={
@@ -2229,14 +2218,19 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               isBespoke
                                 ? `w-7 h-7 rounded-sm border flex items-center justify-center font-mono font-semibold text-xs shrink-0 ${
                                     isEarned
-                                      ? 'bg-neutral-950 border-emerald-800 text-emerald-400'
-                                      : 'bg-neutral-950 border-amber-800 text-amber-400'
+                                      ? 'bg-neutral-950 border-blue-500/60 text-blue-400'
+                                      : 'bg-neutral-950 border-red-800 text-red-400'
                                   }`
                                 : `w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                                     isEarned
-                                      ? 'bg-emerald-500/20 text-emerald-400'
-                                      : 'bg-amber-500/20 text-amber-400'
+                                      ? 'obsidian-inset'
+                                      : 'bg-red-950/60 border border-red-700/70 text-red-300'
                                   }`
+                            }
+                            style={
+                              isEarned && !isBespoke
+                                ? { color: 'var(--accent-hex, #FFFFFF)' }
+                                : undefined
                             }
                           >
                             {isEarned ? '+1' : '-1'}
@@ -2256,13 +2250,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             isBespoke
                               ? `text-[10px] font-mono font-semibold px-2 py-0.5 rounded-sm uppercase shrink-0 border ${
                                   isEarned
-                                    ? 'bg-neutral-950 text-emerald-400 border-emerald-800'
-                                    : 'bg-neutral-950 text-amber-400 border-amber-800'
+                                    ? 'bg-neutral-950 text-blue-400 border-blue-500/50'
+                                    : 'bg-neutral-950 text-red-400 border-red-800'
                                 }`
                               : `text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
                                   isEarned
-                                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                                    : 'bg-amber-950 text-amber-300 border border-amber-800'
+                                    ? 'obsidian-pill-active font-black'
+                                    : 'bg-red-950/70 text-red-300 border border-red-700/70'
                                 }`
                           }
                         >
@@ -2299,7 +2293,6 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
           {sessions.length === 0 ? (
             <ObsidianCard
-              accent={profileAccentKey}
               headerClassName={isBespoke ? 'p-6 text-center text-neutral-300 font-sans text-xs' : 'p-6 text-center text-zinc-300 font-mono text-xs'}
               footerClassName={isBespoke ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400' : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'}
               headerContent={
@@ -2319,11 +2312,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <ObsidianCard
                     key={sess.id}
                     accentOverride={
-                      isBespoke
-                        ? undefined
-                        : isAborted
-                        ? { hex: '#F59E0B', rgb: '245, 158, 11' }
-                        : { hex: '#10B981', rgb: '16, 185, 129' }
+                      isBespoke || !isAborted ? undefined : { hex: '#EF4444', rgb: '239, 68, 68' }
                     }
                     className={isBespoke ? 'font-sans text-xs' : 'font-mono text-xs'}
                     headerClassName={
@@ -2340,9 +2329,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       <>
                         <div className="flex items-center gap-2.5 min-w-0">
                           {sess.status === 'completed' ? (
-                            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                            <CheckCircle2
+                              size={16}
+                              className={isBespoke ? 'text-blue-500 shrink-0' : 'shrink-0'}
+                              style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                            />
                           ) : (
-                            <AlertOctagon size={16} className="text-amber-400 shrink-0" />
+                            <AlertOctagon size={16} className="text-red-400 shrink-0" />
                           )}
                           <div className="min-w-0">
                             <div
@@ -2361,7 +2354,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                                   className={
                                     isBespoke
                                       ? 'text-[10px] font-mono px-1.5 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-sm'
-                                      : 'text-[9px] px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded'
+                                      : 'text-[9px] px-1.5 py-0.5 obsidian-inset-neutral text-zinc-300 rounded'
                                   }
                                 >
                                   {sess.weightMultiplier}x sleep
@@ -2376,12 +2369,15 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             className={`font-mono tabular-nums font-semibold ${
                               isAborted
                                 ? 'text-red-400'
-                                : isSleep
-                                ? isBespoke
-                                  ? 'text-neutral-200'
-                                  : 'text-amber-300'
-                                : 'text-emerald-400'
+                                : isBespoke
+                                ? 'text-blue-400'
+                                : ''
                             }`}
+                            style={
+                              !isAborted && !isBespoke
+                                ? { color: 'var(--accent-hex, #FFFFFF)' }
+                                : undefined
+                            }
                           >
                             {isAborted
                               ? '0h (Voided)'
@@ -2421,6 +2417,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         parachuteMetrics={parachuteMetrics}
         currentStreak={currentStreak}
         profile={profile}
+        themeConfig={themeConfig}
         isZeroSupporter={isZeroSupporter}
         onClose={() => setShowShareModal(false)}
       />

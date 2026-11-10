@@ -109,11 +109,11 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             <>
               <div className="flex items-start justify-between gap-2.5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-md bg-neutral-950 border border-emerald-500/50 flex items-center justify-center text-emerald-400 shrink-0">
+                  <div className="w-10 h-10 rounded-md bg-neutral-950 border border-blue-500/50 flex items-center justify-center text-blue-400 shrink-0">
                     <CheckCircle2 size={20} />
                   </div>
                   <div>
-                    <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+                    <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-blue-400">
                       Session Complete • Focus Reclaimed
                     </div>
                     <h2 className="text-sm font-semibold text-white mt-0.5">
@@ -176,7 +176,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                         <Sparkles size={11} />
                         <span>Best Offer • Best Option</span>
                       </span>
-                      <span className="font-mono text-[10px] font-semibold text-emerald-400 bg-neutral-950 border border-emerald-500/40 px-2 py-0.5 rounded-sm">
+                      <span className="font-mono text-[10px] font-semibold text-blue-400 bg-neutral-950 border border-blue-500/40 px-2 py-0.5 rounded-sm">
                         NO MINIMUM LIMIT (GENERAL UPI)
                       </span>
                     </div>
@@ -195,7 +195,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     {!hasClaimedFirstDonationParachute ? (
                       <div className="p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-3">
                         <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold uppercase tracking-wide">
+                          <div className="flex items-center gap-1.5 text-blue-400 text-xs font-semibold uppercase tracking-wide">
                             <Gift size={14} className="shrink-0" />
                             <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 Ticket &amp; Gold Crest</span>
                           </div>
@@ -270,7 +270,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                         )}
                       </div>
                     ) : (
-                      <div className="px-3.5 py-2.5 rounded-md bg-neutral-950 border border-emerald-500/40 flex items-center justify-between gap-2 flex-wrap text-xs text-emerald-400">
+                      <div className="px-3.5 py-2.5 rounded-md bg-neutral-950 border border-blue-500/40 flex items-center justify-between gap-2 flex-wrap text-xs text-blue-400">
                         <span className="flex items-center gap-1.5 font-medium">
                           <CheckCircle2 size={13} />
                           <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
@@ -297,8 +297,8 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                       >
                         {copiedUpi ? (
                           <>
-                            <Check size={14} className="text-emerald-400" />
-                            <span className="text-emerald-400">Copied</span>
+                            <Check size={14} className="text-blue-400" />
+                            <span className="text-blue-400">Copied</span>
                           </>
                         ) : (
                           <>
@@ -443,7 +443,6 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
       }}
     >
       <ObsidianCard
-        accentOverride={{ hex: '#10B981', rgb: '16, 185, 129' }}
         ambientGlow
         className="w-full max-w-md max-h-full font-mono"
         headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
@@ -453,11 +452,17 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  className="w-10 h-10 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
+                  style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                >
                   <CheckCircle2 size={20} />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                  >
                     Session Complete • Focus Reclaimed
                   </div>
                   <h2 className="text-sm font-black text-white mt-0.5">
@@ -480,14 +485,17 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               <ObsidianCard
                 asButton
                 onClick={onShareResults}
-                accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
                 className="font-mono"
                 headerClassName="p-3 flex items-center justify-between gap-2"
                 headerContent={
                   <>
                     <div className="text-left min-w-0">
                       <div className="text-xs font-black text-white flex items-center gap-1.5">
-                        <Share2 size={13} className="text-amber-400 shrink-0" />
+                        <Share2
+                          size={13}
+                          className="shrink-0"
+                          style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                        />
                         <span>Flex Session Results &amp; Badges</span>
                       </div>
                       <div className="text-[10px] text-zinc-400 truncate mt-0.5">
@@ -496,7 +504,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                           : 'Generate a shareable PNG Focus Receipt with your badges'}
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+                    <span className="px-2.5 py-1 rounded-lg obsidian-pill-active text-[10px] font-black uppercase shrink-0">
                       Flex
                     </span>
                   </>
@@ -512,19 +520,25 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
 
             {/* BEST OFFER: UPI (Zero Minimum Limit) + Strict Min ₹50 First Tip Bonus */}
             <ObsidianCard
-              accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
               ambientGlow
               className="font-mono"
               headerClassName="p-4 space-y-3"
-              footerClassName="px-4 py-2 text-[10px] text-amber-200/90 flex items-center justify-between gap-2 flex-wrap"
+              footerClassName="px-4 py-2 text-[10px] text-zinc-300 flex items-center justify-between gap-2 flex-wrap"
               headerContent={
                 <>
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md obsidian-pill-active text-[10px] font-black uppercase tracking-wider">
                       <Sparkles size={11} />
                       <span>Best Offer • Best Option</span>
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-700/70 px-2 py-0.5 rounded-md">
+                    <span
+                      className="text-[10px] font-bold border px-2 py-0.5 rounded-md"
+                      style={{
+                        background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                        borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.36)',
+                        color: 'var(--accent-hex, #FFFFFF)',
+                      }}
+                    >
                       NO MINIMUM LIMIT (GENERAL UPI)
                     </span>
                   </div>
@@ -532,7 +546,12 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="font-bold text-sm text-white">UPI / Instant Pay</div>
-                      <div className="text-[11px] font-bold text-amber-200">{UPI_ID}</div>
+                      <div
+                        className="text-[11px] font-bold"
+                        style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                      >
+                        {UPI_ID}
+                      </div>
                     </div>
                     <p className="text-[11px] text-zinc-300 leading-relaxed">
                       Regular UPI tips have <strong>no minimum limit</strong> — tip even ₹1 with zero
@@ -542,19 +561,22 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
 
                   {/* 1st Minimum ₹50 Donation Bonus Callout */}
                   {!hasClaimedFirstDonationParachute ? (
-                    <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
+                    <div className="p-3 rounded-xl obsidian-inset space-y-2">
                       <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                        <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-black uppercase tracking-wide">
-                          <Gift size={13} className="text-emerald-400 shrink-0" />
+                        <div
+                          className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide"
+                          style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                        >
+                          <Gift size={13} className="shrink-0" />
                           <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 🎫 &amp; Gold Badge</span>
                         </div>
-                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-black shrink-0">
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded obsidian-pill-active shrink-0">
                           Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
                         </span>
                       </div>
                       <p className="text-[10px] text-zinc-300 leading-relaxed">
                         <strong>Strict Requirement:</strong> The Golden{' '}
-                        <strong className="text-amber-300">ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
+                        <strong style={{ color: 'var(--accent-hex, #FFFFFF)' }}>ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
                         <strong>+1 Free Emergency Escape Ticket (🎫)</strong>{' '}
                         <strong>ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                         (tips under ₹{FIRST_DONATION_BONUS_INR} do not unlock this badge).
@@ -568,7 +590,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                               handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL);
                               setConfirmingDonationClaim(true);
                             }}
-                            className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                            className="flex-1 py-2 px-3 rounded-xl obsidian-pill-active font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                           >
                             <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 🎫 &amp; Gold)</span>
                             <ExternalLink size={12} />
@@ -576,17 +598,17 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                           <button
                             type="button"
                             onClick={() => setConfirmingDonationClaim(true)}
-                            className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-emerald-700/60 text-emerald-200 text-[10px] font-bold"
+                            className="px-3 py-2 rounded-xl obsidian-inset-neutral text-zinc-200 hover:text-white text-[10px] font-bold"
                           >
                             Sent Min ₹{FIRST_DONATION_BONUS_INR}?
                           </button>
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2">
-                          <div className="text-[10px] text-emerald-200 leading-relaxed">
+                        <div className="p-2.5 rounded-xl obsidian-inset space-y-2">
+                          <div className="text-[10px] text-zinc-200 leading-relaxed">
                             Confirm you completed your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                             to unlock the Golden{' '}
-                            <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge &amp;{' '}
+                            <strong style={{ color: 'var(--accent-hex, #FFFFFF)' }}>ZERO-SUPPORTER</strong> Badge &amp;{' '}
                             <strong>+1 Free Emergency Escape Ticket (🎫)</strong>:
                           </div>
                           <div className="flex gap-2">
@@ -596,14 +618,14 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                                 onClaimFirstDonationBonus();
                                 setConfirmingDonationClaim(false);
                               }}
-                              className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all"
+                              className="flex-1 py-2 px-2.5 rounded-lg obsidian-pill-active font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all"
                             >
                               Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmingDonationClaim(false)}
-                              className="px-2.5 py-2 rounded-lg bg-zinc-900 border border-white/15 text-zinc-300 hover:text-white text-[10px] font-bold"
+                              className="px-2.5 py-2 rounded-lg obsidian-inset-neutral text-zinc-300 hover:text-white text-[10px] font-bold"
                             >
                               Back
                             </button>
@@ -612,7 +634,10 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] text-emerald-300">
+                    <div
+                      className="px-3 py-2 rounded-xl obsidian-inset flex items-center justify-between gap-2 flex-wrap text-[10px]"
+                      style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                    >
                       <span className="flex items-center gap-1.5 font-bold">
                         <CheckCircle2 size={12} />
                         <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
@@ -625,7 +650,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     <a
                       href={UPI_PAY_URL}
                       onClick={(e) => handleOpenExternalUrl(e, UPI_PAY_URL)}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      className="flex-1 py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                     >
                       <span>Any Amount via UPI</span>
                       <ExternalLink size={13} />
@@ -639,8 +664,8 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     >
                       {copiedUpi ? (
                         <>
-                          <Check size={14} className="text-emerald-400" />
-                          <span className="text-emerald-400">Copied</span>
+                          <Check size={14} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
+                          <span style={{ color: 'var(--accent-hex, #FFFFFF)' }}>Copied</span>
                         </>
                       ) : (
                         <>
@@ -689,7 +714,12 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               footerContent={
                 <>
                   <span>Zero fees • 100% reaches the developer</span>
-                  <span className="text-amber-300 font-bold uppercase">Instant</span>
+                  <span
+                    className="font-bold uppercase"
+                    style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                  >
+                    Instant
+                  </span>
                 </>
               }
             />
@@ -708,7 +738,10 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     className="w-full p-3 flex items-center justify-between transition-all group active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                      <div
+                        className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0"
+                        style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                      >
                         <Coffee size={16} />
                       </div>
                       <div className="min-w-0">

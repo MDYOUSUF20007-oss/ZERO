@@ -112,9 +112,9 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
           <span
             className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0"
             style={{
-              background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.14)',
-              borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.42)',
-              color: 'var(--accent-hex, #F59E0B)',
+              background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+              borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.42)',
+              color: 'var(--accent-hex, #FFFFFF)',
             }}
           >
             Unlock Now
@@ -149,7 +149,7 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
         >
           <Settings
             size={13}
-            style={!isBlockedNow ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            style={!isBlockedNow ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
           />
           <span>Open Zero App Info</span>
           <ExternalLink size={11} className="opacity-75" />

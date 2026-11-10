@@ -2,7 +2,7 @@ import React from 'react';
 import type { ParachuteMetrics, ZeroProfile } from '../types';
 import { FIRST_DONATION_BONUS_INR } from '../utils/supportLinks';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
-import { ACCENT_ID_TO_KEY, ACCENT_THEMES, ProfileAvatar } from './ProfileAvatar';
+import { ProfileAvatar } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
@@ -47,8 +47,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   if (!isOpen) return null;
 
   const balance = parachuteMetrics.currentBalance;
-  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-  const accentTheme = ACCENT_THEMES[profileAccentKey] || ACCENT_THEMES.Amber;
   const rank = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours);
   const holderName = profile?.displayName?.trim() || 'ZERO INITIATE';
   const holderHandle = profile?.handle?.trim() || null;
@@ -81,7 +79,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       >
         <div className="w-full max-w-md my-auto space-y-4 py-2 font-sans">
           <ObsidianCard
-            accent={profileAccentKey}
             className="font-sans"
             headerClassName="p-5 space-y-4"
             footerClassName="px-5 py-3 flex items-center justify-between gap-2 font-mono text-[10px] text-neutral-400"
@@ -122,7 +119,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                     {profile ? (
                       <ProfileAvatar
                         avatarId={profile.avatarId}
-                        accent={profile.accentColor}
                         size="sm"
                         interactive
                       />
@@ -199,7 +195,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
           />
 
           <ObsidianCard
-            accent={profileAccentKey}
             className="font-sans"
             headerClassName="p-5 space-y-3"
             footerClassName="px-5 py-3 flex items-start gap-2.5 text-xs text-neutral-400 leading-relaxed"
@@ -248,7 +243,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                     </div>
                   </div>
                   {hasClaimedFirstTimeParachute ? (
-                    <span className="px-2 py-1 rounded-sm bg-black border border-emerald-500/50 text-emerald-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                    <span className="px-2 py-1 rounded-sm bg-black border border-blue-500/50 text-blue-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
                       <CheckCircle2 size={10} />
                       <span>Claimed</span>
                     </span>
@@ -281,7 +276,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                     </div>
                   </div>
                   {hasClaimedFirstDonationParachute ? (
-                    <span className="px-2 py-1 rounded-sm bg-black border border-emerald-500/50 text-emerald-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                    <span className="px-2 py-1 rounded-sm bg-black border border-blue-500/50 text-blue-400 font-mono text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
                       <CheckCircle2 size={10} />
                       <span>Unlocked</span>
                     </span>
@@ -302,7 +297,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
             }
             footerContent={
               <>
-                <ShieldAlert size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                <ShieldAlert size={14} className="text-red-400 shrink-0 mt-0.5" />
                 <span>
                   Using a ticket ends the lock early, costs{' '}
                   <strong className="font-mono text-white">1 Ticket</strong>, and voids that broken
@@ -349,7 +344,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       <div className="w-full max-w-md my-auto space-y-3.5 py-2">
         {/* GIANT PHYSICAL ESCAPE TICKET */}
         <ObsidianCard
-          accent={profileAccentKey}
           ambientGlow
           className="font-mono"
           overlays={
@@ -378,7 +372,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               {/* Ticket Top Serial Strip + Close */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-zinc-400 font-bold">
-                  <Ticket size={13} style={{ color: accentTheme.hex }} />
+                  <Ticket size={13} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
                   <span>ZERO PASS • VAULT</span>
                 </div>
                 <button
@@ -401,7 +395,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 <div className="min-w-0">
                   <div
                     className="text-[10px] font-black uppercase tracking-[0.22em]"
-                    style={{ color: accentTheme.hex }}
+                    style={{ color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     EMERGENCY EXIT VOUCHER
                   </div>
@@ -418,7 +412,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                   {profile ? (
                     <ProfileAvatar
                       avatarId={profile.avatarId}
-                      accent={profile.accentColor}
                       size="sm"
                       interactive
                     />
@@ -439,11 +432,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                         <span className="text-[10px] text-zinc-400 truncate">{holderHandle}</span>
                       )}
                       <span
-                        className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest"
-                        style={{
-                          background: accentTheme.badgeGradient,
-                          color: accentTheme.badgeText,
-                        }}
+                        className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest obsidian-pill-active"
                       >
                         {rank.title}
                       </span>
@@ -465,7 +454,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               <div className="space-y-1.5 pt-2 border-t border-dashed border-white/15">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-zinc-300 font-bold">Progress to Next Escape Ticket</span>
-                  <span className="font-black" style={{ color: accentTheme.hex }}>
+                  <span className="font-black" style={{ color: 'var(--accent-hex, #FFFFFF)' }}>
                     {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
                   </span>
                 </div>
@@ -474,7 +463,8 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${parachuteMetrics.progressPercentage}%`,
-                      background: accentTheme.badgeGradient,
+                      background:
+                        'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
                     }}
                   />
                 </div>
@@ -490,7 +480,10 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               <span className="uppercase tracking-widest text-zinc-400 font-semibold">
                 {balance > 0 ? 'STATUS: READY IN VAULT' : 'STATUS: 0 AVAILABLE'}
               </span>
-              <span style={{ color: accentTheme.hex }} className="font-black uppercase tracking-wider">
+              <span
+                style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                className="font-black uppercase tracking-wider"
+              >
                 {profile ? profile.primaryMission : 'MONOTONIC PROOF'}
               </span>
             </>
@@ -499,7 +492,6 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
 
         {/* BELOW TICKET: HOW TO GAIN MORE ESCAPE TICKETS */}
         <ObsidianCard
-          accent={profileAccentKey}
           className="font-mono"
           headerClassName="p-4 space-y-2.5"
           footerClassName="px-4 py-2.5 flex items-start gap-2 text-[10px] text-zinc-400 leading-relaxed"
@@ -512,7 +504,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               {/* 1. 20h Milestone */}
               <div className="p-3 rounded-xl obsidian-inset-neutral flex items-start gap-2.5">
                 <div className="w-7 h-7 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0 mt-0.5">
-                  <Clock size={13} style={{ color: accentTheme.hex }} />
+                  <Clock size={13} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
                 </div>
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex items-center justify-between gap-2">
@@ -526,7 +518,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                   <p className="text-[10px] text-zinc-400 leading-relaxed">
                     Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
                     <span className="text-zinc-200 font-semibold inline-flex items-center gap-1">
-                      <Moon size={10} style={{ color: accentTheme.hex }} />
+                      <Moon size={10} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
                       {sleepRateLabel}
                     </span>
                     .
@@ -538,7 +530,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               <div className="p-3 rounded-xl obsidian-inset-neutral flex items-center justify-between gap-2.5">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0 mt-0.5">
-                    <Gift size={13} style={{ color: accentTheme.hex }} />
+                    <Gift size={13} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] font-bold text-white">
@@ -550,7 +542,14 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                   </div>
                 </div>
                 {hasClaimedFirstTimeParachute ? (
-                  <span className="px-2 py-1 rounded-lg bg-emerald-950/60 border border-emerald-600/50 text-emerald-300 text-[9px] font-black uppercase flex items-center gap-1 shrink-0">
+                  <span
+                    className="px-2 py-1 rounded-lg border text-[9px] font-black uppercase flex items-center gap-1 shrink-0"
+                    style={{
+                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+                      color: 'var(--accent-hex, #FFFFFF)',
+                    }}
+                  >
                     <CheckCircle2 size={10} />
                     <span>Claimed</span>
                   </span>
@@ -584,7 +583,14 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                   </div>
                 </div>
                 {hasClaimedFirstDonationParachute ? (
-                  <span className="px-2 py-1 rounded-lg bg-emerald-950/60 border border-emerald-600/50 text-emerald-300 text-[9px] font-black uppercase flex items-center gap-1 shrink-0">
+                  <span
+                    className="px-2 py-1 rounded-lg border text-[9px] font-black uppercase flex items-center gap-1 shrink-0"
+                    style={{
+                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+                      color: 'var(--accent-hex, #FFFFFF)',
+                    }}
+                  >
                     <CheckCircle2 size={10} />
                     <span>Unlocked</span>
                   </span>
@@ -605,7 +611,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
           }
           footerContent={
             <>
-              <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
+              <ShieldAlert size={13} className="text-red-400 shrink-0 mt-0.5" />
               <span>
                 Using a ticket ends the lock early, costs <strong className="text-white">1 🎫</strong>, and voids that broken session&rsquo;s progress toward your next 20h ticket.
               </span>

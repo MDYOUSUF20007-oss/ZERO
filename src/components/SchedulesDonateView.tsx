@@ -28,7 +28,7 @@ import type {
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { evaluatePermissionPriority } from '../utils/permissionPriority';
 import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
-import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import { ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ThemeSelectorCard } from './ThemeSelectorCard';
 import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
@@ -195,7 +195,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
   const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
-  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const [activeSection, setActiveSection] = useState<'schedules' | 'themes' | 'settings' | 'os_security' | 'support'>(
     sectionOverride?.section || 'schedules'
   );
@@ -436,7 +435,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             onChange={onThemeConfigChange}
           />
           <ObsidianCard
-            accent={profileAccentKey}
             className={isBespoke ? 'font-sans' : 'font-mono'}
             headerClassName={isBespoke ? 'p-4 text-xs text-zinc-300 leading-relaxed' : 'p-3.5 text-[11px] text-zinc-300 leading-relaxed'}
             footerClassName={isBespoke ? 'px-4 py-2.5 flex items-center justify-between text-[11px] text-zinc-400' : 'px-3.5 py-2 flex items-center justify-between text-[10px] text-zinc-400'}
@@ -459,7 +457,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
           {/* Dedicated Runtime Switcher Card at the bottom of Theme Settings */}
           <ObsidianCard
-            accent={profileAccentKey}
             ambientGlow={!isBespoke}
             className={isBespoke ? 'font-sans' : 'font-mono'}
             headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 sm:p-5 space-y-3'}
@@ -535,7 +532,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
                         activeInterfaceStyle === 'classic'
-                          ? 'bg-blue-600 border-blue-500 text-white'
+                          ? isBespoke
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'obsidian-pill-active'
                           : 'border-neutral-600 bg-transparent'
                       }`}
                     >
@@ -575,7 +574,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
                         activeInterfaceStyle === 'bespoke'
-                          ? 'bg-blue-600 border-blue-500 text-white'
+                          ? isBespoke
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'obsidian-pill-active'
                           : 'border-neutral-600 bg-transparent'
                       }`}
                     >
@@ -624,7 +625,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             {schedules.map((sched) => (
               <ObsidianCard
                 key={sched.id}
-                accent={profileAccentKey}
                 className={`${isBespoke ? 'font-sans' : 'font-mono'} ${sched.isEnabled ? '' : 'opacity-65'}`}
                 headerClassName={isBespoke ? 'p-5' : 'p-4'}
                 footerClassName={
@@ -666,8 +666,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                                 }
                               : {
                                   background:
-                                    'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
-                                  borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.75)',
+                                    'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                                  borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.75)',
                                 }
                             : undefined
                         }
@@ -740,7 +740,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 footerContent={
                   <>
                     <div className="flex items-center gap-1.5 text-zinc-300">
-                      <Bell size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0" />
+                      <Bell
+                        size={12}
+                        className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
                       <span>5-min heads-up alert enabled</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -772,7 +776,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         <div className={isBespoke ? 'space-y-5' : 'space-y-4'}>
           {/* CONSOLIDATED CARD #1: BACKUP & RESTORE EVERYTHING */}
           <ObsidianCard
-            accent={profileAccentKey}
             ambientGlow={!isBespoke}
             className={isBespoke ? 'font-sans' : 'font-mono'}
             headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
@@ -792,7 +795,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     >
                       <HardDrive
                         size={16}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                     </div>
                     <div className="min-w-0">
@@ -809,7 +812,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       isBespoke ? 'rounded-sm' : 'rounded-full font-black'
                     } ${
                       cloudBackupStatus?.enabled
-                        ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300'
+                        ? isBespoke
+                          ? 'bg-blue-600/15 border-blue-500/60 text-blue-300'
+                          : 'obsidian-pill-active'
                         : 'obsidian-inset-neutral text-zinc-300'
                     }`}
                   >
@@ -854,7 +859,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
                 {cloudBackupStatus?.lastError && (
                   <div
-                    className={`p-2.5 bg-amber-950/50 border border-amber-700/80 text-amber-200 text-[11px] ${
+                    className={`p-2.5 bg-red-950/50 border border-red-700/80 text-red-200 text-[11px] ${
                       isBespoke ? 'rounded-md' : 'rounded-xl text-[10px]'
                     }`}
                   >
@@ -864,11 +869,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
                 {restoreDisabled && (
                   <div
-                    className={`p-2.5 bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[11px] leading-relaxed flex items-start gap-2 ${
+                    className={`p-2.5 bg-red-950/50 border border-red-700/80 text-red-200 text-[11px] leading-relaxed flex items-start gap-2 ${
                       isBespoke ? 'rounded-md' : 'rounded-xl text-[10px]'
                     }`}
                   >
-                    <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                    <ShieldAlert size={13} className="text-red-400 shrink-0 mt-0.5" />
                     <span>
                       <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Backup restore is disabled; saves and uploads remain active.
                     </span>
@@ -881,9 +886,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       isBespoke ? 'rounded-md' : 'rounded-xl'
                     } ${
                       (cloudNotice || backupNotice)!.ok
-                        ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
+                        ? isBespoke
+                          ? 'bg-neutral-950 border-blue-500/60 text-blue-300'
+                          : 'obsidian-inset text-zinc-100'
                         : 'bg-red-950/50 border-red-700 text-red-200'
                     }`}
+                    style={
+                      !isBespoke && (cloudNotice || backupNotice)!.ok
+                        ? { color: 'var(--accent-hex, #FFFFFF)' }
+                        : undefined
+                    }
                   >
                     {(cloudNotice || backupNotice)!.message}
                   </div>
@@ -925,7 +937,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         }`}
                       >
                         <div className="min-w-0">
-                          <div className="text-[11px] font-semibold text-emerald-300 truncate">
+                          <div
+                            className={`text-[11px] font-semibold truncate ${
+                              isBespoke ? 'text-blue-400' : ''
+                            }`}
+                            style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                          >
                             Auto-Sync Linked
                           </div>
                           <div className="text-[10px] text-zinc-400 truncate font-mono">
@@ -1000,7 +1017,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   >
                     <Save
                       size={13}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       className={isBespoke ? 'text-blue-400' : undefined}
                     />
                     <span>One-Tap Save</span>
@@ -1028,7 +1045,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     >
                       <Upload
                         size={13}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         className={isBespoke ? 'text-blue-400' : undefined}
                       />
                       <span>Restore Data Picker</span>
@@ -1059,7 +1076,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     ) : (
                       <CloudUpload
                         size={14}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         className={isBespoke ? 'text-blue-400' : undefined}
                       />
                     )}
@@ -1080,7 +1097,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white uppercase tracking-wider">
                         <Bell
                           size={12}
-                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                           className={isBespoke ? 'text-blue-400' : undefined}
                         />
                         <span>Cloud Upload Reminder</span>
@@ -1088,9 +1105,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <span
                         className={`text-[10px] font-mono tabular-nums ${
                           nextCloudReminderInfo?.isDue
-                            ? 'text-amber-300 font-semibold'
+                            ? isBespoke
+                              ? 'text-blue-400 font-semibold'
+                              : 'font-bold'
                             : 'text-zinc-400'
                         }`}
+                        style={
+                          nextCloudReminderInfo?.isDue && !isBespoke
+                            ? { color: 'var(--accent-hex, #FFFFFF)' }
+                            : undefined
+                        }
                       >
                         {formatCloudReminderCountdown(
                           cloudReminderInterval,
@@ -1179,7 +1203,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
           {/* CARD #2: ANTI-SLEEP-FARMING RULE CARD */}
           <ObsidianCard
-            accent={profileAccentKey}
             ambientGlow={!isBespoke}
             className={isBespoke ? 'font-sans' : 'font-mono'}
             headerClassName="p-5 space-y-3.5"
@@ -1190,10 +1213,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2 text-white font-semibold text-sm">
                     <div
                       className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                        isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
                       }`}
                     >
-                      <Moon size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <Moon
+                        size={14}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
                     </div>
                     <span>ANTI-SLEEP-FARMING RULE</span>
                   </div>
@@ -1247,7 +1273,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       </p>
                     </div>
                     {sleepFarmingMode === 'quarter_credit' && (
-                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                      <Check
+                        size={16}
+                        style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                        className="shrink-0 mt-0.5"
+                      />
                     )}
                   </button>
 
@@ -1278,7 +1308,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       </p>
                     </div>
                     {sleepFarmingMode === 'daytime_only' && (
-                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                      <Check
+                        size={16}
+                        style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                        className="shrink-0 mt-0.5"
+                      />
                     )}
                   </button>
 
@@ -1309,7 +1343,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       </p>
                     </div>
                     {sleepFarmingMode === 'full_credit' && (
-                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                      <Check
+                        size={16}
+                        style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                        className="shrink-0 mt-0.5"
+                      />
                     )}
                   </button>
                 </div>
@@ -1349,7 +1387,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           {/* CARD #5: Interactive Profile Card */}
           {onOpenProfileModal && (
             <ObsidianCard
-              accent={profileAccentKey}
               className={isBespoke ? 'font-sans' : 'font-mono'}
               headerClassName={isBespoke ? 'p-5 space-y-3.5' : 'p-4 space-y-3'}
               footerClassName={isBespoke ? 'px-5 py-2.5 flex items-center justify-between gap-2 text-[11px] text-zinc-400' : 'px-4 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400'}
@@ -1357,7 +1394,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-zinc-100 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                      <UserPlus size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <UserPlus
+                        size={14}
+                        className={isBespoke ? 'text-blue-500' : undefined}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
                       <span>Interactive Zero Profile</span>
                     </span>
                     {!hasClaimedFirstTimeParachute && (
@@ -1392,11 +1433,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             {supporterBadgeUnlocked && <ZeroSupporterGoldenBadge compact />}
                           </div>
                           <div
-                            className={`text-[11px] truncate ${
-                              isBespoke
-                                ? 'text-blue-400'
-                                : (ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber).text
-                            }`}
+                            className={`text-[11px] truncate ${isBespoke ? 'text-blue-400' : ''}`}
+                            style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                           >
                             #{profile.primaryMission} •{' '}
                             <span className="font-mono tabular-nums">{profile.dailyGoalHours}h</span>/day target
@@ -1449,7 +1487,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           {/* CARD #6: Theme Studio Launcher */}
           <ObsidianCard
             asButton
-            accent={profileAccentKey}
             onClick={() => setActiveSection('themes')}
             className={isBespoke ? 'font-sans' : 'font-mono'}
             headerClassName={isBespoke ? 'p-5 flex items-center justify-between gap-3' : 'p-4 flex items-center justify-between gap-3'}
@@ -1459,10 +1496,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div className="flex items-center gap-2.5 text-xs text-zinc-100 font-semibold uppercase tracking-wider">
                   <div
                     className={`w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl'
+                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
                     }`}
                   >
-                    <Palette size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    <Palette
+                      size={14}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    />
                   </div>
                   <span>Theme Studio &amp; Interface Style</span>
                 </div>
@@ -1525,9 +1565,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
                     <div
                       className={`w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                        isBespoke ? 'rounded-md text-blue-400' : 'rounded-xl'
                       }`}
-                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       <Smartphone size={15} />
                     </div>
@@ -1574,18 +1614,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             className={`text-[9px] px-2 py-0.5 border font-mono ${
                               isBespoke ? 'rounded-sm' : 'rounded-full'
                             } ${
-                              coreGranted
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                                : hasNativeBridge
-                                ? 'font-bold'
+                              hasNativeBridge && !coreGranted && isBlockedNow
+                                ? 'bg-red-950/60 text-red-300 border-red-700/70 font-bold'
+                                : hasNativeBridge && (coreGranted || !isBlockedNow)
+                                ? isBespoke
+                                  ? 'bg-blue-600/15 text-blue-400 border-blue-500/40 font-semibold'
+                                  : 'font-bold'
                                 : 'obsidian-inset-neutral text-zinc-400'
                             }`}
                             style={
-                              hasNativeBridge && !coreGranted
+                              !isBespoke && hasNativeBridge && (coreGranted || !isBlockedNow)
                                 ? {
-                                    background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                                    borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                                    color: 'var(--accent-hex, #F59E0B)',
+                                    background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                                    borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                                    color: 'var(--accent-hex, #FFFFFF)',
                                   }
                                 : undefined
                             }
@@ -1661,22 +1703,39 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         {hasNativeBridge ? (
                           hasOverlayPerm ? (
                             <span
-                              className={`text-[9px] px-2 py-0.5 border bg-emerald-500/10 text-emerald-400 border-emerald-500/25 font-mono ${
-                                isBespoke ? 'rounded-sm' : 'rounded-full'
+                              className={`text-[9px] px-2 py-0.5 border font-mono ${
+                                isBespoke
+                                  ? 'rounded-sm bg-blue-600/15 text-blue-400 border-blue-500/40'
+                                  : 'rounded-full font-bold'
                               }`}
+                              style={
+                                isBespoke
+                                  ? undefined
+                                  : {
+                                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                                      color: 'var(--accent-hex, #FFFFFF)',
+                                    }
+                              }
                             >
                               GRANTED
                             </span>
                           ) : isStep2Active ? (
                             <span
                               className={`text-[9px] px-2 py-0.5 border font-bold font-mono ${
-                                isBespoke ? 'rounded-sm' : 'rounded-full font-black'
+                                isBespoke
+                                  ? 'rounded-sm bg-blue-600/15 text-blue-400 border-blue-500/40'
+                                  : 'rounded-full font-black'
                               }`}
-                              style={{
-                                background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                                borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                                color: 'var(--accent-hex, #F59E0B)',
-                              }}
+                              style={
+                                isBespoke
+                                  ? undefined
+                                  : {
+                                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                                      color: 'var(--accent-hex, #FFFFFF)',
+                                    }
+                              }
                             >
                               STEP 2
                             </span>
@@ -1741,22 +1800,39 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         {hasNativeBridge ? (
                           hasNotifPerm ? (
                             <span
-                              className={`text-[9px] px-2 py-0.5 border bg-emerald-500/10 text-emerald-400 border-emerald-500/25 font-mono ${
-                                isBespoke ? 'rounded-sm' : 'rounded-full'
+                              className={`text-[9px] px-2 py-0.5 border font-mono ${
+                                isBespoke
+                                  ? 'rounded-sm bg-blue-600/15 text-blue-400 border-blue-500/40'
+                                  : 'rounded-full font-bold'
                               }`}
+                              style={
+                                isBespoke
+                                  ? undefined
+                                  : {
+                                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                                      color: 'var(--accent-hex, #FFFFFF)',
+                                    }
+                              }
                             >
                               GRANTED
                             </span>
                           ) : isStep3Active ? (
                             <span
                               className={`text-[9px] px-2 py-0.5 border font-bold font-mono ${
-                                isBespoke ? 'rounded-sm' : 'rounded-full font-black'
+                                isBespoke
+                                  ? 'rounded-sm bg-blue-600/15 text-blue-400 border-blue-500/40'
+                                  : 'rounded-full font-black'
                               }`}
-                              style={{
-                                background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.12)',
-                                borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
-                                color: 'var(--accent-hex, #F59E0B)',
-                              }}
+                              style={
+                                isBespoke
+                                  ? undefined
+                                  : {
+                                      background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                                      borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                                      color: 'var(--accent-hex, #FFFFFF)',
+                                    }
+                              }
                             >
                               OPTIONAL
                             </span>
@@ -1814,9 +1890,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
                         isDeviceOwner
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                          ? isBespoke
+                            ? 'bg-blue-600/15 text-blue-400 border-blue-500/40'
+                            : 'font-bold'
                           : 'obsidian-inset-neutral text-zinc-400'
                       }`}
+                      style={
+                        !isBespoke && isDeviceOwner
+                          ? {
+                              background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                              borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                              color: 'var(--accent-hex, #FFFFFF)',
+                            }
+                          : undefined
+                      }
                     >
                       {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'OPTIONAL'}
                     </span>
@@ -1837,8 +1924,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <button
                   type="button"
                   onClick={onRefreshPermissions}
-                  className="font-semibold uppercase tracking-wider hover:brightness-125"
-                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                  className={`font-semibold uppercase tracking-wider hover:brightness-125 ${
+                    isBespoke ? 'text-blue-400' : ''
+                  }`}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   Re-check Now
                 </button>
@@ -1859,13 +1948,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <div
                       className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-md' : 'rounded-xl'
+                      } ${
+                        appBuildInfo && !appBuildInfo.isOfficialReleaseKey
+                          ? 'text-red-400'
+                          : isBespoke
+                          ? 'text-blue-400'
+                          : ''
                       }`}
-                      style={{
-                        color:
-                          appBuildInfo && !appBuildInfo.isOfficialReleaseKey
-                            ? 'var(--accent-hex, #F59E0B)'
-                            : '#34D399',
-                      }}
+                      style={
+                        isBespoke || (appBuildInfo && !appBuildInfo.isOfficialReleaseKey)
+                          ? undefined
+                          : { color: 'var(--accent-hex, #FFFFFF)' }
+                      }
                     >
                       <KeyRound size={13} />
                     </div>
@@ -1877,9 +1971,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         isBespoke ? 'rounded-sm' : 'rounded-full font-black'
                       } ${
                         appBuildInfo.isOfficialReleaseKey
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                          : 'obsidian-inset text-zinc-200'
+                          ? isBespoke
+                            ? 'bg-blue-600/15 text-blue-400 border-blue-500/40'
+                            : 'font-bold'
+                          : 'bg-red-950/60 text-red-300 border-red-700/70'
                       }`}
+                      style={
+                        !isBespoke && appBuildInfo.isOfficialReleaseKey
+                          ? {
+                              background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                              borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+                              color: 'var(--accent-hex, #FFFFFF)',
+                            }
+                          : undefined
+                      }
                     >
                       {appBuildInfo.isOfficialReleaseKey ? 'Update Key Verified' : 'Debug / Preview Key'}
                     </span>
@@ -1904,7 +2009,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-zinc-400">Cert SHA-256:</span>
-                      <span className="text-emerald-400 font-bold font-mono truncate max-w-[190px]">
+                      <span
+                        className={`font-bold font-mono truncate max-w-[190px] ${
+                          isBespoke ? 'text-blue-400' : ''
+                        }`}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      >
                         {appBuildInfo.signingSha256 || 'Unavailable'}
                       </span>
                     </div>
@@ -1917,8 +2027,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <span className="text-zinc-400">Runtime Environment:</span>
                         <span
                           className={`font-semibold ${
-                            environmentSecurity.isCompromised ? 'text-amber-300' : 'text-emerald-400'
+                            environmentSecurity.isCompromised
+                              ? 'text-red-400'
+                              : isBespoke
+                              ? 'text-blue-400'
+                              : ''
                           }`}
+                          style={
+                            !isBespoke && !environmentSecurity.isCompromised
+                              ? { color: 'var(--accent-hex, #FFFFFF)' }
+                              : undefined
+                          }
                         >
                           {environmentSecurity.isCompromised
                             ? `Restricted (${environmentSecurity.reasons.join(', ') || 'compromised'})`
@@ -1933,7 +2052,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       isBespoke ? 'rounded-md' : 'rounded-xl'
                     }`}
                   >
-                    Permanent APK Release Key: <code className="text-emerald-400 font-mono">A14A36...CE11</code> (V1+V2+V3 signed).
+                    Permanent APK Release Key:{' '}
+                    <code
+                      className={`font-mono font-bold ${isBespoke ? 'text-blue-400' : ''}`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    >
+                      A14A36...CE11
+                    </code>{' '}
+                    (V1+V2+V3 signed).
                   </div>
                 )}
               </>
@@ -1949,7 +2075,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               ) : (
                 <div className="space-y-1.5 text-zinc-300">
                   <div className="flex items-start gap-1.5">
-                    <ShieldCheck size={13} className="shrink-0 mt-0.5 text-emerald-400" />
+                    <ShieldCheck
+                      size={13}
+                      className={`shrink-0 mt-0.5 ${isBespoke ? 'text-blue-400' : ''}`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    />
                     <span>
                       Keep updating within the same edition using a higher version code. If Android ever says &ldquo;App not installed&rdquo;, check that Chrome/Files has <strong>Install unknown apps</strong> allowed and uninstall any duplicate copy from Work Profile / Dual Apps.
                     </span>
@@ -1973,9 +2103,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                        isBespoke ? 'rounded-md text-blue-400' : 'rounded-xl'
                       }`}
-                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       <Terminal size={13} />
                     </div>
@@ -1993,7 +2123,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       isBespoke ? 'rounded-sm transition-colors duration-75' : 'rounded-lg'
                     }`}
                   >
-                    {copiedId === 'adb_cmd' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                    {copiedId === 'adb_cmd' ? (
+                      <Check
+                        size={12}
+                        className={isBespoke ? 'text-blue-400' : ''}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
+                    ) : (
+                      <Copy size={12} />
+                    )}
                     <span>{copiedId === 'adb_cmd' ? 'Copied' : 'Copy ADB'}</span>
                   </button>
                 </div>
@@ -2014,8 +2152,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
-                  className="hover:underline font-semibold"
-                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                  className={`hover:underline font-semibold ${isBespoke ? 'text-blue-400' : ''}`}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   GitHub Releases
                 </a>{' '}
@@ -2056,7 +2194,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   Emergency Escape Tickets can never be purchased outright; earn 1 every 20 focus
                   hours, plus one-time free gifts (+1 starter on first profile, and strictly on your
                   1st tip of minimum ₹<span className="font-mono tabular-nums">{FIRST_DONATION_BONUS_INR}</span>: +1 thank-you ticket &amp; Golden{' '}
-                  <strong className={isBespoke ? 'text-white' : 'text-amber-300'}>ZERO-SUPPORTER</strong> badge).
+                  <strong className="text-white">ZERO-SUPPORTER</strong> badge).
                 </p>
               </>
             }
@@ -2068,8 +2206,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   rel="noreferrer"
                   onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
                   className={`hover:underline flex items-center gap-1 font-semibold ${
-                    isBespoke ? 'text-blue-400' : 'text-amber-300 font-bold'
+                    isBespoke ? 'text-blue-400' : 'font-bold'
                   }`}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   <span>Check Updates</span>
                   <ExternalLink size={12} />
@@ -2100,12 +2239,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
             {/* UPI ID & Scannable QR (Best Offer • No Minimum Limit) */}
             <ObsidianCard
-              accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
               ambientGlow={!isBespoke}
               className={isBespoke ? 'font-sans' : 'font-mono'}
               headerClassName={isBespoke ? 'p-5 space-y-3.5' : 'p-4 space-y-3'}
-              footerClassName={`px-5 py-2.5 text-[11px] leading-relaxed flex items-center justify-between gap-2 flex-wrap ${
-                isBespoke ? 'text-zinc-400' : 'px-4 text-[10px] text-amber-200/90'
+              footerClassName={`px-5 py-2.5 text-[11px] leading-relaxed flex items-center justify-between gap-2 flex-wrap text-zinc-400 ${
+                isBespoke ? '' : 'px-4 text-[10px]'
               }`}
               headerContent={
                 <>
@@ -2113,16 +2251,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <span
                       className={`px-2 py-0.5 text-[10px] uppercase tracking-wider ${
                         isBespoke
-                          ? 'rounded-sm bg-neutral-900 border border-neutral-700 text-white font-semibold'
-                          : 'rounded-md bg-amber-400 text-black font-black'
+                          ? 'rounded-sm obsidian-pill-active font-semibold'
+                          : 'rounded-md obsidian-pill-active font-black'
                       }`}
                     >
                       Best Offer • Best Option
                     </span>
                     <span
-                      className={`px-2 py-0.5 bg-emerald-950/80 border border-emerald-700/70 text-emerald-300 text-[10px] font-semibold ${
-                        isBespoke ? 'rounded-sm' : 'rounded-md font-bold'
+                      className={`px-2 py-0.5 obsidian-inset text-[10px] font-semibold ${
+                        isBespoke ? 'rounded-sm text-blue-400' : 'rounded-md font-bold'
                       }`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       NO MINIMUM LIMIT
                     </span>
@@ -2131,9 +2270,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-9 h-9 obsidian-icon-box flex items-center justify-center text-white font-bold text-xs shrink-0 ${
-                          isBespoke ? 'rounded-md font-mono' : 'rounded-xl'
+                        className={`w-9 h-9 obsidian-icon-box flex items-center justify-center font-bold text-xs shrink-0 ${
+                          isBespoke ? 'rounded-md font-mono text-blue-400' : 'rounded-xl text-white'
                         }`}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         UPI
                       </div>
@@ -2141,8 +2281,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <div className="font-semibold text-xs text-white">UPI / Instant Pay</div>
                         <div
                           className={`text-[11px] truncate font-mono ${
-                            isBespoke ? 'text-zinc-300' : 'text-amber-200'
+                            isBespoke ? 'text-zinc-300' : ''
                           }`}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         >
                           {UPI_ID}
                         </div>
@@ -2173,7 +2314,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         title="Copy UPI ID"
                         aria-label="Copy UPI ID"
                       >
-                        {copiedId === 'upi' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        {copiedId === 'upi' ? (
+                          <Check
+                            size={14}
+                            className={isBespoke ? 'text-blue-400' : ''}
+                            style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                          />
+                        ) : (
+                          <Copy size={14} />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -2181,22 +2330,23 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   {/* 1st Minimum ₹50 Supporter Bonus */}
                   {!hasClaimedFirstDonationParachute ? (
                     <div
-                      className={`p-3.5 border space-y-2.5 ${
-                        isBespoke
-                          ? 'rounded-md bg-neutral-950 border-neutral-800'
-                          : 'rounded-xl bg-emerald-950/50 border-emerald-500/50 space-y-2'
+                      className={`p-3.5 obsidian-inset space-y-2.5 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl space-y-2'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold uppercase">
-                          <Gift size={13} className="text-emerald-400 shrink-0" />
+                        <div
+                          className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase ${
+                            isBespoke ? 'text-blue-400' : ''
+                          }`}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        >
+                          <Gift size={13} className="shrink-0" />
                           <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 🎫 &amp; Gold Badge</span>
                         </div>
                         <span
-                          className={`text-[9px] font-semibold uppercase px-1.5 py-0.5 shrink-0 font-mono ${
-                            isBespoke
-                              ? 'rounded-sm bg-neutral-900 border border-neutral-700 text-amber-300'
-                              : 'rounded bg-amber-400 text-black font-black'
+                          className={`text-[9px] font-semibold uppercase px-1.5 py-0.5 obsidian-inset-neutral text-zinc-200 shrink-0 font-mono ${
+                            isBespoke ? 'rounded-sm' : 'rounded font-bold'
                           }`}
                         >
                           Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
@@ -2204,7 +2354,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       </div>
                       <p className="text-[11px] text-zinc-300 leading-relaxed">
                         <strong>Strict Rule:</strong> The Golden{' '}
-                        <strong className={isBespoke ? 'text-white' : 'text-amber-300'}>ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
+                        <strong className="text-white">ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
                         <strong>+1 Free Emergency Escape Ticket (🎫)</strong>{' '}
                         <strong>ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                         (smaller tips have no minimum limit via UPI but do not unlock the badge).
@@ -2217,10 +2367,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                               handleOpenExternal(e, UPI_FIFTY_RS_PAY_URL);
                               setConfirmingDonationClaim(true);
                             }}
-                            className={`flex-1 py-2 px-3 text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 ${
+                            className={`flex-1 py-2 px-3 obsidian-pill-active text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 ${
                               isBespoke
-                                ? 'rounded-md bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 text-white font-semibold transition-colors duration-75'
-                                : 'rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black active:scale-95 transition-all'
+                                ? 'rounded-md font-semibold transition-colors duration-75'
+                                : 'rounded-xl font-black active:scale-95 transition-all'
                             }`}
                           >
                             <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 🎫 &amp; Gold)</span>
@@ -2230,7 +2380,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setConfirmingDonationClaim(true)}
-                              className={`px-3 py-2 obsidian-inset-neutral border border-emerald-700/60 text-emerald-300 text-[10px] font-semibold ${
+                              className={`px-3 py-2 obsidian-inset-neutral text-zinc-200 hover:text-white text-[10px] font-semibold ${
                                 isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
                               }`}
                             >
@@ -2240,14 +2390,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         </div>
                       ) : (
                         <div
-                          className={`p-2.5 obsidian-inset-neutral border border-emerald-600/60 space-y-2 ${
+                          className={`p-2.5 obsidian-inset-neutral space-y-2 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
                           }`}
                         >
-                          <div className="text-[11px] text-emerald-200">
+                          <div className="text-[11px] text-zinc-200">
                             Confirm you sent your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                             to unlock the Golden{' '}
-                            <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge &amp;{' '}
+                            <strong className="text-white">ZERO-SUPPORTER</strong> Badge &amp;{' '}
                             <strong>+1 Free Emergency Escape Ticket (🎫)</strong>:
                           </div>
                           <div className="flex gap-2">
@@ -2257,10 +2407,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                                 onClaimFirstDonationBonus?.();
                                 setConfirmingDonationClaim(false);
                               }}
-                              className={`flex-1 py-2 px-2.5 text-[10px] uppercase tracking-wider ${
+                              className={`flex-1 py-2 px-2.5 obsidian-pill-active text-[10px] uppercase tracking-wider ${
                                 isBespoke
-                                  ? 'rounded-md bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 text-white font-semibold'
-                                  : 'rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black'
+                                  ? 'rounded-md font-semibold'
+                                  : 'rounded-lg font-black'
                               }`}
                             >
                               Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
@@ -2280,9 +2430,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </div>
                   ) : (
                     <div
-                      className={`px-3 py-2 obsidian-inset border border-emerald-700/60 flex items-center justify-between gap-2 flex-wrap text-[11px] text-emerald-300 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl border-amber-500/40 text-[10px]'
+                      className={`px-3 py-2 obsidian-inset flex items-center justify-between gap-2 flex-wrap text-[11px] ${
+                        isBespoke ? 'rounded-md text-blue-400' : 'rounded-xl text-[10px]'
                       }`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       <span className="flex items-center gap-1.5 font-semibold">
                         <CheckCircle2 size={12} />
@@ -2295,10 +2446,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <a
                     href={UPI_PAY_URL}
                     onClick={(e) => handleOpenExternal(e, UPI_PAY_URL)}
-                    className={`w-full py-2.5 px-3 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 ${
+                    className={`w-full py-2.5 px-3 obsidian-pill-active text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 ${
                       isBespoke
-                        ? 'rounded-md obsidian-pill-active font-semibold transition-colors duration-75'
-                        : 'rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] active:scale-95 transition-all'
+                        ? 'rounded-md font-semibold transition-colors duration-75'
+                        : 'rounded-xl font-black text-[11px] active:scale-95 transition-all'
                     }`}
                   >
                     <span>Open UPI App (Any Amount)</span>
@@ -2344,7 +2495,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <span>
                     UPI has <strong>no minimum limit</strong> — tip even ₹1 with 0% platform fees.
                   </span>
-                  <span className={`font-semibold uppercase tracking-wider ${isBespoke ? 'text-blue-400' : 'text-amber-300 font-bold'}`}>
+                  <span
+                    className={`font-semibold uppercase tracking-wider ${
+                      isBespoke ? 'text-blue-400' : 'font-bold'
+                    }`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  >
                     Instant
                   </span>
                 </>
@@ -2353,7 +2509,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
             {/* Buy Me a Coffee via Ko-fi */}
             <ObsidianCard
-              accent={profileAccentKey}
               className={isBespoke ? 'font-sans' : 'font-mono'}
               headerClassName="p-0"
               footerClassName="px-5 py-2.5 text-[11px] text-zinc-400 flex items-center justify-between gap-2"
@@ -2370,10 +2525,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                        isBespoke ? 'rounded-md text-blue-400' : 'rounded-xl'
                       }`}
                     >
-                      <Coffee size={17} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <Coffee
+                        size={17}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
@@ -2386,7 +2544,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               footerContent={
                 <>
                   <span>International &amp; card tips supported via Ko-fi</span>
-                  <span className={`font-semibold uppercase ${isBespoke ? 'text-zinc-300' : 'text-amber-300 font-bold'}`}>
+                  <span
+                    className={`font-semibold uppercase ${
+                      isBespoke ? 'text-zinc-300' : 'font-bold'
+                    }`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  >
                     Optional
                   </span>
                 </>
@@ -2407,7 +2570,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
             {tipSkipRemaining > 0 && (
               <ObsidianCard
-                accent={profileAccentKey}
                 className={`${isBespoke ? 'font-sans' : 'font-mono'} text-[11px]`}
                 headerClassName="p-4 flex items-center justify-between gap-2"
                 headerContent={
@@ -2447,7 +2609,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         >
           <ObsidianCard
             onSubmit={handleCreateSchedule}
-            accent={profileAccentKey}
             ambientGlow={!isBespoke}
             className={`w-full max-w-sm max-h-full text-left ${isBespoke ? 'font-sans' : 'font-mono'}`}
             headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
@@ -2548,7 +2709,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     isBespoke ? 'rounded-md' : 'rounded-xl'
                   }`}
                 >
-                  <Bell size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0" />
+                  <Bell
+                    size={12}
+                    className={`shrink-0 ${isBespoke ? 'text-blue-400' : ''}`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  />
                   <span>Includes automatic 5-minute pre-lock heads-up warning</span>
                 </div>
 

@@ -321,6 +321,14 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                           kindleInkAccent: preset.inkAccent,
                         });
                       }}
+                      style={
+                        !isBespoke && active
+                          ? {
+                              borderColor: 'var(--accent-hex, #FFFFFF)',
+                              boxShadow: '0 0 0 1px var(--accent-hex, #FFFFFF)',
+                            }
+                          : undefined
+                      }
                       className={`p-2 flex flex-col items-center gap-1 ${
                         isBespoke
                           ? `rounded-md border transition-colors duration-75 ${
@@ -328,9 +336,9 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                                 ? 'bg-neutral-950 border-blue-500'
                                 : 'bg-black border-neutral-800 hover:border-neutral-600'
                             }`
-                          : `rounded-xl transition-all ${
+                          : `rounded-xl border transition-all ${
                               active
-                                ? 'obsidian-inset ring-1 ring-amber-400/50'
+                                ? 'obsidian-inset'
                                 : 'obsidian-inset-neutral hover:border-white/25'
                             }`
                       }`}
@@ -386,36 +394,43 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                     </label>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {KINDLE_QUICK_PAPERS.map((hex) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => {
-                          haptics.tick(760);
-                          onChange({
-                            ...themeConfig,
-                            family: 'kindle',
-                            kindlePreset: 'custom',
-                            kindlePaperColor: hex,
-                          });
-                        }}
-                        className={`w-6 h-6 border ${
-                          isBespoke
-                            ? `rounded-sm transition-colors duration-75 ${
-                                themeConfig.kindlePaperColor.toUpperCase() === hex
-                                  ? 'ring-2 ring-blue-500 border-black'
-                                  : 'border-neutral-600'
-                              }`
-                            : `rounded-full transition-transform ${
-                                themeConfig.kindlePaperColor.toUpperCase() === hex
-                                  ? 'scale-110 ring-2 ring-amber-400 border-black'
-                                  : 'border-zinc-500'
-                              }`
-                        }`}
-                        style={{ backgroundColor: hex }}
-                        aria-label={`Paper color ${hex}`}
-                      />
-                    ))}
+                    {KINDLE_QUICK_PAPERS.map((hex) => {
+                      const selected = themeConfig.kindlePaperColor.toUpperCase() === hex;
+                      return (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(760);
+                            onChange({
+                              ...themeConfig,
+                              family: 'kindle',
+                              kindlePreset: 'custom',
+                              kindlePaperColor: hex,
+                            });
+                          }}
+                          className={`w-6 h-6 border ${
+                            isBespoke
+                              ? `rounded-sm transition-colors duration-75 ${
+                                  selected ? 'ring-2 ring-blue-500 border-black' : 'border-neutral-600'
+                                }`
+                              : `rounded-full transition-transform ${
+                                  selected ? 'scale-110' : 'border-zinc-500'
+                                }`
+                          }`}
+                          style={{
+                            backgroundColor: hex,
+                            ...( !isBespoke && selected
+                              ? {
+                                  borderColor: 'var(--accent-hex, #FFFFFF)',
+                                  boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)',
+                                }
+                              : {}),
+                          }}
+                          aria-label={`Paper color ${hex}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -449,36 +464,43 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                     </label>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {KINDLE_QUICK_INKS.map((hex) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => {
-                          haptics.tick(760);
-                          onChange({
-                            ...themeConfig,
-                            family: 'kindle',
-                            kindlePreset: 'custom',
-                            kindleInkAccent: hex,
-                          });
-                        }}
-                        className={`w-6 h-6 border ${
-                          isBespoke
-                            ? `rounded-sm transition-colors duration-75 ${
-                                themeConfig.kindleInkAccent.toUpperCase() === hex
-                                  ? 'ring-2 ring-blue-500 border-white'
-                                  : 'border-neutral-600'
-                              }`
-                            : `rounded-full transition-transform ${
-                                themeConfig.kindleInkAccent.toUpperCase() === hex
-                                  ? 'scale-110 ring-2 ring-amber-400 border-white'
-                                  : 'border-zinc-500'
-                              }`
-                        }`}
-                        style={{ backgroundColor: hex }}
-                        aria-label={`Ink accent ${hex}`}
-                      />
-                    ))}
+                    {KINDLE_QUICK_INKS.map((hex) => {
+                      const selected = themeConfig.kindleInkAccent.toUpperCase() === hex;
+                      return (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(760);
+                            onChange({
+                              ...themeConfig,
+                              family: 'kindle',
+                              kindlePreset: 'custom',
+                              kindleInkAccent: hex,
+                            });
+                          }}
+                          className={`w-6 h-6 border ${
+                            isBespoke
+                              ? `rounded-sm transition-colors duration-75 ${
+                                  selected ? 'ring-2 ring-blue-500 border-white' : 'border-neutral-600'
+                                }`
+                              : `rounded-full transition-transform ${
+                                  selected ? 'scale-110' : 'border-zinc-500'
+                                }`
+                          }`}
+                          style={{
+                            backgroundColor: hex,
+                            ...(!isBespoke && selected
+                              ? {
+                                  borderColor: 'var(--accent-hex, #FFFFFF)',
+                                  boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)',
+                                }
+                              : {}),
+                          }}
+                          aria-label={`Ink accent ${hex}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -515,6 +537,14 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                           matteAccentColor: preset.accentColor,
                         });
                       }}
+                      style={
+                        !isBespoke && active
+                          ? {
+                              borderColor: 'var(--accent-hex, #FFFFFF)',
+                              boxShadow: '0 0 0 1px var(--accent-hex, #FFFFFF)',
+                            }
+                          : undefined
+                      }
                       className={`p-2 flex flex-col items-center gap-1 ${
                         isBespoke
                           ? `rounded-md border transition-colors duration-75 ${
@@ -522,9 +552,9 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                                 ? 'bg-neutral-950 border-blue-500'
                                 : 'bg-black border-neutral-800 hover:border-neutral-600'
                             }`
-                          : `rounded-xl transition-all ${
+                          : `rounded-xl border transition-all ${
                               active
-                                ? 'obsidian-inset ring-1 ring-amber-400/50'
+                                ? 'obsidian-inset'
                                 : 'obsidian-inset-neutral hover:border-white/25'
                             }`
                       }`}
@@ -580,36 +610,43 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                     </label>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {MATTE_QUICK_SURFACES.map((hex) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => {
-                          haptics.tick(760);
-                          onChange({
-                            ...themeConfig,
-                            family: 'matte',
-                            mattePreset: 'custom',
-                            matteBaseColor: hex,
-                          });
-                        }}
-                        className={`w-6 h-6 border ${
-                          isBespoke
-                            ? `rounded-sm transition-colors duration-75 ${
-                                themeConfig.matteBaseColor.toUpperCase() === hex
-                                  ? 'ring-2 ring-blue-500 border-white'
-                                  : 'border-neutral-600'
-                              }`
-                            : `rounded-full transition-transform ${
-                                themeConfig.matteBaseColor.toUpperCase() === hex
-                                  ? 'scale-110 ring-2 ring-amber-400 border-white'
-                                  : 'border-zinc-500'
-                              }`
-                        }`}
-                        style={{ backgroundColor: hex }}
-                        aria-label={`Matte surface ${hex}`}
-                      />
-                    ))}
+                    {MATTE_QUICK_SURFACES.map((hex) => {
+                      const selected = themeConfig.matteBaseColor.toUpperCase() === hex;
+                      return (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(760);
+                            onChange({
+                              ...themeConfig,
+                              family: 'matte',
+                              mattePreset: 'custom',
+                              matteBaseColor: hex,
+                            });
+                          }}
+                          className={`w-6 h-6 border ${
+                            isBespoke
+                              ? `rounded-sm transition-colors duration-75 ${
+                                  selected ? 'ring-2 ring-blue-500 border-white' : 'border-neutral-600'
+                                }`
+                              : `rounded-full transition-transform ${
+                                  selected ? 'scale-110' : 'border-zinc-500'
+                                }`
+                          }`}
+                          style={{
+                            backgroundColor: hex,
+                            ...(!isBespoke && selected
+                              ? {
+                                  borderColor: 'var(--accent-hex, #FFFFFF)',
+                                  boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)',
+                                }
+                              : {}),
+                          }}
+                          aria-label={`Matte surface ${hex}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -643,36 +680,43 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                     </label>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {MATTE_QUICK_ACCENTS.map((hex) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => {
-                          haptics.tick(760);
-                          onChange({
-                            ...themeConfig,
-                            family: 'matte',
-                            mattePreset: 'custom',
-                            matteAccentColor: hex,
-                          });
-                        }}
-                        className={`w-6 h-6 border ${
-                          isBespoke
-                            ? `rounded-sm transition-colors duration-75 ${
-                                themeConfig.matteAccentColor.toUpperCase() === hex
-                                  ? 'ring-2 ring-blue-500 border-black'
-                                  : 'border-neutral-600'
-                              }`
-                            : `rounded-full transition-transform ${
-                                themeConfig.matteAccentColor.toUpperCase() === hex
-                                  ? 'scale-110 ring-2 ring-amber-400 border-black'
-                                  : 'border-zinc-500'
-                              }`
-                        }`}
-                        style={{ backgroundColor: hex }}
-                        aria-label={`Matte accent ${hex}`}
-                      />
-                    ))}
+                    {MATTE_QUICK_ACCENTS.map((hex) => {
+                      const selected = themeConfig.matteAccentColor.toUpperCase() === hex;
+                      return (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(760);
+                            onChange({
+                              ...themeConfig,
+                              family: 'matte',
+                              mattePreset: 'custom',
+                              matteAccentColor: hex,
+                            });
+                          }}
+                          className={`w-6 h-6 border ${
+                            isBespoke
+                              ? `rounded-sm transition-colors duration-75 ${
+                                  selected ? 'ring-2 ring-blue-500 border-black' : 'border-neutral-600'
+                                }`
+                              : `rounded-full transition-transform ${
+                                  selected ? 'scale-110' : 'border-zinc-500'
+                                }`
+                          }`}
+                          style={{
+                            backgroundColor: hex,
+                            ...(!isBespoke && selected
+                              ? {
+                                  borderColor: 'var(--accent-hex, #FFFFFF)',
+                                  boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)',
+                                }
+                              : {}),
+                          }}
+                          aria-label={`Matte accent ${hex}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>

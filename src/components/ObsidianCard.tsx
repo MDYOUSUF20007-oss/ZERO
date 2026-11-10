@@ -1,5 +1,5 @@
 import React, { type CSSProperties, type FormEventHandler, type ReactNode } from 'react';
-import { ACCENT_THEMES, type AccentKey } from './ProfileAvatar';
+import { type AccentKey } from './ProfileAvatar';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 
 export interface ObsidianCardProps {
@@ -26,8 +26,6 @@ export interface ObsidianCardProps {
 }
 
 export const ObsidianCard: React.FC<ObsidianCardProps> = ({
-  accent,
-  forceAccent = false,
   accentOverride,
   headerContent,
   footerContent,
@@ -51,13 +49,7 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
   const resolvedHeaderClass = headerClassName ?? (isBespoke ? 'p-5' : 'p-4');
   const resolvedFooterClass = footerClassName ?? (isBespoke ? 'px-5 py-3' : 'px-4 py-2.5');
 
-  const resolvedAccent = isBespoke
-    ? null
-    : accentOverride
-    ? accentOverride
-    : forceAccent && accent
-    ? ACCENT_THEMES[accent] || ACCENT_THEMES.Amber
-    : null;
+  const resolvedAccent = isBespoke ? null : accentOverride ?? null;
 
   const isPureAmoledBanner = dataAmoledBanner === 'true';
   const accentVarsStyle: CSSProperties = resolvedAccent
@@ -71,17 +63,17 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
     ? '1px solid var(--zero-border, #262626)'
     : resolvedAccent
     ? `1.5px solid rgba(${resolvedAccent.rgb}, 0.45)`
-    : '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.45)';
+    : '1.5px solid rgba(var(--accent-rgb, 255, 255, 255), 0.45)';
 
   const shadowExpr = isBespoke
     ? 'none'
     : resolvedAccent
     ? `0 0 28px -4px rgba(${resolvedAccent.rgb}, 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)`
-    : '0 0 28px -4px rgba(var(--accent-rgb, 245, 158, 11), 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)';
+    : '0 0 28px -4px rgba(var(--accent-rgb, 255, 255, 255), 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)';
 
   const topHighlightBg = resolvedAccent
     ? `linear-gradient(90deg, transparent 0%, ${resolvedAccent.hex} 50%, transparent 100%)`
-    : 'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)';
+    : 'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)';
 
   const interactiveClasses = isBespoke
     ? onClick && !disabled
@@ -141,7 +133,7 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
           style={{
             background: resolvedAccent
               ? `radial-gradient(circle, rgba(${resolvedAccent.rgb}, 0.28) 0%, transparent 70%)`
-              : 'radial-gradient(circle, rgba(var(--accent-rgb, 245, 158, 11), 0.28) 0%, transparent 70%)',
+              : 'radial-gradient(circle, rgba(var(--accent-rgb, 255, 255, 255), 0.28) 0%, transparent 70%)',
           }}
         />
       )}

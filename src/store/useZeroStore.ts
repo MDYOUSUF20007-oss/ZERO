@@ -43,17 +43,16 @@ import {
   DEFAULT_THEME_CONFIG,
   computeDynamicAccentTokens,
   computeThemeRuntime,
+  getRelativeLuminance,
+  mixHexColors,
   resolveActiveAccentTokens,
   sanitizeThemeConfig,
 } from '../utils/themes';
+import { normalizeCustomHashtag } from '../utils/bagLayout';
 import {
   DEFAULT_WIDGETS_CONFIG,
   sanitizeWidgetsConfig,
 } from '../utils/heatmapAnalytics';
-import {
-  ACCENT_ID_TO_KEY,
-  ACCENT_THEMES,
-} from '../components/ProfileAvatar';
 import {
   disableUniversalCloudAutoBackup,
   enableUniversalCloudAutoBackup,
@@ -92,6 +91,7 @@ const UI_STORAGE_KEYS = {
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
   WIDGET_CONFIG: 'zero_widgets_config_v1',
+  CUSTOM_HASHTAGS: 'zero_custom_hashtags_v1',
 };
 
 const IDLE_LOCK: ActiveLockSession = {
@@ -404,6 +404,44 @@ export function useZeroStore() {
     }
   });
 
+  const [customHashtags, setCustomHashtags] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(UI_STORAGE_KEYS.CUSTOM_HASHTAGS);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      const seen = new Set<string>();
+      const out: string[] = [];
+      for (const item of parsed) {
+        const clean = normalizeCustomHashtag(typeof item === 'string' ? item : null);
+        if (clean && !seen.has(clean.toLowerCase())) {
+          seen.add(clean.toLowerCase());
+          out.push(clean);
+        }
+      }
+      return out.slice(0, 24);
+    } catch {
+      return [];
+    }
+  });
+
+  const addCustomHashtag = useCallback((rawTag: string): string | null => {
+    const clean = normalizeCustomHashtag(rawTag);
+    if (!clean) return null;
+    setCustomHashtags((prev) => {
+      if (prev.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, clean].slice(-24);
+    });
+    return clean;
+  }, []);
+
+  const removeCustomHashtag = useCallback((targetTag: string) => {
+    const targetLower = targetTag.trim().toLowerCase();
+    setCustomHashtags((prev) => prev.filter((t) => t.toLowerCase() !== targetLower));
+  }, []);
+
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(() => {
     const saved = localStorage.getItem(UI_STORAGE_KEYS.ONBOARDING_COMPLETE);
     if (saved === 'true' || saved === '1') return true;
@@ -706,11 +744,12 @@ export function useZeroStore() {
   const emitParachuteReward = useCallback((event: Omit<ParachuteRewardEvent, 'id'>) => {
     haptics.milestoneChime();
     try {
+      const activeHex = activeAccentTokensRef.current?.hex || '#FFFFFF';
       confetti({
         particleCount: 110,
         spread: 75,
         origin: { y: 0.6 },
-        colors: ['#FFFFFF', '#F59E0B', '#10B981'],
+        colors: ['#FFFFFF', activeHex, '#E4E4E7'],
       });
     } catch {
       // Ignore confetti errors
@@ -967,6 +1006,10 @@ export function useZeroStore() {
   }, [widgetsConfig]);
 
   useEffect(() => {
+    localStorage.setItem(UI_STORAGE_KEYS.CUSTOM_HASHTAGS, JSON.stringify(customHashtags));
+  }, [customHashtags]);
+
+  useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.THEME_CONFIG, JSON.stringify(themeConfig));
     localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, interfaceStyle);
     const runtime = computeThemeRuntime(themeConfig);
@@ -991,6 +1034,10 @@ export function useZeroStore() {
         rootEl.style.setProperty('--accent-hex', '#1D4ED8');
         rootEl.style.setProperty('--accent-badge-gradient', '#1D4ED8');
         rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
+        rootEl.style.setProperty('--accent-surface-rgb', '59, 130, 246');
+        rootEl.style.setProperty('--accent-surface-hex', '#3B82F6');
+        rootEl.style.setProperty('--accent-surface-badge-gradient', '#2563EB');
+        rootEl.style.setProperty('--accent-surface-badge-text', '#FFFFFF');
       } else {
         // Anchor dark mode strictly in pure AMOLED #000000 with neutral borders and functional utility blue
         rootEl.style.setProperty('--zero-bg-primary', '#000000');
@@ -1014,6 +1061,10 @@ export function useZeroStore() {
         rootEl.style.setProperty('--accent-hex', '#3B82F6');
         rootEl.style.setProperty('--accent-badge-gradient', '#2563EB');
         rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
+        rootEl.style.setProperty('--accent-surface-rgb', '59, 130, 246');
+        rootEl.style.setProperty('--accent-surface-hex', '#3B82F6');
+        rootEl.style.setProperty('--accent-surface-badge-gradient', '#2563EB');
+        rootEl.style.setProperty('--accent-surface-badge-text', '#FFFFFF');
       }
 
       const nativeTokens = {
@@ -1051,42 +1102,36 @@ export function useZeroStore() {
       rootEl.style.setProperty(cssVar, val);
     });
 
-    // Harmonize global Frosted Obsidian accent tokens (--accent-rgb, --accent-hex,
-    // --accent-badge-gradient, --accent-badge-text) across the entire app:
-    // - Pure Pitch AMOLED follows the user's Profile Accent (default Amber #F59E0B)
-    // - Gradient AMOLED / Paper Kindle / Matte Studio harmonize to their active finish accent
-    const accentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-    const profileAccentTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
-    const isPureAmoled =
-      themeConfig.family === 'amoled' && themeConfig.amoledGradient === 'pure';
-    const activeTokens = resolveActiveAccentTokens(themeConfig, profileAccentTheme);
+    // Strictly derive global accent tokens (--accent-rgb, --accent-hex, --accent-badge-gradient,
+    // --accent-badge-text) directly from Theme Studio so zero color mismatches can occur.
+    const activeTokens = resolveActiveAccentTokens(themeConfig);
+    const derived = computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || activeTokens.hex);
+    const surfaceHex =
+      getRelativeLuminance(derived.hex) < 0.28
+        ? mixHexColors(derived.hex, '#FFFFFF', 0.56)
+        : derived.hex;
+    const surfaceTokens = computeDynamicAccentTokens(surfaceHex);
     activeAccentTokensRef.current = {
-      hex: activeTokens.hex,
-      rgb: activeTokens.rgb,
-      badgeText: activeTokens.badgeText,
+      hex: derived.hex,
+      rgb: derived.rgb,
+      badgeText: derived.badgeText,
     };
 
-    if (isPureAmoled) {
-      rootEl.style.setProperty('--accent-rgb', activeTokens.rgb);
-      rootEl.style.setProperty('--accent-hex', activeTokens.hex);
-      rootEl.style.setProperty('--accent-badge-gradient', activeTokens.badgeGradient);
-      rootEl.style.setProperty('--accent-badge-text', activeTokens.badgeText);
-      rootEl.style.setProperty('--zero-accent', activeTokens.hex);
-      rootEl.style.setProperty('--zero-dial-stroke', activeTokens.hex);
-    } else {
-      const derived = computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#F59E0B');
-      rootEl.style.setProperty('--accent-rgb', derived.rgb);
-      rootEl.style.setProperty('--accent-hex', derived.hex);
-      rootEl.style.setProperty('--accent-badge-gradient', derived.badgeGradient);
-      rootEl.style.setProperty('--accent-badge-text', derived.badgeText);
-    }
+    rootEl.style.setProperty('--accent-rgb', derived.rgb);
+    rootEl.style.setProperty('--accent-hex', derived.hex);
+    rootEl.style.setProperty('--accent-badge-gradient', derived.badgeGradient);
+    rootEl.style.setProperty('--accent-badge-text', derived.badgeText);
+    rootEl.style.setProperty('--accent-surface-rgb', surfaceTokens.rgb);
+    rootEl.style.setProperty('--accent-surface-hex', surfaceTokens.hex);
+    rootEl.style.setProperty('--accent-surface-badge-gradient', surfaceTokens.badgeGradient);
+    rootEl.style.setProperty('--accent-surface-badge-text', surfaceTokens.badgeText);
 
     try {
       window.ZeroNative?.setInterfaceStyle?.('classic');
       window.ZeroNative?.setActiveThemeAccent?.(
-        activeTokens.hex,
-        activeTokens.rgb,
-        activeTokens.badgeText
+        derived.hex,
+        derived.rgb,
+        derived.badgeText
       );
     } catch {
       // Ignore on web preview
@@ -1096,7 +1141,7 @@ export function useZeroStore() {
     if (metaTheme) {
       metaTheme.setAttribute('content', runtime.metaThemeColor);
     }
-  }, [themeConfig, profile, interfaceStyle]);
+  }, [themeConfig, interfaceStyle]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SLEEP_FARMING_MODE, sleepFarmingMode);
@@ -1136,12 +1181,23 @@ export function useZeroStore() {
     }
     try {
       if (window.ZeroNative && activeBag) {
-        window.ZeroNative.setBagStateJson(
-          activeBag.name,
-          JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-          true,
-          activeBag.allowSms
-        );
+        const appsJson = JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS));
+        if (window.ZeroNative.setBagStateWithIdJson) {
+          window.ZeroNative.setBagStateWithIdJson(
+            activeBag.id,
+            activeBag.name,
+            appsJson,
+            true,
+            activeBag.allowSms
+          );
+        } else {
+          window.ZeroNative.setBagStateJson(
+            activeBag.name,
+            appsJson,
+            true,
+            activeBag.allowSms
+          );
+        }
       }
     } catch {
       // Web mode
@@ -1278,21 +1334,30 @@ export function useZeroStore() {
     try {
       if (window.ZeroNative && activeBag) {
         if (!latestSecurity.restrictions.presetBagEditingDisabled) {
-          window.ZeroNative.setBagStateJson(
-            activeBag.name,
-            JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS)),
-            true,
-            activeBag.allowSms
-          );
+          const appsJson = JSON.stringify(activeBag.apps.slice(0, MAX_BAG_APPS));
+          if (window.ZeroNative.setBagStateWithIdJson) {
+            window.ZeroNative.setBagStateWithIdJson(
+              activeBag.id,
+              activeBag.name,
+              appsJson,
+              true,
+              activeBag.allowSms
+            );
+          } else {
+            window.ZeroNative.setBagStateJson(
+              activeBag.name,
+              appsJson,
+              true,
+              activeBag.allowSms
+            );
+          }
         }
         syncNativeLedger(
           integrityStateRef.current.cumulativeSeconds,
           integrityStateRef.current.usedParachutes,
           integrityStateRef.current.bonusParachutes
         );
-        const accentKeyNow = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-        const profileThemeNow = ACCENT_THEMES[accentKeyNow] || ACCENT_THEMES.Amber;
-        const activeTokensNow = resolveActiveAccentTokens(themeConfig, profileThemeNow);
+        const activeTokensNow = resolveActiveAccentTokens(themeConfig);
         window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
         if (interfaceStyleRef.current === 'bespoke') {
           window.ZeroNative.setActiveThemeAccent?.('#3B82F6', '59, 130, 246', '#FFFFFF');
@@ -1989,6 +2054,7 @@ export function useZeroStore() {
       lastError: null,
     });
     setProfile(null);
+    setCustomHashtags([]);
     setParachuteRewardEvent(null);
     setJustEarnedParachute(false);
     setSchedules(DEFAULT_SCHEDULES);
@@ -2037,6 +2103,9 @@ export function useZeroStore() {
     sleepFarmingMode,
     setSleepFarmingMode,
     profile,
+    customHashtags,
+    addCustomHashtag,
+    removeCustomHashtag,
     isZeroSupporter,
     badgeSummary,
     currentStreak,

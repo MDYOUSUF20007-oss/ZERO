@@ -80,6 +80,12 @@ import {
   formatReceiptHandle,
   formatReceiptMotto,
 } from '../src/utils/focusReceipt.ts';
+import {
+  DEFAULT_SESSION_TAGS,
+  isWorkBag,
+  mergeHashtagList,
+  normalizeCustomHashtag,
+} from '../src/utils/bagLayout.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
 import type {
   NativeEnvironmentSecurity,
@@ -428,9 +434,9 @@ failIf(
 console.log('PASS: Golden ZERO-SUPPORTER & All 6 Achievement Milestone Badges Verified');
 
 console.log('\n=== TEST 11: Theme Studio Palette Derivation & WCAG Contrast Safety ===');
-failIf(AMOLED_GRADIENTS.length === 6, 'Should define Pure + 5 Gradient AMOLED presets (6 total)');
-failIf(KINDLE_PAPER_PRESETS.length >= 5, 'Should define at least 5 Paper like Kindle presets');
-failIf(MATTE_STUDIO_PRESETS.length >= 5, 'Should define at least 5 Matte Studio presets');
+failIf(AMOLED_GRADIENTS.length === 14, 'Should define Pure + 13 Gradient AMOLED presets (14 total)');
+failIf(KINDLE_PAPER_PRESETS.length === 10, 'Should define 10 Paper like Kindle presets');
+failIf(MATTE_STUDIO_PRESETS.length === 10, 'Should define 10 Matte Studio presets');
 
 for (const preset of AMOLED_GRADIENTS) {
   const rt = computeThemeRuntime({
@@ -1387,12 +1393,12 @@ const emeraldMock = {
 };
 const pureResolved = resolveActiveAccentTokens(DEFAULT_THEME_CONFIG, emeraldMock);
 const gradientResolved = resolveActiveAccentTokens(
-  { ...DEFAULT_THEME_CONFIG, family: 'amoled', amoledGradient: 'obsidian_violet' },
+  { ...DEFAULT_THEME_CONFIG, family: 'amoled', amoledGradient: 'cosmic' },
   emeraldMock
 );
 failIf(
-  pureResolved.hex === '#10B981' && gradientResolved.hex !== '#10B981',
-  'Active accent token helper must preserve Profile accent in Pure AMOLED and derive finish accent on Gradient themes'
+  pureResolved.hex === '#FFFFFF' && gradientResolved.hex === '#C4B5FD',
+  'Active accent token helper must unify UI with active Theme Studio palette (ignoring legacy profile accent mismatches)'
 );
 console.log('PASS: Void Pixelated Gradient Clock & WhatsApp-Style Brand Bag Visuals Verified');
 
@@ -1443,5 +1449,31 @@ failIf(
   'All-time Focus Receipt must fallback cleanly to totalReclaimedHours and #MonkMode when sessions list is empty'
 );
 console.log('PASS: Frosted Obsidian Focus Receipt Formatting & Period Metrics Verified');
+
+console.log('\n=== TEST 21: Custom Hashtag Normalization & Work Bag Layout Detection ===');
+failIf(
+  normalizeCustomHashtag('  ###Sprint  Flow\n ') === 'Sprint Flow' &&
+    normalizeCustomHashtag('###   ') === null &&
+    (normalizeCustomHashtag('A Very Long Custom Mission Tag Exceeding Limit') || '').length <= 24,
+  'Custom hashtag normalizer must strip # prefixes, collapse whitespace, clamp length, and reject empty tags'
+);
+
+const mergedTags = mergeHashtagList(['deep work', 'Coding', '#Sprint', 'Sprint'], DEFAULT_SESSION_TAGS);
+failIf(
+  mergedTags.length === DEFAULT_SESSION_TAGS.length + 2 &&
+    mergedTags.includes('Coding') &&
+    mergedTags.includes('Sprint'),
+  'Merged hashtag list must deduplicate case-insensitively across defaults and custom tags'
+);
+
+failIf(
+  isWorkBag('bag-work', 'Renamed') === true &&
+    isWorkBag('bag-2', 'Work Bag') === true &&
+    isWorkBag('bag-2', 'My Work Flow') === true &&
+    isWorkBag('bag-study', 'Study Bag') === false &&
+    isWorkBag('bag-travel', 'Monk Bag') === false,
+  'Work Bag detector must identify bag-work ID or Work Bag name for Void hashtag spotlight layout'
+);
+console.log('PASS: Custom Hashtag Normalization & Work Bag Layout Detection Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

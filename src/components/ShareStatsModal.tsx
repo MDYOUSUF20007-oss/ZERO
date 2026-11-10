@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { SessionRecord, ParachuteMetrics, ZeroProfile } from '../types';
+import type { SessionRecord, ParachuteMetrics, ZeroProfile, ThemeConfig } from '../types';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
-import { evaluateBadges, type BadgeTierColor } from '../utils/achievements';
+import { evaluateBadges } from '../utils/achievements';
+import {
+  computeDynamicAccentTokens,
+  computeThemeRuntime,
+  getRelativeLuminance,
+  mixHexColors,
+} from '../utils/themes';
 import {
   FOCUS_RECEIPT_PERIOD_LABELS,
   FOCUS_RECEIPT_PERIOD_ORDER,
@@ -21,6 +27,7 @@ interface ShareStatsModalProps {
   parachuteMetrics: ParachuteMetrics;
   currentStreak: number;
   profile?: ZeroProfile | null;
+  themeConfig?: ThemeConfig;
   isZeroSupporter?: boolean;
   onClose: () => void;
 }
@@ -41,67 +48,13 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mimeType });
 }
 
-const CANVAS_BADGE_COLORS: Record<
-  BadgeTierColor,
-  {
-    bgStart: string;
-    bgEnd: string;
-    border: string;
-    text: string;
-    icon: string;
-    glow?: string;
-  }
-> = {
-  gold: {
-    bgStart: '#FDE68A',
-    bgEnd: '#D97706',
-    border: '#FEF3C7',
-    text: '#000000',
-    icon: '#000000',
-    glow: 'rgba(251, 191, 36, 0.5)',
-  },
-  emerald: {
-    bgStart: 'rgba(16, 185, 129, 0.22)',
-    bgEnd: 'rgba(6, 78, 59, 0.45)',
-    border: '#34D399',
-    text: '#6EE7B7',
-    icon: '#34D399',
-  },
-  cyan: {
-    bgStart: 'rgba(6, 182, 212, 0.22)',
-    bgEnd: 'rgba(22, 78, 99, 0.45)',
-    border: '#22D3EE',
-    text: '#67E8F9',
-    icon: '#22D3EE',
-  },
-  indigo: {
-    bgStart: 'rgba(99, 102, 241, 0.24)',
-    bgEnd: 'rgba(49, 46, 129, 0.48)',
-    border: '#818CF8',
-    text: '#C7D2FE',
-    icon: '#818CF8',
-  },
-  amber: {
-    bgStart: 'rgba(245, 158, 11, 0.22)',
-    bgEnd: 'rgba(120, 53, 15, 0.45)',
-    border: '#FBBF24',
-    text: '#FDE68A',
-    icon: '#FBBF24',
-  },
-  rose: {
-    bgStart: 'rgba(244, 63, 94, 0.22)',
-    bgEnd: 'rgba(136, 19, 55, 0.45)',
-    border: '#FB7185',
-    text: '#FECDD3',
-    icon: '#FB7185',
-  },
-  platinum: {
-    bgStart: '#FFFFFF',
-    bgEnd: '#D4D4D8',
-    border: '#FFFFFF',
-    text: '#000000',
-    icon: '#000000',
-  },
+const GOLD_CANVAS_BADGE = {
+  bgStart: '#FDE68A',
+  bgEnd: '#D97706',
+  border: '#FEF3C7',
+  text: '#000000',
+  icon: '#000000',
+  glow: 'rgba(251, 191, 36, 0.5)',
 };
 
 function drawRoundedRectPath(
@@ -150,14 +103,30 @@ function drawVectorStar(
   ctx.restore();
 }
 
-function readLiveAccentCssTokens(): { hex: string; rgb: string } {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return { hex: '#F59E0B', rgb: '245, 158, 11' };
+function resolveDarkSurfaceAccentTokens(themeConfig?: ThemeConfig): {
+  hex: string;
+  rgb: string;
+  badgeText: string;
+} {
+  let rawHex = '#FFFFFF';
+  if (themeConfig) {
+    const runtime = computeThemeRuntime(themeConfig);
+    rawHex = runtime.cssVars['--zero-accent'] || '#FFFFFF';
+  } else if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const styles = window.getComputedStyle(document.documentElement);
+    rawHex = styles.getPropertyValue('--accent-hex').trim() || '#FFFFFF';
   }
-  const styles = window.getComputedStyle(document.documentElement);
-  const hex = styles.getPropertyValue('--accent-hex').trim() || '#F59E0B';
-  const rgb = styles.getPropertyValue('--accent-rgb').trim() || '245, 158, 11';
-  return { hex, rgb };
+  const normalizedHex = rawHex.startsWith('#') ? rawHex : '#FFFFFF';
+  const canvasHex =
+    getRelativeLuminance(normalizedHex) < 0.28
+      ? mixHexColors(normalizedHex, '#FFFFFF', 0.54)
+      : normalizedHex;
+  const tokens = computeDynamicAccentTokens(canvasHex);
+  return {
+    hex: tokens.hex,
+    rgb: tokens.rgb,
+    badgeText: tokens.badgeText,
+  };
 }
 
 export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
@@ -166,6 +135,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   parachuteMetrics,
   currentStreak,
   profile,
+  themeConfig,
   isZeroSupporter = false,
   onClose,
 }) => {
@@ -214,7 +184,11 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     const currentDateLabel = new Date()
       .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       .toUpperCase();
-    const { hex: activeAccentHex, rgb: activeAccentRgb } = readLiveAccentCssTokens();
+    const {
+      hex: activeAccentHex,
+      rgb: activeAccentRgb,
+      badgeText: activeAccentBadgeText,
+    } = resolveDarkSurfaceAccentTokens(themeConfig);
 
     // Pitch AMOLED Canvas Background (+ Subtle Dot Matrix in Classic mode)
     ctx.fillStyle = '#000000';
@@ -368,10 +342,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ? '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       : '900 22px monospace';
     const periodPillW = Math.max(180, Math.round(ctx.measureText(badgeLabel).width + 52));
-    ctx.fillStyle = isBespoke ? '#2563EB' : '#F59E0B';
+    ctx.fillStyle = isBespoke ? '#2563EB' : activeAccentHex;
     drawRoundedRectPath(ctx, 104, 226, periodPillW, 44, isBespoke ? 6 : 10);
     ctx.fill();
-    ctx.fillStyle = isBespoke ? '#FFFFFF' : '#09090B';
+    ctx.fillStyle = isBespoke ? '#FFFFFF' : activeAccentBadgeText;
     ctx.fillText(badgeLabel, 130, 255);
 
     // Giant Hero Metric (auto-scaled so long 1Y / All-Time totals fit cleanly)
@@ -416,7 +390,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     };
 
     drawStat('COMPLETED BLOCKS', `${periodStats.completedCount}`, 104, 548);
-    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 554, 548, isBespoke ? '#3B82F6' : '#F59E0B');
+    drawStat('DAILY STREAK', `${currentStreak} DAYS`, 554, 548, isBespoke ? '#3B82F6' : activeAccentHex);
     drawStat(
       'COMPLETION RATE',
       `${periodStats.completionRate}%`,
@@ -449,7 +423,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ctx.fillStyle = '#D4D4D8';
       ctx.font = '700 21px monospace';
       ctx.fillText('NEXT UNLOCK: COMPLETE 1H LOCK -> GETTING STARTED', 104, tier2Y + 106, cardW - 96);
-      ctx.fillStyle = isBespoke ? '#93C5FD' : '#FBBF24';
+      ctx.fillStyle = isBespoke ? '#93C5FD' : activeAccentHex;
       ctx.font = '600 20px monospace';
       ctx.fillText('SUPPORTER CREST: MIN RS.50 1ST TIP -> ZERO-SUPPORTER', 104, tier2Y + 150, cardW - 96);
     } else {
@@ -490,27 +464,37 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
           ctx.font = '700 18px monospace';
           ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
         } else {
-          const theme = CANVAS_BADGE_COLORS[badge.tierColor];
+          const isSupporterGold = badge.tierColor === 'gold';
+          const pillTheme = isSupporterGold
+            ? GOLD_CANVAS_BADGE
+            : {
+                bgStart: `rgba(${activeAccentRgb}, 0.22)`,
+                bgEnd: `rgba(${activeAccentRgb}, 0.10)`,
+                border: activeAccentHex,
+                text: activeAccentHex,
+                icon: activeAccentHex,
+                glow: undefined,
+              };
           ctx.save();
-          if (theme.glow) {
-            ctx.shadowColor = theme.glow;
+          if (pillTheme.glow) {
+            ctx.shadowColor = pillTheme.glow;
             ctx.shadowBlur = 12;
           }
           const grad = ctx.createLinearGradient(curX, curY, curX + pillW, curY + pillH);
-          grad.addColorStop(0, theme.bgStart);
-          grad.addColorStop(1, theme.bgEnd);
+          grad.addColorStop(0, pillTheme.bgStart);
+          grad.addColorStop(1, pillTheme.bgEnd);
           ctx.fillStyle = grad;
           drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
           ctx.fill();
           ctx.restore();
 
-          ctx.strokeStyle = theme.border;
+          ctx.strokeStyle = pillTheme.border;
           ctx.lineWidth = 2;
           drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
           ctx.stroke();
 
-          drawVectorStar(ctx, curX + 22, curY + pillH / 2, 8.5, 4, theme.icon);
-          ctx.fillStyle = theme.text;
+          drawVectorStar(ctx, curX + 22, curY + pillH / 2, 8.5, 4, pillTheme.icon);
+          ctx.fillStyle = pillTheme.text;
           ctx.font = '900 18px monospace';
           ctx.fillText(badge.title, curX + 38, curY + 28, pillW - 48);
         }
@@ -549,6 +533,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   }, [
     isOpen,
     isBespoke,
+    themeConfig,
     period,
     periodStats,
     currentStreak,
@@ -658,7 +643,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   >
                     <Sparkles
                       size={18}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <div className="min-w-0">
@@ -751,7 +736,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-neutral-300">
                     <Trophy
                       size={12}
-                      className={isBespoke ? 'text-blue-500 shrink-0' : 'text-amber-400 shrink-0'}
+                      className={isBespoke ? 'text-blue-500 shrink-0' : 'shrink-0'}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                     <span>Badges On Card</span>
                   </span>
@@ -759,7 +745,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     className={`font-mono tabular-nums font-semibold uppercase tracking-wider ${
                       isBespoke ? 'text-blue-400' : 'font-black'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length} Earned
                   </span>
@@ -779,7 +765,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     Complete a 1h lock for{' '}
                     <strong className="text-neutral-200">GETTING STARTED</strong> or make your 1st min
                     ₹50 tip for the{' '}
-                    <strong className={isBespoke ? 'text-blue-400' : 'text-amber-300'}>
+                    <strong
+                      className={isBespoke ? 'text-blue-400' : ''}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    >
                       ZERO-SUPPORTER
                     </strong>{' '}
                     badge.
@@ -801,7 +790,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     : {
                         background:
                           'linear-gradient(180deg, rgba(16, 16, 20, 0.98) 0%, rgba(6, 6, 8, 1) 100%)',
-                        border: '1.5px solid rgba(var(--accent-rgb, 245, 158, 11), 0.36)',
+                        border: '1.5px solid rgba(var(--accent-rgb, 255, 255, 255), 0.36)',
                         boxShadow:
                           '0 14px 32px -8px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                       }
@@ -813,7 +802,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     className="absolute top-0 left-5 right-5 h-[1.5px] pointer-events-none z-10"
                     style={{
                       background:
-                        'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+                        'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
                       opacity: 0.78,
                     }}
                   />
@@ -837,7 +826,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       className={`text-[10px] font-mono font-semibold tracking-wider uppercase shrink-0 ${
                         isBespoke ? 'text-blue-500' : 'font-bold'
                       }`}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       {receiptExport.dateLabel || 'TODAY'}
                     </span>
@@ -855,16 +844,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     className={`mt-3 inline-block px-2.5 py-0.5 text-[10px] tracking-widest uppercase ${
                       isBespoke
                         ? 'rounded-sm bg-blue-600 text-white font-sans font-semibold'
-                        : 'rounded-md font-black font-mono'
+                        : 'rounded-md obsidian-pill-active font-black font-mono'
                     }`}
-                    style={
-                      isBespoke
-                        ? undefined
-                        : {
-                            backgroundColor: '#F59E0B',
-                            color: '#09090B',
-                          }
-                    }
                   >
                     {FOCUS_RECEIPT_PERIOD_LABELS[period].title}
                   </div>
@@ -944,7 +925,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       className={`text-xl font-semibold font-mono tabular-nums mt-0.5 ${
                         isBespoke ? 'text-blue-400' : 'font-bold'
                       }`}
-                      style={isBespoke ? undefined : { color: '#F59E0B' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       {currentStreak} DAYS
                     </div>
@@ -972,7 +953,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       className={`text-xl font-semibold font-mono tabular-nums mt-0.5 ${
                         isBespoke ? 'text-blue-400' : 'font-bold'
                       }`}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #34D399)' }}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       {periodStats.completionRate}%
                     </div>
@@ -1033,7 +1014,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                         <div className="text-neutral-300">
                           NEXT UNLOCK: COMPLETE 1H LOCK -&gt; GETTING STARTED
                         </div>
-                        <div className={isBespoke ? 'text-blue-400' : 'text-amber-400'}>
+                        <div
+                          className={isBespoke ? 'text-blue-400' : ''}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        >
                           SUPPORTER CREST: MIN RS.50 1ST TIP -&gt; ZERO-SUPPORTER
                         </div>
                       </div>
@@ -1072,7 +1056,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     ? undefined
                     : {
                         boxShadow:
-                          '0 0 20px rgba(var(--accent-rgb, 245, 158, 11), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28)',
+                          '0 0 20px rgba(var(--accent-rgb, 255, 255, 255), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28)',
                       }
                 }
               >

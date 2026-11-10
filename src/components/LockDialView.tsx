@@ -10,7 +10,12 @@ import type {
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
-import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
+import {
+  DEFAULT_SESSION_TAGS,
+  mergeHashtagList,
+  normalizeCustomHashtag,
+} from '../utils/bagLayout';
+import { ProfileAvatar } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
@@ -41,6 +46,8 @@ interface LockDialViewProps {
   activeBag: OccasionBag;
   permissions: NativePermissionStatus;
   profile: ZeroProfile | null;
+  customHashtags?: string[];
+  onAddCustomHashtag?: (tag: string) => string | null;
   isZeroSupporter: boolean;
   sessions: SessionRecord[];
   hasClaimedFirstTimeParachute: boolean;
@@ -72,9 +79,353 @@ const PRESET_DURATIONS = [
   { label: '24h', seconds: 1440 * 60, desc: 'Full Detox' },
 ];
 
-const SESSION_TAGS: SessionTag[] = ['Deep Work', 'Study', 'Family', 'Sleep', 'Detox'];
 const MIN_SECS = 5 * 60;
 const MAX_SECS = 24 * 3600;
+const DIAL_ARC_CIRCUMFERENCE = 829.38;
+const UNTIL_TIME_FMT = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+function formatDialTime(secs: number): string {
+  const hours = Math.floor(secs / 3600);
+  const mins = Math.floor((secs % 3600) / 60);
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours} hr${hours > 1 ? 's' : ''}`;
+  return `${mins} min`;
+}
+
+function formatUntilTime(secs: number): string {
+  return UNTIL_TIME_FMT.format(new Date(Date.now() + secs * 1000));
+}
+
+function secsToDialAngle(secs: number): number {
+  const pct = (secs - MIN_SECS) / (MAX_SECS - MIN_SECS);
+  return Math.min(360, Math.max(0, pct * 360));
+}
+
+const DialTickRing = React.memo(function DialTickRing({ isBespoke }: { isBespoke: boolean }) {
+  return (
+    <circle
+      cx="144"
+      cy="144"
+      r="132"
+      fill="none"
+      stroke={isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.14)'}
+      strokeOpacity={isBespoke ? '1' : '0.6'}
+      strokeWidth={isBespoke ? '8' : '12'}
+      strokeDasharray={isBespoke ? '1.5 8.5' : '2 10'}
+    />
+  );
+});
+
+const DialWheelSection = React.memo(function DialWheelSection({
+  durationSeconds,
+  onSelectDuration,
+  isBespoke,
+}: {
+  durationSeconds: number;
+  onSelectDuration: (secs: number) => void;
+  isBespoke: boolean;
+}) {
+  const dialRef = useRef<HTMLDivElement>(null);
+  const arcRef = useRef<SVGCircleElement>(null);
+  const knobLayerRef = useRef<HTMLDivElement>(null);
+  const durationTextRef = useRef<HTMLDivElement>(null);
+  const untilTextRef = useRef<HTMLSpanElement>(null);
+
+  const isDraggingRef = useRef<boolean>(false);
+  const dialCenterRef = useRef<{ cx: number; cy: number }>({ cx: 0, cy: 0 });
+  const latestSecsRef = useRef<number>(durationSeconds);
+  const pendingCoordsRef = useRef<{ x: number; y: number } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const lastTouchAtRef = useRef<number>(0);
+  const onSelectDurationRef = useRef(onSelectDuration);
+
+  useEffect(() => {
+    onSelectDurationRef.current = onSelectDuration;
+  }, [onSelectDuration]);
+
+  const applyDialVisuals = useCallback((secs: number) => {
+    const angle = secsToDialAngle(secs);
+    if (arcRef.current) {
+      arcRef.current.setAttribute(
+        'stroke-dasharray',
+        `${(angle / 360) * DIAL_ARC_CIRCUMFERENCE} ${DIAL_ARC_CIRCUMFERENCE}`
+      );
+    }
+    if (knobLayerRef.current) {
+      knobLayerRef.current.style.transform = `rotate(${angle}deg)`;
+    }
+    if (durationTextRef.current) {
+      durationTextRef.current.textContent = formatDialTime(secs);
+    }
+    if (untilTextRef.current) {
+      untilTextRef.current.textContent = formatUntilTime(secs);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      latestSecsRef.current = durationSeconds;
+      applyDialVisuals(durationSeconds);
+    }
+  }, [durationSeconds, applyDialVisuals]);
+
+  const computeAndApplyCoords = useCallback(
+    (clientX: number, clientY: number) => {
+      const { cx, cy } = dialCenterRef.current;
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+
+      let theta = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+      if (theta < 0) theta += 360;
+
+      const rawSecs = MIN_SECS + (theta / 360) * (MAX_SECS - MIN_SECS);
+      const steppedMins = Math.round(rawSecs / 300) * 5;
+      const clampedSecs = Math.min(MAX_SECS, Math.max(MIN_SECS, steppedMins * 60));
+
+      if (clampedSecs !== latestSecsRef.current) {
+        latestSecsRef.current = clampedSecs;
+        haptics.tick(700 + (clampedSecs / MAX_SECS) * 600);
+        applyDialVisuals(clampedSecs);
+      }
+    },
+    [applyDialVisuals]
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!dialRef.current || e.touches.length === 0) return;
+      lastTouchAtRef.current = Date.now();
+      const rect = dialRef.current.getBoundingClientRect();
+      dialCenterRef.current = {
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+      };
+      isDraggingRef.current = true;
+      dialRef.current.dataset.dialDragging = 'true';
+      computeAndApplyCoords(e.touches[0].clientX, e.touches[0].clientY);
+    },
+    [computeAndApplyCoords]
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (Date.now() - lastTouchAtRef.current < 500) return;
+      if (!dialRef.current) return;
+      const rect = dialRef.current.getBoundingClientRect();
+      dialCenterRef.current = {
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+      };
+      isDraggingRef.current = true;
+      dialRef.current.dataset.dialDragging = 'true';
+      computeAndApplyCoords(e.clientX, e.clientY);
+    },
+    [computeAndApplyCoords]
+  );
+
+  useEffect(() => {
+    const flushPending = () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      const coords = pendingCoordsRef.current;
+      pendingCoordsRef.current = null;
+      if (coords && isDraggingRef.current) {
+        computeAndApplyCoords(coords.x, coords.y);
+      }
+    };
+
+    const scheduleMove = (clientX: number, clientY: number) => {
+      if (!isDraggingRef.current) return;
+      pendingCoordsRef.current = { x: clientX, y: clientY };
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          rafIdRef.current = null;
+          const coords = pendingCoordsRef.current;
+          pendingCoordsRef.current = null;
+          if (coords && isDraggingRef.current) {
+            computeAndApplyCoords(coords.x, coords.y);
+          }
+        });
+      }
+    };
+
+    const onMouseMove = (e: MouseEvent) => scheduleMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current || e.touches.length === 0) return;
+      scheduleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const onEnd = () => {
+      if (!isDraggingRef.current) return;
+      flushPending();
+      isDraggingRef.current = false;
+      if (dialRef.current) {
+        delete dialRef.current.dataset.dialDragging;
+      }
+      haptics.thud();
+      onSelectDurationRef.current(latestSecsRef.current);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+    window.addEventListener('blur', onEnd);
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+      window.removeEventListener('blur', onEnd);
+    };
+  }, [computeAndApplyCoords]);
+
+  const initialAngle = secsToDialAngle(durationSeconds);
+
+  return (
+    <div className="my-auto flex flex-col items-center justify-center relative w-full py-2">
+      <div
+        ref={dialRef}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        className={
+          isBespoke
+            ? 'zero-dial-surface relative w-64 h-64 sm:w-72 sm:h-72 rounded-md bg-black border border-neutral-800 flex items-center justify-center cursor-grab active:cursor-grabbing'
+            : 'zero-dial-surface zero-dial-ring obsidian-dial-bezel relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
+        }
+        style={{ touchAction: 'none' }}
+      >
+        <svg
+          className={`absolute pointer-events-none ${
+            isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'inset-0 w-full h-full'
+          }`}
+          viewBox="0 0 288 288"
+        >
+          <DialTickRing isBespoke={isBespoke} />
+          <circle
+            ref={arcRef}
+            cx="144"
+            cy="144"
+            r="132"
+            fill="none"
+            stroke={isBespoke ? '#2563EB' : 'var(--accent-hex, #FFFFFF)'}
+            strokeWidth={isBespoke ? '4' : '5'}
+            strokeDasharray={`${(initialAngle / 360) * DIAL_ARC_CIRCUMFERENCE} ${DIAL_ARC_CIRCUMFERENCE}`}
+            strokeLinecap={isBespoke ? 'butt' : 'round'}
+            transform="rotate(-90 144 144)"
+            className="zero-dial-arc transition-[stroke-dasharray] duration-75"
+          />
+        </svg>
+
+        <div
+          ref={knobLayerRef}
+          className={`zero-dial-knob-layer absolute pointer-events-none transition-transform duration-75 ${
+            isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'w-full h-full'
+          }`}
+          style={{ transform: `rotate(${initialAngle}deg)` }}
+        >
+          {isBespoke ? (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-4 rounded-none bg-blue-500 border border-black" />
+          ) : (
+            <div
+              className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border"
+              style={{
+                backgroundColor: 'var(--accent-hex, #FFFFFF)',
+                borderColor: '#09090B',
+                boxShadow: '0 0 14px var(--accent-hex, rgba(255, 255, 255, 0.75))',
+              }}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
+          <span
+            className={
+              isBespoke
+                ? 'text-[11px] font-sans tracking-[0.14em] text-neutral-400 uppercase mb-1.5 font-medium'
+                : 'text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1 font-semibold'
+            }
+          >
+            Lock Duration
+          </span>
+          <div
+            ref={durationTextRef}
+            className={
+              isBespoke
+                ? 'font-mono tabular-nums text-4xl font-semibold tracking-tight text-neutral-50'
+                : 'font-mono text-4xl font-black tracking-tight text-white drop-shadow'
+            }
+          >
+            {formatDialTime(durationSeconds)}
+          </div>
+          <div
+            className={
+              isBespoke
+                ? 'flex items-center gap-1.5 mt-2 text-xs font-sans text-neutral-400'
+                : 'flex items-center gap-1.5 mt-1.5 text-xs font-mono text-zinc-400'
+            }
+          >
+            <Clock
+              size={12}
+              style={isBespoke ? undefined : { color: 'var(--accent-hex, #A1A1AA)' }}
+              className={isBespoke ? 'text-blue-500' : undefined}
+            />
+            <span>
+              Until{' '}
+              <span ref={untilTextRef} className="font-mono tabular-nums">
+                {formatUntilTime(durationSeconds)}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick-Preset Chips */}
+      <div
+        className={`flex items-center justify-center flex-wrap max-w-sm ${
+          isBespoke ? 'gap-2 mt-5' : 'gap-1.5 mt-4'
+        }`}
+      >
+        {PRESET_DURATIONS.map((preset) => (
+          <button
+            key={preset.label}
+            onClick={() => {
+              haptics.thud();
+              onSelectDuration(preset.seconds);
+            }}
+            className={
+              isBespoke
+                ? `px-3 py-1.5 text-xs font-mono tabular-nums rounded-md border transition-colors duration-75 ${
+                    durationSeconds === preset.seconds
+                      ? 'bg-blue-600 border-blue-500 text-white font-semibold'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                  }`
+                : `px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                    durationSeconds === preset.seconds
+                      ? 'obsidian-pill-active font-black'
+                      : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
+                  }`
+            }
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 export const LockDialView: React.FC<LockDialViewProps> = ({
   onIgnite,
@@ -82,6 +433,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   activeBag,
   permissions,
   profile,
+  customHashtags = [],
+  onAddCustomHashtag,
   isZeroSupporter,
   sessions,
   hasClaimedFirstTimeParachute,
@@ -106,7 +459,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
   const [customTagInput, setCustomTagInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
-  const [allTags, setAllTags] = useState<SessionTag[]>(SESSION_TAGS);
+  const [localExtraTags, setLocalExtraTags] = useState<string[]>([]);
 
   // Hold-to-lock states
   const [holdProgress, setHoldProgress] = useState<number>(0);
@@ -114,83 +467,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   const holdStartTimeRef = useRef<number | null>(null);
   const holdAnimFrameRef = useRef<number | null>(null);
 
-  const dialRef = useRef<HTMLDivElement>(null);
-  const isDraggingDial = useRef<boolean>(false);
-
-  const targetTimeStr = React.useMemo(() => {
-    const d = new Date(Date.now() + durationSeconds * 1000);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }, [durationSeconds]);
-
-  const formatDialTime = (secs: number) => {
-    const hours = Math.floor(secs / 3600);
-    const mins = Math.floor((secs % 3600) / 60);
-    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
-    if (hours > 0) return `${hours} hr${hours > 1 ? 's' : ''}`;
-    return `${mins} min`;
-  };
-
-  const currentAngle = React.useMemo(() => {
-    const pct = (durationSeconds - MIN_SECS) / (MAX_SECS - MIN_SECS);
-    return Math.min(360, Math.max(0, pct * 360));
-  }, [durationSeconds]);
-
-  const handleDialMove = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!dialRef.current) return;
-      const rect = dialRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const dx = clientX - centerX;
-      const dy = clientY - centerY;
-
-      let theta = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-      if (theta < 0) theta += 360;
-
-      const rawSecs = MIN_SECS + (theta / 360) * (MAX_SECS - MIN_SECS);
-      const steppedMins = Math.round(rawSecs / 300) * 5;
-      const clampedSecs = Math.min(MAX_SECS, Math.max(MIN_SECS, steppedMins * 60));
-
-      if (clampedSecs !== durationSeconds) {
-        haptics.tick(700 + (clampedSecs / MAX_SECS) * 600);
-        setDurationSeconds(clampedSecs);
-      }
-    },
-    [durationSeconds]
+  const allTags = useMemo(
+    () => mergeHashtagList([...customHashtags, ...localExtraTags], DEFAULT_SESSION_TAGS),
+    [customHashtags, localExtraTags]
   );
-
-  const startDialScrub = (e: React.MouseEvent | React.TouchEvent) => {
-    isDraggingDial.current = true;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    handleDialMove(clientX, clientY);
-  };
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDraggingDial.current) return;
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      handleDialMove(clientX, clientY);
-    };
-    const onEnd = () => {
-      if (isDraggingDial.current) {
-        isDraggingDial.current = false;
-        haptics.thud();
-      }
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onEnd);
-    window.addEventListener('touchmove', onMove, { passive: true });
-    window.addEventListener('touchend', onEnd);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onEnd);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onEnd);
-    };
-  }, [handleDialMove]);
 
   const HOLD_DURATION_MS = 3000;
 
@@ -250,15 +530,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
 
   const handleAddCustomTag = (e: React.FormEvent) => {
     e.preventDefault();
-    if (customTagInput.trim()) {
-      const tag = customTagInput.trim();
-      if (!allTags.includes(tag)) {
-        setAllTags([...allTags, tag]);
-      }
-      setSelectedTag(tag);
-      setCustomTagInput('');
-      setIsAddingTag(false);
-    }
+    const cleaned = normalizeCustomHashtag(customTagInput);
+    if (!cleaned) return;
+    const added = onAddCustomHashtag?.(cleaned) ?? cleaned;
+    setLocalExtraTags((prev) => mergeHashtagList([...prev, added], []));
+    setSelectedTag(added);
+    setCustomTagInput('');
+    setIsAddingTag(false);
+    haptics.tick(880);
   };
 
   const profileRank = getZeroRankFromHours(parachuteMetrics.totalReclaimedHours);
@@ -271,10 +550,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       }),
     [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
   );
-  const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-  const profileAccent = profile
-    ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
-    : ACCENT_STYLES.amber;
   const dailyGoalPct = profile
     ? Math.min(100, Math.round((todayReclaimedHours / Math.max(1, profile.dailyGoalHours)) * 100))
     : 0;
@@ -289,7 +564,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       <div className={`w-full flex items-stretch ${isBespoke ? 'gap-2' : 'gap-1.5'}`}>
         {profile ? (
           <ObsidianCard
-            accent={profileAccentKey}
             fullWidth={false}
             className="flex-1 min-w-0"
             headerClassName={
@@ -301,7 +575,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               <>
                 <ProfileAvatar
                   avatarId={profile.avatarId}
-                  accent={profile.accentColor}
                   size="sm"
                   interactive
                 />
@@ -327,7 +600,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                         className={
                           isBespoke
                             ? 'text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 shrink-0'
-                            : `text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`
+                            : 'text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 obsidian-pill-active'
                         }
                       >
                         {profileRank.title}
@@ -348,10 +621,9 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       {badgeSummary.unlockedBadges.length > 0 && (
                         <span
                           className={`inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums ${
-                            isBespoke
-                              ? 'text-blue-400 font-semibold'
-                              : 'text-amber-300 font-bold'
+                            isBespoke ? 'text-blue-400 font-semibold' : 'font-bold'
                           }`}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         >
                           <Trophy size={9} />
                           {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
@@ -377,7 +649,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                           width: `${dailyGoalPct}%`,
                           background: isBespoke
                             ? '#2563EB'
-                            : 'var(--accent-badge-gradient, #F59E0B)',
+                            : 'var(--accent-badge-gradient, #FFFFFF)',
                         }}
                       />
                     </div>
@@ -397,7 +669,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           />
         ) : (
           <ObsidianCard
-            accent={profileAccentKey}
             asButton
             fullWidth={false}
             onClick={onOpenProfileModal}
@@ -414,7 +685,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     className={`w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                       isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {hasClaimedFirstTimeParachute ? <UserPlus size={14} /> : <Gift size={14} />}
                   </div>
@@ -428,8 +699,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     </div>
                     <div
                       className={`text-[10px] truncate ${
-                        isBespoke ? 'text-neutral-400' : 'text-amber-200/80'
+                        isBespoke ? 'text-neutral-400' : ''
                       }`}
+                      style={
+                        isBespoke
+                          ? undefined
+                          : { color: 'var(--accent-hex, #FFFFFF)', opacity: 0.8 }
+                      }
                     >
                       {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
                     </div>
@@ -452,18 +728,22 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
 
         {/* Compact Escape Ticket Shortcut (left of Theme) */}
         <ObsidianCard
-          accent={profileAccentKey}
           asButton
           fullWidth={false}
           onClick={() => {
             haptics.tick(860);
             onOpenTicketModal();
           }}
+          style={
+            justEarnedParachute && !isBespoke
+              ? { boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)' }
+              : undefined
+          }
           className={`shrink-0 ${
             justEarnedParachute
               ? isBespoke
                 ? 'border-blue-500'
-                : 'ring-2 ring-amber-400/60 animate-parachute-card-pop'
+                : 'animate-parachute-card-pop'
               : ''
           }`}
           headerClassName={
@@ -497,7 +777,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       ? 'text-[11px] font-mono tabular-nums font-bold leading-none text-neutral-100'
                       : 'text-[11px] font-black leading-none'
                   }
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {parachuteMetrics.currentBalance}
                 </span>
@@ -514,7 +794,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         />
 
         <ObsidianCard
-          accent={profileAccentKey}
           asButton
           fullWidth={false}
           onClick={() => {
@@ -538,7 +817,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               >
                 <Palette
                   size={12}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   className={isBespoke ? 'text-blue-500' : undefined}
                 />
               </div>
@@ -574,7 +853,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               <div className="flex items-center gap-2 min-w-0">
                 <ShieldAlert
                   size={14}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
                 />
                 <span
@@ -803,138 +1082,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       )}
 
       {/* Center: Tactile Duration Dial Wheel */}
-      <div className="my-auto flex flex-col items-center justify-center relative w-full py-2">
-        <div
-          ref={dialRef}
-          onMouseDown={startDialScrub}
-          onTouchStart={startDialScrub}
-          className={
-            isBespoke
-              ? 'relative w-64 h-64 sm:w-72 sm:h-72 rounded-md bg-black border border-neutral-800 flex items-center justify-center cursor-grab active:cursor-grabbing'
-              : 'zero-dial-ring obsidian-dial-bezel relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
-          }
-          style={{ touchAction: 'none' }}
-        >
-          <svg
-            className={`absolute pointer-events-none ${
-              isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'inset-0 w-full h-full'
-            }`}
-            viewBox="0 0 288 288"
-          >
-            <circle
-              cx="144"
-              cy="144"
-              r="132"
-              fill="none"
-              stroke={isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.14)'}
-              strokeOpacity={isBespoke ? '1' : '0.6'}
-              strokeWidth={isBespoke ? '8' : '12'}
-              strokeDasharray={isBespoke ? '1.5 8.5' : '2 10'}
-            />
-            <circle
-              cx="144"
-              cy="144"
-              r="132"
-              fill="none"
-              stroke={isBespoke ? '#2563EB' : 'var(--accent-hex, #F59E0B)'}
-              strokeWidth={isBespoke ? '4' : '5'}
-              strokeDasharray={`${(currentAngle / 360) * 829.38} 829.38`}
-              strokeLinecap={isBespoke ? 'butt' : 'round'}
-              transform="rotate(-90 144 144)"
-              className="transition-[stroke-dasharray] duration-75"
-            />
-          </svg>
-
-          <div
-            className={`absolute pointer-events-none transition-transform duration-75 ${
-              isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'w-full h-full'
-            }`}
-            style={{ transform: `rotate(${currentAngle}deg)` }}
-          >
-            {isBespoke ? (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-4 rounded-none bg-blue-500 border border-black" />
-            ) : (
-              <div
-                className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border"
-                style={{
-                  backgroundColor: 'var(--accent-hex, #F59E0B)',
-                  borderColor: '#09090B',
-                  boxShadow: '0 0 14px var(--accent-hex, rgba(245, 158, 11, 0.75))',
-                }}
-              />
-            )}
-          </div>
-
-          <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
-            <span
-              className={
-                isBespoke
-                  ? 'text-[11px] font-sans tracking-[0.14em] text-neutral-400 uppercase mb-1.5 font-medium'
-                  : 'text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1 font-semibold'
-              }
-            >
-              Lock Duration
-            </span>
-            <div
-              className={
-                isBespoke
-                  ? 'font-mono tabular-nums text-4xl font-semibold tracking-tight text-neutral-50'
-                  : 'font-mono text-4xl font-black tracking-tight text-white drop-shadow'
-              }
-            >
-              {formatDialTime(durationSeconds)}
-            </div>
-            <div
-              className={
-                isBespoke
-                  ? 'flex items-center gap-1.5 mt-2 text-xs font-sans text-neutral-400'
-                  : 'flex items-center gap-1.5 mt-1.5 text-xs font-mono text-zinc-400'
-              }
-            >
-              <Clock
-                size={12}
-                style={isBespoke ? undefined : { color: 'var(--accent-hex, #A1A1AA)' }}
-                className={isBespoke ? 'text-blue-500' : undefined}
-              />
-              <span>
-                Until <span className="font-mono tabular-nums">{targetTimeStr}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick-Preset Chips */}
-        <div
-          className={`flex items-center justify-center flex-wrap max-w-sm ${
-            isBespoke ? 'gap-2 mt-5' : 'gap-1.5 mt-4'
-          }`}
-        >
-          {PRESET_DURATIONS.map((preset) => (
-            <button
-              key={preset.label}
-              onClick={() => {
-                haptics.thud();
-                setDurationSeconds(preset.seconds);
-              }}
-              className={
-                isBespoke
-                  ? `px-3 py-1.5 text-xs font-mono tabular-nums rounded-md border transition-colors duration-75 ${
-                      durationSeconds === preset.seconds
-                        ? 'bg-blue-600 border-blue-500 text-white font-semibold'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
-                    }`
-                  : `px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
-                      durationSeconds === preset.seconds
-                        ? 'obsidian-pill-active font-black'
-                        : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
-                    }`
-              }
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <DialWheelSection
+        durationSeconds={durationSeconds}
+        onSelectDuration={setDurationSeconds}
+        isBespoke={isBespoke}
+      />
 
       {/* Bottom Area: The 4-Bag Selector, Tags & Hold to Lock */}
       <div className={`w-full flex flex-col items-center mt-auto ${isBespoke ? 'gap-4' : 'gap-3'}`}>
@@ -1021,7 +1173,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         {/* Active Bag Card */}
         <ObsidianCard
           asButton
-          accent={profileAccentKey}
           onClick={onOpenBagDrawer}
           headerClassName={
             isBespoke
@@ -1043,7 +1194,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 >
                   <Briefcase
                     size={16}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   />
                 </div>
                 <div className="min-w-0">
@@ -1088,14 +1239,28 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           footerContent={
             <>
               <div className="flex items-center gap-3">
-                <span className="text-emerald-400 flex items-center gap-1 font-medium">
+                <span
+                  className={
+                    isBespoke
+                      ? 'text-blue-400 flex items-center gap-1 font-medium'
+                      : 'flex items-center gap-1 font-medium'
+                  }
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                >
                   <Phone size={10} /> Calls Always ON
                 </span>
                 <span
                   className={
                     activeBag.allowSms
-                      ? 'text-emerald-400 flex items-center gap-1 font-medium'
+                      ? isBespoke
+                        ? 'text-blue-400 flex items-center gap-1 font-medium'
+                        : 'flex items-center gap-1 font-medium'
                       : 'flex items-center gap-1'
+                  }
+                  style={
+                    !isBespoke && activeBag.allowSms
+                      ? { color: 'var(--accent-hex, #FFFFFF)' }
+                      : undefined
                   }
                 >
                   <MessageSquare size={10} /> {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
@@ -1135,10 +1300,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     touchAction: 'none',
                     borderColor: isHolding
                       ? 'var(--accent-hex, #FFFFFF)'
-                      : 'rgba(var(--accent-rgb, 245, 158, 11), 0.5)',
+                      : 'rgba(var(--accent-rgb, 255, 255, 255), 0.5)',
                     boxShadow: isHolding
-                      ? '0 0 28px -2px rgba(var(--accent-rgb, 245, 158, 11), 0.52), inset 0 1px 0 rgba(255,255,255,0.16)'
-                      : '0 0 22px -6px rgba(var(--accent-rgb, 245, 158, 11), 0.28), inset 0 1px 0 rgba(255,255,255,0.14)',
+                      ? '0 0 28px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.52), inset 0 1px 0 rgba(255,255,255,0.16)'
+                      : '0 0 22px -6px rgba(var(--accent-rgb, 255, 255, 255), 0.28), inset 0 1px 0 rgba(255,255,255,0.14)',
                   }
             }
           >
@@ -1148,7 +1313,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px] opacity-80"
                 style={{
                   background:
-                    'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+                    'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
                 }}
               />
             )}
@@ -1161,7 +1326,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 opacity: isHolding ? (isBespoke ? 1 : 0.96) : 0,
                 background: isBespoke
                   ? '#2563EB'
-                  : 'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+                  : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
               }}
             />
 
@@ -1200,7 +1365,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 <>
                   <ShieldAlert
                     size={18}
-                    className={isBespoke ? 'text-blue-500' : 'text-amber-400'}
+                    className={isBespoke ? 'text-blue-500' : undefined}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   />
                   <span>Grant Permissions to Lock</span>
                 </>
@@ -1209,7 +1375,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <ShieldAlert
                     size={18}
                     className={isBespoke ? 'text-blue-500' : undefined}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   />
                   <span>Hold 3s to Lock</span>
                 </>

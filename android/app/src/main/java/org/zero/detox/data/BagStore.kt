@@ -11,6 +11,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.util.Locale
 
 /**
  * BagStore:
@@ -27,12 +28,23 @@ class BagStore(private val context: Context) {
 
     companion object {
         const val PREFS_NAME = "zero_bag_store"
+        const val KEY_ACTIVE_BAG_ID = "active_bag_id"
         const val KEY_ACTIVE_BAG_NAME = "active_bag_name"
         const val KEY_ALLOW_CALLS = "allow_calls"
         const val KEY_ALLOW_SMS = "allow_sms"
         const val KEY_BAG_APPS_JSON = "bag_apps_json"
         const val KEY_BAG_APPS_COMPACT = "bag_apps_compact"
         const val MAX_BAG_APPS = 3
+
+        @JvmStatic
+        fun isWorkBag(bagId: String?, bagName: String?): Boolean {
+            val cleanId = bagId?.trim()?.lowercase(Locale.US).orEmpty()
+            if (cleanId == "bag-work" || cleanId == "work" || cleanId == "work_bag") {
+                return true
+            }
+            val cleanName = bagName?.trim()?.lowercase(Locale.US).orEmpty()
+            return cleanName == "work bag" || cleanName.contains("work")
+        }
 
         private val OBJ_PATTERN = Regex("\\{([^{}]*)\\}")
         private val PKG_PATTERN = Regex("\"packageName\"\\s*:\\s*\"([^\"]+)\"")
@@ -70,6 +82,18 @@ class BagStore(private val context: Context) {
         allowCalls: Boolean,
         allowSms: Boolean
     ) {
+        val inferredId = if (isWorkBag(null, bagName)) "bag-work" else ""
+        saveActiveBag(inferredId, bagName, appsJson, allowCalls, allowSms)
+    }
+
+    @Synchronized
+    fun saveActiveBag(
+        bagId: String,
+        bagName: String,
+        appsJson: String,
+        allowCalls: Boolean,
+        allowSms: Boolean
+    ) {
         val parsedApps = parseIncomingApps(appsJson).take(MAX_BAG_APPS)
 
         val sanitizedJson = try {
@@ -90,6 +114,7 @@ class BagStore(private val context: Context) {
         val compact = serializeCompact(parsedApps)
 
         prefs.edit()
+            .putString(KEY_ACTIVE_BAG_ID, bagId.trim())
             .putString(KEY_ACTIVE_BAG_NAME, bagName.ifBlank { "Work Bag" })
             .putBoolean(KEY_ALLOW_CALLS, true)
             .putBoolean(KEY_ALLOW_SMS, allowSms)
@@ -156,7 +181,11 @@ class BagStore(private val context: Context) {
         return list
     }
 
+    fun getActiveBagId(): String = prefs.getString(KEY_ACTIVE_BAG_ID, "") ?: ""
+
     fun getActiveBagName(): String = prefs.getString(KEY_ACTIVE_BAG_NAME, "Essentials Bag") ?: "Essentials Bag"
+
+    fun isWorkBagActive(): Boolean = isWorkBag(getActiveBagId(), getActiveBagName())
 
     fun isCallsAllowed(): Boolean = true
 

@@ -122,9 +122,6 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   return (
     <ObsidianCard
       ambientGlow
-      accentOverride={
-        isBespoke ? undefined : badgeUnlocked ? { hex: '#F59E0B', rgb: '245, 158, 11' } : undefined
-      }
       className={isBespoke ? 'font-sans' : 'font-mono'}
       headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
       footerClassName={
@@ -142,7 +139,11 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   isBespoke ? 'w-8 h-8 rounded-md text-blue-500' : 'w-7 h-7 rounded-xl'
                 }`}
               >
-                <Award size={14} className={isBespoke ? 'text-blue-500' : 'text-amber-400'} />
+                <Award
+                  size={14}
+                  className={isBespoke ? 'text-blue-500' : ''}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                />
               </div>
               <span>Donor Perks &amp; Badges</span>
             </div>
@@ -176,9 +177,12 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   badgeUnlocked
                     ? isBespoke
                       ? 'text-blue-400'
-                      : 'text-amber-300'
+                      : ''
                     : 'text-neutral-300'
                 }`}
+                style={
+                  badgeUnlocked && !isBespoke ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
               >
                 {badgeUnlocked
                   ? 'ZERO-SUPPORTER Active'
@@ -197,11 +201,16 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span
                 className={`font-semibold ${
                   hasClaimedFirstDonationParachute
-                    ? 'text-emerald-400'
+                    ? isBespoke
+                      ? 'text-blue-400'
+                      : ''
                     : isBespoke
                     ? 'text-neutral-200'
-                    : 'text-amber-300'
+                    : ''
                 }`}
+                style={
+                  !isBespoke ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
               >
                 {hasClaimedFirstDonationParachute
                   ? 'Claimed & Added'
@@ -218,7 +227,16 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span className="text-neutral-400">Cloud Backup Protection:</span>
               <span
                 className={
-                  cloudAutoBackupEnabled ? 'text-emerald-400 font-semibold' : 'text-neutral-400'
+                  cloudAutoBackupEnabled
+                    ? isBespoke
+                      ? 'text-blue-400 font-semibold'
+                      : 'font-semibold'
+                    : 'text-neutral-400'
+                }
+                style={
+                  cloudAutoBackupEnabled && !isBespoke
+                    ? { color: 'var(--accent-hex, #FFFFFF)' }
+                    : undefined
                 }
               >
                 {cloudAutoBackupEnabled ? 'Auto-Syncing (.zbak)' : 'Manual / Export JSON'}
@@ -237,8 +255,9 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             >
               <div
                 className={`flex items-center gap-1.5 text-xs font-semibold ${
-                  isBespoke ? 'text-neutral-100' : 'text-[11px] font-bold text-amber-300'
+                  isBespoke ? 'text-neutral-100' : 'text-[11px] font-bold'
                 }`}
+                style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
               >
                 <Gift
                   size={13}
@@ -248,7 +267,10 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               </div>
               <p className="text-[11px] text-neutral-300 leading-relaxed">
                 Strict Rule:{' '}
-                <strong className={isBespoke ? 'text-neutral-100' : 'text-amber-300'}>
+                <strong
+                  className={isBespoke ? 'text-neutral-100' : ''}
+                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                >
                   ZERO-SUPPORTER
                 </strong>{' '}
                 Crest &amp; <strong>+1 Free Emergency Escape Ticket</strong> unlock strictly on your{' '}
@@ -265,7 +287,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     className={
                       isBespoke
                         ? 'py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
-                        : 'py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
+                        : 'py-2 px-3 rounded-xl obsidian-pill-active font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
                     }
                   >
                     <Coffee size={12} />
@@ -278,7 +300,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     className={
                       isBespoke
                         ? 'py-2.5 px-3 rounded-md bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-xs uppercase tracking-wide transition-colors duration-75'
-                        : 'py-2 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-emerald-600/60 text-emerald-300 font-bold text-[10px] uppercase tracking-wider'
+                        : 'py-2 px-3 rounded-xl obsidian-inset hover:border-white/30 text-white font-bold text-[10px] uppercase tracking-wider'
                     }
                   >
                     Tipped ₹{FIRST_DONATION_BONUS_INR}+ Already?
@@ -289,7 +311,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   className={
                     isBespoke
                       ? 'p-3 rounded-md bg-black border border-neutral-800 space-y-2.5'
-                      : 'p-2.5 rounded-xl bg-black/80 border border-emerald-600/60 space-y-2'
+                      : 'p-2.5 rounded-xl obsidian-inset space-y-2'
                   }
                 >
                   <div className="text-[11px] text-neutral-200 leading-relaxed">
@@ -297,7 +319,8 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     <a
                       href={UPI_FIFTY_RS_PAY_URL}
                       onClick={(e) => handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL)}
-                      className={`underline ${isBespoke ? 'text-blue-400' : 'text-amber-300'}`}
+                      className={`underline ${isBespoke ? 'text-blue-400' : ''}`}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       Open ₹{FIRST_DONATION_BONUS_INR} UPI
                     </a>
@@ -313,7 +336,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                       className={
                         isBespoke
                           ? 'flex-1 py-2 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide transition-colors duration-75'
-                          : 'flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider'
+                          : 'flex-1 py-2 px-2.5 rounded-lg obsidian-pill-active font-black text-[10px] uppercase tracking-wider'
                       }
                     >
                       Confirm &amp; Activate
@@ -324,7 +347,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                       className={
                         isBespoke
                           ? 'px-3 py-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-neutral-200 text-xs font-medium transition-colors duration-75'
-                          : 'px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-bold'
+                          : 'px-2.5 py-2 rounded-lg obsidian-inset-neutral text-zinc-400 text-[10px] font-bold'
                       }
                     >
                       Back
@@ -337,9 +360,10 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             <div
               className={
                 isBespoke
-                  ? 'px-3.5 py-2.5 rounded-md bg-neutral-950 border border-emerald-800 flex items-center justify-between gap-2 text-xs text-emerald-400'
-                  : 'px-3 py-2 rounded-xl bg-emerald-950/45 border border-emerald-600/50 flex items-center justify-between gap-2 text-[10px] text-emerald-300'
+                  ? 'px-3.5 py-2.5 rounded-md bg-neutral-950 border border-blue-500/40 flex items-center justify-between gap-2 text-xs text-blue-400'
+                  : 'px-3 py-2 rounded-xl obsidian-inset flex items-center justify-between gap-2 text-[10px]'
               }
+              style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
             >
               <span className="flex items-center gap-1.5 font-semibold">
                 <CheckCircle2 size={13} />
@@ -402,8 +426,8 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <div
                 className={
                   isBespoke
-                    ? 'p-2.5 rounded-md bg-neutral-950 border border-amber-700 text-amber-300 text-[11px]'
-                    : 'p-2 rounded-xl bg-amber-950/50 border border-amber-600/60 text-amber-200 text-[10px]'
+                    ? 'p-2.5 rounded-md bg-neutral-950 border border-red-800 text-red-300 text-[11px]'
+                    : 'p-2 rounded-xl bg-red-950/50 border border-red-700/70 text-red-200 text-[10px]'
                 }
               >
                 Root / test-keys ROM / emulator detected: <code className="font-mono">ZBAK1</code> cloud backup restore is disabled; signed <code className="font-mono">ZDON1</code> donor tokens remain enabled.
@@ -416,14 +440,19 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   isBespoke
                     ? `p-3 rounded-md text-xs border leading-relaxed ${
                         tokenNotice.ok
-                          ? 'bg-neutral-950 border-emerald-700 text-emerald-300'
+                          ? 'bg-neutral-950 border-blue-500/60 text-blue-300'
                           : 'bg-neutral-950 border-red-700 text-red-300'
                       }`
                     : `p-2.5 rounded-xl text-[10px] border leading-relaxed ${
                         tokenNotice.ok
-                          ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
+                          ? 'obsidian-inset text-zinc-100'
                           : 'bg-red-950/50 border-red-700 text-red-200'
                       }`
+                }
+                style={
+                  !isBespoke && tokenNotice.ok
+                    ? { color: 'var(--accent-hex, #FFFFFF)' }
+                    : undefined
                 }
               >
                 {tokenNotice.message}
@@ -559,7 +588,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 >
                   {copiedEmail ? (
                     <>
-                      <Check size={12} style={{ color: '#34D399' }} />
+                      <Check size={12} style={{ color: isBespoke ? '#3B82F6' : '#A78BFA' }} />
                       <span>Copied</span>
                     </>
                   ) : (
@@ -582,8 +611,11 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               badgeUnlocked
                 ? isBespoke
                   ? 'text-blue-400 font-semibold'
-                  : 'text-amber-300 font-bold'
+                  : 'font-bold'
                 : 'text-neutral-400'
+            }
+            style={
+              badgeUnlocked && !isBespoke ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
             }
           >
             {badgeUnlocked ? 'Crest Active' : `Min ₹${FIRST_DONATION_BONUS_INR} Rule`}

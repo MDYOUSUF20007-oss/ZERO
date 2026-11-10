@@ -133,7 +133,6 @@ export function App() {
             style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
           >
             <ObsidianCard
-              accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
               ambientGlow={!isBespoke}
               className={isBespoke ? 'font-sans' : 'font-mono shadow-2xl'}
               headerClassName={
@@ -145,17 +144,19 @@ export function App() {
                 <>
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 text-amber-400 ${
+                      className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-md' : 'rounded-xl'
                       }`}
+                      style={{ color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }}
                     >
                       <BellRing size={17} />
                     </div>
                     <div className="min-w-0">
                       <div
-                        className={`text-xs uppercase tracking-wider text-amber-300 ${
+                        className={`text-xs uppercase tracking-wider ${
                           isBespoke ? 'font-semibold' : 'font-black'
                         }`}
+                        style={{ color: isBespoke ? '#60A5FA' : 'var(--accent-hex, #FFFFFF)' }}
                       >
                         Heads-up: Lock Starts in{' '}
                         <span className="font-mono tabular-nums">
@@ -237,6 +238,8 @@ export function App() {
             activeBag={store.activeBag}
             permissions={store.permissions}
             profile={store.profile}
+            customHashtags={store.customHashtags}
+            onAddCustomHashtag={store.addCustomHashtag}
             isZeroSupporter={store.isZeroSupporter}
             sessions={store.sessions}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
@@ -275,6 +278,7 @@ export function App() {
             ledger={store.ledger}
             sessions={store.sessions}
             profile={store.profile}
+            themeConfig={store.themeConfig}
             widgetsConfig={store.widgetsConfig}
             onWidgetsConfigChange={store.setWidgetsConfig}
             isZeroSupporter={store.isZeroSupporter}
@@ -373,6 +377,7 @@ export function App() {
         parachuteMetrics={store.parachuteMetrics}
         currentStreak={store.currentStreak}
         profile={store.profile}
+        themeConfig={store.themeConfig}
         isZeroSupporter={store.isZeroSupporter}
         onClose={() => setShowSessionFlexModal(false)}
       />
@@ -385,6 +390,10 @@ export function App() {
         isZeroSupporter={store.isZeroSupporter}
         sessions={store.sessions}
         totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
+        themeConfig={store.themeConfig}
+        onThemeConfigChange={store.setThemeConfig}
+        customHashtags={store.customHashtags}
+        onAddCustomHashtag={store.addCustomHashtag}
         isCloudBusy={store.isCloudBusy}
         environmentSecurity={store.environmentSecurity}
         onRestoreFromCloud={store.restoreBackupFromCloudPicker}
@@ -433,7 +442,7 @@ export function App() {
         }`}
         style={{
           paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
-          borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+          borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
         }}
       >
         {!isBespoke && (
@@ -442,7 +451,7 @@ export function App() {
             className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
             style={{
               background:
-                'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+                'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
               opacity: 0.75,
             }}
           />
@@ -469,13 +478,13 @@ export function App() {
           >
             <Clock
               size={17}
-              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             />
             <span
               className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
                 isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
               }`}
-              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             >
               Dial
             </span>
@@ -519,7 +528,7 @@ export function App() {
                 isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
               }`}
               style={
-                activeTab === 'dashboard' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+                activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
               }
             >
               Insights
@@ -548,7 +557,7 @@ export function App() {
             <Settings
               size={17}
               style={
-                activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+                activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
               }
             />
             <span
@@ -556,7 +565,7 @@ export function App() {
                 isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-normal'
               }`}
               style={
-                activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+                activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
               }
             >
               Settings &amp; OS
@@ -584,13 +593,13 @@ export function App() {
           >
             <Heart
               size={17}
-              style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+              style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             />
             <span
               className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
                 isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
               }`}
-              style={activeTab === 'support' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+              style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             >
               Support
             </span>

@@ -728,6 +728,38 @@ public class LockEngineUnitTest {
         assertTrue(VoidThemeStore.isBespokeStyle(fakeContext));
         VoidThemeStore.saveInterfaceStyle(fakeContext, "unexpected-value");
         assertEquals("classic", VoidThemeStore.loadInterfaceStyle(fakeContext));
+
+        int liftedInk = VoidThemeStore.ensureReadableOnBlack(0xFF1F2937);
+        assertTrue(
+            "Dark Kindle ink should lift luminance for legibility on pure black Void screen",
+            VoidThemeStore.relativeLuminance(liftedInk) > VoidThemeStore.relativeLuminance(0xFF1F2937)
+        );
+        assertEquals(0xFFF59E0B, VoidThemeStore.ensureReadableOnBlack(0xFFF59E0B));
+    }
+
+    @Test
+    public void bagStore_tracksBagIdAndDetectsWorkBagForLockLayout() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        assertTrue(BagStore.isWorkBag("bag-work", "Custom Name"));
+        assertTrue(BagStore.isWorkBag("bag-2", "Work Bag"));
+        assertTrue(BagStore.isWorkBag("", "Morning Work"));
+        assertFalse(BagStore.isWorkBag("bag-study", "Study Bag"));
+
+        BagStore bagStore = new BagStore(fakeContext);
+        bagStore.saveActiveBag("bag-work", "Work Bag", "[]", true, false);
+        assertEquals("bag-work", bagStore.getActiveBagId());
+        assertTrue(bagStore.isWorkBagActive());
+
+        bagStore.saveActiveBag("bag-study", "Study Bag", "[]", true, false);
+        assertEquals("bag-study", bagStore.getActiveBagId());
+        assertFalse(bagStore.isWorkBagActive());
     }
 
     @Test

@@ -481,6 +481,21 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
+    fun setBagStateWithIdJson(
+        bagId: String,
+        bagName: String,
+        appsJson: String,
+        allowCalls: Boolean,
+        allowSms: Boolean
+    ) {
+        val security = AppSecurityGuard.evaluateEnvironment(activity)
+        if (security.presetBagEditingDisabled) {
+            return
+        }
+        bagStore.saveActiveBag(bagId, bagName, appsJson, allowCalls, allowSms)
+    }
+
+    @JavascriptInterface
     fun getBagStateJson(): String {
         val arr = JSONArray()
         for (app in bagStore.getBagApps()) {
@@ -492,6 +507,7 @@ class ZeroNativeBridge(
             )
         }
         return JSONObject().apply {
+            put("bagId", bagStore.getActiveBagId())
             put("bagName", bagStore.getActiveBagName())
             put("allowCalls", bagStore.isCallsAllowed())
             put("allowSms", bagStore.isSmsAllowed())

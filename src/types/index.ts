@@ -255,9 +255,28 @@ export type AmoledGradientId =
   | 'aurora'
   | 'cosmic'
   | 'crimson'
-  | 'cobalt';
+  | 'cobalt'
+  | 'solar_gold'
+  | 'jade_matrix'
+  | 'indigo_abyss'
+  | 'rose_quartz'
+  | 'arctic_teal'
+  | 'bronze_dusk'
+  | 'vermilion_heat'
+  | 'graphite_silver';
 
-export type KindlePaperPresetId = 'classic' | 'warm' | 'sage' | 'slate' | 'blush' | 'custom';
+export type KindlePaperPresetId =
+  | 'classic'
+  | 'warm'
+  | 'sage'
+  | 'slate'
+  | 'blush'
+  | 'parchment'
+  | 'matcha'
+  | 'cobalt_ink'
+  | 'plum_ink'
+  | 'charcoal_ink'
+  | 'custom';
 
 export type MatteStudioPresetId =
   | 'graphite'
@@ -265,6 +284,11 @@ export type MatteStudioPresetId =
   | 'nordic'
   | 'olive'
   | 'espresso'
+  | 'obsidian_gold'
+  | 'steel_blue'
+  | 'terracotta'
+  | 'amethyst'
+  | 'alpine_mint'
   | 'custom';
 
 export interface ThemeConfig {
@@ -316,6 +340,7 @@ export interface ZeroNativeBridgeInterface {
   requestNextMissingPermission(): void;
   getInstalledAppsJson(): string;
   setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
+  setBagStateWithIdJson?(bagId: string, bagName: string, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
   getBagStateJson(): string;
   shareImageBase64(base64Png: string, fileName: string, caption: string): void;
   exportBackupJson(jsonContent: string, fileName: string): void;

@@ -1,16 +1,39 @@
 /**
  * Tactile Sound Synthesizer & Web Haptics Engine for Zero
  * Synthesizes crisp clicks, mechanical detents, and escalating charge hums without external audio files.
+ * Optimized for low CPU/battery load during continuous dial spinning:
+ * - Throttles tick audio (>=45ms) & haptic vibrate (>=95ms) to avoid Binder/WebAudio flooding
+ * - Disconnects completed OscillatorNode/GainNode graphs via onended
+ * - Automatically suspends AudioContext after idle delay so the audio thread sleeps
  */
 class HapticsEngine {
   private ctx: AudioContext | null = null;
   private holdOsc: OscillatorNode | null = null;
+  private holdFilter: BiquadFilterNode | null = null;
   private holdGain: GainNode | null = null;
+  private idleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastTickAudioMs = 0;
+  private lastTickVibrateMs = 0;
+
+  private scheduleIdleSuspend() {
+    if (this.idleSuspendTimer) {
+      clearTimeout(this.idleSuspendTimer);
+    }
+    this.idleSuspendTimer = setTimeout(() => {
+      this.idleSuspendTimer = null;
+      if (this.holdOsc) return;
+      if (this.ctx && this.ctx.state === 'running') {
+        this.ctx.suspend().catch(() => {});
+      }
+    }, 1800);
+  }
 
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -18,13 +41,40 @@ class HapticsEngine {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+    if (this.ctx) {
+      this.scheduleIdleSuspend();
+    }
     return this.ctx;
   }
 
-  // Dial Scrub Click (short metallic/detent tick)
+  private cleanupAfterPlay(osc: OscillatorNode, gain: GainNode) {
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+      } catch {
+        // Ignored
+      }
+      try {
+        gain.disconnect();
+      } catch {
+        // Ignored
+      }
+    };
+  }
+
+  // Dial Scrub Click (short metallic/detent tick, throttled to prevent CPU/Binder saturation)
   tick(frequency = 900) {
     try {
-      if (navigator.vibrate) navigator.vibrate(8);
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+      if (navigator.vibrate && now - this.lastTickVibrateMs >= 95) {
+        this.lastTickVibrateMs = now;
+        navigator.vibrate(5);
+      }
+
+      if (now - this.lastTickAudioMs < 45) return;
+      this.lastTickAudioMs = now;
+
       const ctx = this.getContext();
       if (!ctx) return;
 
@@ -35,11 +85,12 @@ class HapticsEngine {
       osc.frequency.setValueAtTime(frequency, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.015);
 
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.cleanupAfterPlay(osc, gain);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.018);
@@ -51,7 +102,12 @@ class HapticsEngine {
   // Heavy Detent Thud (e.g. Presets or 1-hour intervals)
   thud() {
     try {
-      if (navigator.vibrate) navigator.vibrate(20);
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (navigator.vibrate && now - this.lastTickVibrateMs >= 75) {
+        this.lastTickVibrateMs = now;
+        navigator.vibrate(16);
+      }
+
       const ctx = this.getContext();
       if (!ctx) return;
 
@@ -62,11 +118,12 @@ class HapticsEngine {
       osc.frequency.setValueAtTime(160, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.04);
 
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.setValueAtTime(0.32, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.cleanupAfterPlay(osc, gain);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.05);
@@ -75,7 +132,7 @@ class HapticsEngine {
     }
   }
 
-  // Escalating hold-to-lock hum (starts at 120Hz, rises to 520Hz over 3s)
+  // Escalating hold-to-lock hum (starts at 110Hz, rises to 600Hz over 3s)
   startHoldCharge() {
     try {
       if (navigator.vibrate) navigator.vibrate([15, 60, 20, 60, 30, 60, 40]);
@@ -94,7 +151,6 @@ class HapticsEngine {
       gain.gain.setValueAtTime(0.01, ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 3.0);
 
-      // Low pass filter to warm up the brutalist tone
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(300, ctx.currentTime);
@@ -106,6 +162,7 @@ class HapticsEngine {
 
       osc.start();
       this.holdOsc = osc;
+      this.holdFilter = filter;
       this.holdGain = gain;
     } catch {
       // Ignored
@@ -119,9 +176,16 @@ class HapticsEngine {
         this.holdOsc.disconnect();
         this.holdOsc = null;
       }
+      if (this.holdFilter) {
+        this.holdFilter.disconnect();
+        this.holdFilter = null;
+      }
       if (this.holdGain) {
         this.holdGain.disconnect();
         this.holdGain = null;
+      }
+      if (this.ctx) {
+        this.scheduleIdleSuspend();
       }
     } catch {
       // Ignored
@@ -148,6 +212,7 @@ class HapticsEngine {
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.cleanupAfterPlay(osc, gain);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.13);
@@ -163,7 +228,6 @@ class HapticsEngine {
       const ctx = this.getContext();
       if (!ctx) return;
 
-      // Descending warning alert
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -176,6 +240,7 @@ class HapticsEngine {
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+      this.cleanupAfterPlay(osc, gain);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.26);
@@ -204,6 +269,7 @@ class HapticsEngine {
 
         osc.connect(gain);
         gain.connect(ctx.destination);
+        this.cleanupAfterPlay(osc, gain);
 
         osc.start(ctx.currentTime + idx * 0.08);
         osc.stop(ctx.currentTime + idx * 0.08 + 0.65);

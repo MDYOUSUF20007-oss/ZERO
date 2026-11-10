@@ -3,6 +3,7 @@ import type { ParachuteRewardEvent } from '../types';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ObsidianCard } from './ObsidianCard';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
+import { mixHexColors } from '../utils/themes';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
 import { Sparkles, X, CheckCircle2, Ticket } from 'lucide-react';
@@ -26,11 +27,18 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
     setTappedPulse(true);
     setTimeout(() => setTappedPulse(false), isBespoke ? 180 : 600);
     try {
+      const liveAccent =
+        (typeof document !== 'undefined'
+          ? getComputedStyle(document.documentElement).getPropertyValue('--accent-hex').trim()
+          : '') || '#FFFFFF';
+      const confettiHex = liveAccent.startsWith('#') ? liveAccent : '#FFFFFF';
       confetti({
         particleCount: 70,
         spread: 65,
         origin: { y: 0.55 },
-        colors: isBespoke ? ['#FFFFFF', '#2563EB', '#3B82F6'] : ['#FFFFFF', '#F59E0B', '#10B981'],
+        colors: isBespoke
+          ? ['#FFFFFF', '#2563EB', '#3B82F6']
+          : ['#FFFFFF', confettiHex, mixHexColors(confettiHex, '#FFFFFF', 0.38)],
       });
     } catch {
       // Ignore in headless environments
@@ -47,7 +55,11 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
   const shimmerOverlay = (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-400/15 to-transparent animate-parachute-shimmer"
+      className="pointer-events-none absolute inset-0 -translate-x-full animate-parachute-shimmer"
+      style={{
+        background:
+          'linear-gradient(90deg, transparent, rgba(var(--accent-rgb, 255, 255, 255), 0.16), transparent)',
+      }}
     />
   );
 
@@ -65,7 +77,6 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
         aria-label="Escape Ticket Unlocked Celebration"
       >
         <ObsidianCard
-          accent="Amber"
           onClick={(e) => e?.stopPropagation()}
           className="w-full max-w-sm font-sans"
           headerClassName="p-6 text-center space-y-5 relative"
@@ -131,7 +142,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
                     <span className="font-sans text-xs font-normal text-neutral-400">Ready</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[10px] font-semibold uppercase bg-black border border-emerald-500/40 px-2.5 py-1 rounded-sm shrink-0">
+                <div className="flex items-center gap-1.5 text-blue-400 font-mono text-[10px] font-semibold uppercase bg-black border border-blue-500/40 px-2.5 py-1 rounded-sm shrink-0">
                   <CheckCircle2 size={12} />
                   <span>Added to Vault</span>
                 </div>
@@ -164,7 +175,6 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
       aria-label="Escape Ticket Unlocked Celebration"
     >
       <ObsidianCard
-        accent="Amber"
         ambientGlow
         overlays={shimmerOverlay}
         onClick={(e) => e?.stopPropagation()}
@@ -196,11 +206,13 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
             <div className="relative h-32 flex items-center justify-center">
               <div
                 aria-hidden="true"
-                className="absolute w-28 h-28 rounded-full border border-amber-400/40 animate-ring-burst"
+                className="absolute w-28 h-28 rounded-full border animate-ring-burst"
+                style={{ borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.42)' }}
               />
               <div
                 aria-hidden="true"
-                className="absolute w-24 h-24 rounded-full bg-amber-500/15 blur-xl"
+                className="absolute w-24 h-24 rounded-full blur-xl"
+                style={{ backgroundColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.16)' }}
               />
               <button
                 type="button"
@@ -211,7 +223,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
                 <span className="text-5xl animate-parachute-float select-none" aria-hidden="true">
                   🎫
                 </span>
-                <span className="absolute -top-2.5 -right-2.5 px-2 py-0.5 rounded-full bg-emerald-400 text-black text-[11px] font-black shadow-md border border-black">
+                <span className="absolute -top-2.5 -right-2.5 px-2 py-0.5 rounded-full obsidian-pill-active text-[11px] font-black shadow-md">
                   +{reward.delta}
                 </span>
               </button>
@@ -240,12 +252,22 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
                 <div className="text-[10px] uppercase tracking-wider text-zinc-400">
                   Escape Ticket Balance
                 </div>
-                <div className="text-xl font-black text-amber-300 flex items-center gap-1.5">
+                <div
+                  className="text-xl font-black flex items-center gap-1.5"
+                  style={{ color: 'var(--accent-hex, #FFFFFF)' }}
+                >
                   <span>{reward.newBalance}</span>
                   <span className="text-xs font-normal text-zinc-400">Ready</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-bold bg-emerald-950/70 border border-emerald-700/60 px-2.5 py-1 rounded-xl">
+              <div
+                className="flex items-center gap-1 text-[11px] font-bold border px-2.5 py-1 rounded-xl"
+                style={{
+                  background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                  borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.4)',
+                  color: 'var(--accent-hex, #FFFFFF)',
+                }}
+              >
                 <CheckCircle2 size={13} />
                 <span>Added to Vault</span>
               </div>

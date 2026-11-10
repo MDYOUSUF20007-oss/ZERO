@@ -91,7 +91,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 >
                   <Briefcase
                     size={17}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   />
                 </div>
                 <div>
@@ -126,11 +126,11 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
               <div
                 className={
                   isBespoke
-                    ? 'p-3 rounded-md bg-neutral-950 border border-amber-700 text-amber-300 text-xs leading-relaxed flex items-start gap-2 shrink-0'
-                    : 'p-2.5 rounded-2xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px] leading-relaxed flex items-start gap-2 shrink-0'
+                    ? 'p-3 rounded-md bg-neutral-950 border border-red-700 text-red-300 text-xs leading-relaxed flex items-start gap-2 shrink-0'
+                    : 'p-2.5 rounded-2xl bg-red-950/60 border border-red-500/70 text-red-200 text-[10px] leading-relaxed flex items-start gap-2 shrink-0'
                 }
               >
-                <ShieldAlert size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                <ShieldAlert size={14} className="text-red-400 shrink-0 mt-0.5" />
                 <span>
                   <strong>Preset Bag Editing Disabled:</strong> Root access, test-keys ROM, or debug emulator detected. Bags are locked to prevent bypass tampering.
                 </span>
@@ -271,21 +271,39 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div
+                    style={
+                      isBespoke
+                        ? undefined
+                        : {
+                            backgroundColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                            borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.55)',
+                          }
+                    }
                     className={
                       isBespoke
-                        ? 'p-3 rounded-md border bg-neutral-950 border-emerald-800 text-emerald-300 text-left flex items-center justify-between gap-1.5'
-                        : 'p-3 rounded-2xl border bg-emerald-950/35 border-emerald-500/50 text-emerald-200 text-left flex items-center justify-between gap-1.5'
+                        ? 'p-3 rounded-md border bg-neutral-950 border-blue-500/60 text-blue-300 text-left flex items-center justify-between gap-1.5'
+                        : 'p-3 rounded-2xl border text-white text-left flex items-center justify-between gap-1.5'
                     }
                     title="Phone Calls remain compulsory and always accessible even if not in the bag"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Phone size={15} className="shrink-0" />
+                      <Phone
+                        size={15}
+                        className={isBespoke ? 'shrink-0 text-blue-400' : 'shrink-0'}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
                       <div className="min-w-0">
                         <div className="text-xs font-semibold truncate">Phone Calls</div>
-                        <div className="text-[10px] opacity-85 truncate">Compulsory • ON</div>
+                        <div className="text-[10px] opacity-85 truncate text-zinc-300">
+                          Compulsory • ON
+                        </div>
                       </div>
                     </div>
-                    <Lock size={13} className="shrink-0 text-emerald-400 opacity-90" />
+                    <Lock
+                      size={13}
+                      className={isBespoke ? 'shrink-0 text-blue-400 opacity-90' : 'shrink-0 opacity-90'}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    />
                   </div>
 
                   <button
@@ -294,22 +312,38 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                     onClick={() =>
                       onUpdateBag(selectedBag.id, (b) => ({ ...b, allowSms: !b.allowSms }))
                     }
+                    style={
+                      !isBespoke && selectedBag.allowSms
+                        ? {
+                            backgroundColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.12)',
+                            borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.55)',
+                          }
+                        : undefined
+                    }
                     className={
                       isBespoke
                         ? `p-3 rounded-md border text-left transition-colors duration-75 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
                             selectedBag.allowSms
-                              ? 'bg-neutral-950 border-emerald-800 text-emerald-300'
+                              ? 'bg-neutral-950 border-blue-500/60 text-blue-300'
                               : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
                           }`
                         : `p-3 rounded-2xl border text-left transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
                             selectedBag.allowSms
-                              ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
+                              ? 'text-white'
                               : 'bg-zinc-900/50 border-white/10 text-zinc-400'
                           }`
                     }
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare size={15} />
+                      <MessageSquare
+                        size={15}
+                        className={isBespoke && selectedBag.allowSms ? 'text-blue-400' : undefined}
+                        style={
+                          !isBespoke && selectedBag.allowSms
+                            ? { color: 'var(--accent-hex, #FFFFFF)' }
+                            : undefined
+                        }
+                      />
                       <div>
                         <div className="text-xs font-semibold">Normal Texts</div>
                         <div className="text-[10px] opacity-80">
@@ -317,7 +351,13 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    {selectedBag.allowSms && <Check size={14} />}
+                    {selectedBag.allowSms && (
+                      <Check
+                        size={14}
+                        className={isBespoke ? 'text-blue-400' : undefined}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      />
+                    )}
                   </button>
                 </div>
               </div>
@@ -334,8 +374,9 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                   </span>
                   <span
                     className={`font-mono tabular-nums ${
-                      isBespoke ? 'text-blue-400' : 'text-amber-300'
+                      isBespoke ? 'text-blue-400' : ''
                     }`}
+                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     Max {MAX_BAG_APPS}
                   </span>

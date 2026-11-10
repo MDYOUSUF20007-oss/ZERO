@@ -15,6 +15,7 @@ import android.view.View
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
@@ -35,8 +36,8 @@ object VoidThemeStore {
     const val STYLE_CLASSIC = "classic"
     const val DEFAULT_INTERFACE_STYLE = STYLE_CLASSIC
 
-    const val DEFAULT_ACCENT_HEX = "#F59E0B"
-    const val DEFAULT_ACCENT_RGB = "245, 158, 11"
+    const val DEFAULT_ACCENT_HEX = "#FFFFFF"
+    const val DEFAULT_ACCENT_RGB = "255, 255, 255"
     const val DEFAULT_BADGE_TEXT_HEX = "#09090B"
 
     data class VoidAccentConfig(
@@ -106,6 +107,23 @@ object VoidThemeStore {
         val g = (g0 + (255 - g0) * t).roundToInt().coerceIn(0, 255)
         val b = (b0 + (255 - b0) * t).roundToInt().coerceIn(0, 255)
         return (a shl 24) or (r shl 16) or (g shl 8) or b
+    }
+
+    @JvmStatic
+    fun relativeLuminance(color: Int): Double {
+        fun linearChannel(c: Int): Double {
+            val s = (c and 0xFF) / 255.0
+            return if (s <= 0.03928) s / 12.92 else ((s + 0.055) / 1.055).pow(2.4)
+        }
+        val r = linearChannel(color ushr 16)
+        val g = linearChannel(color ushr 8)
+        val b = linearChannel(color)
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+
+    @JvmStatic
+    fun ensureReadableOnBlack(color: Int): Int {
+        return if (relativeLuminance(color) < 0.24) lightenColor(color, 0.48f) else color
     }
 
     @JvmStatic

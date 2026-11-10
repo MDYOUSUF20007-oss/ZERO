@@ -152,9 +152,20 @@ export const AchievementBadgePill: React.FC<{
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[9px] font-black uppercase tracking-wide ${
         badge.unlocked
-          ? style.pill
+          ? badge.tierColor === 'gold'
+            ? style.pill
+            : 'border'
           : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
       }`}
+      style={
+        badge.unlocked && badge.tierColor !== 'gold'
+          ? {
+              background: 'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+              borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.55)',
+              color: 'var(--accent-hex, #FFFFFF)',
+            }
+          : undefined
+      }
     >
       {badge.unlocked ? renderBadgeIcon(badge.id, 10) : <Lock size={9} />}
       <span>{badge.title}</span>
@@ -169,6 +180,7 @@ export const AchievementBadgeCard: React.FC<{
 }> = ({ badge, isSelected = false, onSelect }) => {
   const { isBespoke } = useInterfaceStyle();
   const style = TIER_STYLES[badge.tierColor];
+  const isGoldUnlocked = badge.unlocked && badge.tierColor === 'gold';
 
   if (isBespoke) {
     return (
@@ -208,7 +220,7 @@ export const AchievementBadgeCard: React.FC<{
           <span
             className={`font-mono tabular-nums text-[10px] font-semibold uppercase px-2 py-0.5 rounded-sm border shrink-0 ${
               badge.unlocked
-                ? 'bg-neutral-950 text-emerald-400 border-emerald-500/50'
+                ? 'bg-neutral-950 text-blue-400 border-blue-500/50'
                 : 'bg-black border-neutral-800 text-neutral-400'
             }`}
           >
@@ -245,7 +257,9 @@ export const AchievementBadgeCard: React.FC<{
       onClick={onSelect}
       className={`w-full text-left p-3 rounded-2xl border transition-all font-mono space-y-2 active:scale-[0.99] ${
         badge.unlocked
-          ? style.unlockedBox
+          ? isGoldUnlocked
+            ? style.unlockedBox
+            : 'obsidian-inset'
           : 'obsidian-inset-neutral hover:border-white/25 opacity-90'
       } ${isSelected ? 'ring-1 ring-white/50' : ''}`}
     >
@@ -253,7 +267,11 @@ export const AchievementBadgeCard: React.FC<{
         <div className="flex items-center gap-2 min-w-0">
           <div
             className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
-              badge.unlocked ? style.iconBg : 'obsidian-inset-neutral text-zinc-400'
+              badge.unlocked
+                ? isGoldUnlocked
+                  ? style.iconBg
+                  : 'obsidian-pill-active'
+                : 'obsidian-inset-neutral text-zinc-400'
             }`}
           >
             {badge.unlocked ? renderBadgeIcon(badge.id, 14) : <Lock size={12} />}
@@ -261,8 +279,17 @@ export const AchievementBadgeCard: React.FC<{
           <div className="min-w-0">
             <div
               className={`text-[11px] font-black uppercase tracking-wide truncate ${
-                badge.unlocked ? style.label : 'text-zinc-300'
+                badge.unlocked
+                  ? isGoldUnlocked
+                    ? style.label
+                    : ''
+                  : 'text-zinc-300'
               }`}
+              style={
+                badge.unlocked && !isGoldUnlocked
+                  ? { color: 'var(--accent-hex, #FFFFFF)' }
+                  : undefined
+              }
             >
               {badge.title}
             </div>
@@ -274,9 +301,9 @@ export const AchievementBadgeCard: React.FC<{
         <span
           className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${
             badge.unlocked
-              ? badge.tierColor === 'gold'
+              ? isGoldUnlocked
                 ? 'bg-amber-400 text-black'
-                : 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+                : 'obsidian-pill-active'
               : 'obsidian-inset-neutral text-zinc-400'
           }`}
         >
@@ -288,8 +315,13 @@ export const AchievementBadgeCard: React.FC<{
         <div className="space-y-1">
           <div className="w-full h-1.5 rounded-full obsidian-inset-neutral overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${style.bar}`}
-              style={{ width: `${badge.progressPct}%` }}
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${badge.progressPct}%`,
+                background: isGoldUnlocked
+                  ? '#FBBF24'
+                  : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+              }}
             />
           </div>
           <div className="text-[9px] text-zinc-400">{badge.progressText}</div>

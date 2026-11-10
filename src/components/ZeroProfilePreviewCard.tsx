@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ACCENT_THEMES,
   ZeroEmblemIcon,
   type AccentKey,
   type EmblemKey,
@@ -14,7 +13,7 @@ export interface ZeroProfilePreviewCardProps {
   callsign: string; // e.g., "MDYOUSUF"
   handle: string; // e.g., "@mdyousuf"
   emblem: EmblemKey; // e.g., "Ember"
-  accent: AccentKey; // e.g., "Amber"
+  accent?: AccentKey; // Deprecated legacy field; Theme Studio drives active colors
   mission: string; // e.g., "#Deep Work"
   dailyGoalHours: number; // Dynamically bound to slider! e.g., 4 -> shows "4h/day"
   pledge: string; // e.g., "Put your phone facedown. Reclaim your hours."
@@ -26,7 +25,6 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   callsign,
   handle,
   emblem,
-  accent,
   mission,
   dailyGoalHours,
   pledge,
@@ -34,7 +32,6 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   isZeroSupporter = false,
 }) => {
   const { isBespoke } = useInterfaceStyle();
-  const theme = ACCENT_THEMES[accent] || ACCENT_THEMES.Amber;
   const formattedHandle = handle.trim()
     ? handle.trim().startsWith('@')
       ? handle.trim()
@@ -47,7 +44,6 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   if (isBespoke) {
     return (
       <ObsidianCard
-        accent={accent}
         className="my-3"
         headerClassName="p-5"
         footerClassName="px-5 py-3"
@@ -96,8 +92,6 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
 
   return (
     <ObsidianCard
-      accent={accent}
-      forceAccent
       ambientGlow
       className="my-3"
       headerClassName="px-4 pt-4 pb-3.5"
@@ -108,12 +102,14 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
           <div
             className="relative flex-shrink-0 w-[60px] h-[60px] rounded-2xl flex items-center justify-center transition-all duration-300"
             style={{
-              background: `radial-gradient(circle at 50% 35%, rgba(${theme.rgb}, 0.2), rgba(10, 10, 12, 0.96))`,
-              border: `1.5px solid rgba(${theme.rgb}, 0.65)`,
-              boxShadow: `0 0 18px -2px rgba(${theme.rgb}, 0.35), inset 0 0 0 2px rgba(${theme.rgb}, 0.18), inset 0 0 10px rgba(${theme.rgb}, 0.15)`,
+              background:
+                'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.2), rgba(10, 10, 12, 0.96))',
+              border: '1.5px solid rgba(var(--accent-rgb, 255, 255, 255), 0.65)',
+              boxShadow:
+                '0 0 18px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.35), inset 0 0 0 2px rgba(var(--accent-rgb, 255, 255, 255), 0.18), inset 0 0 10px rgba(var(--accent-rgb, 255, 255, 255), 0.15)',
             }}
           >
-            <ZeroEmblemIcon emblem={emblem} color={theme.hex} size={28} />
+            <ZeroEmblemIcon emblem={emblem} color="var(--accent-hex, #FFFFFF)" size={28} />
           </div>
 
           {/* Center: Callsign + Rank Pill + Handle & Mission */}
@@ -123,11 +119,9 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
                 {callsign.trim() || 'ANONYMOUS'}
               </span>
               <span
-                className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase shadow-sm"
+                className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase shadow-sm obsidian-pill-active"
                 style={{
-                  background: theme.badgeGradient,
-                  color: theme.badgeText,
-                  boxShadow: `0 0 12px rgba(${theme.rgb}, 0.35)`,
+                  boxShadow: '0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
                 }}
               >
                 {rankTitle}
@@ -138,7 +132,9 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
             <p className="mt-1 text-xs font-mono text-zinc-400 truncate">
               <span>{formattedHandle}</span>
               <span className="mx-1.5 text-zinc-600">•</span>
-              <span style={{ color: `rgba(${theme.rgb}, 0.9)` }}>{formattedMission}</span>
+              <span style={{ color: 'rgba(var(--accent-rgb, 255, 255, 255), 0.92)' }}>
+                {formattedMission}
+              </span>
             </p>
           </div>
 
@@ -147,13 +143,13 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
             className="flex-shrink-0 px-3 py-2 rounded-xl text-center transition-all duration-300"
             style={{
               background: 'rgba(9, 9, 11, 0.78)',
-              border: `1px solid rgba(${theme.rgb}, 0.35)`,
-              boxShadow: `inset 0 0 12px rgba(${theme.rgb}, 0.08)`,
+              border: '1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+              boxShadow: 'inset 0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.08)',
             }}
           >
             <div
               className="text-sm font-extrabold font-mono leading-none tracking-tight"
-              style={{ color: theme.hex }}
+              style={{ color: 'var(--accent-hex, #FFFFFF)' }}
             >
               {dailyGoalHours}h/day
             </div>

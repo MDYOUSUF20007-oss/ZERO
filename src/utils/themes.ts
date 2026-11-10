@@ -84,6 +84,78 @@ export const AMOLED_GRADIENTS: AmoledGradientPreset[] = [
       'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(56, 189, 248, 0.22) 0%, rgba(12, 74, 110, 0.28) 42%, #000000 80%)',
     accentHex: '#38BDF8',
   },
+  {
+    id: 'solar_gold',
+    label: 'Solar Gold',
+    tagline: 'Molten bullion champagne',
+    previewCss: 'radial-gradient(circle at 30% 20%, #CA8A04, #422006 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(250, 204, 21, 0.22) 0%, rgba(113, 63, 18, 0.28) 42%, #000000 80%)',
+    accentHex: '#FACC15',
+  },
+  {
+    id: 'jade_matrix',
+    label: 'Jade Matrix',
+    tagline: 'Mint phosphor void',
+    previewCss: 'radial-gradient(circle at 30% 20%, #0F766E, #042F2E 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(45, 212, 191, 0.22) 0%, rgba(19, 78, 74, 0.28) 42%, #000000 80%)',
+    accentHex: '#2DD4BF',
+  },
+  {
+    id: 'indigo_abyss',
+    label: 'Indigo Abyss',
+    tagline: 'Midnight prism vault',
+    previewCss: 'radial-gradient(circle at 30% 20%, #3730A3, #1E1B4B 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(129, 140, 248, 0.24) 0%, rgba(49, 46, 129, 0.30) 44%, #000000 80%)',
+    accentHex: '#818CF8',
+  },
+  {
+    id: 'rose_quartz',
+    label: 'Rose Quartz',
+    tagline: 'Velvet magenta dusk',
+    previewCss: 'radial-gradient(circle at 30% 20%, #A21CAF, #4A044E 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(244, 114, 182, 0.22) 0%, rgba(112, 26, 117, 0.28) 42%, #000000 80%)',
+    accentHex: '#F472B6',
+  },
+  {
+    id: 'arctic_teal',
+    label: 'Arctic Cyan',
+    tagline: 'Cryo glacier pulse',
+    previewCss: 'radial-gradient(circle at 30% 20%, #0E7490, #083344 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(34, 211, 238, 0.22) 0%, rgba(22, 78, 99, 0.28) 42%, #000000 80%)',
+    accentHex: '#22D3EE',
+  },
+  {
+    id: 'bronze_dusk',
+    label: 'Bronze Dusk',
+    tagline: 'Warm copper monolith',
+    previewCss: 'radial-gradient(circle at 30% 20%, #9A3412, #431407 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(251, 146, 60, 0.22) 0%, rgba(124, 45, 18, 0.28) 42%, #000000 80%)',
+    accentHex: '#FB923C',
+  },
+  {
+    id: 'vermilion_heat',
+    label: 'Vermilion Heat',
+    tagline: 'Laser coral ignition',
+    previewCss: 'radial-gradient(circle at 30% 20%, #B91C1C, #450A0A 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(248, 113, 113, 0.22) 0%, rgba(127, 29, 29, 0.28) 42%, #000000 80%)',
+    accentHex: '#F87171',
+  },
+  {
+    id: 'graphite_silver',
+    label: 'Titanium Mist',
+    tagline: 'Brushed chrome rim',
+    previewCss: 'radial-gradient(circle at 30% 20%, #52525B, #18181B 55%, #000000 100%)',
+    backgroundCss:
+      'radial-gradient(ellipse 95% 48% at 50% 0%, rgba(212, 212, 216, 0.16) 0%, rgba(39, 39, 42, 0.28) 42%, #000000 80%)',
+    accentHex: '#D4D4D8',
+  },
 ];
 
 export const KINDLE_PAPER_PRESETS: KindlePaperPreset[] = [
@@ -92,6 +164,11 @@ export const KINDLE_PAPER_PRESETS: KindlePaperPreset[] = [
   { id: 'sage', label: 'Botanical Sage', paperColor: '#E3EDE3', inkAccent: '#047857' },
   { id: 'slate', label: 'Cool E-Ink', paperColor: '#E9EDF2', inkAccent: '#1D4ED8' },
   { id: 'blush', label: 'Soft Dusk', paperColor: '#F5E9EC', inkAccent: '#9F1239' },
+  { id: 'parchment', label: 'Parchment', paperColor: '#F6EBD8', inkAccent: '#92400E' },
+  { id: 'matcha', label: 'Matcha Folio', paperColor: '#E4ECD9', inkAccent: '#3F6212' },
+  { id: 'cobalt_ink', label: 'Cobalt Ink', paperColor: '#E6ECF5', inkAccent: '#0F766E' },
+  { id: 'plum_ink', label: 'Plum Folio', paperColor: '#F2EAF4', inkAccent: '#6D28D9' },
+  { id: 'charcoal_ink', label: 'Newsprint', paperColor: '#ECECE9', inkAccent: '#18181B' },
 ];
 
 export const MATTE_STUDIO_PRESETS: MatteStudioPreset[] = [
@@ -100,6 +177,11 @@ export const MATTE_STUDIO_PRESETS: MatteStudioPreset[] = [
   { id: 'nordic', label: 'Nordic Slate', baseColor: '#131820', accentColor: '#38BDF8' },
   { id: 'olive', label: 'Dark Olive', baseColor: '#151914', accentColor: '#34D399' },
   { id: 'espresso', label: 'Espresso', baseColor: '#1C1415', accentColor: '#FB7185' },
+  { id: 'obsidian_gold', label: 'Bullion', baseColor: '#171512', accentColor: '#FACC15' },
+  { id: 'steel_blue', label: 'Steel Indigo', baseColor: '#121722', accentColor: '#818CF8' },
+  { id: 'terracotta', label: 'Terracotta', baseColor: '#1E1614', accentColor: '#F87171' },
+  { id: 'amethyst', label: 'Amethyst', baseColor: '#181420', accentColor: '#C4B5FD' },
+  { id: 'alpine_mint', label: 'Alpine Mint', baseColor: '#121A1A', accentColor: '#2DD4BF' },
 ];
 
 export const DEFAULT_THEME_CONFIG: ThemeConfig = {
@@ -195,13 +277,10 @@ export interface ActiveAccentTokens {
 
 export function resolveActiveAccentTokens(
   config: ThemeConfig,
-  profileAccentTheme: ActiveAccentTokens
+  _legacyFallback?: ActiveAccentTokens
 ): ActiveAccentTokens {
-  if (config.family === 'amoled' && config.amoledGradient === 'pure') {
-    return profileAccentTheme;
-  }
   const runtime = computeThemeRuntime(config);
-  return computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#F59E0B');
+  return computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#FFFFFF');
 }
 
 export function migrateLegacyThemeStyle(style?: ThemeStyle | null): ThemeFamily {

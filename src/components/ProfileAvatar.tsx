@@ -271,7 +271,6 @@ interface ProfileAvatarProps {
 
 export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   avatarId,
-  accent = 'amber',
   size = 'md',
   interactive = false,
   glowHighlighted = false,
@@ -279,9 +278,6 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 }) => {
   const { isBespoke } = useInterfaceStyle();
   const [pulsing, setPulsing] = useState(false);
-  const style = ACCENT_STYLES[accent] || ACCENT_STYLES.amber;
-  const accentKey = ACCENT_ID_TO_KEY[accent] || 'Amber';
-  const theme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
   const emblem = AVATAR_ID_TO_EMBLEM[avatarId] || 'Monk';
 
   const boxSize = isBespoke
@@ -297,17 +293,23 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     : 'w-11 h-11 rounded-2xl';
   const iconPx = size === 'lg' ? 28 : size === 'sm' ? 20 : 24;
 
-  const boxGlowStyle: React.CSSProperties = glowHighlighted
-    ? {
-        background: `radial-gradient(circle at 50% 35%, rgba(${theme.rgb}, 0.24), rgba(10, 10, 12, 0.96))`,
-        borderColor: `rgba(${theme.rgb}, 0.72)`,
-        boxShadow: `0 0 14px -1px rgba(${theme.rgb}, 0.42), inset 0 0 8px rgba(${theme.rgb}, 0.18)`,
-      }
-    : {
-        background: `radial-gradient(circle at 50% 35%, rgba(${theme.rgb}, 0.14), rgba(10, 10, 12, 0.94))`,
-        borderColor: `rgba(${theme.rgb}, 0.45)`,
-        boxShadow: `0 0 10px -2px rgba(${theme.rgb}, 0.2), inset 0 0 6px rgba(${theme.rgb}, 0.08)`,
-      };
+  const boxGlowStyle: React.CSSProperties =
+    glowHighlighted || pulsing
+      ? {
+          background:
+            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.24), rgba(10, 10, 12, 0.96))',
+          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.72)',
+          boxShadow: pulsing
+            ? '0 0 24px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.2)'
+            : '0 0 14px -1px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.18)',
+        }
+      : {
+          background:
+            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.14), rgba(10, 10, 12, 0.94))',
+          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+          boxShadow:
+            '0 0 10px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.2), inset 0 0 6px rgba(var(--accent-rgb, 255, 255, 255), 0.08)',
+        };
 
   const handleClick = (e: React.MouseEvent) => {
     if (!interactive) return;
@@ -356,10 +358,10 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         aria-label="Interactive profile emblem"
         style={boxGlowStyle}
         className={`${boxSize} border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${
-          style.ring
-        } ${pulsing ? `scale-110 rotate-6 ${style.glow}` : 'hover:scale-105 active:scale-95'}`}
+          pulsing ? 'scale-110 rotate-6' : 'hover:scale-105 active:scale-95'
+        }`}
       >
-        <ZeroEmblemIcon emblem={emblem} color={theme.hex} size={iconPx} />
+        <ZeroEmblemIcon emblem={emblem} color="var(--accent-hex, #FFFFFF)" size={iconPx} />
       </button>
     );
   }
@@ -367,9 +369,9 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   return (
     <div
       style={boxGlowStyle}
-      className={`${boxSize} border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${style.ring}`}
+      className={`${boxSize} border-2 flex items-center justify-center shrink-0 transition-all duration-300`}
     >
-      <ZeroEmblemIcon emblem={emblem} color={theme.hex} size={iconPx} />
+      <ZeroEmblemIcon emblem={emblem} color="var(--accent-hex, #FFFFFF)" size={iconPx} />
     </div>
   );
 };
