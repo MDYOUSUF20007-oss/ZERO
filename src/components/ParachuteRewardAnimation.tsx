@@ -76,7 +76,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
             <button
               type="button"
               onClick={onDismiss}
-              className="absolute top-3.5 right-3.5 p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white z-10"
+              className="absolute top-3.5 right-3.5 p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white z-10"
               aria-label="Close Escape Ticket Celebration"
             >
               <X size={15} />
@@ -84,7 +84,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
 
             {/* Source Badge */}
             <div className="flex justify-center">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-widest">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full obsidian-pill-active text-[10px] font-black uppercase tracking-widest">
                 <Sparkles size={12} />
                 <span>{sourceBadge}</span>
               </span>
@@ -104,7 +104,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
                 type="button"
                 onClick={handleCardBoost}
                 title="Tap to celebrate!"
-                className="relative z-10 w-24 h-24 rounded-3xl bg-zinc-900 border-2 border-amber-400/70 flex items-center justify-center shadow-[0_0_24px_rgba(245,158,11,0.4)] animate-parachute-descend active:scale-95 transition-transform cursor-pointer"
+                className="relative z-10 w-24 h-24 rounded-3xl obsidian-icon-box flex items-center justify-center animate-parachute-descend active:scale-95 transition-transform cursor-pointer"
               >
                 <span className="text-5xl animate-parachute-float select-none" aria-hidden="true">
                   🎫
@@ -133,7 +133,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
         }
         footerContent={
           <>
-            <div className="bg-black/80 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
+            <div className="obsidian-inset-neutral rounded-2xl p-3 flex items-center justify-between">
               <div className="text-left">
                 <div className="text-[10px] uppercase tracking-wider text-zinc-400">
                   Escape Ticket Balance
@@ -152,7 +152,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
             <button
               type="button"
               onClick={onDismiss}
-              className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+              className="w-full py-3 rounded-2xl obsidian-pill-active font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
             >
               Awesome • Back to Focus
             </button>

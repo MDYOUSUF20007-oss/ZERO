@@ -127,21 +127,23 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
         <>
           {/* Header & Live Donor Status */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 text-xs text-white font-bold uppercase tracking-wider">
-              <Award size={15} className="text-amber-400 shrink-0" />
+            <div className="flex items-center gap-2.5 text-xs text-white font-bold uppercase tracking-wider">
+              <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                <Award size={14} className="text-amber-400" />
+              </div>
               <span>Donor Perks &amp; Badges</span>
             </div>
             {badgeUnlocked ? (
               <ZeroSupporterGoldenBadge compact />
             ) : (
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300">
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full obsidian-inset-neutral text-zinc-300">
                 Status: Standard
               </span>
             )}
           </div>
 
           {/* Donor Status Summary */}
-          <div className="p-3 rounded-xl bg-black/80 border border-white/10 space-y-1.5 text-[11px]">
+          <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1.5 text-[11px]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-zinc-400">Supporter Badge:</span>
               <span
@@ -180,7 +182,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
 
           {/* Quick In-App Donor Check / Unlock */}
           {!badgeUnlocked ? (
-            <div className="p-3 rounded-xl bg-zinc-900/70 border border-amber-500/35 space-y-2">
+            <div className="p-3 rounded-xl obsidian-inset space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
                 <Gift size={13} className="shrink-0" />
                 <span>Check Donor Status or Claim 1st ₹{FIRST_DONATION_BONUS_INR}+ Tip</span>
@@ -278,7 +280,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 placeholder={
                   restoreDisabled ? 'Paste ZDON1... unlock token' : 'Paste ZDON1... or ZBAK1... token'
                 }
-                className="flex-1 min-w-0 bg-black border border-zinc-700 focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none"
+                className="flex-1 min-w-0 obsidian-input focus:border-[#8B5CF6] rounded-xl px-3 py-2 text-[11px] text-white outline-none"
               />
               <button
                 type="submit"

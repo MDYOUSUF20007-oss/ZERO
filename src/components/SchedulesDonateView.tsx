@@ -61,6 +61,7 @@ import {
   Settings,
   KeyRound,
   ShieldCheck,
+  HardDrive,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -82,7 +83,9 @@ interface SchedulesDonateViewProps {
   sleepFarmingMode: SleepFarmingMode;
   onSleepFarmingModeChange: (mode: SleepFarmingMode) => void;
   onBuildBackupJson: () => string;
+  onBuildZbakString?: () => string;
   onExportData: () => string;
+  onExportZbakData?: () => string;
   onImportData: (rawJson: string) => { ok: boolean; message: string };
   onResetData: () => void;
   cloudBackupStatus?: CloudAutoBackupStatus;
@@ -123,7 +126,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   sleepFarmingMode,
   onSleepFarmingModeChange,
   onBuildBackupJson,
+  onBuildZbakString,
   onExportData,
+  onExportZbakData,
   onImportData,
   onResetData,
   cloudBackupStatus,
@@ -272,13 +277,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </p>
       </div>
 
-      {/* Sub-Nav Pill */}
-      <div className="grid grid-cols-5 gap-1 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl text-[10px] font-mono">
+      {/* Frosted Obsidian Sub-Nav Pill */}
+      <div className="grid grid-cols-5 gap-1 p-1 obsidian-shell-bar rounded-2xl text-[10px] font-mono">
         <button
           onClick={() => setActiveSection('schedules')}
           className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'schedules'
-              ? 'bg-zinc-200 text-black shadow-sm'
+              ? 'obsidian-pill-active font-black'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
@@ -288,7 +293,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           onClick={() => setActiveSection('themes')}
           className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'themes'
-              ? 'bg-zinc-200 text-black shadow-sm'
+              ? 'obsidian-pill-active font-black'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
@@ -298,7 +303,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           onClick={() => setActiveSection('settings')}
           className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'settings'
-              ? 'bg-zinc-200 text-black shadow-sm'
+              ? 'obsidian-pill-active font-black'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
@@ -308,7 +313,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           onClick={() => setActiveSection('os_security')}
           className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'os_security'
-              ? 'bg-zinc-200 text-black shadow-sm'
+              ? 'obsidian-pill-active font-black'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
@@ -318,7 +323,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           onClick={() => setActiveSection('support')}
           className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'support'
-              ? 'bg-zinc-200 text-black shadow-sm'
+              ? 'obsidian-pill-active font-black'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
@@ -366,7 +371,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </span>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-3 py-1.5 bg-zinc-200 hover:bg-white text-black font-mono font-bold text-xs rounded-xl flex items-center gap-1 active:scale-95 transition-all shadow-sm"
+              className="px-3 py-1.5 obsidian-pill-active font-mono font-black text-xs rounded-xl flex items-center gap-1 active:scale-95 transition-all"
             >
               <Plus size={14} />
               <span>Add Schedule</span>
@@ -388,7 +393,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <div>
                         <div className="font-bold text-sm text-zinc-100 flex items-center gap-2 flex-wrap">
                           <span>{sched.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/10 text-zinc-300">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded obsidian-inset-neutral text-zinc-300">
                             #{sched.tag}
                           </span>
                         </div>
@@ -400,17 +405,31 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       {/* Toggle Switch */}
                       <button
                         onClick={() => onToggleSchedule(sched.id)}
+                        style={
+                          sched.isEnabled
+                            ? {
+                                background:
+                                  'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+                                borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.75)',
+                              }
+                            : undefined
+                        }
                         className={`w-12 h-6 rounded-full transition-colors relative border shrink-0 ${
                           sched.isEnabled
-                            ? 'bg-white border-white'
-                            : 'bg-zinc-900 border-zinc-800'
+                            ? ''
+                            : 'obsidian-inset-neutral'
                         }`}
                       >
                         <div
+                          style={
+                            sched.isEnabled
+                              ? { backgroundColor: 'var(--accent-badge-text, #09090B)' }
+                              : undefined
+                          }
                           className={`w-4 h-4 rounded-full transition-transform transform ${
                             sched.isEnabled
-                              ? 'translate-x-6 bg-black'
-                              : 'translate-x-1 bg-zinc-600'
+                              ? 'translate-x-6'
+                              : 'translate-x-1 bg-zinc-500'
                           }`}
                         />
                       </button>
@@ -423,8 +442,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           key={day}
                           className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
                             sched.days.includes(idx)
-                              ? 'bg-zinc-200 text-black font-bold'
-                              : 'bg-zinc-900 text-zinc-500'
+                              ? 'obsidian-pill-active font-black'
+                              : 'obsidian-inset-neutral text-zinc-500'
                           }`}
                         >
                           {day}
@@ -436,7 +455,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 footerContent={
                   <>
                     <div className="flex items-center gap-1.5 text-zinc-300">
-                      <Bell size={12} className="text-amber-400 shrink-0" />
+                      <Bell size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0" />
                       <span>5-min heads-up alert enabled</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -463,263 +482,269 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </div>
       )}
 
-      {/* SECTION 2: DISCIPLINE RULES & ANTI-SLEEP-FARMING */}
+      {/* SECTION 2: MANUAL BACKUP & RESTORE, CLOUD SYNC & DISCIPLINE RULES */}
       {activeSection === 'settings' && (
         <div className="space-y-4">
-          {/* ANTI-SLEEP-FARMING RULE CARD */}
+          {/* CARD #1: MANUAL BACKUP & RESTORE OPTIONS (.ZBAK + .JSON EXPORT / FILE RESTORE / CLIPBOARD / RESET) */}
           <ObsidianCard
             accent={profileAccentKey}
             ambientGlow
             className="font-mono"
-            headerClassName="p-5 space-y-3"
-            footerClassName="px-5 py-2.5 text-[11px] text-zinc-400 leading-relaxed"
+            headerClassName="p-4 space-y-3"
+            footerClassName="px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed flex items-center justify-between gap-2 flex-wrap"
             headerContent={
               <>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Moon size={16} className="text-amber-400" />
-                    <span>ANTI-SLEEP-FARMING RULE</span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <HardDrive size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs text-white font-black uppercase tracking-wider">
+                        Manual Backup &amp; Restore
+                      </div>
+                      <div className="text-[10px] text-zinc-400 truncate">
+                        Full .ZBAK (Signed) &amp; .JSON Portable Options
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] uppercase bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                    Integrity
+                  <div className="px-2.5 py-1.5 rounded-xl obsidian-inset text-center shrink-0">
+                    <div
+                      className="text-[10px] font-extrabold leading-none"
+                      style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                    >
+                      {cloudBackupStatus?.lastBackupTimestamp &&
+                      cloudBackupStatus.lastBackupTimestamp > 0
+                        ? 'SAVED'
+                        : 'READY'}
+                    </div>
+                    <div className="mt-0.5 text-[8px] uppercase tracking-wider text-zinc-400">
+                      MANUAL
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl obsidian-inset-neutral flex items-center justify-between gap-2 text-[10px]">
+                  <span className="text-zinc-400">Last Backup Timestamp:</span>
+                  <span className="text-zinc-200 font-bold truncate">
+                    {cloudBackupStatus?.lastBackupTimestamp &&
+                    cloudBackupStatus.lastBackupTimestamp > 0
+                      ? new Date(cloudBackupStatus.lastBackupTimestamp).toLocaleString()
+                      : 'No export created yet'}
                   </span>
                 </div>
 
-                <div className="space-y-2 pt-1">
-                  <label className="text-[11px] uppercase tracking-wider text-zinc-400 font-bold block">
-                    Select Escape Ticket Rate for #Sleep:
-                  </label>
-
-                  {/* Option 1: 0.25x Credit (Recommended) */}
-                  <button
-                    type="button"
-                    onClick={() => onSleepFarmingModeChange('quarter_credit')}
-                    className={`w-full p-3 rounded-2xl border text-left text-xs transition-all flex items-start justify-between ${
-                      sleepFarmingMode === 'quarter_credit'
-                        ? 'border-amber-400 bg-amber-950/20 text-white'
-                        : 'border-white/10 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold flex items-center gap-2 text-zinc-100">
-                        <span>0.25x Sleep Ticket Credit</span>
-                        <span className="text-[9px] bg-amber-500 text-black px-1.5 py-0.2 rounded font-black uppercase">
-                          Recommended
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1">
-                        An 8-hour sleep session earns 2.0 hours towards the 20h Escape Ticket milestone. Keeps rewards meaningful.
-                      </p>
-                    </div>
-                    {sleepFarmingMode === 'quarter_credit' && (
-                      <Check size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                    )}
-                  </button>
-
-                  {/* Option 2: Daytime Hours Only (0.0x Sleep) */}
-                  <button
-                    type="button"
-                    onClick={() => onSleepFarmingModeChange('daytime_only')}
-                    className={`w-full p-3 rounded-2xl border text-left text-xs transition-all flex items-start justify-between ${
-                      sleepFarmingMode === 'daytime_only'
-                        ? 'border-white bg-zinc-900 text-white'
-                        : 'border-white/10 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-zinc-100">Daytime Focus Only (0.0x Sleep Credit)</div>
-                      <p className="text-[11px] text-zinc-400 mt-1">
-                        Escape Tickets can only be earned during daytime waking hours. Sleep blocks still track total reclaimed time, but 0h toward Escape Tickets.
-                      </p>
-                    </div>
-                    {sleepFarmingMode === 'daytime_only' && (
-                      <Check size={16} className="text-white shrink-0 mt-0.5" />
-                    )}
-                  </button>
-
-                  {/* Option 3: Full Credit (1.0x) */}
-                  <button
-                    type="button"
-                    onClick={() => onSleepFarmingModeChange('full_credit')}
-                    className={`w-full p-3 rounded-2xl border text-left text-xs transition-all flex items-start justify-between ${
-                      sleepFarmingMode === 'full_credit'
-                        ? 'border-white bg-zinc-900 text-white'
-                        : 'border-white/10 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-zinc-100">Full 1.0x Credit (Relaxed)</div>
-                      <p className="text-[11px] text-zinc-400 mt-1">
-                        Every hour locked (day or night) counts 1:1 toward emergency escape tickets.
-                      </p>
-                    </div>
-                    {sleepFarmingMode === 'full_credit' && (
-                      <Check size={16} className="text-white shrink-0 mt-0.5" />
-                    )}
-                  </button>
-                </div>
-              </>
-            }
-            footerContent={
-              <p>
-                Prevents farming a free Emergency Escape Ticket every 2.5 nights overnight without resisting waking temptation.
-              </p>
-            }
-          />
-
-          {/* ABORTED SESSION PENALTY EXPLANATION */}
-          <ObsidianCard
-            accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}
-            className="font-mono text-xs"
-            headerClassName="p-4 space-y-2"
-            footerClassName="px-4 py-2.5 text-[11px] text-zinc-300 leading-relaxed"
-            headerContent={
-              <>
-                <div className="flex items-center gap-2 text-zinc-200 font-bold uppercase tracking-wider">
-                  <ShieldAlert size={14} className="text-red-400 shrink-0" />
-                  <span>Aborted Session Penalty (Anti-Exploit)</span>
-                </div>
-                <p className="text-zinc-300 leading-relaxed text-[11px]">
-                  Using an Emergency Escape Ticket forfeits all accumulated hours in that specific broken session toward the 20-hour meter.
-                </p>
-              </>
-            }
-            footerContent={
-              <div>
-                <strong className="text-white">Example:</strong> If you set a 4-hour lock and use an escape ticket at hour 3, you spend 1 Escape Ticket and receive <strong className="text-red-300">0 hours</strong> toward your next one.
-              </div>
-            }
-          />
-
-          {/* Interactive Profile Card */}
-          {onOpenProfileModal && (
-            <ObsidianCard
-              accent={profileAccentKey}
-              className="font-mono"
-              headerClassName="p-4 space-y-3"
-              footerClassName="px-4 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
-              headerContent={
-                <>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-zinc-100 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <UserPlus size={14} className="text-amber-400" />
-                      <span>Interactive Zero Profile</span>
-                    </span>
-                    {!hasClaimedFirstTimeParachute && (
-                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-black">
-                        +1 Free 🎫 Gift
-                      </span>
-                    )}
+                {restoreDisabled && (
+                  <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px]">
+                    File &amp; text restore are disabled in this rooted, test-keys ROM, or debug emulator environment. Manual exports remain active.
                   </div>
+                )}
 
-                  {profile ? (
-                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/80 border border-white/10">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <ProfileAvatar
-                          avatarId={profile.avatarId}
-                          accent={profile.accentColor}
-                          size="sm"
-                          interactive
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-white truncate">
-                              {profile.displayName} ({profile.handle})
-                            </span>
-                            {supporterBadgeUnlocked && <ZeroSupporterGoldenBadge compact />}
-                          </div>
-                          <div
-                            className={`text-[10px] truncate ${
-                              (ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber).text
-                            }`}
-                          >
-                            #{profile.primaryMission} • {profile.dailyGoalHours}h/day target
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={onOpenProfileModal}
-                        className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-white shrink-0"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  ) : (
+                {backupNotice && (
+                  <div
+                    className={`p-2.5 rounded-xl text-[11px] border ${
+                      backupNotice.ok
+                        ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
+                        : 'bg-red-950/50 border-red-700 text-red-200'
+                    }`}
+                  >
+                    {backupNotice.message}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zbak,.json,application/json,application/octet-stream,*/*"
+                  onChange={handleFileRestore}
+                  className="hidden"
+                />
+
+                {/* Manual Export Buttons (.ZBAK + .JSON) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onExportZbakData) {
+                        onExportZbakData();
+                      } else {
+                        onExportData();
+                      }
+                      setBackupNotice({
+                        ok: true,
+                        message: hasNativeBridge
+                          ? 'Signed zero-backup.zbak created. Choose Save to Files, Drive, OneDrive or JioDrive.'
+                          : 'Signed .zbak backup file downloaded.',
+                      });
+                    }}
+                    className="p-3 obsidian-pill-active font-black rounded-xl flex items-center justify-center gap-1.5 text-xs active:scale-95 transition-all"
+                  >
+                    <Download size={14} />
+                    <span>Export .ZBAK</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExportData();
+                      setBackupNotice({
+                        ok: true,
+                        message: hasNativeBridge
+                          ? 'JSON backup generated. Choose Save to Files / Drive or Share.'
+                          : 'Backup .json file downloaded.',
+                      });
+                    }}
+                    className="p-3 obsidian-shell-bar text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs hover:border-white/30 active:scale-95 transition-all"
+                  >
+                    <Download size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    <span>Export .JSON</span>
+                  </button>
+                </div>
+
+                {/* Manual File Restore Buttons */}
+                <div className={hasNativeBridge && onRestoreFromCloudPicker ? 'grid grid-cols-2 gap-2' : ''}>
+                  {hasNativeBridge && onRestoreFromCloudPicker && (
                     <button
                       type="button"
-                      onClick={onOpenProfileModal}
-                      className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      disabled={isCloudBusy || restoreDisabled}
+                      onClick={async () => {
+                        const res = await onRestoreFromCloudPicker();
+                        if (res.ok) {
+                          setBackupNotice({ ok: true, message: res.message });
+                          onRestoreSuccess?.();
+                        } else if (!res.cancelled) {
+                          setBackupNotice({ ok: false, message: res.message });
+                        }
+                      }}
+                      className="p-2.5 obsidian-inset text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px] active:scale-95 transition-all disabled:opacity-45 disabled:cursor-not-allowed"
                     >
-                      <Sparkles size={14} />
-                      <span>
-                        {hasClaimedFirstTimeParachute
-                          ? 'Create Interactive Profile'
-                          : 'Make Profile & Claim +1 Free 🎫'}
-                      </span>
+                      <Upload size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <span>Pick Cloud / Device File</span>
                     </button>
                   )}
-                </>
-              }
-              footerContent={
-                profile ? (
-                  <>
-                    <span className="italic text-zinc-300 break-words">&ldquo;{profile.motto}&rdquo;</span>
-                    <span className="shrink-0">{profile.dailyGoalHours}h/day</span>
-                  </>
-                ) : (
-                  <span>Customize your callsign, emblem SVG &amp; daily lock goal</span>
-                )
-              }
-            />
-          )}
 
-          {/* Theme Studio Launcher */}
-          <ObsidianCard
-            asButton
-            accent={profileAccentKey}
-            onClick={() => setActiveSection('themes')}
-            className="font-mono"
-            headerClassName="p-4 flex items-center justify-between gap-3"
-            footerClassName="px-4 py-2 flex items-center justify-between text-[11px] text-zinc-400"
-            headerContent={
-              <>
-                <div className="flex items-center gap-2 text-xs text-zinc-100 font-bold uppercase tracking-wider">
-                  <Palette size={14} style={{ color: 'var(--zero-accent)' }} />
-                  <span>Theme Studio</span>
+                  <button
+                    type="button"
+                    disabled={restoreDisabled}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`${
+                      hasNativeBridge && onRestoreFromCloudPicker ? '' : 'w-full'
+                    } p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 font-bold rounded-xl flex items-center justify-center gap-1.5 text-[11px] active:scale-95 transition-all disabled:opacity-45 disabled:cursor-not-allowed`}
+                  >
+                    <Upload size={13} />
+                    <span>
+                      {hasNativeBridge && onRestoreFromCloudPicker
+                        ? 'Browse Local File'
+                        : 'Restore .ZBAK / .JSON File'}
+                    </span>
+                  </button>
                 </div>
-                <span className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-[10px] font-bold text-white uppercase shrink-0">
-                  Customize &rarr;
-                </span>
+
+                {/* Clipboard Copy (.ZBAK / .JSON) + Paste Text Restore */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {onBuildZbakString && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleCopy(onBuildZbakString(), 'backup_zbak');
+                        setBackupNotice({
+                          ok: true,
+                          message: 'Signed ZBAK1 token copied to clipboard.',
+                        });
+                      }}
+                      className="py-2 px-2 obsidian-inset-neutral hover:border-white/25 rounded-xl text-[10px] text-zinc-200 flex items-center justify-center gap-1 font-bold"
+                    >
+                      {copiedId === 'backup_zbak' ? (
+                        <Check size={11} className="text-emerald-400 shrink-0" />
+                      ) : (
+                        <Copy size={11} className="shrink-0" />
+                      )}
+                      <span className="truncate">Copy .ZBAK</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCopy(onBuildBackupJson(), 'backup_json');
+                      setBackupNotice({
+                        ok: true,
+                        message: 'Full JSON backup copied to clipboard.',
+                      });
+                    }}
+                    className="py-2 px-2 obsidian-inset-neutral hover:border-white/25 rounded-xl text-[10px] text-zinc-200 flex items-center justify-center gap-1 font-bold"
+                  >
+                    {copiedId === 'backup_json' ? (
+                      <Check size={11} className="text-emerald-400 shrink-0" />
+                    ) : (
+                      <Copy size={11} className="shrink-0" />
+                    )}
+                    <span className="truncate">Copy .JSON</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={restoreDisabled}
+                    onClick={() => setShowPasteRestore(!showPasteRestore)}
+                    className={`py-2 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center truncate disabled:opacity-45 disabled:cursor-not-allowed ${
+                      showPasteRestore
+                        ? 'obsidian-pill-active font-black'
+                        : 'obsidian-inset-neutral hover:border-white/25 text-zinc-200'
+                    }`}
+                  >
+                    {showPasteRestore ? 'Hide Paste' : 'Paste Backup'}
+                  </button>
+                </div>
+
+                {showPasteRestore && !restoreDisabled && (
+                  <div className="space-y-2 pt-1">
+                    <textarea
+                      rows={4}
+                      value={pasteJsonInput}
+                      onChange={(e) => setPasteJsonInput(e.target.value)}
+                      placeholder="Paste signed ZBAK1... token or full Zero JSON backup text here..."
+                      className="w-full obsidian-input rounded-xl p-2.5 text-[11px] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePasteRestore}
+                      className="w-full py-2.5 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider"
+                    >
+                      Restore Pasted Backup
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        'Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.'
+                      )
+                    ) {
+                      onResetData();
+                      setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
+                    }
+                  }}
+                  className="w-full p-2.5 bg-black/75 border border-red-950/90 hover:border-red-700 text-red-400 hover:text-red-300 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
+                >
+                  <RotateCcw size={13} />
+                  <span>Factory Reset App State</span>
+                </button>
               </>
             }
             footerContent={
               <>
-                <span>Active Theme:</span>
-                <strong className="text-white uppercase">
-                  {themeConfig.family === 'amoled'
-                    ? `AMOLED (${themeConfig.amoledGradient})`
-                    : themeConfig.family === 'kindle'
-                    ? 'Paper like Kindle'
-                    : 'Matte Studio'}
-                </strong>
+                <span>
+                  Exports stats, 20h meter, donor badges, bags, schedules, widgets &amp; theme.
+                </span>
+                <span className="font-bold text-zinc-300">.ZBAK &amp; .JSON</span>
               </>
             }
           />
 
-          {/* DONOR PERKS & BADGES (STATUS, SIGNED TOKEN & KO-FI MANUAL SUPPORT) */}
-          <DonorPerksBadgesCard
-            isZeroSupporter={supporterBadgeUnlocked}
-            hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
-            remainingEscapeTickets={remainingEscapeTickets}
-            cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
-            environmentSecurity={environmentSecurity}
-            onClaimFirstDonationBonus={onClaimFirstDonationBonus}
-            onImportData={onImportData}
-            onRestoreSuccess={onRestoreSuccess}
-          />
-
-          {/* UNIVERSAL CLOUD AUTO-BACKUP & 1-TAP RESTORE (.zbak SAF) */}
+          {/* CARD #2: UNIVERSAL CLOUD AUTO-BACKUP & 1-TAP RESTORE (.zbak SAF) */}
           <ObsidianCard
             accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
             ambientGlow
@@ -745,7 +770,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </div>
 
                 {/* Active Sync Destination Card */}
-                <div className="p-3 rounded-xl bg-black/80 border border-white/10 space-y-1 text-[11px]">
+                <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1 text-[11px]">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-zinc-400">Cloud Target:</span>
                     <span className="text-white font-bold truncate">
@@ -836,7 +861,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                               setCloudNotice({ ok: res.ok, message: res.message });
                             }
                           }}
-                          className="py-2 px-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-white font-bold text-[10px] uppercase"
+                          className="py-2 px-2 rounded-xl obsidian-inset-neutral hover:border-white/30 text-white font-bold text-[10px] uppercase"
                         >
                           Change File
                         </button>
@@ -873,7 +898,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           setCloudNotice({ ok: res.ok, message: res.message });
                         }
                       }}
-                      className="py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-60"
+                      className="py-2.5 px-3 rounded-xl obsidian-inset-neutral hover:border-white/25 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-60"
                     >
                       <CloudUpload size={14} style={{ color: '#A78BFA' }} />
                       <span>1-Tap Upload (.zbak)</span>
@@ -893,10 +918,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           setCloudNotice({ ok: false, message: res.message });
                         }
                       }}
-                      className="py-2.5 px-3 rounded-xl bg-zinc-200 hover:bg-white text-black font-black text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-[11px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <CloudDownload size={14} />
-                      <span>Restore Backup from Cloud (Drive / OneDrive / JioDrive)</span>
+                      <span>Restore from Cloud Picker</span>
                     </button>
                   )}
                 </div>
@@ -918,134 +943,261 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             }
           />
 
-          {/* Data Management: Full Export, Restore & Reset */}
+          {/* CARD #3: ANTI-SLEEP-FARMING RULE CARD */}
           <ObsidianCard
             accent={profileAccentKey}
+            ambientGlow
             className="font-mono"
-            headerClassName="p-4 space-y-3"
-            footerClassName="px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed"
+            headerClassName="p-5 space-y-3"
+            footerClassName="px-5 py-2.5 text-[11px] text-zinc-400 leading-relaxed"
             headerContent={
               <>
-                <div className="text-xs text-zinc-100 font-bold uppercase tracking-wider">
-                  Backup &amp; Restore Everything
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white font-bold text-sm">
+                    <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <Moon size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                    </div>
+                    <span>ANTI-SLEEP-FARMING RULE</span>
+                  </div>
+                  <span className="text-[10px] uppercase px-2 py-0.5 rounded-full obsidian-inset text-white font-bold">
+                    Integrity
+                  </span>
                 </div>
 
-                {restoreDisabled && (
-                  <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-[10px]">
-                    File &amp; JSON restore are disabled in this rooted or emulator environment. Exports stay active.
-                  </div>
-                )}
+                <div className="space-y-2 pt-1">
+                  <label className="text-[11px] uppercase tracking-wider text-zinc-400 font-bold block">
+                    Select Escape Ticket Rate for #Sleep:
+                  </label>
 
-                {backupNotice && (
-                  <div
-                    className={`p-2.5 rounded-xl text-[11px] border ${
-                      backupNotice.ok
-                        ? 'bg-emerald-950/50 border-emerald-700 text-emerald-200'
-                        : 'bg-red-950/50 border-red-700 text-red-200'
+                  {/* Option 1: 0.25x Credit (Recommended) */}
+                  <button
+                    type="button"
+                    onClick={() => onSleepFarmingModeChange('quarter_credit')}
+                    className={`w-full p-3 rounded-2xl text-left text-xs transition-all flex items-start justify-between ${
+                      sleepFarmingMode === 'quarter_credit'
+                        ? 'obsidian-inset text-white'
+                        : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
                     }`}
                   >
-                    {backupNotice.message}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".zbak,.json,application/json,application/octet-stream"
-                  onChange={handleFileRestore}
-                  className="hidden"
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onExportData();
-                      setBackupNotice({
-                        ok: true,
-                        message: hasNativeBridge
-                          ? 'Backup generated. Choose Save to Files / Drive or Share.'
-                          : 'Backup .json file downloaded.',
-                      });
-                    }}
-                    className="p-3 bg-zinc-200 hover:bg-white text-black font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors"
-                  >
-                    <Download size={14} />
-                    <span>Export Backup</span>
+                    <div>
+                      <div className="font-bold flex items-center gap-2 text-zinc-100">
+                        <span>0.25x Sleep Ticket Credit</span>
+                        <span className="text-[9px] obsidian-pill-active px-1.5 py-0.5 rounded font-black uppercase">
+                          Recommended
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        An 8-hour sleep session earns 2.0 hours towards the 20h Escape Ticket milestone. Keeps rewards meaningful.
+                      </p>
+                    </div>
+                    {sleepFarmingMode === 'quarter_credit' && (
+                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                    )}
                   </button>
 
+                  {/* Option 2: Daytime Hours Only (0.0x Sleep) */}
                   <button
                     type="button"
-                    disabled={restoreDisabled}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+                    onClick={() => onSleepFarmingModeChange('daytime_only')}
+                    className={`w-full p-3 rounded-2xl text-left text-xs transition-all flex items-start justify-between ${
+                      sleepFarmingMode === 'daytime_only'
+                        ? 'obsidian-inset text-white'
+                        : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                    }`}
                   >
-                    <Upload size={14} />
-                    <span>Restore File</span>
-                  </button>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleCopy(onBuildBackupJson(), 'backup_json');
-                      setBackupNotice({ ok: true, message: 'Full JSON backup copied to clipboard.' });
-                    }}
-                    className="flex-1 py-2 bg-zinc-900 border border-white/10 hover:border-zinc-600 rounded-xl text-[11px] text-zinc-300 flex items-center justify-center gap-1.5"
-                  >
-                    {copiedId === 'backup_json' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                    <span>Copy JSON Backup</span>
+                    <div>
+                      <div className="font-bold text-zinc-100">Daytime Focus Only (0.0x Sleep Credit)</div>
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        Escape Tickets can only be earned during daytime waking hours. Sleep blocks still track total reclaimed time, but 0h toward Escape Tickets.
+                      </p>
+                    </div>
+                    {sleepFarmingMode === 'daytime_only' && (
+                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                    )}
                   </button>
 
+                  {/* Option 3: Full Credit (1.0x) */}
                   <button
                     type="button"
-                    disabled={restoreDisabled}
-                    onClick={() => setShowPasteRestore(!showPasteRestore)}
-                    className="flex-1 py-2 bg-zinc-900 border border-white/10 hover:border-zinc-600 rounded-xl text-[11px] text-zinc-300 disabled:opacity-45 disabled:cursor-not-allowed"
+                    onClick={() => onSleepFarmingModeChange('full_credit')}
+                    className={`w-full p-3 rounded-2xl text-left text-xs transition-all flex items-start justify-between ${
+                      sleepFarmingMode === 'full_credit'
+                        ? 'obsidian-inset text-white'
+                        : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                    }`}
                   >
-                    {showPasteRestore ? 'Hide Paste Box' : 'Paste JSON to Restore'}
+                    <div>
+                      <div className="font-bold text-zinc-100">Full 1.0x Credit (Relaxed)</div>
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        Every hour locked (day or night) counts 1:1 toward emergency escape tickets.
+                      </p>
+                    </div>
+                    {sleepFarmingMode === 'full_credit' && (
+                      <Check size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0 mt-0.5" />
+                    )}
                   </button>
                 </div>
-
-                {showPasteRestore && !restoreDisabled && (
-                  <div className="space-y-2 pt-1">
-                    <textarea
-                      rows={4}
-                      value={pasteJsonInput}
-                      onChange={(e) => setPasteJsonInput(e.target.value)}
-                      placeholder="Paste your Zero JSON backup text here..."
-                      className="w-full bg-black border border-zinc-700 rounded-xl p-2.5 text-[11px] text-zinc-200 outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handlePasteRestore}
-                      className="w-full py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase"
-                    >
-                      Restore Pasted Backup
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    if (window.confirm('Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.')) {
-                      onResetData();
-                      setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
-                    }
-                  }}
-                  className="w-full p-3 bg-black/70 border border-red-950/80 hover:border-red-800 text-red-400 hover:text-red-300 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
-                >
-                  <RotateCcw size={14} />
-                  <span>Factory Reset App State</span>
-                </button>
               </>
             }
             footerContent={
               <p>
-                Saves all sessions, 20h Escape Ticket progress, streaks, schedules, themes, and all 4 Bags to <code>.json</code> or restores <code>.zbak</code> / <code>.json</code>.
+                Prevents farming a free Emergency Escape Ticket every 2.5 nights overnight without resisting waking temptation.
               </p>
             }
+          />
+
+          {/* CARD #4: ABORTED SESSION PENALTY EXPLANATION */}
+          <ObsidianCard
+            accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}
+            className="font-mono text-xs"
+            headerClassName="p-4 space-y-2"
+            footerClassName="px-4 py-2.5 text-[11px] text-zinc-300 leading-relaxed"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2 text-zinc-200 font-bold uppercase tracking-wider">
+                  <ShieldAlert size={14} className="text-red-400 shrink-0" />
+                  <span>Aborted Session Penalty (Anti-Exploit)</span>
+                </div>
+                <p className="text-zinc-300 leading-relaxed text-[11px]">
+                  Using an Emergency Escape Ticket forfeits all accumulated hours in that specific broken session toward the 20-hour meter.
+                </p>
+              </>
+            }
+            footerContent={
+              <div>
+                <strong className="text-white">Example:</strong> If you set a 4-hour lock and use an escape ticket at hour 3, you spend 1 Escape Ticket and receive <strong className="text-red-300">0 hours</strong> toward your next one.
+              </div>
+            }
+          />
+
+          {/* CARD #5: Interactive Profile Card */}
+          {onOpenProfileModal && (
+            <ObsidianCard
+              accent={profileAccentKey}
+              className="font-mono"
+              headerClassName="p-4 space-y-3"
+              footerClassName="px-4 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
+              headerContent={
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-zinc-100 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <UserPlus size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <span>Interactive Zero Profile</span>
+                    </span>
+                    {!hasClaimedFirstTimeParachute && (
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full obsidian-pill-active">
+                        +1 Free 🎫 Gift
+                      </span>
+                    )}
+                  </div>
+
+                  {profile ? (
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl obsidian-inset-neutral">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <ProfileAvatar
+                          avatarId={profile.avatarId}
+                          accent={profile.accentColor}
+                          size="sm"
+                          interactive
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-white truncate">
+                              {profile.displayName} ({profile.handle})
+                            </span>
+                            {supporterBadgeUnlocked && <ZeroSupporterGoldenBadge compact />}
+                          </div>
+                          <div
+                            className={`text-[10px] truncate ${
+                              (ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber).text
+                            }`}
+                          >
+                            #{profile.primaryMission} • {profile.dailyGoalHours}h/day target
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onOpenProfileModal}
+                        className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-white/15 hover:border-white/30 text-[11px] font-bold text-white shrink-0"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onOpenProfileModal}
+                      className="w-full py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <Sparkles size={14} />
+                      <span>
+                        {hasClaimedFirstTimeParachute
+                          ? 'Create Interactive Profile'
+                          : 'Make Profile & Claim +1 Free 🎫'}
+                      </span>
+                    </button>
+                  )}
+                </>
+              }
+              footerContent={
+                profile ? (
+                  <>
+                    <span className="italic text-zinc-300 break-words">&ldquo;{profile.motto}&rdquo;</span>
+                    <span className="shrink-0">{profile.dailyGoalHours}h/day</span>
+                  </>
+                ) : (
+                  <span>Customize your callsign, emblem SVG &amp; daily lock goal</span>
+                )
+              }
+            />
+          )}
+
+          {/* CARD #6: Theme Studio Launcher */}
+          <ObsidianCard
+            asButton
+            accent={profileAccentKey}
+            onClick={() => setActiveSection('themes')}
+            className="font-mono"
+            headerClassName="p-4 flex items-center justify-between gap-3"
+            footerClassName="px-4 py-2 flex items-center justify-between text-[11px] text-zinc-400"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2.5 text-xs text-zinc-100 font-bold uppercase tracking-wider">
+                  <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                    <Palette size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                  </div>
+                  <span>Theme Studio</span>
+                </div>
+                <span className="px-2.5 py-1.5 rounded-xl obsidian-inset text-[10px] font-bold text-white uppercase shrink-0">
+                  Customize &rarr;
+                </span>
+              </>
+            }
+            footerContent={
+              <>
+                <span>Active Theme:</span>
+                <strong className="text-white uppercase">
+                  {themeConfig.family === 'amoled'
+                    ? `AMOLED (${themeConfig.amoledGradient})`
+                    : themeConfig.family === 'kindle'
+                    ? 'Paper like Kindle'
+                    : 'Matte Studio'}
+                </strong>
+              </>
+            }
+          />
+
+          {/* CARD #7: DONOR PERKS & BADGES */}
+          <DonorPerksBadgesCard
+            isZeroSupporter={supporterBadgeUnlocked}
+            hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
+            remainingEscapeTickets={remainingEscapeTickets}
+            cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
+            environmentSecurity={environmentSecurity}
+            onClaimFirstDonationBonus={onClaimFirstDonationBonus}
+            onImportData={onImportData}
+            onRestoreSuccess={onRestoreSuccess}
           />
         </div>
       )}
@@ -1062,14 +1214,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Smartphone size={16} className="text-emerald-400 shrink-0" />
+                  <div className="flex items-center gap-2.5 text-white font-bold text-sm">
+                    <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <Smartphone size={15} className="text-emerald-400" />
+                    </div>
                     <span>OS PERMISSIONS &amp; PRIORITY</span>
                   </div>
                   <button
                     type="button"
                     onClick={onRefreshPermissions}
-                    className="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-900 border border-white/10 text-zinc-200 hover:border-white/25 transition-colors"
+                    className="text-[10px] px-2.5 py-0.5 rounded-full obsidian-inset-neutral text-zinc-200 hover:border-white/25 transition-colors"
                   >
                     {hasNativeBridge ? (isStrictBuild ? 'STRICT EDITION' : 'STANDARD EDITION') : 'WEB PREVIEW'}
                   </button>
@@ -1088,14 +1242,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     onClick={() => window.ZeroNative?.requestNextMissingPermission()}
-                    className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+                    className="w-full py-2.5 px-3 rounded-xl obsidian-pill-active font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
                   >
                     {permissionPriority.nextButtonLabel}
                   </button>
                 )}
 
                 {/* 1: Check Allow Restricted Settings + App Info Shortcut */}
-                <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-2">
+                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                     <span>1. Allow Restricted Settings Check</span>
                     <span
@@ -1134,7 +1288,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
                 {/* 2A: Usage Access (Standard Sideload Edition) */}
                 {!isStrictBuild && (
-                  <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-2.5">
+                  <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2.5">
                     <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                       <span>2. Usage Access Guard (Find Zero-Distractions)</span>
                       <span
@@ -1155,7 +1309,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <button
                           type="button"
                           onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
-                          className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                          className="w-full py-2 obsidian-pill-active font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
                         >
                           Grant Usage Access -&gt; Find Zero-Distractions
                         </button>
@@ -1172,7 +1326,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
                 {/* 2B: Accessibility Service (Strict Edition) */}
                 {isStrictBuild && (
-                  <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-2.5">
+                  <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2.5">
                     <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                       <span>2. Accessibility Service</span>
                       <span
@@ -1193,7 +1347,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <button
                           type="button"
                           onClick={() => window.ZeroNative?.openAccessibilitySettings()}
-                          className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                          className="w-full py-2 obsidian-pill-active font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
                         >
                           Enable Accessibility Service -&gt; Find Zero-Distractions
                         </button>
@@ -1209,7 +1363,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 )}
 
                 {/* 3: SYSTEM_ALERT_WINDOW */}
-                <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-2">
+                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                     <span>3. Display Over Other Apps</span>
                     <span
@@ -1229,7 +1383,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <button
                       type="button"
                       onClick={() => window.ZeroNative?.requestOverlayPermission()}
-                      className="w-full py-2 bg-white hover:bg-zinc-200 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                      className="w-full py-2 obsidian-pill-active font-bold text-[11px] rounded-xl active:scale-95 transition-all"
                     >
                       Grant Display Over Other Apps
                     </button>
@@ -1237,7 +1391,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </div>
 
                 {/* 4: Notifications */}
-                <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-2">
+                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                     <span>4. Lock &amp; Pre-Lock Notifications</span>
                     <span
@@ -1254,7 +1408,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <button
                       type="button"
                       onClick={() => window.ZeroNative?.requestNotificationPermission()}
-                      className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-[11px] rounded-xl"
+                      className="w-full py-2 obsidian-inset text-white font-bold text-[11px] rounded-xl hover:brightness-110 transition-all"
                     >
                       Allow Notifications
                     </button>
@@ -1262,14 +1416,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </div>
 
                 {/* 5: LockTaskMode / Device Owner */}
-                <div className="p-3 bg-zinc-900/70 rounded-2xl border border-white/10 space-y-1.5">
+                <div className="p-3 obsidian-inset-neutral rounded-2xl space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
                     <span>5. Hardware Kiosk (Optional ADB)</span>
                     <span
                       className={`text-[9px] px-1.5 py-0.5 rounded border ${
                         isDeviceOwner
                           ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : 'bg-black/70 text-zinc-400 border-white/10'
+                          : 'obsidian-inset-neutral text-zinc-400'
                       }`}
                     >
                       {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'OPTIONAL'}
@@ -1313,8 +1467,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-white font-bold uppercase tracking-wider">
-                    <KeyRound size={14} className="text-emerald-400 shrink-0" />
+                  <div className="flex items-center gap-2 text-white font-bold uppercase tracking-wider">
+                    <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <KeyRound size={13} className="text-emerald-400" />
+                    </div>
                     <span>Installed Build &amp; Update Key</span>
                   </div>
                   {appBuildInfo && (
@@ -1331,7 +1487,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </div>
 
                 {appBuildInfo ? (
-                  <div className="p-3 rounded-xl bg-black/80 border border-white/10 space-y-1 text-[11px]">
+                  <div className="p-3 rounded-xl obsidian-inset-neutral space-y-1 text-[11px]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-zinc-400">Installed Version:</span>
                       <span className="text-white font-bold">
@@ -1364,7 +1520,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="p-2.5 rounded-xl bg-black/80 border border-white/10 text-[11px] text-zinc-400">
+                  <div className="p-2.5 rounded-xl obsidian-inset-neutral text-[11px] text-zinc-400">
                     Permanent APK Release Key: <code className="text-emerald-300">A14A36...CE11</code> (V1+V2+V3 signed).
                   </div>
                 )}
@@ -1398,8 +1554,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center justify-between text-zinc-200 font-bold uppercase tracking-wider">
-                  <div className="flex items-center gap-1.5">
-                    <Terminal size={14} className="text-cyan-400" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <Terminal size={13} className="text-cyan-400" />
+                    </div>
                     <span>ADB Device Owner Setup (Optional)</span>
                   </div>
                   <button
@@ -1410,13 +1568,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         'adb_cmd'
                       )
                     }
-                    className="text-[10px] text-zinc-300 hover:text-white flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 border border-white/10"
+                    className="text-[10px] text-zinc-200 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg obsidian-inset-neutral"
                   >
                     {copiedId === 'adb_cmd' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                     <span>{copiedId === 'adb_cmd' ? 'Copied' : 'Copy ADB'}</span>
                   </button>
                 </div>
-                <pre className="p-2.5 bg-black/80 rounded-xl text-[10px] text-emerald-300 overflow-x-auto no-scrollbar border border-white/10">
+                <pre className="p-2.5 obsidian-inset-neutral rounded-xl text-[10px] text-emerald-300 overflow-x-auto no-scrollbar">
                   adb shell dpm set-device-owner org.zero.detox/.receiver.ZeroDeviceAdminReceiver
                 </pre>
               </>
@@ -1451,8 +1609,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerClassName="px-5 py-3 flex items-center justify-between text-xs gap-2"
             headerContent={
               <>
-                <div className="flex items-center gap-2 text-white font-bold text-sm">
-                  <Heart size={16} className="text-red-500 fill-red-500" />
+                <div className="flex items-center gap-2.5 text-white font-bold text-sm">
+                  <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                    <Heart size={15} className="text-red-500 fill-red-500" />
+                  </div>
                   <span>THE ZERO-DISTRACTIONS PROMISE</span>
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed">
@@ -1520,7 +1680,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/15 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                      <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center text-white font-bold text-xs shrink-0">
                         UPI
                       </div>
                       <div className="min-w-0">
@@ -1532,10 +1692,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowUPIQR(!showUPIQR)}
-                        className={`p-1.5 rounded-lg border transition-colors ${
+                        className={`p-1.5 rounded-lg transition-colors ${
                           showUPIQR
-                            ? 'bg-zinc-200 text-black border-white'
-                            : 'bg-zinc-900 border-white/15 text-zinc-300 hover:text-white'
+                            ? 'obsidian-pill-active font-bold'
+                            : 'obsidian-inset-neutral text-zinc-300 hover:text-white'
                         }`}
                         title="Toggle QR Code"
                         aria-label="Toggle UPI QR Code"
@@ -1545,7 +1705,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopy(UPI_ID, 'upi')}
-                        className="p-1.5 rounded-lg bg-zinc-900 border border-white/15 text-zinc-300 hover:text-white"
+                        className="p-1.5 rounded-lg obsidian-inset-neutral text-zinc-300 hover:text-white"
                         title="Copy UPI ID"
                         aria-label="Copy UPI ID"
                       >
@@ -1590,14 +1750,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setConfirmingDonationClaim(true)}
-                              className="px-3 py-2 rounded-xl bg-zinc-900 border border-emerald-700/60 text-emerald-200 text-[10px] font-bold"
+                              className="px-3 py-2 rounded-xl obsidian-inset-neutral border border-emerald-700/60 text-emerald-200 text-[10px] font-bold"
                             >
                               Sent Min ₹{FIRST_DONATION_BONUS_INR}?
                             </button>
                           )}
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2">
+                        <div className="p-2.5 rounded-xl obsidian-inset-neutral border border-emerald-600/60 space-y-2">
                           <div className="text-[10px] text-emerald-200">
                             Confirm you sent your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                             to unlock the Golden{' '}
@@ -1618,7 +1778,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setConfirmingDonationClaim(false)}
-                              className="px-2.5 py-2 rounded-lg bg-zinc-900 border border-white/15 text-zinc-300 text-[10px] font-bold"
+                              className="px-2.5 py-2 rounded-lg obsidian-inset-neutral text-zinc-300 text-[10px] font-bold"
                             >
                               Back
                             </button>
@@ -1627,7 +1787,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] text-emerald-300">
+                    <div className="px-3 py-2 rounded-xl obsidian-inset border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] text-emerald-300">
                       <span className="flex items-center gap-1.5 font-bold">
                         <CheckCircle2 size={12} />
                         <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
@@ -1646,7 +1806,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </a>
 
                   {showUPIQR && (
-                    <div className="p-3.5 bg-zinc-900/80 rounded-xl flex flex-col items-center justify-center text-center space-y-2 border border-white/10">
+                    <div className="p-3.5 obsidian-inset-neutral rounded-xl flex flex-col items-center justify-center text-center space-y-2">
                       {upiQrUrl ? (
                         <div data-qr-surface="true" className="bg-white p-2 rounded-xl shadow-md">
                           <img
@@ -1693,8 +1853,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   className="w-full p-3.5 flex items-center justify-between transition-all group active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                      <Coffee size={18} />
+                    <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                      <Coffee size={17} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
@@ -1740,7 +1900,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <button
                         type="button"
                         onClick={onResetTipPromptBlock}
-                        className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/15 text-zinc-200 hover:text-white font-bold shrink-0"
+                        className="px-2.5 py-1 rounded-lg obsidian-inset-neutral text-zinc-200 hover:text-white font-bold shrink-0"
                       >
                         Unblock
                       </button>
@@ -1781,7 +1941,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. Morning Focus"
                     required
-                    className="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                   />
                 </div>
 
@@ -1793,10 +1953,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         key={day}
                         type="button"
                         onClick={() => toggleDaySelection(idx)}
-                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold ${
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
                           newDays.includes(idx)
-                            ? 'bg-white text-black'
-                            : 'bg-zinc-900 text-zinc-400 border border-white/10'
+                            ? 'obsidian-pill-active'
+                            : 'obsidian-inset-neutral text-zinc-400'
                         }`}
                       >
                         {day[0]}
@@ -1812,7 +1972,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       type="time"
                       value={newStartTime}
                       onChange={(e) => setNewStartTime(e.target.value)}
-                      className="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                      className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                     />
                   </div>
                   <div>
@@ -1821,7 +1981,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       type="time"
                       value={newEndTime}
                       onChange={(e) => setNewEndTime(e.target.value)}
-                      className="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                      className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                     />
                   </div>
                 </div>
@@ -1831,7 +1991,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <select
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                   >
                     {TAGS.map((t) => (
                       <option key={t} value={t}>
@@ -1844,22 +2004,22 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             }
             footerContent={
               <>
-                <div className="p-2.5 bg-zinc-900/70 border border-white/10 rounded-xl text-[10px] text-zinc-300 flex items-center gap-1.5">
-                  <Bell size={12} className="text-amber-400 shrink-0" />
+                <div className="p-2.5 obsidian-inset-neutral rounded-xl text-[10px] text-zinc-300 flex items-center gap-1.5">
+                  <Bell size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} className="shrink-0" />
                   <span>Includes automatic 5-minute pre-lock heads-up warning</span>
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-white text-black rounded-xl font-bold text-xs uppercase"
+                    className="flex-1 py-2.5 obsidian-pill-active rounded-xl font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
                   >
                     Save Schedule
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="py-2.5 px-4 bg-zinc-900 text-zinc-300 rounded-xl text-xs font-bold border border-white/10"
+                    className="py-2.5 px-4 obsidian-inset-neutral text-zinc-300 rounded-xl text-xs font-bold hover:text-white transition-colors"
                   >
                     Cancel
                   </button>

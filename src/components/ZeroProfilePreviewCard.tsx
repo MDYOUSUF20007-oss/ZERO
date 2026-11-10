@@ -45,6 +45,7 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   return (
     <ObsidianCard
       accent={accent}
+      forceAccent
       ambientGlow
       className="my-3"
       headerClassName="px-4 pt-4 pb-3.5"

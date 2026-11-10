@@ -124,7 +124,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               <button
                 type="button"
                 onClick={onDismiss}
-                className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white shrink-0"
+                className="p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white shrink-0"
                 aria-label="Close Tip Popup"
               >
                 <X size={16} />
@@ -289,7 +289,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     <button
                       type="button"
                       onClick={handleCopyUpi}
-                      className="px-3 py-2.5 rounded-xl bg-zinc-900 border border-white/15 text-zinc-200 hover:text-white text-xs font-bold flex items-center gap-1"
+                      className="px-3 py-2.5 rounded-xl obsidian-inset-neutral text-zinc-200 hover:text-white text-xs font-bold flex items-center gap-1"
                       title="Copy UPI ID"
                       aria-label="Copy UPI ID"
                     >
@@ -308,10 +308,10 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowQr((prev) => !prev)}
-                      className={`p-2.5 rounded-xl border transition-colors ${
+                      className={`p-2.5 rounded-xl transition-colors ${
                         showQr
-                          ? 'bg-white text-black border-white'
-                          : 'bg-zinc-900 border-white/15 text-zinc-300 hover:text-white'
+                          ? 'obsidian-pill-active font-bold'
+                          : 'obsidian-inset-neutral text-zinc-300 hover:text-white'
                       }`}
                       title="Toggle UPI QR Code"
                       aria-label="Toggle UPI QR Code"
@@ -321,7 +321,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                   </div>
 
                   {showQr && (
-                    <div className="p-3 bg-black/80 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center space-y-2">
+                    <div className="p-3 obsidian-inset-neutral rounded-xl flex flex-col items-center justify-center text-center space-y-2">
                       {upiQrUrl ? (
                         <div data-qr-surface="true" className="bg-white p-2 rounded-xl shadow-md">
                           <img
@@ -408,14 +408,14 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             <button
               type="button"
               onClick={onDismiss}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-white/10 text-xs font-bold transition-all"
+              className="flex-1 py-2.5 px-3 rounded-xl obsidian-inset-neutral text-zinc-200 hover:text-white text-xs font-bold transition-all"
             >
               Maybe Later
             </button>
             <button
               type="button"
               onClick={onBlockFiveSessions}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-black/70 hover:bg-zinc-900 text-zinc-300 hover:text-white border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+              className="flex-1 py-2.5 px-3 rounded-xl obsidian-inset-neutral text-zinc-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
             >
               <EyeOff size={13} />
               <span>Block for {TIP_SNOOZE_SESSIONS} Sessions</span>

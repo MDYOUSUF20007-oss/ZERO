@@ -3,6 +3,7 @@ import { ACCENT_THEMES, type AccentKey } from './ProfileAvatar';
 
 export interface ObsidianCardProps {
   accent?: AccentKey;
+  forceAccent?: boolean;
   accentOverride?: { hex: string; rgb: string };
   headerContent: ReactNode; // Tier 1: Primary icon/emblem, title, metadata, action/stat controls
   footerContent?: ReactNode; // Tier 2: Footer status bar, quote, helper note, timestamps
@@ -25,6 +26,7 @@ export interface ObsidianCardProps {
 
 export const ObsidianCard: React.FC<ObsidianCardProps> = ({
   accent,
+  forceAccent = false,
   accentOverride,
   headerContent,
   footerContent,
@@ -46,7 +48,7 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = ({
 }) => {
   const resolvedAccent = accentOverride
     ? accentOverride
-    : accent
+    : forceAccent && accent
     ? ACCENT_THEMES[accent] || ACCENT_THEMES.Amber
     : null;
 

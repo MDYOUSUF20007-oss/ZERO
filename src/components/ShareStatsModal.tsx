@@ -521,8 +521,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         headerContent={
           <>
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-400" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                  <Sparkles size={17} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                </div>
                 <div>
                   <h2 className="text-sm font-black uppercase tracking-wider text-white">
                     Flex Your Focus Card
@@ -534,7 +536,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white"
+                className="p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white"
                 aria-label="Close"
               >
                 <X size={16} />
@@ -542,14 +544,14 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
             </div>
 
             {/* Period Picker */}
-            <div className="grid grid-cols-5 gap-1 p-1 bg-black/80 border border-white/10 rounded-2xl text-[10px]">
+            <div className="grid grid-cols-5 gap-1 p-1 obsidian-shell-bar rounded-2xl text-[10px]">
               {(['today', 'week', 'month', 'year', 'all'] as FlexPeriod[]).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setPeriod(p)}
                   className={`py-2 rounded-xl font-bold transition-all ${
-                    period === p ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
+                    period === p ? 'obsidian-pill-active font-black' : 'text-zinc-400 hover:text-white'
                   }`}
                 >
                   {p === 'today'
@@ -566,7 +568,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
             </div>
 
             {/* Live Badges Shown on Flex Card */}
-            <div className="p-3 rounded-2xl bg-black/80 border border-white/10 space-y-1.5">
+            <div className="p-3 rounded-2xl obsidian-inset-neutral space-y-1.5">
               <div className="flex items-center justify-between text-[10px] text-zinc-400">
                 <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-zinc-300">
                   <Award size={11} className="text-amber-400" />
@@ -613,7 +615,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
             <button
               type="button"
               onClick={handleNativeOrWebShare}
-              className="flex-1 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+              className="flex-1 py-3 rounded-2xl obsidian-pill-active font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
               <Share2 size={15} />
               <span>Share with Friends</span>
@@ -621,7 +623,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
             <button
               type="button"
               onClick={handleDownloadPng}
-              className="px-4 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-bold flex items-center justify-center"
+              className="px-4 py-3 rounded-2xl obsidian-inset-neutral text-white text-xs font-bold flex items-center justify-center hover:border-white/25"
               title="Save PNG"
             >
               <Download size={15} />

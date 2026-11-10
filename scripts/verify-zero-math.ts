@@ -30,9 +30,20 @@ import {
   KINDLE_PAPER_PRESETS,
   MATTE_STUDIO_PRESETS,
   computeThemeRuntime,
+  computeDynamicAccentTokens,
   getRelativeLuminance,
   sanitizeThemeConfig,
 } from '../src/utils/themes.ts';
+import {
+  DEFAULT_WIDGETS_CONFIG,
+  computeHeatmapView,
+  computeMiniWeekHeatmap,
+  computeTimeframeSummary,
+  moveWidgetOrder,
+  sanitizeWidgetsConfig,
+  shiftDateStr,
+  shiftMonthAnchor,
+} from '../src/utils/heatmapAnalytics.ts';
 import {
   WEEKLY_BACKUP_INTERVAL_MS,
   ZBAK_PREFIX,
@@ -1064,5 +1075,207 @@ failIf(
   'IntegrityEngine.applyVerifiedRestore must succeed cleanly on uncompromised devices'
 );
 console.log('PASS: Runtime Integrity & Root/Emulator Feature Restrictions Verified');
+
+console.log('\n=== TEST 18: Widget Options & Dynamic Multi-Timeframe Discipline Heatmap ===');
+// 1. Widget sanitization & reordering
+const partialWidgets = sanitizeWidgetsConfig({
+  defaultTimeframe: 'merged_all',
+  order: ['badges', 'discipline_heatmap'],
+  visible: { discipline_heatmap: true, overview_kpis: false, badges: true, tag_breakdown: true },
+  syncOverviewWithTimeframe: true,
+  showDialWidget: false,
+});
+failIf(
+  partialWidgets.order.length === 4 &&
+    partialWidgets.order[0] === 'badges' &&
+    partialWidgets.order[1] === 'discipline_heatmap' &&
+    partialWidgets.order.includes('overview_kpis') &&
+    partialWidgets.order.includes('tag_breakdown') &&
+    partialWidgets.defaultTimeframe === 'merged_all' &&
+    partialWidgets.visible.overview_kpis === false &&
+    partialWidgets.syncOverviewWithTimeframe === true &&
+    partialWidgets.showDialWidget === false,
+  'sanitizeWidgetsConfig should preserve valid partial config & append any missing widget IDs'
+);
+
+const reorderedWidgets = moveWidgetOrder(DEFAULT_WIDGETS_CONFIG.order, 'badges', 'up');
+failIf(
+  reorderedWidgets[1] === 'badges' && reorderedWidgets[2] === 'overview_kpis',
+  'moveWidgetOrder up should swap widget cleanly with predecessor'
+);
+
+// 2. Heatmap Daily (24h), Weekly (Mon-Sun), Monthly & Merged All
+const anchorNowMs = Date.UTC(2026, 10, 10, 18, 0, 0); // Tue 2026-11-10T18:00:00Z
+const heatmapSessions: SessionRecord[] = [
+  // Historic session (>16 weeks earlier) -> expands Merged All span!
+  {
+    id: 'hm_old',
+    startTime: Date.UTC(2026, 0, 15, 9, 0, 0),
+    endTime: Date.UTC(2026, 0, 15, 14, 0, 0),
+    durationSeconds: 5 * 3600,
+    earnedParachuteSeconds: 5 * 3600,
+    weightMultiplier: 1.0,
+    tag: 'Study',
+    status: 'completed',
+    dateStr: '2026-01-15',
+  },
+  // 3-day consecutive streak: Nov 08, Nov 09, Nov 10 (best streak = 3)
+  {
+    id: 'hm_s1',
+    startTime: Date.UTC(2026, 10, 8, 10, 0, 0),
+    endTime: Date.UTC(2026, 10, 8, 12, 0, 0),
+    durationSeconds: 2 * 3600,
+    earnedParachuteSeconds: 2 * 3600,
+    weightMultiplier: 1.0,
+    tag: 'Deep Work',
+    status: 'completed',
+    dateStr: '2026-11-08',
+  },
+  {
+    id: 'hm_s2',
+    startTime: Date.UTC(2026, 10, 9, 9, 0, 0),
+    endTime: Date.UTC(2026, 10, 9, 13, 30, 0),
+    durationSeconds: Math.round(4.5 * 3600),
+    earnedParachuteSeconds: Math.round(4.5 * 3600),
+    weightMultiplier: 1.0,
+    tag: 'Deep Work',
+    status: 'completed',
+    dateStr: '2026-11-09',
+  },
+  {
+    id: 'hm_s3_today',
+    startTime: Date.UTC(2026, 10, 10, 13, 30, 0),
+    endTime: Date.UTC(2026, 10, 10, 16, 0, 0),
+    durationSeconds: Math.round(2.5 * 3600),
+    earnedParachuteSeconds: Math.round(2.5 * 3600),
+    weightMultiplier: 1.0,
+    tag: 'Detox',
+    status: 'completed',
+    dateStr: '2026-11-10',
+  },
+  // Aborted session must NOT count as completed heatmap hours
+  {
+    id: 'hm_aborted',
+    startTime: Date.UTC(2026, 10, 10, 7, 0, 0),
+    endTime: Date.UTC(2026, 10, 10, 8, 0, 0),
+    durationSeconds: 3600,
+    earnedParachuteSeconds: 0,
+    weightMultiplier: 0,
+    tag: 'Deep Work',
+    status: 'parachuted',
+    dateStr: '2026-11-10',
+  },
+];
+
+const dailyHm = computeHeatmapView({
+  sessions: heatmapSessions,
+  timeframe: 'daily',
+  anchorDateStr: '2026-11-10',
+  nowMs: anchorNowMs,
+  dailyGoalHours: 4,
+  useUtc: true,
+});
+const hourlySumSec = dailyHm.hourlyCells.reduce((a, b) => a + b.seconds, 0);
+failIf(
+  dailyHm.hourlyCells.length === 24 &&
+    hourlySumSec === Math.round(2.5 * 3600) &&
+    dailyHm.hourlyCells[15].seconds === 3600 &&
+    dailyHm.hourlyCells[14].seconds === 3600 &&
+    dailyHm.hourlyCells[13].seconds === 1800 &&
+    dailyHm.sessionCount === 1,
+  'Daily heatmap must allocate exact 2.5h across UTC hours 13–15 and exclude aborted sessions'
+);
+
+const weeklyHm = computeHeatmapView({
+  sessions: heatmapSessions,
+  timeframe: 'weekly',
+  anchorDateStr: '2026-11-10',
+  nowMs: anchorNowMs,
+  dailyGoalHours: 4,
+  useUtc: true,
+});
+// Week of 2026-11-10 starts Mon 2026-11-09 -> Sun 2026-11-15: Nov 09 (4.5h, goalMet) + Nov 10 (2.5h) = 7.0h
+failIf(
+  weeklyHm.weekCells.length === 7 &&
+    weeklyHm.weekCells[0].dateStr === '2026-11-09' &&
+    weeklyHm.weekCells[0].goalMet === true &&
+    weeklyHm.weekCells[1].dateStr === '2026-11-10' &&
+    weeklyHm.weekCells[1].hours === 2.5 &&
+    weeklyHm.goalMetDays === 1 &&
+    weeklyHm.totalHours === 7.0,
+  'Weekly heatmap must align Mon–Sun, flag goalMetDays accurately, and sum Mon+Tue = 7.0h'
+);
+
+const monthlyHm = computeHeatmapView({
+  sessions: heatmapSessions,
+  timeframe: 'monthly',
+  anchorDateStr: '2026-11-10',
+  nowMs: anchorNowMs,
+  dailyGoalHours: 4,
+  useUtc: true,
+});
+// Nov 2026 has 30 days, Nov 1 2026 is Sunday -> 6 leading Mon..Sat empty slots; sum Nov 08(2h)+09(4.5h)+10(2.5h)=9h
+failIf(
+  monthlyHm.monthCells.length === 30 &&
+    monthlyHm.monthLeadingEmpty === 6 &&
+    monthlyHm.totalHours === 9.0 &&
+    monthlyHm.activeCount === 3,
+  'Monthly heatmap must compute 30 Nov days, Mon-first leading empties=6, and 9.0h across 3 active days'
+);
+
+const mergedHm = computeHeatmapView({
+  sessions: heatmapSessions,
+  timeframe: 'merged_all',
+  anchorDateStr: '2026-11-10',
+  nowMs: anchorNowMs,
+  dailyGoalHours: 4,
+  useUtc: true,
+});
+failIf(
+  mergedHm.totalHours === 14.0 &&
+    mergedHm.sessionCount === 4 &&
+    mergedHm.mergedWeekCount >= 40 &&
+    mergedHm.mergedBestDay?.dateStr === '2026-01-15' &&
+    mergedHm.mergedBestDay?.hours === 5.0 &&
+    mergedHm.mergedLongestStreak === 3,
+  'Merged All heatmap must combine Jan historic session + Nov streak cleanly (14.0h, best day Jan 15, streak 3)'
+);
+
+const shiftedMonth = shiftMonthAnchor('2026-01-31', 1);
+failIf(
+  shiftedMonth === '2026-02-01' && shiftDateStr('2026-11-10', -7) === '2026-11-03',
+  'Date & month anchor shifting helpers must avoid Jan 31 -> Mar rollover bug'
+);
+
+const scopedSummary = computeTimeframeSummary({
+  sessions: heatmapSessions,
+  timeframe: 'weekly',
+  anchorDateStr: '2026-11-10',
+  nowMs: anchorNowMs,
+});
+failIf(
+  scopedSummary.totalHours === 7.0 &&
+    scopedSummary.completedCount === 2 &&
+    scopedSummary.abortedCount === 1 &&
+    scopedSummary.completionRate === 67 &&
+    scopedSummary.tagBreakdown[0].tag === 'Deep Work',
+  'Timeframe summary helper must compute scoped KPI & tag breakdown cleanly'
+);
+
+const dialStrip = computeMiniWeekHeatmap(heatmapSessions, 4, anchorNowMs);
+failIf(
+  dialStrip.weekTotalHours === 7.0 && dialStrip.goalMetDays === 1 && dialStrip.weekCells.length === 7,
+  'Mini dial widget helper must return matching 7-day strip summary'
+);
+
+const dynamicAccentEmerald = computeDynamicAccentTokens('#10B981');
+const dynamicAccentCrimson = computeDynamicAccentTokens('#9F1239');
+failIf(
+  dynamicAccentEmerald.rgb === '16, 185, 129' &&
+    dynamicAccentEmerald.badgeText === '#09090B' &&
+    dynamicAccentCrimson.badgeText === '#FFFFFF',
+  'Dynamic accent token generator must compute crisp dark/light metallic text contrast'
+);
+console.log('PASS: Widget Options, Daily/Weekly/Monthly/Merged-All Heatmaps & Dynamic Accents Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

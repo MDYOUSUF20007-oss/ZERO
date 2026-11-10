@@ -101,6 +101,7 @@ export function App() {
       {/* Top Status Bar Safe-Area Scrim (prevents scrolled content from clashing with Android system icons) */}
       <div
         aria-hidden="true"
+        data-frosted-chrome="true"
         className="fixed top-0 left-0 right-0 z-40 zero-top-scrim backdrop-blur-md pointer-events-none"
         style={{ height: 'var(--zero-safe-top)' }}
       />
@@ -108,26 +109,39 @@ export function App() {
       {/* 5-Minute Pre-Lock Heads-Up Warning Banner */}
       {store.preLockAlert && (
         <div
-          className="fixed left-4 right-4 z-50 max-w-md mx-auto bg-amber-500 text-black p-3 rounded-2xl shadow-2xl flex items-center justify-between font-mono animate-bounce"
+          className="fixed left-4 right-4 z-50 max-w-md mx-auto animate-bounce"
           style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
         >
-          <div className="flex items-center gap-2.5">
-            <BellRing size={18} className="shrink-0" />
-            <div>
-              <div className="font-black text-xs uppercase tracking-wider">
-                Heads-up: Lock Starts in {store.preLockAlert.minutesLeft}m
-              </div>
-              <div className="text-[11px] font-medium opacity-90">
-                "{store.preLockAlert.scheduleName}" is about to engage The Void.
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => store.triggerTestWarning('')}
-            className="p-1 hover:bg-black/10 rounded-lg text-black"
-          >
-            <X size={16} />
-          </button>
+          <ObsidianCard
+            accentOverride={{ hex: '#F59E0B', rgb: '245, 158, 11' }}
+            ambientGlow
+            className="font-mono shadow-2xl"
+            headerClassName="p-3 flex items-center justify-between gap-2.5"
+            headerContent={
+              <>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0 text-amber-400">
+                    <BellRing size={17} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-black text-xs uppercase tracking-wider text-amber-300">
+                      Heads-up: Lock Starts in {store.preLockAlert.minutesLeft}m
+                    </div>
+                    <div className="text-[11px] text-zinc-300 truncate">
+                      &ldquo;{store.preLockAlert.scheduleName}&rdquo; is about to engage The Void.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => store.triggerTestWarning('')}
+                  className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white shrink-0"
+                  aria-label="Dismiss Heads-up Warning"
+                >
+                  <X size={15} />
+                </button>
+              </>
+            }
+          />
         </div>
       )}
 
@@ -182,6 +196,7 @@ export function App() {
             profile={store.profile}
             isZeroSupporter={store.isZeroSupporter}
             sessions={store.sessions}
+            widgetsConfig={store.widgetsConfig}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
@@ -189,6 +204,7 @@ export function App() {
             isCloudBusy={store.isCloudBusy}
             onOneTapUpload={store.oneTapCloudUpload}
             onTurnOnAutoBackup={store.enableCloudAutoBackup}
+            onExportZbakData={store.exportZbakData}
             onOpenDashboard={() => setActiveTab('dashboard')}
             onOpenBagDrawer={() => {
               store.refreshInstalledApps();
@@ -203,6 +219,10 @@ export function App() {
               setRulesSectionOverride({ section: 'themes', key: Date.now() });
               setActiveTab('schedules');
             }}
+            onOpenManualBackup={() => {
+              setRulesSectionOverride({ section: 'settings', key: Date.now() });
+              setActiveTab('schedules');
+            }}
           />
         )}
 
@@ -212,6 +232,8 @@ export function App() {
             ledger={store.ledger}
             sessions={store.sessions}
             profile={store.profile}
+            widgetsConfig={store.widgetsConfig}
+            onWidgetsConfigChange={store.setWidgetsConfig}
             isZeroSupporter={store.isZeroSupporter}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
@@ -237,7 +259,9 @@ export function App() {
             sleepFarmingMode={store.sleepFarmingMode}
             onSleepFarmingModeChange={store.setSleepFarmingMode}
             onBuildBackupJson={store.buildBackupJson}
+            onBuildZbakString={store.buildZbakString}
             onExportData={store.exportData}
+            onExportZbakData={store.exportZbakData}
             onImportData={store.importData}
             onResetData={store.resetAllData}
             cloudBackupStatus={store.cloudBackupStatus}
@@ -331,11 +355,24 @@ export function App() {
         onDismiss={store.dismissParachuteRewardAnimation}
       />
 
-      {/* Neo-Brutalist Bottom Navigation Bar */}
+      {/* Frosted Two-Tier Obsidian Bottom Navigation Dock */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 zero-bottom-nav backdrop-blur-md border-t border-zinc-900 pt-2 px-4"
-        style={{ paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))' }}
+        data-frosted-chrome="true"
+        className="fixed bottom-0 left-0 right-0 z-40 obsidian-shell-bar backdrop-blur-md border-t pt-2 px-4"
+        style={{
+          paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
+          borderColor: 'rgba(var(--accent-rgb, 245, 158, 11), 0.35)',
+        }}
       >
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+            opacity: 0.75,
+          }}
+        />
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
           <button
             onClick={() => {
@@ -344,12 +381,20 @@ export function App() {
             }}
             className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all ${
               activeTab === 'dial'
-                ? 'bg-zinc-900 text-white font-bold border border-zinc-700 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'obsidian-inset font-bold text-white shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
-            <Clock size={18} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Dial</span>
+            <Clock
+              size={18}
+              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            />
+            <span
+              className="text-[10px] font-mono mt-1 tracking-wider uppercase"
+              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            >
+              Dial
+            </span>
           </button>
 
           <button
@@ -359,19 +404,26 @@ export function App() {
             }}
             className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all relative ${
               activeTab === 'dashboard'
-                ? 'bg-zinc-900 text-white font-bold border border-zinc-700 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'obsidian-inset font-bold text-white shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
             <div className="relative">
               <span className="text-sm">🎫</span>
               {store.parachuteMetrics.currentBalance > 0 && (
-                <span className="absolute -top-1.5 -right-3 text-[9px] font-mono bg-amber-400 text-black px-1 rounded-full font-black">
+                <span className="absolute -top-1.5 -right-3 text-[9px] font-mono px-1 rounded-full font-black obsidian-pill-active">
                   {store.parachuteMetrics.currentBalance}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-mono mt-0.5 tracking-wider uppercase">Insights</span>
+            <span
+              className="text-[10px] font-mono mt-0.5 tracking-wider uppercase"
+              style={
+                activeTab === 'dashboard' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+              }
+            >
+              Insights
+            </span>
           </button>
 
           <button
@@ -381,12 +433,22 @@ export function App() {
             }}
             className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all ${
               activeTab === 'schedules'
-                ? 'bg-zinc-900 text-white font-bold border border-zinc-700 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'obsidian-inset font-bold text-white shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
-            <Heart size={18} className={activeTab === 'schedules' ? 'text-red-500' : ''} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">Settings &amp; OS</span>
+            <Heart
+              size={18}
+              style={activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined}
+            />
+            <span
+              className="text-[10px] font-mono mt-1 tracking-wider uppercase"
+              style={
+                activeTab === 'schedules' ? { color: 'var(--accent-hex, #F59E0B)' } : undefined
+              }
+            >
+              Settings &amp; OS
+            </span>
           </button>
         </div>
       </nav>

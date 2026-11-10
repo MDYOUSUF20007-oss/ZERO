@@ -167,6 +167,25 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+export function computeDynamicAccentTokens(hexInput: string): {
+  hex: string;
+  rgb: string;
+  badgeGradient: string;
+  badgeText: string;
+} {
+  const hex = normalizeHexColor(hexInput, '#F59E0B');
+  const { r, g, b } = hexToRgb(hex);
+  const lightStop = mixHexColors(hex, '#FFFFFF', 0.24);
+  const deepStop = mixHexColors(hex, '#000000', 0.22);
+  const badgeText = getRelativeLuminance(hex) >= 0.34 ? '#09090B' : '#FFFFFF';
+  return {
+    hex,
+    rgb: `${r}, ${g}, ${b}`,
+    badgeGradient: `linear-gradient(135deg, ${lightStop} 0%, ${deepStop} 100%)`,
+    badgeText,
+  };
+}
+
 export function migrateLegacyThemeStyle(style?: ThemeStyle | null): ThemeFamily {
   if (style === 'kindle') return 'kindle';
   if (style === 'matte') return 'matte';

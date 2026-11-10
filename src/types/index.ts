@@ -273,6 +273,22 @@ export interface ThemeConfig {
 
 export type ThemeStyle = 'amoled' | 'kindle' | 'matte' | 'monochrome' | 'oled' | 'amber' | 'emerald';
 
+export type HeatmapTimeframe = 'daily' | 'weekly' | 'monthly' | 'merged_all';
+
+export type InsightWidgetId =
+  | 'overview_kpis'
+  | 'discipline_heatmap'
+  | 'badges'
+  | 'tag_breakdown';
+
+export interface DashboardWidgetsConfig {
+  visible: Record<InsightWidgetId, boolean>;
+  order: InsightWidgetId[];
+  defaultTimeframe: HeatmapTimeframe;
+  syncOverviewWithTimeframe: boolean;
+  showDialWidget: boolean;
+}
+
 export interface ZeroNativeBridgeInterface {
   isStrictAccessibilityBuild(): boolean;
   isDeviceOwner(): boolean;

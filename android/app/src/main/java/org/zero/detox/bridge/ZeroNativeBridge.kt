@@ -548,10 +548,16 @@ class ZeroNativeBridge(
             outFile.writeText(jsonContent, Charsets.UTF_8)
 
             val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", outFile)
+            val mimeType = if (safeFileName.endsWith(".zbak", ignoreCase = true)) {
+                "application/octet-stream"
+            } else {
+                "application/json"
+            }
             val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/json"
+                type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Backup")
+                putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Backup ($safeFileName)")
+                clipData = android.content.ClipData.newUri(activity.contentResolver, safeFileName, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             activity.runOnUiThread {

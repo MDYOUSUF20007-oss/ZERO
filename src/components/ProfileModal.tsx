@@ -9,6 +9,7 @@ import type {
 import {
   ACCENT_ID_TO_KEY,
   ACCENT_STYLES,
+  ACCENT_THEMES,
   AVATAR_ID_TO_EMBLEM,
   AVATAR_OPTIONS,
   ProfileAvatar,
@@ -156,6 +157,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   };
 
   const accentKey = ACCENT_ID_TO_KEY[accentColor] || 'Amber';
+  const liveTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
 
   return (
     <div
@@ -168,6 +170,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       <ObsidianCard
         onSubmit={handleSubmit}
         accent={accentKey}
+        forceAccent
         ambientGlow
         className="w-full max-w-md max-h-full font-mono"
         headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
@@ -305,7 +308,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   placeholder="e.g. Yousuf"
                   maxLength={28}
                   autoFocus={mode === 'welcome'}
-                  className="w-full bg-zinc-900 border border-white/15 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                  className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                 />
               </div>
               <div>
@@ -318,7 +321,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   onChange={(e) => setHandleInput(e.target.value)}
                   placeholder={normalizeProfileHandle(displayName)}
                   maxLength={20}
-                  className="w-full bg-zinc-900 border border-white/15 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none"
+                  className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none"
                 />
               </div>
             </div>
@@ -395,34 +398,46 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 Primary Detox Mission
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {MISSION_PRESETS.map((mission) => (
-                  <button
-                    key={mission}
-                    type="button"
-                    onClick={() => {
-                      haptics.tick(800);
-                      setPrimaryMission(mission);
-                    }}
-                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${
-                      primaryMission === mission
-                        ? 'bg-zinc-200 text-black border-white'
-                        : 'bg-zinc-900 text-zinc-400 border-white/10 hover:text-zinc-200'
-                    }`}
-                  >
-                    #{mission}
-                  </button>
-                ))}
+                {MISSION_PRESETS.map((mission) => {
+                  const isActiveMission = primaryMission === mission;
+                  return (
+                    <button
+                      key={mission}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(800);
+                        setPrimaryMission(mission);
+                      }}
+                      style={
+                        isActiveMission
+                          ? {
+                              background: liveTheme.badgeGradient,
+                              color: liveTheme.badgeText,
+                              boxShadow: `0 0 12px rgba(${liveTheme.rgb}, 0.35)`,
+                            }
+                          : undefined
+                      }
+                      className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                        isActiveMission
+                          ? 'border border-white/30 font-black'
+                          : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      #{mission}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Interactive Daily Focus Goal Slider */}
-            <div className="p-3 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2">
+            <div className="p-3 rounded-2xl obsidian-inset-neutral space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-zinc-300 flex items-center gap-1.5">
-                  <Flame size={13} className="text-amber-400" />
+                  <Flame size={13} style={{ color: liveTheme.hex }} />
                   <span>Daily Phone-Free Goal</span>
                 </span>
-                <span className={`font-black ${accentStyle.text}`}>
+                <span className="font-black" style={{ color: liveTheme.hex }}>
                   {dailyGoalHours} {dailyGoalHours === 1 ? 'Hour' : 'Hours'} / Day
                 </span>
               </div>
@@ -436,7 +451,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   haptics.tick(650 + Number(e.target.value) * 35);
                   setDailyGoalHours(Number(e.target.value));
                 }}
-                className="w-full accent-amber-400 cursor-pointer"
+                style={{ accentColor: liveTheme.hex }}
+                className="w-full cursor-pointer"
               />
               <div className="flex justify-between text-[9px] text-zinc-400">
                 <span>1h Light</span>
@@ -457,7 +473,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onChange={(e) => setMotto(e.target.value)}
                 maxLength={72}
                 placeholder="Your focus rule..."
-                className="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                className="w-full obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
               />
               <div className="flex gap-1.5 flex-wrap">
                 {MOTTO_PRESETS.map((preset) => (
@@ -465,7 +481,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     key={preset}
                     type="button"
                     onClick={() => setMotto(preset)}
-                    className="text-[9px] px-2 py-0.5 rounded bg-zinc-900 border border-white/10 text-zinc-400 hover:text-zinc-200"
+                    className="text-[9px] px-2 py-0.5 rounded obsidian-inset-neutral text-zinc-400 hover:text-zinc-200 transition-colors"
                   >
                     {preset}
                   </button>
@@ -484,7 +500,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <>
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+              style={{
+                background: liveTheme.badgeGradient,
+                color: liveTheme.badgeText,
+                boxShadow: `0 0 18px -2px rgba(${liveTheme.rgb}, 0.42)`,
+              }}
+              className="w-full py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
               {showGiftOffer ? (
                 <>
@@ -502,7 +523,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-bold"
+              className="w-full py-2.5 rounded-xl obsidian-inset-neutral text-zinc-300 hover:text-white text-xs font-bold transition-colors"
             >
               {mode === 'welcome' ? 'Maybe Later' : 'Cancel'}
             </button>

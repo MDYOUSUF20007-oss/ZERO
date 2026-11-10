@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import type {
   SessionTag,
   SessionRecord,
@@ -6,6 +6,7 @@ import type {
   OccasionBag,
   NativePermissionStatus,
   ZeroProfile,
+  DashboardWidgetsConfig,
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
@@ -13,6 +14,11 @@ import { ACCENT_ID_TO_KEY, ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar'
 import { ObsidianCard } from './ObsidianCard';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
+import {
+  computeMiniWeekHeatmap,
+  sanitizeWidgetsConfig,
+  DEFAULT_WIDGETS_CONFIG,
+} from '../utils/heatmapAnalytics';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import {
   ShieldAlert,
@@ -31,6 +37,8 @@ import {
   CloudUpload,
   CloudCog,
   Loader2,
+  Download,
+  HardDrive,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -41,6 +49,7 @@ interface LockDialViewProps {
   profile: ZeroProfile | null;
   isZeroSupporter: boolean;
   sessions: SessionRecord[];
+  widgetsConfig?: DashboardWidgetsConfig;
   hasClaimedFirstTimeParachute: boolean;
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
@@ -48,11 +57,54 @@ interface LockDialViewProps {
   isCloudBusy?: boolean;
   onOneTapUpload?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onTurnOnAutoBackup?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
+  onExportZbakData?: () => string;
   onOpenDashboard: () => void;
   onOpenBagDrawer: () => void;
   onOpenPermissionGate: () => void;
   onOpenProfileModal: () => void;
   onOpenThemes: () => void;
+  onOpenManualBackup?: () => void;
+}
+
+function getMiniHeatmapCellStyle(
+  level: 0 | 1 | 2 | 3 | 4,
+  isToday: boolean
+): CSSProperties {
+  const ringShadow = isToday ? ', 0 0 0 1.5px rgba(255, 255, 255, 0.78)' : '';
+  switch (level) {
+    case 1:
+      return {
+        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.18)',
+        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.36)',
+        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
+      };
+    case 2:
+      return {
+        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.4)',
+        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.58)',
+        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
+      };
+    case 3:
+      return {
+        background: 'rgba(var(--accent-rgb, 245, 158, 11), 0.66)',
+        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.85)',
+        boxShadow: `0 0 8px rgba(var(--accent-rgb, 245, 158, 11), 0.28)${ringShadow}`,
+      };
+    case 4:
+      return {
+        background:
+          'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
+        border: '1px solid rgba(var(--accent-rgb, 245, 158, 11), 0.98)',
+        boxShadow: `0 0 10px rgba(var(--accent-rgb, 245, 158, 11), 0.45)${ringShadow}`,
+      };
+    case 0:
+    default:
+      return {
+        background: 'rgba(9, 9, 11, 0.84)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: isToday ? '0 0 0 1.5px rgba(255, 255, 255, 0.78)' : undefined,
+      };
+  }
 }
 
 const PRESET_DURATIONS = [
@@ -68,6 +120,8 @@ const PRESET_DURATIONS = [
 ];
 
 const SESSION_TAGS: SessionTag[] = ['Deep Work', 'Study', 'Family', 'Sleep', 'Detox'];
+const MIN_SECS = 5 * 60;
+const MAX_SECS = 24 * 3600;
 
 export const LockDialView: React.FC<LockDialViewProps> = ({
   onIgnite,
@@ -77,6 +131,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   profile,
   isZeroSupporter,
   sessions,
+  widgetsConfig,
   hasClaimedFirstTimeParachute,
   todayReclaimedHours,
   justEarnedParachute,
@@ -84,11 +139,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   isCloudBusy = false,
   onOneTapUpload,
   onTurnOnAutoBackup,
+  onExportZbakData,
   onOpenDashboard,
   onOpenBagDrawer,
   onOpenPermissionGate,
   onOpenProfileModal,
   onOpenThemes,
+  onOpenManualBackup,
 }) => {
   const [cloudBannerMsg, setCloudBannerMsg] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
@@ -118,9 +175,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     if (hours > 0) return `${hours} hr${hours > 1 ? 's' : ''}`;
     return `${mins} min`;
   };
-
-  const MIN_SECS = 5 * 60;
-  const MAX_SECS = 24 * 3600;
 
   const currentAngle = React.useMemo(() => {
     const pct = (durationSeconds - MIN_SECS) / (MAX_SECS - MIN_SECS);
@@ -263,6 +317,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       }),
     [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
   );
+  const resolvedWidgets = useMemo(
+    () => sanitizeWidgetsConfig(widgetsConfig ?? DEFAULT_WIDGETS_CONFIG),
+    [widgetsConfig]
+  );
+  const miniWeek = useMemo(
+    () => computeMiniWeekHeatmap(sessions, profile?.dailyGoalHours || 4),
+    [sessions, profile?.dailyGoalHours]
+  );
   const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const profileAccent = profile
     ? ACCENT_STYLES[profile.accentColor] || ACCENT_STYLES.amber
@@ -325,10 +387,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-8 bg-zinc-800 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                    <div className="w-8 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden hidden sm:block">
                       <div
-                        className={`h-full rounded-full transition-all ${profileAccent.bar}`}
-                        style={{ width: `${dailyGoalPct}%` }}
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${dailyGoalPct}%`,
+                          background: 'var(--accent-badge-gradient, #F59E0B)',
+                        }}
                       />
                     </div>
                     <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
@@ -350,7 +415,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+                  <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0" style={{ color: 'var(--accent-hex, #F59E0B)' }}>
                     {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
                   </div>
                   <div className="text-left min-w-0">
@@ -366,7 +431,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     </div>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg obsidian-pill-active text-[10px] font-black uppercase shrink-0">
                   <Sparkles size={11} />
                   <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
                 </span>
@@ -384,12 +449,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onOpenThemes();
           }}
           className="shrink-0"
-          headerClassName="flex-1 px-3 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white"
+          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white"
           title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
           aria-label="Open Theme Studio"
           headerContent={
             <>
-              <Palette size={15} style={{ color: 'var(--zero-accent)' }} />
+              <div className="w-6 h-6 rounded-lg obsidian-icon-box flex items-center justify-center">
+                <Palette size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+              </div>
               <span className="text-[9px] font-bold uppercase tracking-wider">Theme</span>
             </>
           }
@@ -420,10 +487,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           <>
             <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className={`w-9 h-9 rounded-xl bg-zinc-900 border flex items-center justify-center font-mono text-base shrink-0 transition-colors ${
-                  justEarnedParachute
-                    ? 'border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.5)]'
-                    : 'border-zinc-700 group-hover:border-amber-400/50'
+                className={`w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center font-mono text-base shrink-0 transition-transform ${
+                  justEarnedParachute ? 'scale-105' : ''
                 }`}
               >
                 <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
@@ -439,8 +504,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <span
                     className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
                       justEarnedParachute || parachuteMetrics.bonusParachutes > 0
-                        ? 'bg-amber-400/15 border border-amber-400/40 text-amber-300'
-                        : 'bg-zinc-800 text-zinc-300'
+                        ? 'obsidian-inset text-amber-300'
+                        : 'obsidian-inset-neutral text-zinc-300'
                     }`}
                   >
                     {balanceBadgeText}
@@ -449,10 +514,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-zinc-400 group-hover:text-zinc-200 shrink-0">
-              <div className="w-12 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+              <div className="w-12 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-zinc-200 h-full rounded-full transition-all"
-                  style={{ width: `${parachuteMetrics.progressPercentage}%` }}
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${parachuteMetrics.progressPercentage}%`,
+                    background: 'var(--accent-badge-gradient, #F59E0B)',
+                  }}
                 />
               </div>
               <ChevronRight size={16} />
@@ -610,6 +678,49 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       <span>Turn On Auto-Backup</span>
                     </button>
                   </div>
+
+                  {(onExportZbakData || onOpenManualBackup) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {onExportZbakData && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(820);
+                            onExportZbakData();
+                            setCloudBannerMsg('Saved signed zero-backup.zbak manually.');
+                            setTimeout(() => setCloudBannerMsg(''), 4500);
+                          }}
+                          className="amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                          style={{
+                            backgroundColor: '#09090B',
+                            borderColor: 'rgba(139, 92, 246, 0.35)',
+                            color: '#DDD6FE',
+                          }}
+                        >
+                          <Download size={11} />
+                          <span>Export .zbak</span>
+                        </button>
+                      )}
+                      {onOpenManualBackup && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(820);
+                            onOpenManualBackup();
+                          }}
+                          className="amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                          style={{
+                            backgroundColor: '#09090B',
+                            borderColor: 'rgba(139, 92, 246, 0.35)',
+                            color: '#DDD6FE',
+                          }}
+                        >
+                          <HardDrive size={11} />
+                          <span>Manual Options &rarr;</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -638,13 +749,92 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         />
       )}
 
+      {/* Optional Compact 7-Day Discipline Widget Strip (Toggled in Insights -> Widgets) */}
+      {resolvedWidgets.showDialWidget && (
+        <ObsidianCard
+          asButton
+          accent={profileAccentKey}
+          onClick={onOpenDashboard}
+          className="font-mono"
+          headerClassName="p-3 flex items-center justify-between gap-2.5"
+          footerClassName="px-3 py-1.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400"
+          headerContent={
+            <>
+              <div className="flex-1 min-w-0 space-y-1.5 text-left">
+                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                  <span>7-Day Discipline</span>
+                  <span style={{ color: 'var(--accent-hex, #F59E0B)' }}>
+                    {miniWeek.goalMetDays}/7 Goal
+                  </span>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {miniWeek.weekCells.map((cell) => (
+                    <div
+                      key={cell.dateStr}
+                      style={getMiniHeatmapCellStyle(cell.level, cell.isToday)}
+                      className="h-7 rounded-lg flex flex-col items-center justify-center"
+                      title={cell.detailLabel}
+                    >
+                      <span
+                        className="text-[8px] font-black leading-none"
+                        style={{
+                          color:
+                            cell.level === 4
+                              ? 'var(--accent-badge-text, #09090B)'
+                              : cell.isToday
+                              ? '#FFFFFF'
+                              : '#A1A1AA',
+                        }}
+                      >
+                        {cell.dayShort[0]}
+                      </span>
+                      <span
+                        className="text-[7px] font-bold leading-none mt-0.5"
+                        style={{
+                          color:
+                            cell.level === 4
+                              ? 'var(--accent-badge-text, #09090B)'
+                              : cell.seconds > 0
+                              ? '#E4E4E7'
+                              : '#52525B',
+                        }}
+                      >
+                        {cell.seconds > 0 ? `${cell.hours}h` : '·'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="px-2.5 py-2 rounded-xl obsidian-inset flex flex-col items-center justify-center shrink-0 min-w-[66px]">
+                <span
+                  className="text-sm font-black leading-none"
+                  style={{ color: 'var(--accent-hex, #F59E0B)' }}
+                >
+                  {miniWeek.weekTotalHours}h
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 mt-1">
+                  WEEK
+                </span>
+              </div>
+            </>
+          }
+          footerContent={
+            <>
+              <span>Weekly discipline pulse</span>
+              <span className="font-bold text-zinc-300">Daily / Monthly / All &rarr;</span>
+            </>
+          }
+        />
+      )}
+
       {/* Center: Tactile Duration Dial Wheel */}
       <div className="my-auto flex flex-col items-center justify-center relative w-full py-2">
         <div
           ref={dialRef}
           onMouseDown={startDialScrub}
           onTouchStart={startDialScrub}
-          className="zero-dial-ring relative w-60 h-60 sm:w-68 sm:h-68 rounded-full border-2 border-zinc-800/80 bg-zinc-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl transition-shadow hover:border-zinc-700"
+          className="zero-dial-ring obsidian-dial-bezel relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow"
           style={{ touchAction: 'none' }}
         >
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 288 288">
@@ -653,8 +843,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               cy="144"
               r="132"
               fill="none"
-              stroke="var(--zero-border, rgba(255, 255, 255, 0.12))"
-              strokeOpacity="0.45"
+              stroke="rgba(255, 255, 255, 0.14)"
+              strokeOpacity="0.6"
               strokeWidth="12"
               strokeDasharray="2 10"
             />
@@ -663,7 +853,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               cy="144"
               r="132"
               fill="none"
-              stroke="var(--zero-dial-stroke, #EDEDED)"
+              stroke="var(--accent-hex, #F59E0B)"
               strokeWidth="5"
               strokeDasharray={`${(currentAngle / 360) * 829.38} 829.38`}
               strokeLinecap="round"
@@ -677,10 +867,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             style={{ transform: `rotate(${currentAngle}deg)` }}
           >
             <div
-              className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.45)] border"
+              className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border"
               style={{
-                backgroundColor: 'var(--zero-dial-stroke, #FFFFFF)',
-                borderColor: 'var(--zero-bg-primary, #000000)',
+                backgroundColor: 'var(--accent-hex, #F59E0B)',
+                borderColor: '#09090B',
+                boxShadow: '0 0 14px var(--accent-hex, rgba(245, 158, 11, 0.75))',
               }}
             />
           </div>
@@ -693,7 +884,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               {formatDialTime(durationSeconds)}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs font-mono text-zinc-400">
-              <Clock size={12} className="text-zinc-500" />
+              <Clock size={12} style={{ color: 'var(--accent-hex, #A1A1AA)' }} />
               <span>Until {targetTimeStr}</span>
             </div>
           </div>
@@ -708,10 +899,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 haptics.thud();
                 setDurationSeconds(preset.seconds);
               }}
-              className={`px-2.5 py-1 text-xs font-mono rounded-lg border transition-all ${
+              className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
                 durationSeconds === preset.seconds
-                  ? 'bg-zinc-100 text-black border-zinc-100 font-bold shadow-sm'
-                  : 'bg-zinc-900/80 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
+                  ? 'obsidian-pill-active font-black'
+                  : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
               }`}
             >
               {preset.label}
@@ -745,11 +936,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 placeholder="e.g. Thesis, Meditation..."
                 maxLength={20}
                 autoFocus
-                className="flex-1 bg-zinc-900 border border-zinc-700 text-xs text-white rounded-xl px-3 py-2 font-mono outline-none focus:border-zinc-400"
+                className="flex-1 obsidian-input text-xs text-white rounded-xl px-3 py-2 font-mono outline-none"
               />
               <button
                 type="submit"
-                className="bg-zinc-200 text-black text-xs font-mono font-bold px-3 py-2 rounded-xl"
+                className="obsidian-pill-active text-xs font-mono font-black px-3.5 py-2 rounded-xl uppercase"
               >
                 Add
               </button>
@@ -763,10 +954,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     haptics.tick(900);
                     setSelectedTag(tag);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all border ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all ${
                     selectedTag === tag
-                      ? 'bg-zinc-200 text-black border-white font-bold'
-                      : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                      ? 'obsidian-pill-active font-black'
+                      : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   #{tag}
@@ -786,15 +977,15 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           headerContent={
             <>
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white shrink-0">
-                  <Briefcase size={16} />
+                <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                  <Briefcase size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-bold text-white truncate">
                       Bag: {activeBag.name}
                     </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded obsidian-inset-neutral text-zinc-300 shrink-0">
                       {activeBag.apps.length}/{MAX_BAG_APPS} apps
                     </span>
                   </div>
@@ -836,28 +1027,46 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchStart={startHold}
             onTouchEnd={cancelHold}
             onTouchCancel={cancelHold}
-            className={`relative w-full h-15 py-4 rounded-2xl border-2 font-mono font-black text-sm tracking-wider uppercase overflow-hidden transition-all select-none shadow-brutal flex items-center justify-center ${
-              isHolding
-                ? 'border-white bg-zinc-900 text-white scale-[0.99]'
-                : 'border-zinc-700 bg-zinc-950 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-900 active:scale-[0.99]'
+            className={`relative w-full h-15 py-4 rounded-2xl obsidian-shell-bar border font-mono font-black text-sm tracking-wider uppercase overflow-hidden transition-all select-none flex items-center justify-center ${
+              isHolding ? 'scale-[0.99]' : 'active:scale-[0.99]'
             }`}
-            style={{ touchAction: 'none' }}
+            style={{
+              touchAction: 'none',
+              borderColor: isHolding
+                ? 'var(--accent-hex, #FFFFFF)'
+                : 'rgba(var(--accent-rgb, 245, 158, 11), 0.5)',
+              boxShadow: isHolding
+                ? '0 0 28px -2px rgba(var(--accent-rgb, 245, 158, 11), 0.52), inset 0 1px 0 rgba(255,255,255,0.16)'
+                : '0 0 22px -6px rgba(var(--accent-rgb, 245, 158, 11), 0.28), inset 0 1px 0 rgba(255,255,255,0.14)',
+            }}
           >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px] opacity-80"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent 0%, var(--accent-hex, #F59E0B) 50%, transparent 100%)',
+              }}
+            />
             <div
               className="absolute left-0 top-0 bottom-0 transition-all pointer-events-none"
               style={{
                 width: `${holdProgress * 100}%`,
-                opacity: isHolding ? 0.95 : 0,
-                backgroundColor: 'var(--zero-inverted-bg, #FFFFFF)',
+                opacity: isHolding ? 0.96 : 0,
+                background:
+                  'var(--accent-badge-gradient, linear-gradient(135deg, #FBBF24 0%, #D97706 100%))',
               }}
             />
 
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors ${
-                holdProgress > 0.5 ? 'font-extrabold' : 'text-zinc-100'
+                holdProgress > 0.5 ? 'font-black' : 'text-zinc-100'
               }`}
               style={{
-                color: holdProgress > 0.5 ? 'var(--zero-inverted-text, #000000)' : undefined,
+                color:
+                  holdProgress > 0.5
+                    ? 'var(--accent-badge-text, #09090B)'
+                    : undefined,
               }}
             >
               {isHolding ? (
@@ -872,7 +1081,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 </>
               ) : (
                 <>
-                  <ShieldAlert size={18} />
+                  <ShieldAlert size={18} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
                   <span>Hold 3s to Lock</span>
                 </>
               )}

@@ -82,7 +82,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white"
+                className="p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white"
                 aria-label="Close"
               >
                 <X size={16} />
@@ -90,7 +90,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
             </div>
 
             {/* Top Smart Action Box: Grant Missing Permissions + Priority Order + Quick App Info Shortcut */}
-            <div className="p-3 bg-zinc-900/70 border border-white/10 rounded-2xl text-[11px] text-zinc-300 leading-relaxed space-y-2.5">
+            <div className="p-3 obsidian-inset-neutral rounded-2xl text-[11px] text-zinc-300 leading-relaxed space-y-2.5">
               <div>
                 Priority order:{' '}
                 <strong className="text-white">
@@ -126,7 +126,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
 
             <div className="space-y-2.5">
               {/* PRIORITY 1: Check Allow Restricted Settings (App Info) */}
-              <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-2xl obsidian-inset-neutral space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Settings size={16} className="text-emerald-400 shrink-0" />
@@ -165,7 +165,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
 
               {/* PRIORITY 2A: Accessibility Service (Strict Edition) */}
               {needsAccessibility && (
-                <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2.5">
+                <div className="p-3.5 rounded-2xl obsidian-inset-neutral space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-white">
                       <Accessibility size={16} className="text-amber-400 shrink-0" />
@@ -206,7 +206,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
 
               {/* PRIORITY 2B: Usage Access (Standard Edition) */}
               {needsUsage && (
-                <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2.5">
+                <div className="p-3.5 rounded-2xl obsidian-inset-neutral space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-white">
                       <Activity size={16} className="text-amber-400 shrink-0" />
@@ -248,7 +248,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
               )}
 
               {/* PRIORITY 3: Display Over Other Apps */}
-              <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-2xl obsidian-inset-neutral space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Layers size={16} className="text-cyan-400 shrink-0" />
@@ -279,7 +279,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
               </div>
 
               {/* PRIORITY 4: Notifications */}
-              <div className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-2xl obsidian-inset-neutral space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Bell size={16} className="text-zinc-300 shrink-0" />
@@ -316,7 +316,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
             <button
               type="button"
               onClick={onRefresh}
-              className="px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/15 text-zinc-200 hover:text-white text-xs font-bold"
+              className="px-3.5 py-2.5 rounded-xl obsidian-inset-neutral text-zinc-200 hover:text-white text-xs font-bold"
             >
               Re-check
             </button>

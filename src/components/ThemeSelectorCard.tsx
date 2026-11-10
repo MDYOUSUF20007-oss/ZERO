@@ -47,8 +47,10 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
         <>
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs text-white font-black uppercase tracking-wider">
-              <Palette size={15} style={{ color: 'var(--zero-accent)' }} />
+            <div className="flex items-center gap-2.5 text-xs text-white font-black uppercase tracking-wider">
+              <div className="w-8 h-8 rounded-xl obsidian-icon-box flex items-center justify-center shrink-0">
+                <Palette size={15} style={{ color: 'var(--accent-hex, var(--zero-accent))' }} />
+              </div>
               <span>Theme Studio</span>
             </div>
             <button
@@ -57,7 +59,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                 haptics.tick(700);
                 onChange(DEFAULT_THEME_CONFIG);
               }}
-              className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-[10px] text-zinc-400 hover:text-white flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg obsidian-inset-neutral hover:border-white/25 text-[10px] text-zinc-300 hover:text-white flex items-center gap-1 transition-colors"
               title="Reset Theme Studio to Pure AMOLED"
             >
               <RotateCcw size={10} />
@@ -71,12 +73,12 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
               type="button"
               onClick={() => selectFamily('amoled')}
               style={{
-                borderColor: themeConfig.family === 'amoled' ? 'var(--zero-accent)' : undefined,
+                borderColor: themeConfig.family === 'amoled' ? 'var(--accent-hex, var(--zero-accent))' : undefined,
               }}
-              className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+              className={`p-3 rounded-2xl text-left transition-all flex flex-col gap-1.5 ${
                 themeConfig.family === 'amoled'
-                  ? 'border-amber-400 bg-zinc-900 text-white font-bold shadow-sm'
-                  : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
+                  ? 'obsidian-inset text-white font-bold shadow-sm'
+                  : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -87,7 +89,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   <Moon size={10} />
                 </span>
                 {themeConfig.family === 'amoled' && (
-                  <Check size={13} style={{ color: 'var(--zero-accent)' }} className="shrink-0" />
+                  <Check size={13} style={{ color: 'var(--accent-hex, var(--zero-accent))' }} className="shrink-0" />
                 )}
               </div>
               <div className="text-xs font-black">AMOLED</div>
@@ -100,12 +102,12 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
               type="button"
               onClick={() => selectFamily('kindle')}
               style={{
-                borderColor: themeConfig.family === 'kindle' ? 'var(--zero-accent)' : undefined,
+                borderColor: themeConfig.family === 'kindle' ? 'var(--accent-hex, var(--zero-accent))' : undefined,
               }}
-              className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+              className={`p-3 rounded-2xl text-left transition-all flex flex-col gap-1.5 ${
                 themeConfig.family === 'kindle'
-                  ? 'border-amber-400 bg-zinc-900 text-white font-bold shadow-sm'
-                  : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
+                  ? 'obsidian-inset text-white font-bold shadow-sm'
+                  : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -116,7 +118,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   <BookOpen size={10} color={themeConfig.kindleInkAccent} />
                 </span>
                 {themeConfig.family === 'kindle' && (
-                  <Check size={13} style={{ color: 'var(--zero-accent)' }} className="shrink-0" />
+                  <Check size={13} style={{ color: 'var(--accent-hex, var(--zero-accent))' }} className="shrink-0" />
                 )}
               </div>
               <div className="text-xs font-black">Paper Kindle</div>
@@ -129,12 +131,12 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
               type="button"
               onClick={() => selectFamily('matte')}
               style={{
-                borderColor: themeConfig.family === 'matte' ? 'var(--zero-accent)' : undefined,
+                borderColor: themeConfig.family === 'matte' ? 'var(--accent-hex, var(--zero-accent))' : undefined,
               }}
-              className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+              className={`p-3 rounded-2xl text-left transition-all flex flex-col gap-1.5 ${
                 themeConfig.family === 'matte'
-                  ? 'border-amber-400 bg-zinc-900 text-white font-bold shadow-sm'
-                  : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
+                  ? 'obsidian-inset text-white font-bold shadow-sm'
+                  : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -145,7 +147,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   <Layers size={10} color={themeConfig.matteAccentColor} />
                 </span>
                 {themeConfig.family === 'matte' && (
-                  <Check size={13} style={{ color: 'var(--zero-accent)' }} className="shrink-0" />
+                  <Check size={13} style={{ color: 'var(--accent-hex, var(--zero-accent))' }} className="shrink-0" />
                 )}
               </div>
               <div className="text-xs font-black">Matte Studio</div>
@@ -178,16 +180,16 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                         });
                       }}
                       style={{
-                        borderColor: active ? 'var(--zero-accent)' : undefined,
+                        borderColor: active ? 'var(--accent-hex, var(--zero-accent))' : undefined,
                       }}
-                      className={`p-2.5 rounded-2xl border text-left flex items-center gap-2.5 transition-all ${
+                      className={`p-2.5 rounded-2xl text-left flex items-center gap-2.5 transition-all ${
                         active
-                          ? 'border-amber-400 bg-zinc-900 text-white'
-                          : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
+                          ? 'obsidian-inset text-white'
+                          : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
                       }`}
                     >
                       <div
-                        className="w-8 h-8 rounded-xl border border-zinc-700 shrink-0"
+                        className="w-8 h-8 rounded-xl border border-white/15 shrink-0"
                         style={{ background: preset.previewCss }}
                       />
                       <div className="min-w-0">
@@ -229,10 +231,10 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                           kindleInkAccent: preset.inkAccent,
                         });
                       }}
-                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                      className={`p-2 rounded-xl flex flex-col items-center gap-1 transition-all ${
                         active
-                          ? 'border-amber-400 ring-1 ring-amber-400/60 bg-zinc-900'
-                          : 'border-zinc-850 bg-black hover:border-zinc-700'
+                          ? 'obsidian-inset ring-1 ring-amber-400/50'
+                          : 'obsidian-inset-neutral hover:border-white/25'
                       }`}
                     >
                       <span
@@ -254,7 +256,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
 
               {/* Custom Kindle Paper & Ink Pickers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+                <div className="p-2.5 rounded-2xl obsidian-inset-neutral space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold uppercase text-zinc-300">Custom Paper Color</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -301,7 +303,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+                <div className="p-2.5 rounded-2xl obsidian-inset-neutral space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold uppercase text-zinc-300">Custom Ink Accent</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -377,10 +379,10 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                           matteAccentColor: preset.accentColor,
                         });
                       }}
-                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                      className={`p-2 rounded-xl flex flex-col items-center gap-1 transition-all ${
                         active
-                          ? 'border-amber-400 ring-1 ring-amber-400/60 bg-zinc-900'
-                          : 'border-zinc-850 bg-black hover:border-zinc-700'
+                          ? 'obsidian-inset ring-1 ring-amber-400/50'
+                          : 'obsidian-inset-neutral hover:border-white/25'
                       }`}
                     >
                       <span
@@ -402,7 +404,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
 
               {/* Custom Matte Surface & Accent Pickers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+                <div className="p-2.5 rounded-2xl obsidian-inset-neutral space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold uppercase text-zinc-300">Custom Matte Base</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -449,7 +451,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2">
+                <div className="p-2.5 rounded-2xl obsidian-inset-neutral space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="font-bold uppercase text-zinc-300">Custom Studio Accent</span>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">

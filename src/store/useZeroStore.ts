@@ -24,6 +24,7 @@ import type {
   ProfileAccent,
   CloudAutoBackupStatus,
   ThemeConfig,
+  DashboardWidgetsConfig,
 } from '../types';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -38,9 +39,14 @@ import {
 } from '../utils/parachuteRewardsPolicy';
 import {
   DEFAULT_THEME_CONFIG,
+  computeDynamicAccentTokens,
   computeThemeRuntime,
   sanitizeThemeConfig,
 } from '../utils/themes';
+import {
+  DEFAULT_WIDGETS_CONFIG,
+  sanitizeWidgetsConfig,
+} from '../utils/heatmapAnalytics';
 import {
   ACCENT_ID_TO_KEY,
   ACCENT_THEMES,
@@ -76,6 +82,7 @@ const UI_STORAGE_KEYS = {
   THEME_CONFIG: 'zero_theme_config_v1',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
+  WIDGET_CONFIG: 'zero_widgets_config_v1',
 };
 
 const IDLE_LOCK: ActiveLockSession = {
@@ -333,6 +340,23 @@ export function useZeroStore() {
     return normalizeTipSkipCount(localStorage.getItem(UI_STORAGE_KEYS.TIP_SKIP_REMAINING));
   });
   const [postSessionTipPrompt, setPostSessionTipPrompt] = useState<SessionRecord | null>(null);
+
+  const [widgetsConfig, setWidgetsConfigState] = useState<DashboardWidgetsConfig>(() => {
+    try {
+      const saved = localStorage.getItem(UI_STORAGE_KEYS.WIDGET_CONFIG);
+      if (saved) {
+        return sanitizeWidgetsConfig(JSON.parse(saved) as Partial<DashboardWidgetsConfig>);
+      }
+    } catch {
+      // Fallback
+    }
+    return DEFAULT_WIDGETS_CONFIG;
+  });
+
+  const setWidgetsConfig = useCallback((next: DashboardWidgetsConfig) => {
+    const sanitized = sanitizeWidgetsConfig(next);
+    setWidgetsConfigState(sanitized);
+  }, []);
 
   const [hasDismissedWelcomeModal, setHasDismissedWelcomeModal] = useState<boolean>(() => {
     return localStorage.getItem(UI_STORAGE_KEYS.DISMISSED_WELCOME_MODAL) === '1';
@@ -830,6 +854,18 @@ export function useZeroStore() {
   }, [theme]);
 
   useEffect(() => {
+    if (profile) {
+      localStorage.setItem(UI_STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(UI_STORAGE_KEYS.PROFILE);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem(UI_STORAGE_KEYS.WIDGET_CONFIG, JSON.stringify(widgetsConfig));
+  }, [widgetsConfig]);
+
+  useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.THEME_CONFIG, JSON.stringify(themeConfig));
     const runtime = computeThemeRuntime(themeConfig);
     const rootEl = document.documentElement;
@@ -842,11 +878,36 @@ export function useZeroStore() {
     Object.entries(runtime.cssVars).forEach(([cssVar, val]) => {
       rootEl.style.setProperty(cssVar, val);
     });
+
+    // Harmonize global Frosted Obsidian accent tokens (--accent-rgb, --accent-hex,
+    // --accent-badge-gradient, --accent-badge-text) across the entire app:
+    // - Pure Pitch AMOLED follows the user's Profile Accent (default Amber #F59E0B)
+    // - Gradient AMOLED / Paper Kindle / Matte Studio harmonize to their active finish accent
+    const accentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
+    const profileAccentTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
+    const isPureAmoled =
+      themeConfig.family === 'amoled' && themeConfig.amoledGradient === 'pure';
+
+    if (isPureAmoled) {
+      rootEl.style.setProperty('--accent-rgb', profileAccentTheme.rgb);
+      rootEl.style.setProperty('--accent-hex', profileAccentTheme.hex);
+      rootEl.style.setProperty('--accent-badge-gradient', profileAccentTheme.badgeGradient);
+      rootEl.style.setProperty('--accent-badge-text', profileAccentTheme.badgeText);
+      rootEl.style.setProperty('--zero-accent', profileAccentTheme.hex);
+      rootEl.style.setProperty('--zero-dial-stroke', profileAccentTheme.hex);
+    } else {
+      const derived = computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#F59E0B');
+      rootEl.style.setProperty('--accent-rgb', derived.rgb);
+      rootEl.style.setProperty('--accent-hex', derived.hex);
+      rootEl.style.setProperty('--accent-badge-gradient', derived.badgeGradient);
+      rootEl.style.setProperty('--accent-badge-text', derived.badgeText);
+    }
+
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
       metaTheme.setAttribute('content', runtime.metaThemeColor);
     }
-  }, [themeConfig]);
+  }, [themeConfig, profile]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SLEEP_FARMING_MODE, sleepFarmingMode);
@@ -862,20 +923,6 @@ export function useZeroStore() {
       hasDismissedWelcomeModal ? '1' : '0'
     );
   }, [hasDismissedWelcomeModal]);
-
-  useEffect(() => {
-    if (profile) {
-      localStorage.setItem(UI_STORAGE_KEYS.PROFILE, JSON.stringify(profile));
-    } else {
-      localStorage.removeItem(UI_STORAGE_KEYS.PROFILE);
-    }
-
-    const accentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
-    const accentTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
-    const rootEl = document.documentElement;
-    rootEl.style.setProperty('--accent-rgb', accentTheme.rgb);
-    rootEl.style.setProperty('--accent-hex', accentTheme.hex);
-  }, [profile]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
@@ -1309,6 +1356,9 @@ export function useZeroStore() {
   const exportData = (): string => {
     const json = buildBackupJson();
     const fileName = `zero-backup-${new Date().toISOString().split('T')[0]}.json`;
+    const exportedTs = Date.now();
+    setLastBackupTimestamp(exportedTs);
+    localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(exportedTs));
 
     if (typeof window !== 'undefined' && window.ZeroNative) {
       window.ZeroNative.exportBackupJson(json, fileName);
@@ -1323,6 +1373,28 @@ export function useZeroStore() {
     a.click();
     URL.revokeObjectURL(url);
     return json;
+  };
+
+  const exportZbakData = (): string => {
+    const zbak = buildZbakString();
+    const fileName = `zero-backup-${new Date().toISOString().split('T')[0]}.zbak`;
+    const exportedTs = Date.now();
+    setLastBackupTimestamp(exportedTs);
+    localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(exportedTs));
+
+    if (typeof window !== 'undefined' && window.ZeroNative) {
+      window.ZeroNative.exportBackupJson(zbak, fileName);
+      return zbak;
+    }
+
+    const blob = new Blob([zbak], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    return zbak;
   };
 
   const importData = useCallback(
@@ -1665,6 +1737,7 @@ export function useZeroStore() {
     setActiveBagIdState(DEFAULT_BAGS[0].id);
     setThemeState('amoled');
     setThemeConfigState(DEFAULT_THEME_CONFIG);
+    setWidgetsConfigState(DEFAULT_WIDGETS_CONFIG);
     setTipSkipRemaining(0);
     tipSkipRemainingRef.current = 0;
     setPostSessionTipPrompt(null);
@@ -1695,6 +1768,8 @@ export function useZeroStore() {
     setTheme,
     themeConfig,
     setThemeConfig,
+    widgetsConfig,
+    setWidgetsConfig,
     sleepFarmingMode,
     setSleepFarmingMode,
     profile,
@@ -1744,6 +1819,7 @@ export function useZeroStore() {
     buildBackupJson,
     buildZbakString,
     exportData,
+    exportZbakData,
     importData,
     resetAllData,
     autoBackupEnabled,

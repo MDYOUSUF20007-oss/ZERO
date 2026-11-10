@@ -127,14 +127,17 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       {/* Center Void Countdown & Active Bag Status */}
       <div className="flex flex-col items-center justify-center my-auto w-full max-w-md text-center">
         <div className="relative mb-5">
-          <div className="w-20 h-20 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center shadow-2xl relative">
-            <div className="absolute inset-0 rounded-full border border-white/10 animate-ping opacity-25" />
-            <span className="font-mono text-2xl font-black text-zinc-400">0</span>
+          <div className="w-20 h-20 rounded-full obsidian-dial-bezel flex items-center justify-center relative">
+            <div
+              className="absolute inset-0 rounded-full animate-ping opacity-25"
+              style={{ border: '1px solid var(--accent-hex, rgba(255,255,255,0.2))' }}
+            />
+            <span className="font-mono text-2xl font-black text-white">0</span>
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-xs uppercase tracking-wider mb-4 font-semibold">
-          <Flame size={12} className="text-amber-400" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full obsidian-inset text-white font-mono text-xs uppercase tracking-wider mb-4 font-bold">
+          <Flame size={12} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
           <span>LOCKED IN #{activeLock.tag}</span>
         </div>
 
@@ -148,6 +151,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
         {/* Active Bag Card */}
         <ObsidianCard
+          ambientGlow
           className="mt-6 font-mono text-left"
           headerClassName="p-4 space-y-2.5"
           footerClassName="px-4 py-2 text-[10px] text-zinc-400 flex items-center justify-between gap-2"
@@ -155,9 +159,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             <>
               <div className="flex items-center justify-between text-[11px] text-zinc-400">
                 <span className="flex items-center gap-1.5 font-bold text-white">
-                  <Briefcase size={13} /> Bag: {activeBag.name}
+                  <Briefcase size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} /> Bag: {activeBag.name}
                 </span>
-                <span>
+                <span className="px-1.5 py-0.5 rounded obsidian-inset-neutral text-zinc-300 text-[10px]">
                   {activeBag.apps.length}/{MAX_BAG_APPS} apps
                 </span>
               </div>
@@ -166,7 +170,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 {activeBag.allowCalls && (
                   <a
                     href="tel:"
-                    className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/15 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                    className="px-2.5 py-1.5 rounded-xl obsidian-inset-neutral text-emerald-300 text-[11px] font-bold flex items-center gap-1"
                   >
                     <Phone size={11} /> Normal Calls
                   </a>
@@ -174,7 +178,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 {activeBag.allowSms && (
                   <a
                     href="sms:"
-                    className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/15 text-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                    className="px-2.5 py-1.5 rounded-xl obsidian-inset-neutral text-emerald-300 text-[11px] font-bold flex items-center gap-1"
                   >
                     <MessageSquare size={11} /> Normal SMS
                   </a>
@@ -182,7 +186,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 {activeBag.apps.map((app) => (
                   <span
                     key={app.packageName}
-                    className="px-2.5 py-1.5 rounded-xl bg-zinc-200 text-black text-[11px] font-bold"
+                    className="px-2.5 py-1.5 rounded-xl obsidian-pill-active text-[11px] font-black"
                   >
                     {app.appName}
                   </span>
@@ -221,7 +225,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl">🎫</span>
+                  <div className="w-9 h-9 rounded-xl obsidian-icon-box flex items-center justify-center text-base shrink-0">
+                    🎫
+                  </div>
                   <div className="text-left">
                     <div className="font-bold text-sm tracking-wide text-amber-200">
                       Use Emergency Escape Ticket
@@ -254,7 +260,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   <span className="text-lg opacity-50">🎫</span>
                   <span className="font-semibold text-zinc-200">0 Escape Tickets Available</span>
                 </div>
-                <span className="px-2 py-0.5 rounded bg-zinc-900 text-[10px] text-zinc-400 font-bold border border-white/10">
+                <span className="px-2 py-0.5 rounded obsidian-inset-neutral text-[10px] text-zinc-400 font-bold">
                   LOCKED
                 </span>
               </>
@@ -270,7 +276,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
         <button
           onClick={() => setShowEmergencyModal(true)}
-          className="w-full h-12 bg-zinc-950/90 hover:bg-zinc-900 active:scale-[0.98] border border-white/15 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs text-zinc-300 hover:text-white transition-all"
+          className="w-full h-12 obsidian-shell-bar active:scale-[0.98] border border-white/15 rounded-2xl flex items-center justify-center gap-2 font-mono text-xs text-zinc-200 hover:text-white transition-all"
         >
           <Phone size={14} className="text-red-400" />
           <span>Emergency Call (911 / 112 / ICE)</span>
@@ -320,7 +326,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       value={emergencyNumber}
                       onChange={(e) => setEmergencyNumber(e.target.value)}
                       placeholder="e.g. +1 555-0199"
-                      className="flex-1 bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                      className="flex-1 obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none"
                     />
                     <a
                       href={`tel:${emergencyNumber}`}
@@ -337,7 +343,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             footerContent={
               <button
                 onClick={() => setShowEmergencyModal(false)}
-                className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs rounded-xl font-bold border border-white/15"
+                className="w-full py-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 text-xs rounded-xl font-bold transition-colors"
               >
                 Return to The Void
               </button>
