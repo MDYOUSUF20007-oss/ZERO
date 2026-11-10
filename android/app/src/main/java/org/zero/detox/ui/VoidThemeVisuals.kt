@@ -33,7 +33,7 @@ object VoidThemeStore {
 
     const val STYLE_BESPOKE = "bespoke"
     const val STYLE_CLASSIC = "classic"
-    const val DEFAULT_INTERFACE_STYLE = STYLE_BESPOKE
+    const val DEFAULT_INTERFACE_STYLE = STYLE_CLASSIC
 
     const val DEFAULT_ACCENT_HEX = "#F59E0B"
     const val DEFAULT_ACCENT_RGB = "245, 158, 11"
@@ -151,7 +151,7 @@ object VoidThemeStore {
 
     @JvmStatic
     fun normalizeInterfaceStyle(raw: String?): String {
-        return if (raw?.trim()?.lowercase(Locale.US) == STYLE_CLASSIC) STYLE_CLASSIC else STYLE_BESPOKE
+        return if (raw?.trim()?.lowercase(Locale.US) == STYLE_BESPOKE) STYLE_BESPOKE else STYLE_CLASSIC
     }
 
     @JvmStatic
@@ -271,7 +271,7 @@ class PixelClockView @JvmOverloads constructor(
     private var clockText: String = "3:39 PM"
     private var layoutData: PixelFont5x7.Layout = PixelFont5x7.buildLayout(clockText)
     private var accentColor: Int = 0xFFF59E0B.toInt()
-    private var bespokeMinimalist: Boolean = true
+    private var bespokeMinimalist: Boolean = false
     private var invertedPolarity: Boolean = false
     private var desiredHeightDp: Float = 34f
 

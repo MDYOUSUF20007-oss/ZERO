@@ -83,6 +83,7 @@ const UI_STORAGE_KEYS = {
   THEME: 'zero_active_theme_v3',
   THEME_CONFIG: 'zero_theme_config_v1',
   INTERFACE_STYLE: 'zero_interface_style_v1',
+  CLASSIC_DEFAULT_MIGRATED: 'zero_classic_default_migrated_v1',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
   WIDGET_CONFIG: 'zero_widgets_config_v1',
@@ -301,11 +302,17 @@ export function useZeroStore() {
 
   const [interfaceStyle, setInterfaceStyleState] = useState<InterfaceStyle>(() => {
     try {
-      return localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE) === 'classic'
-        ? 'classic'
-        : 'bespoke';
+      const migrated = localStorage.getItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED) === '1';
+      if (!migrated) {
+        localStorage.setItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED, '1');
+        localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'classic');
+        return 'classic';
+      }
+      return localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE) === 'bespoke'
+        ? 'bespoke'
+        : 'classic';
     } catch {
-      return 'bespoke';
+      return 'classic';
     }
   });
   const interfaceStyleRef = useRef<InterfaceStyle>(interfaceStyle);
@@ -314,7 +321,7 @@ export function useZeroStore() {
   }, [interfaceStyle]);
 
   const setInterfaceStyle = useCallback((nextStyle: InterfaceStyle) => {
-    setInterfaceStyleState(nextStyle === 'classic' ? 'classic' : 'bespoke');
+    setInterfaceStyleState(nextStyle === 'bespoke' ? 'bespoke' : 'classic');
   }, []);
 
   const [themeConfig, setThemeConfigState] = useState<ThemeConfig>(() => {
@@ -1886,8 +1893,9 @@ export function useZeroStore() {
     setActiveBagIdState(DEFAULT_BAGS[0].id);
     setThemeState('amoled');
     setThemeConfigState(DEFAULT_THEME_CONFIG);
-    setInterfaceStyleState('bespoke');
-    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'bespoke');
+    localStorage.setItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED, '1');
+    setInterfaceStyleState('classic');
+    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'classic');
     setWidgetsConfigState(DEFAULT_WIDGETS_CONFIG);
     setTipSkipRemaining(0);
     tipSkipRemainingRef.current = 0;

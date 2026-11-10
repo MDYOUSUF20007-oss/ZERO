@@ -502,6 +502,46 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     role="radio"
+                    aria-checked={activeInterfaceStyle === 'classic'}
+                    onClick={() => applyInterfaceStyle('classic')}
+                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
+                      isBespoke
+                        ? `rounded-md border transition-colors duration-75 ${
+                            activeInterfaceStyle === 'classic'
+                              ? 'bg-neutral-950 border-blue-500 text-white'
+                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          }`
+                        : `rounded-2xl transition-all ${
+                            activeInterfaceStyle === 'classic'
+                              ? 'obsidian-inset text-white'
+                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                          }`
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
+                        <span>Classic UI (Default)</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                        Frosted Obsidian layout style with specular highlights, pill geometry, gradient badges, and ambient glows.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded-full'
+                      } ${
+                        activeInterfaceStyle === 'classic'
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'border-neutral-600 bg-transparent'
+                      }`}
+                    >
+                      {activeInterfaceStyle === 'classic' && <Check size={11} />}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="radio"
                     aria-checked={activeInterfaceStyle === 'bespoke'}
                     onClick={() => applyInterfaceStyle('bespoke')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
@@ -520,7 +560,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   >
                     <div className="min-w-0">
                       <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Bespoke Minimalist (Default)</span>
+                        <span>Bespoke Minimalist</span>
                       </div>
                       <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
                         Pure AMOLED #000000 canvas, 1px neutral structural borders, sans typography with tabular telemetry, and instant mechanical controls.
@@ -536,44 +576,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       }`}
                     >
                       {activeInterfaceStyle === 'bespoke' && <Check size={11} />}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'classic'}
-                    onClick={() => applyInterfaceStyle('classic')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'classic'
-                              ? 'bg-neutral-950 border-blue-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'classic'
-                              ? 'obsidian-inset text-white'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white">Classic UI</div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Legacy Frosted Obsidian layout style with specular highlights, pill geometry, gradient badges, and ambient glows.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'classic'
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {activeInterfaceStyle === 'classic' && <Check size={11} />}
                     </div>
                   </button>
                 </div>
@@ -1528,9 +1530,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerContent={
               <>
                 <span>
-                  {activeInterfaceStyle === 'bespoke'
-                    ? 'Bespoke Minimalist (Default)'
-                    : 'Classic UI'}
+                  {activeInterfaceStyle === 'classic'
+                    ? 'Classic UI (Default)'
+                    : 'Bespoke Minimalist'}
                 </span>
                 <strong className="text-white uppercase font-mono">
                   {themeConfig.family === 'amoled'

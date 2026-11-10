@@ -71,7 +71,7 @@ class TheVoidActivity : AppCompatActivity() {
     private var countDownTimer: CountDownTimer? = null
 
     private lateinit var accentConfig: VoidThemeStore.VoidAccentConfig
-    private var isBespokeStyle: Boolean = true
+    private var isBespokeStyle: Boolean = false
 
     private lateinit var textCurrentTime: TextView
     private lateinit var statusDot: View

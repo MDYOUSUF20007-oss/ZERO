@@ -4,13 +4,14 @@ import './index.css'
 import App from './App.tsx'
 
 try {
+  const migrated = localStorage.getItem('zero_classic_default_migrated_v1') === '1';
   const savedStyle = localStorage.getItem('zero_interface_style_v1');
   document.documentElement.setAttribute(
     'data-zero-style',
-    savedStyle === 'classic' ? 'classic' : 'bespoke'
+    migrated && savedStyle === 'bespoke' ? 'bespoke' : 'classic'
   );
 } catch {
-  document.documentElement.setAttribute('data-zero-style', 'bespoke');
+  document.documentElement.setAttribute('data-zero-style', 'classic');
 }
 
 createRoot(document.getElementById('root')!).render(

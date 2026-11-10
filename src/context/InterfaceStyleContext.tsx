@@ -8,8 +8,8 @@ export interface InterfaceStyleContextValue {
 }
 
 const DEFAULT_CONTEXT: InterfaceStyleContextValue = {
-  interfaceStyle: 'bespoke',
-  isBespoke: true,
+  interfaceStyle: 'classic',
+  isBespoke: false,
   setInterfaceStyle: () => {},
 };
 
