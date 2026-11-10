@@ -212,6 +212,7 @@ export function App() {
           <SchedulesDonateView
             schedules={store.schedules}
             permissions={store.permissions}
+            appBuildInfo={store.appBuildInfo}
             onRefreshPermissions={store.refreshPermissions}
             onToggleSchedule={store.toggleSchedule}
             onAddSchedule={store.addSchedule}

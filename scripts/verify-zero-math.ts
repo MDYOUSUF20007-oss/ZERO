@@ -41,7 +41,11 @@ import {
   hmacSha256Hex,
   isWeeklyBackupDue,
 } from '../src/utils/zbakCodec.ts';
-import type { SessionRecord, ZeroZbakPayload } from '../src/types.ts';
+import {
+  evaluatePermissionPriority,
+  normalizeRestrictedSettingsStatus,
+} from '../src/utils/permissionPriority.ts';
+import type { NativePermissionStatus, SessionRecord, ZeroZbakPayload } from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -571,5 +575,78 @@ failIf(
   'Weekly banner should remind manual users with legacy timestamp=0'
 );
 console.log('PASS: Signed .zbak Envelope, Tamper Rejection & Weekly Backup Timer Verified');
+
+console.log('\n=== TEST 13: Android Permission Priority Order & Restricted Settings State ===');
+const baseMissingPerms: NativePermissionStatus = {
+  isNativeAndroid: true,
+  isStrictAccessibilityBuild: false,
+  isAccessibilityEnabled: false,
+  hasOverlayPermission: false,
+  hasUsageStatsPermission: false,
+  hasNotificationPermission: false,
+  restrictedSettingsStatus: 'blocked',
+  hasRestrictedSettingsAllowed: false,
+  isDeviceOwner: false,
+  strictReady: false,
+};
+
+failIf(
+  evaluatePermissionPriority(baseMissingPerms).nextStep === 'restricted_settings',
+  'Priority 1: Explicitly blocked Restricted Settings must route to App Info first'
+);
+failIf(
+  evaluatePermissionPriority({
+    ...baseMissingPerms,
+    restrictedSettingsStatus: 'check_app_info',
+  }).nextStep === 'usage_or_accessibility',
+  'Priority 2 (default/unblocked): Missing Usage Access comes before Overlay & Notifications'
+);
+failIf(
+  evaluatePermissionPriority({
+    ...baseMissingPerms,
+    isStrictAccessibilityBuild: true,
+    restrictedSettingsStatus: 'allowed',
+  }).nextStep === 'usage_or_accessibility',
+  'Priority 2 (strict): Missing Accessibility Service comes before Overlay & Notifications'
+);
+failIf(
+  evaluatePermissionPriority({
+    ...baseMissingPerms,
+    restrictedSettingsStatus: 'allowed',
+    hasUsageStatsPermission: true,
+  }).nextStep === 'overlay',
+  'Priority 3: Missing Display Over Other Apps comes after Usage Access'
+);
+failIf(
+  evaluatePermissionPriority({
+    ...baseMissingPerms,
+    restrictedSettingsStatus: 'allowed',
+    hasUsageStatsPermission: true,
+    hasOverlayPermission: true,
+    strictReady: true,
+  }).nextStep === 'notifications',
+  'Priority 4: Notifications follows Display Over Other Apps'
+);
+failIf(
+  evaluatePermissionPriority({
+    ...baseMissingPerms,
+    restrictedSettingsStatus: 'allowed',
+    hasUsageStatsPermission: true,
+    hasOverlayPermission: true,
+    hasNotificationPermission: true,
+    strictReady: true,
+  }).nextStep === 'all_done',
+  'All 4 permission priority steps complete cleanly'
+);
+failIf(
+  normalizeRestrictedSettingsStatus({
+    ...baseMissingPerms,
+    restrictedSettingsStatus: undefined,
+    hasRestrictedSettingsAllowed: undefined,
+    hasUsageStatsPermission: true,
+  }) === 'allowed',
+  'Granted Usage Access implies Restricted Settings is allowed when field omitted'
+);
+console.log('PASS: Permission Priority (Restricted Check -> Usage -> Overlay -> Notifications) Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

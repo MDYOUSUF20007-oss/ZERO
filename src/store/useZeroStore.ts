@@ -12,6 +12,7 @@ import type {
   OccasionBag,
   BagApp,
   NativePermissionStatus,
+  NativeAppBuildInfo,
   ZeroBackupPayload,
   ZeroProfile,
   ParachuteRewardEvent,
@@ -161,6 +162,8 @@ const DEFAULT_WEB_PERMISSIONS: NativePermissionStatus = {
   hasOverlayPermission: true,
   hasUsageStatsPermission: true,
   hasNotificationPermission: true,
+  hasRestrictedSettingsAllowed: true,
+  restrictedSettingsStatus: 'allowed',
   isDeviceOwner: false,
   strictReady: true,
 };
@@ -188,6 +191,8 @@ function readPermissionsFromNative(): NativePermissionStatus {
         hasOverlayPermission: false,
         hasUsageStatsPermission: false,
         hasNotificationPermission: false,
+        hasRestrictedSettingsAllowed: false,
+        restrictedSettingsStatus: 'check_app_info',
         isDeviceOwner: false,
         strictReady: false,
       };
@@ -196,13 +201,50 @@ function readPermissionsFromNative(): NativePermissionStatus {
   }
   try {
     const raw = window.ZeroNative.getPermissionStatusJson();
-    return JSON.parse(raw) as NativePermissionStatus;
+    const parsed = JSON.parse(raw) as NativePermissionStatus;
+    const coreGranted = parsed.isStrictAccessibilityBuild
+      ? parsed.isAccessibilityEnabled
+      : parsed.hasUsageStatsPermission;
+    const status =
+      parsed.restrictedSettingsStatus ||
+      (parsed.hasRestrictedSettingsAllowed || coreGranted ? 'allowed' : 'check_app_info');
+    return {
+      ...parsed,
+      hasRestrictedSettingsAllowed:
+        parsed.hasRestrictedSettingsAllowed ?? status === 'allowed',
+      restrictedSettingsStatus: status,
+    };
   } catch {
     return {
       ...DEFAULT_WEB_PERMISSIONS,
       isNativeAndroid: isCapacitorNativeAndroid(),
+      hasRestrictedSettingsAllowed: !isCapacitorNativeAndroid(),
+      restrictedSettingsStatus: isCapacitorNativeAndroid() ? 'check_app_info' : 'allowed',
       strictReady: !isCapacitorNativeAndroid(),
     };
+  }
+}
+
+function readAppBuildInfoFromNative(): NativeAppBuildInfo | null {
+  if (typeof window === 'undefined' || !window.ZeroNative?.getAppBuildInfoJson) {
+    return null;
+  }
+  try {
+    const raw = window.ZeroNative.getAppBuildInfoJson();
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<NativeAppBuildInfo>;
+    if (!parsed.packageName) return null;
+    return {
+      packageName: parsed.packageName,
+      versionName: parsed.versionName || 'unknown',
+      versionCode: Number(parsed.versionCode || 0),
+      edition: parsed.edition === 'strict' ? 'strict' : 'standard',
+      signingSha256: parsed.signingSha256 || '',
+      isOfficialReleaseKey: Boolean(parsed.isOfficialReleaseKey),
+      installerPackageName: parsed.installerPackageName || '',
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -452,6 +494,9 @@ export function useZeroStore() {
   const [permissions, setPermissions] = useState<NativePermissionStatus>(() =>
     readPermissionsFromNative()
   );
+  const [appBuildInfo, setAppBuildInfo] = useState<NativeAppBuildInfo | null>(() =>
+    readAppBuildInfoFromNative()
+  );
 
   const [installedApps, setInstalledApps] = useState<BagApp[]>(() => {
     if (typeof window !== 'undefined' && window.ZeroNative) {
@@ -527,6 +572,7 @@ export function useZeroStore() {
 
   const refreshPermissions = useCallback(() => {
     setPermissions(readPermissionsFromNative());
+    setAppBuildInfo(readAppBuildInfoFromNative());
   }, []);
 
   const refreshInstalledApps = useCallback(() => {
@@ -1960,6 +2006,7 @@ export function useZeroStore() {
     installedApps,
     refreshInstalledApps,
     permissions,
+    appBuildInfo,
     refreshPermissions,
     preLockAlert,
     postSessionTipPrompt,

@@ -454,7 +454,9 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             )}
             <span className="font-bold truncate">
               {permissions.strictReady
-                ? permissions.isStrictAccessibilityBuild
+                ? !permissions.hasNotificationPermission
+                  ? 'Guard Armed • Tap for Step 4 Notifications'
+                  : permissions.isStrictAccessibilityBuild
                   ? 'Strict Accessibility Guard: Armed'
                   : 'Overlay + Usage Guard: Armed'
                 : 'Permissions Required Before Locking'}

@@ -104,6 +104,8 @@ export interface OccasionBag {
   allowSms: boolean;
 }
 
+export type RestrictedSettingsStatus = 'allowed' | 'blocked' | 'check_app_info';
+
 export interface NativePermissionStatus {
   isNativeAndroid: boolean;
   isStrictAccessibilityBuild: boolean;
@@ -111,8 +113,20 @@ export interface NativePermissionStatus {
   hasOverlayPermission: boolean;
   hasUsageStatsPermission: boolean;
   hasNotificationPermission: boolean;
+  hasRestrictedSettingsAllowed?: boolean;
+  restrictedSettingsStatus?: RestrictedSettingsStatus;
   isDeviceOwner: boolean;
   strictReady: boolean;
+}
+
+export interface NativeAppBuildInfo {
+  packageName: string;
+  versionName: string;
+  versionCode: number;
+  edition: 'standard' | 'strict';
+  signingSha256: string;
+  isOfficialReleaseKey: boolean;
+  installerPackageName?: string;
 }
 
 export interface ZeroBackupPayload {
@@ -226,7 +240,10 @@ export interface ZeroNativeBridgeInterface {
   isAccessibilityEnabled(): boolean;
   openAccessibilitySettings(): void;
   openAppSettingsDetails(): void;
+  getRestrictedSettingsStatus?(): RestrictedSettingsStatus;
+  hasRestrictedSettingsAllowed?(): boolean;
   getPermissionStatusJson(): string;
+  getAppBuildInfoJson?(): string;
   requestNextMissingPermission(): void;
   getInstalledAppsJson(): string;
   setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;

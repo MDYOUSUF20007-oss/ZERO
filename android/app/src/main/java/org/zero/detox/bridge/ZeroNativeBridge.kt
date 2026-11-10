@@ -21,6 +21,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.PackageInfoCompat
 import org.json.JSONArray
 import org.json.JSONObject
 import org.zero.detox.core.LockEngine
@@ -196,6 +197,43 @@ class ZeroNativeBridge(
         activity.startActivity(intent)
     }
 
+    private fun queryRestrictedSettingsAppOpMode(): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return AppOpsManager.MODE_ALLOWED
+        }
+        return try {
+            val appOps = activity.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return null
+            val uid = try {
+                activity.packageManager.getApplicationInfo(activity.packageName, 0).uid
+            } catch (_: Exception) {
+                Process.myUid()
+            }
+            appOps.unsafeCheckOpNoThrow(
+                "android:access_restricted_settings",
+                uid,
+                activity.packageName
+            )
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    @JavascriptInterface
+    fun getRestrictedSettingsStatus(): String {
+        val strictBuild = isStrictAccessibilityBuild()
+        val coreGranted = if (strictBuild) isAccessibilityEnabled() else hasUsageStatsPermission()
+        return PermissionStatusHelper.evaluateRestrictedSettingsStatus(
+            sdkInt = Build.VERSION.SDK_INT,
+            appOpMode = queryRestrictedSettingsAppOpMode(),
+            corePermissionGranted = coreGranted
+        )
+    }
+
+    @JavascriptInterface
+    fun hasRestrictedSettingsAllowed(): Boolean {
+        return getRestrictedSettingsStatus() == PermissionStatusHelper.RESTRICTED_ALLOWED
+    }
+
     @JavascriptInterface
     fun openAppSettingsDetails() {
         val intent = Intent(
@@ -218,33 +256,63 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun requestNextMissingPermission() {
-        if (isStrictAccessibilityBuild() && !isAccessibilityEnabled()) {
-            activity.runOnUiThread {
-                Toast.makeText(
-                    activity,
-                    "Enable Zero in Accessibility Services (App Info -> Allow Restricted Settings if greyed out)",
-                    Toast.LENGTH_LONG
-                ).show()
+        val strictBuild = isStrictAccessibilityBuild()
+        val accessibility = isAccessibilityEnabled()
+        val usage = hasUsageStatsPermission()
+        val overlay = hasOverlayPermission()
+        val notifications = hasNotificationPermission()
+        val restrictedStatus = getRestrictedSettingsStatus()
+
+        when (
+            PermissionStatusHelper.determineNextPermissionAction(
+                isStrictBuild = strictBuild,
+                restrictedSettingsStatus = restrictedStatus,
+                isAccessibilityEnabled = accessibility,
+                hasUsageStatsPermission = usage,
+                hasOverlayPermission = overlay,
+                hasNotificationPermission = notifications
+            )
+        ) {
+            PermissionStatusHelper.NextPermissionAction.ALLOW_RESTRICTED_SETTINGS_APP_INFO -> {
+                activity.runOnUiThread {
+                    Toast.makeText(
+                        activity,
+                        "Tap top-right ⋮ -> Allow restricted settings, then return to grant permission",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                openAppSettingsDetails()
             }
-            openAccessibilitySettings()
-            return
-        }
-        if (!isStrictAccessibilityBuild() && !hasUsageStatsPermission()) {
-            activity.runOnUiThread {
-                Toast.makeText(activity, "Allow Usage Access for Zero", Toast.LENGTH_LONG).show()
+            PermissionStatusHelper.NextPermissionAction.ENABLE_ACCESSIBILITY -> {
+                activity.runOnUiThread {
+                    Toast.makeText(
+                        activity,
+                        "Find Zero in Accessibility Services (if greyed out: App Info -> Allow restricted settings)",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                openAccessibilitySettings()
             }
-            requestUsageStatsPermission()
-            return
-        }
-        if (!hasOverlayPermission()) {
-            activity.runOnUiThread {
-                Toast.makeText(activity, "Allow Display Over Other Apps for Zero", Toast.LENGTH_LONG).show()
+            PermissionStatusHelper.NextPermissionAction.GRANT_USAGE_ACCESS -> {
+                activity.runOnUiThread {
+                    Toast.makeText(
+                        activity,
+                        "Find Zero -> Enable Usage Access (if blocked: tap Open Zero App Info -> Allow restricted settings)",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                requestUsageStatsPermission()
             }
-            requestOverlayPermission()
-            return
-        }
-        if (!hasNotificationPermission()) {
-            requestNotificationPermission()
+            PermissionStatusHelper.NextPermissionAction.GRANT_OVERLAY -> {
+                activity.runOnUiThread {
+                    Toast.makeText(activity, "Allow Display Over Other Apps for Zero", Toast.LENGTH_LONG).show()
+                }
+                requestOverlayPermission()
+            }
+            PermissionStatusHelper.NextPermissionAction.GRANT_NOTIFICATIONS -> {
+                requestNotificationPermission()
+            }
+            PermissionStatusHelper.NextPermissionAction.ALL_GRANTED -> Unit
         }
     }
 
@@ -257,6 +325,12 @@ class ZeroNativeBridge(
         val notifications = hasNotificationPermission()
         val owner = isDeviceOwner()
         val strictReady = computeStrictReady()
+        val restrictedStatus = PermissionStatusHelper.evaluateRestrictedSettingsStatus(
+            sdkInt = Build.VERSION.SDK_INT,
+            appOpMode = queryRestrictedSettingsAppOpMode(),
+            corePermissionGranted = if (strictBuild) accessibility else usage
+        )
+        val restrictedAllowed = (restrictedStatus == PermissionStatusHelper.RESTRICTED_ALLOWED)
 
         return JSONObject().apply {
             put("isNativeAndroid", true)
@@ -265,9 +339,78 @@ class ZeroNativeBridge(
             put("hasOverlayPermission", overlay)
             put("hasUsageStatsPermission", usage)
             put("hasNotificationPermission", notifications)
+            put("hasRestrictedSettingsAllowed", restrictedAllowed)
+            put("restrictedSettingsStatus", restrictedStatus)
             put("isDeviceOwner", owner)
             put("strictReady", strictReady)
         }.toString()
+    }
+
+    @JavascriptInterface
+    fun getAppBuildInfoJson(): String {
+        val strictBuild = isStrictAccessibilityBuild()
+        val edition = if (strictBuild) "strict" else "standard"
+        return try {
+            val pm = activity.packageManager
+            val pkgName = activity.packageName
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getPackageInfo(
+                    pkgName,
+                    PackageManager.PackageInfoFlags.of(PackageManager.GET_SIGNING_CERTIFICATES.toLong())
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES)
+            }
+
+            val versionName = pInfo.versionName ?: "unknown"
+            val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
+
+            val certBytes: ByteArray? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pInfo.signingInfo?.apkContentsSigners?.firstOrNull()?.toByteArray()
+                    ?: pInfo.signingInfo?.signingCertificateHistory?.firstOrNull()?.toByteArray()
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.signatures?.firstOrNull()?.toByteArray()
+            }
+
+            val signingSha256 = certBytes?.let { PermissionStatusHelper.formatSha256ColonHex(it) } ?: ""
+            val isOfficialKey = PermissionStatusHelper.isOfficialReleaseCertHex(signingSha256)
+
+            val installer = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    pm.getInstallSourceInfo(pkgName).installingPackageName ?: ""
+                } else {
+                    @Suppress("DEPRECATION")
+                    pm.getInstallerPackageName(pkgName) ?: ""
+                }
+            } catch (_: Throwable) {
+                ""
+            }
+
+            JSONObject().apply {
+                put("packageName", pkgName)
+                put("versionName", versionName)
+                put("versionCode", versionCode)
+                put("edition", edition)
+                put("signingSha256", signingSha256)
+                put("isOfficialReleaseKey", isOfficialKey)
+                put("installerPackageName", installer)
+            }.toString()
+        } catch (_: Throwable) {
+            JSONObject().apply {
+                put("packageName", activity.packageName)
+                put("versionName", "unknown")
+                put("versionCode", 0L)
+                put("edition", edition)
+                put("signingSha256", "")
+                put("isOfficialReleaseKey", false)
+                put("installerPackageName", "")
+            }.toString()
+        }
     }
 
     @JavascriptInterface

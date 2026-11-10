@@ -45,6 +45,11 @@ android {
                 keyAlias System.getenv("ZERO_KEYSTORE_ALIAS")
                 def keyPass = System.getenv("ZERO_KEYSTORE_KEY_PASS")
                 keyPassword (keyPass != null && !keyPass.trim().isEmpty() ? keyPass : System.getenv("ZERO_KEYSTORE_PASS"))
+                // Explicitly sign with V1 + V2 + V3 using ZERO's permanent release cert
+                // so Android 7–16 package installers & OEM file managers always accept in-place updates.
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
@@ -58,6 +63,11 @@ android {
                 signingConfig signingConfigs.release
             }
         }
+    }
+    dependenciesInfo {
+        // Keep FOSS APK clean from encrypted Google Play dependency metadata blocks.
+        includeInApk = false
+        includeInBundle = false
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21

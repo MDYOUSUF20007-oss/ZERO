@@ -254,7 +254,8 @@ body {
 [data-zero-theme="kindle"] [data-gold-badge="true"],
 [data-zero-theme="kindle"] .bg-amber-400,
 [data-zero-theme="kindle"] .bg-amber-500,
-[data-zero-theme="kindle"] .bg-emerald-400 {
+[data-zero-theme="kindle"] .bg-emerald-400,
+[data-zero-theme="kindle"] .bg-emerald-500 {
   color: #000000 !important;
 }
 
@@ -263,9 +264,10 @@ body {
 [data-zero-theme="kindle"] .bg-emerald-950\/70,
 [data-zero-theme="kindle"] .bg-emerald-950\/60,
 [data-zero-theme="kindle"] .bg-emerald-950\/50,
+[data-zero-theme="kindle"] .bg-emerald-950\/45,
 [data-zero-theme="kindle"] .bg-emerald-950\/40,
 [data-zero-theme="kindle"] .bg-emerald-950\/30 {
-  background-color: rgba(16, 185, 129, 0.13) !important;
+  background-color: rgba(16, 185, 129, 0.14) !important;
 }
 
 [data-zero-theme="kindle"] .bg-amber-950,
@@ -313,6 +315,7 @@ body {
 
 [data-zero-theme="kindle"] .text-emerald-300,
 [data-zero-theme="kindle"] .text-emerald-200,
+[data-zero-theme="kindle"] .text-emerald-100,
 [data-zero-theme="kindle"] .text-emerald-400 {
   color: #065F46 !important;
 }

@@ -2,6 +2,7 @@ package org.zero.detox;
 
 import static org.junit.Assert.*;
 
+import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.SharedPreferences;
@@ -9,6 +10,7 @@ import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
+import org.zero.detox.bridge.PermissionStatusHelper;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
@@ -148,5 +150,121 @@ public class LockEngineUnitTest {
         assertTrue(bagStore.isPackageAllowedDuringLock("md.obsidian"));
         assertFalse(bagStore.isPackageAllowedDuringLock("com.instagram.android"));
         assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
+    }
+
+    @Test
+    public void restrictedSettingsEvaluation_respectsSdkAndModes() {
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_ALLOWED,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(31, AppOpsManager.MODE_IGNORED, false)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_ALLOWED,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, AppOpsManager.MODE_ALLOWED, false)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_ALLOWED,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, AppOpsManager.MODE_IGNORED, true)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_BLOCKED,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, AppOpsManager.MODE_IGNORED, false)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_BLOCKED,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, AppOpsManager.MODE_ERRORED, false)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_CHECK_APP_INFO,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, AppOpsManager.MODE_DEFAULT, false)
+        );
+        assertEquals(
+            PermissionStatusHelper.RESTRICTED_CHECK_APP_INFO,
+            PermissionStatusHelper.evaluateRestrictedSettingsStatus(35, null, false)
+        );
+    }
+
+    @Test
+    public void nextPermissionPriority_followsRestrictedThenCoreThenOverlayThenNotifications() {
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.ALLOW_RESTRICTED_SETTINGS_APP_INFO,
+            PermissionStatusHelper.determineNextPermissionAction(
+                false,
+                PermissionStatusHelper.RESTRICTED_BLOCKED,
+                false,
+                false,
+                false,
+                false
+            )
+        );
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.GRANT_USAGE_ACCESS,
+            PermissionStatusHelper.determineNextPermissionAction(
+                false,
+                PermissionStatusHelper.RESTRICTED_CHECK_APP_INFO,
+                false,
+                false,
+                false,
+                false
+            )
+        );
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.ENABLE_ACCESSIBILITY,
+            PermissionStatusHelper.determineNextPermissionAction(
+                true,
+                PermissionStatusHelper.RESTRICTED_ALLOWED,
+                false,
+                false,
+                false,
+                false
+            )
+        );
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.GRANT_OVERLAY,
+            PermissionStatusHelper.determineNextPermissionAction(
+                false,
+                PermissionStatusHelper.RESTRICTED_ALLOWED,
+                false,
+                true,
+                false,
+                false
+            )
+        );
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.GRANT_NOTIFICATIONS,
+            PermissionStatusHelper.determineNextPermissionAction(
+                false,
+                PermissionStatusHelper.RESTRICTED_ALLOWED,
+                false,
+                true,
+                true,
+                false
+            )
+        );
+        assertEquals(
+            PermissionStatusHelper.NextPermissionAction.ALL_GRANTED,
+            PermissionStatusHelper.determineNextPermissionAction(
+                false,
+                PermissionStatusHelper.RESTRICTED_ALLOWED,
+                false,
+                true,
+                true,
+                true
+            )
+        );
+    }
+
+    @Test
+    public void officialReleaseCertHex_validatesCanonicalSha256() {
+        assertTrue(
+            PermissionStatusHelper.isOfficialReleaseCertHex(
+                "A1:4A:36:1E:D4:B7:F7:D6:6E:57:69:92:99:9D:02:8A:05:32:65:85:0A:6C:A4:AF:EE:4F:C1:2F:29:48:CE:11"
+            )
+        );
+        assertFalse(
+            PermissionStatusHelper.isOfficialReleaseCertHex(
+                "0D:6F:3C:19:9D:C8:F1:81:D1:0F:02:0A:4C:7B:46:2A:CD:08:61:2A:47:70:91:72:D5:D1:9A:8D:BE:89:E6:93"
+            )
+        );
     }
 }

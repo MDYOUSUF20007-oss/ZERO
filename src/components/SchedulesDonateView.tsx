@@ -17,9 +17,12 @@ import type {
   ThemeConfig,
   SleepFarmingMode,
   NativePermissionStatus,
+  NativeAppBuildInfo,
   ZeroProfile,
   CloudAutoBackupStatus,
 } from '../types';
+import { evaluatePermissionPriority } from '../utils/permissionPriority';
+import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ThemeSelectorCard } from './ThemeSelectorCard';
@@ -42,7 +45,6 @@ import {
   Smartphone,
   Terminal,
   ShieldAlert,
-  HelpCircle,
   Gift,
   Sparkles,
   CheckCircle2,
@@ -53,11 +55,15 @@ import {
   CloudDownload,
   RefreshCw,
   Loader2,
+  Settings,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
   schedules: RecurringSchedule[];
   permissions: NativePermissionStatus;
+  appBuildInfo?: NativeAppBuildInfo | null;
   onRefreshPermissions: () => void;
   onToggleSchedule: (id: string) => void;
   onAddSchedule: (sched: Omit<RecurringSchedule, 'id'>) => void;
@@ -99,6 +105,7 @@ const TAGS: SessionTag[] = ['Deep Work', 'Study', 'Sleep', 'Detox', 'Family'];
 export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
   permissions,
+  appBuildInfo = null,
   onRefreshPermissions,
   onToggleSchedule,
   onAddSchedule,
@@ -175,6 +182,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const hasNotifPerm = permissions.hasNotificationPermission;
   const isDeviceOwner = permissions.isDeviceOwner;
   const isAccessibilityOn = permissions.isAccessibilityEnabled;
+  const permissionPriority = evaluatePermissionPriority(permissions);
 
   // New Schedule Form State
   const [newName, setNewName] = useState('Afternoon Focus');
@@ -926,10 +934,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {activeSection === 'os_security' && (
         <div className="space-y-4">
           <div className="bg-zinc-950 border-2 border-zinc-800 rounded-3xl p-5 shadow-brutal space-y-3 font-mono">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-white font-bold text-sm">
-                <Smartphone size={16} className="text-emerald-400" />
-                <span>OS-LEVEL ENFORCEMENT</span>
+                <Smartphone size={16} className="text-emerald-400 shrink-0" />
+                <span>OS PERMISSIONS &amp; PRIORITY</span>
               </div>
               <button
                 type="button"
@@ -940,70 +948,138 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </button>
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Zero never relies on soft manual Screen Pinning unless Device Owner is active. Instead, it uses Accessibility / Usage Access + Display Over Other Apps to enforce your selected Bag.
+              Priority setup order:{' '}
+              <strong className="text-white">
+                1. Restricted Settings Check &rarr; 2.{' '}
+                {isStrictBuild ? 'Accessibility Service' : 'Usage Access (Find Zero)'} &rarr; 3.
+                Display Over Apps &rarr; 4. Notifications
+              </strong>
+              .
             </p>
 
-            {/* 1: Accessibility Service */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>1. Accessibility Service</span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                    isAccessibilityOn
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-800'
-                  }`}
-                >
-                  {isStrictBuild ? (isAccessibilityOn ? 'GRANTED' : 'REQUIRED') : 'STRICT APK ONLY'}
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-400">
-                Instantly blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps without Screen Pinning prompts.
-              </p>
-              {hasNativeBridge && isStrictBuild && !isAccessibilityOn && (
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    onClick={() => window.ZeroNative?.openAccessibilitySettings()}
-                    className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
-                  >
-                    Enable Accessibility Service
-                  </button>
-                  <button
-                    onClick={() => window.ZeroNative?.openAppSettingsDetails()}
-                    className="w-full py-1.5 bg-zinc-950 border border-zinc-700 text-zinc-300 text-[10px] rounded-xl flex items-center justify-center gap-1"
-                  >
-                    <HelpCircle size={12} /> Greyed out? Allow Restricted Settings
-                  </button>
-                </div>
-              )}
-            </div>
+            {hasNativeBridge && !permissionPriority.allRecommendedGranted && (
+              <button
+                type="button"
+                onClick={() => window.ZeroNative?.requestNextMissingPermission()}
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+              >
+                {permissionPriority.nextButtonLabel}
+              </button>
+            )}
 
-            {/* 2: Usage Access */}
+            {/* 1: Check Allow Restricted Settings + App Info Shortcut */}
             <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>2. Usage Access Guard</span>
+                <span>1. Allow Restricted Settings Check</span>
                 <span
                   className={`text-[9px] px-1.5 py-0.5 rounded border ${
-                    hasUsagePerm
+                    permissionPriority.restrictedStatus === 'allowed'
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                      : 'bg-amber-950 text-amber-300 border-amber-800'
+                      : permissionPriority.restrictedStatus === 'blocked'
+                      ? 'bg-amber-950 text-amber-300 border-amber-700'
+                      : 'bg-emerald-950/60 text-emerald-300 border-emerald-700'
                   }`}
                 >
-                  {hasNativeBridge ? (hasUsagePerm ? 'GRANTED' : 'MISSING') : 'FOREGROUND MONITOR'}
+                  {hasNativeBridge
+                    ? permissionPriority.restrictedStatus === 'allowed'
+                      ? 'ALLOWED'
+                      : permissionPriority.restrictedStatus === 'blocked'
+                      ? 'BLOCKED — OPEN APP INFO'
+                      : 'CHECK APP INFO'
+                    : 'SIDELOAD GUARD'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Lets Standard Sideload Edition enforce your 4 Bags + Phone/SMS and snap The Void over disallowed apps every 350ms.
+                Direct shortcut to Zero&rsquo;s system App Info page to toggle <strong>&#8942; &rarr; Allow restricted settings</strong> on Android 13–16.
               </p>
-              {hasNativeBridge && !hasUsagePerm && (
+              {hasNativeBridge && (
                 <button
-                  onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
-                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                  type="button"
+                  onClick={() => window.ZeroNative?.openAppSettingsDetails()}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                 >
-                  Grant Usage Access
+                  <Settings size={13} />
+                  <span>Open Zero App Info (Shortcut)</span>
+                  <ExternalLink size={12} />
                 </button>
               )}
             </div>
+
+            {/* 2A: Usage Access (Standard Sideload Edition) */}
+            {!isStrictBuild && (
+              <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
+                  <span>2. Usage Access Guard (Find Zero)</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                      hasUsagePerm
+                        ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                        : 'bg-amber-950 text-amber-300 border-amber-800'
+                    }`}
+                  >
+                    {hasNativeBridge ? (hasUsagePerm ? 'GRANTED' : 'MISSING') : 'FOREGROUND MONITOR'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Lets Zero enforce your 4 Bags + Calls/SMS and snap The Void back over blocked distractions.
+                </p>
+                {hasNativeBridge && !hasUsagePerm && (
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
+                      className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                    >
+                      Grant Usage Access -&gt; Find Zero
+                    </button>
+                    <RestrictedSettingsGuideCard
+                      restrictedStatus={permissionPriority.restrictedStatus}
+                      isStrictBuild={false}
+                      onOpenAppInfo={() => window.ZeroNative?.openAppSettingsDetails()}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 2B: Accessibility Service (Strict Edition) */}
+            {isStrictBuild && (
+              <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
+                  <span>2. Accessibility Service</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                      isAccessibilityOn
+                        ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                        : 'bg-amber-950 text-amber-300 border-amber-800'
+                    }`}
+                  >
+                    {hasNativeBridge ? (isAccessibilityOn ? 'GRANTED' : 'MISSING') : 'STRICT APK ONLY'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Instantly blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps without Screen Pinning prompts.
+                </p>
+                {hasNativeBridge && !isAccessibilityOn && (
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => window.ZeroNative?.openAccessibilitySettings()}
+                      className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+                    >
+                      Enable Accessibility Service -&gt; Find Zero
+                    </button>
+                    <RestrictedSettingsGuideCard
+                      restrictedStatus={permissionPriority.restrictedStatus}
+                      isStrictBuild={true}
+                      onOpenAppInfo={() => window.ZeroNative?.openAppSettingsDetails()}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 3: SYSTEM_ALERT_WINDOW */}
             <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
@@ -1024,6 +1100,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </p>
               {hasNativeBridge && !hasOverlayPerm && (
                 <button
+                  type="button"
                   onClick={() => window.ZeroNative?.requestOverlayPermission()}
                   className="w-full py-2 bg-white hover:bg-zinc-200 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
                 >
@@ -1040,14 +1117,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   className={`text-[9px] px-1.5 py-0.5 rounded border ${
                     hasNotifPerm
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-800'
+                      : 'bg-amber-950 text-amber-300 border-amber-800'
                   }`}
                 >
-                  {hasNativeBridge ? (hasNotifPerm ? 'GRANTED' : 'NOT GRANTED') : 'ALERT READY'}
+                  {hasNativeBridge ? (hasNotifPerm ? 'GRANTED' : 'MISSING (STEP 4)') : 'ALERT READY'}
                 </span>
               </div>
               {hasNativeBridge && !hasNotifPerm && (
                 <button
+                  type="button"
                   onClick={() => window.ZeroNative?.requestNotificationPermission()}
                   className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-[11px] rounded-xl"
                 >
@@ -1074,6 +1152,68 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 When provisioned via ADB Device Owner, <code>LockTaskMode</code> engages unbreakable system kiosk mode while still permitting your packed Bag apps.
               </p>
             </div>
+          </div>
+
+          {/* Installed APK Build & Update Signing Key Diagnostic Card */}
+          <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-2xl space-y-2.5 font-mono text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-white font-bold uppercase tracking-wider">
+                <KeyRound size={14} className="text-emerald-400 shrink-0" />
+                <span>Installed Build &amp; Update Key</span>
+              </div>
+              {appBuildInfo && (
+                <span
+                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                    appBuildInfo.isOfficialReleaseKey
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                      : 'bg-amber-950 text-amber-300 border-amber-700'
+                  }`}
+                >
+                  {appBuildInfo.isOfficialReleaseKey ? 'Update Key Verified' : 'Debug / Preview Key'}
+                </span>
+              )}
+            </div>
+
+            {appBuildInfo ? (
+              <div className="p-3 rounded-xl bg-black border border-zinc-800 space-y-1 text-[11px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-400">Installed Version:</span>
+                  <span className="text-white font-bold">
+                    v{appBuildInfo.versionName} (code {appBuildInfo.versionCode})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-400">Edition:</span>
+                  <span className="text-zinc-200 font-bold uppercase">{appBuildInfo.edition}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-400">Cert SHA-256:</span>
+                  <span className="text-emerald-300 font-bold truncate max-w-[190px]">
+                    {appBuildInfo.signingSha256 || 'Unavailable'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-black border border-zinc-800 text-[11px] text-zinc-400">
+                Permanent APK Release Key: <code className="text-emerald-300">A14A36...CE11</code> (V1+V2+V3 signed).
+              </div>
+            )}
+
+            {appBuildInfo && !appBuildInfo.isOfficialReleaseKey ? (
+              <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-600/70 text-amber-200 text-[10px] leading-relaxed">
+                This device is running an older preview/debug key build. Save a Cloud{' '}
+                <code>.zbak</code> backup in <strong>Rules</strong>,{' '}
+                <strong>Uninstall (for all users)</strong> once, and install the newest signed{' '}
+                <code>ZERO-v*.apk</code> so all future updates install cleanly in-place!
+              </div>
+            ) : (
+              <div className="flex items-start gap-1.5 text-[10px] text-emerald-300 leading-relaxed">
+                <ShieldCheck size={13} className="shrink-0 mt-0.5 text-emerald-400" />
+                <span>
+                  Keep updating within the same edition using a higher version code. If Android ever says &ldquo;App not installed&rdquo;, check that Chrome/Files has <strong>Install unknown apps</strong> allowed and uninstall any old duplicate copy from Work Profile / Dual Apps.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ADB Command Box */}
