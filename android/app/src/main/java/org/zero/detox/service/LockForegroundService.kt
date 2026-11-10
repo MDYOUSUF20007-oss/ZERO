@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Process
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
@@ -42,36 +43,43 @@ class LockForegroundService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var isWatchdogActive = false
     private lateinit var bagStore: BagStore
+    private lateinit var parachuteStore: ParachuteStore
+    private lateinit var lockEngine: LockEngine
     private var lastKnownForegroundPkg: String? = null
 
     private val watchdogRunnable = object : Runnable {
         override fun run() {
             if (!isWatchdogActive) return
 
+            val nowWall = System.currentTimeMillis()
+            val nowElapsed = SystemClock.elapsedRealtime()
             val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
-            val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
-            val targetEndTime = prefs.getLong(LockEngine.KEY_TARGET_END_TIME, 0L)
-            val now = System.currentTimeMillis()
+            val timing = LockEngine.rebaseAfterRebootIfNeeded(prefs, nowWall, nowElapsed)
 
-            if (!isLocked) {
+            if (!timing.isLocked) {
                 stopWatchdogAndService()
                 return
             }
 
-            if (now >= targetEndTime) {
-                LockEngine(this@LockForegroundService, ParachuteStore(this@LockForegroundService)).completeSession()
-                stopWatchdogAndService()
-                return
+            if (timing.isExpired) {
+                if (lockEngine.completeSession()) {
+                    stopWatchdogAndService()
+                    return
+                }
             }
 
-            // Skip enforcement while in emergency 911/112 grace or active Bag launch grace
-            val inEmergencyGrace = now <= TheVoidActivity.dialerGraceUntilMillis
-            val inBagTransitionGrace = now <= TheVoidActivity.bagLaunchGraceUntilMillis
+            // Skip enforcement while in emergency 911/112 grace or active Bag launch grace (monotonic clock)
+            val inEmergencyGrace = nowElapsed <= TheVoidActivity.dialerGraceUntilElapsed
+            val inBagTransitionGrace = nowElapsed <= TheVoidActivity.bagLaunchGraceUntilElapsed
 
             if (!TheVoidActivity.isInForeground && !inEmergencyGrace && !inBagTransitionGrace) {
-                val fgPkg = detectForegroundPackage(now)
+                val fgPkg = detectForegroundPackage(nowWall)
                 val allowedByBag = if (fgPkg != null) {
-                    bagStore.isPackageAllowedDuringLock(fgPkg)
+                    if (fgPkg == "com.android.settings" || BagStore.PROTECTED_SYSTEM_PACKAGES.contains(fgPkg)) {
+                        false
+                    } else {
+                        bagStore.isPackageAllowedDuringLock(fgPkg)
+                    }
                 } else {
                     // Fallback if Usage Access isn't granted: allow temporarily if user intentionally opened a Bag app
                     TheVoidActivity.activeBagPackage != null
@@ -150,6 +158,8 @@ class LockForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         bagStore = BagStore(this)
+        parachuteStore = ParachuteStore(this)
+        lockEngine = LockEngine(this, parachuteStore)
         createNotificationChannel()
     }
 

@@ -47,6 +47,13 @@ class BagStore(private val context: Context) {
             "com.android.server.telecom",
             "com.oneplus.dialer"
         )
+
+        val PROTECTED_SYSTEM_PACKAGES = setOf(
+            "com.android.settings",
+            "com.android.packageinstaller",
+            "com.google.android.packageinstaller",
+            "com.samsung.android.packageinstaller"
+        )
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -98,7 +105,7 @@ class BagStore(private val context: Context) {
                     val item = incoming.optJSONObject(i) ?: continue
                     val pkg = item.optString("packageName", "").trim()
                     val label = item.optString("appName", pkg).trim().ifEmpty { pkg }
-                    if (pkg.isNotEmpty() && seen.add(pkg)) {
+                    if (pkg.isNotEmpty() && !PROTECTED_SYSTEM_PACKAGES.contains(pkg) && seen.add(pkg)) {
                         result.add(BagApp(packageName = pkg, appName = label))
                     }
                 }
@@ -111,7 +118,7 @@ class BagStore(private val context: Context) {
             if (result.size >= MAX_BAG_APPS) break
             val block = match.groupValues[1]
             val pkg = PKG_PATTERN.find(block)?.groupValues?.getOrNull(1)?.trim().orEmpty()
-            if (pkg.isEmpty() || !seen.add(pkg)) continue
+            if (pkg.isEmpty() || PROTECTED_SYSTEM_PACKAGES.contains(pkg) || !seen.add(pkg)) continue
             val label = LABEL_PATTERN.find(block)?.groupValues?.getOrNull(1)?.trim()?.ifEmpty { pkg } ?: pkg
             result.add(BagApp(packageName = pkg, appName = label))
         }
@@ -210,6 +217,7 @@ class BagStore(private val context: Context) {
 
     fun isPackageAllowedDuringLock(pkg: String): Boolean {
         if (pkg.isBlank()) return false
+        if (PROTECTED_SYSTEM_PACKAGES.contains(pkg)) return false
         if (pkg == context.packageName) return true
 
         val customPkgs = getBagApps().map { it.packageName }.toSet()

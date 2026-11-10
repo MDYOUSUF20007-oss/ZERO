@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import org.zero.detox.core.LockEngine
@@ -19,7 +20,7 @@ import org.zero.detox.ui.TheVoidActivity
 class ZeroAccessibilityService : AccessibilityService() {
 
     private lateinit var bagStore: BagStore
-    private var lastVoidSnapMillis: Long = 0L
+    private var lastVoidSnapElapsed: Long = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -30,15 +31,22 @@ class ZeroAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
-        val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
-        if (!isLocked) return
-
-        val targetEndTime = prefs.getLong(LockEngine.KEY_TARGET_END_TIME, 0L)
-        val now = System.currentTimeMillis()
-        if (now >= targetEndTime) return
+        val nowWall = System.currentTimeMillis()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val timing = LockEngine.rebaseAfterRebootIfNeeded(prefs, nowWall, nowElapsed)
+        if (!timing.isLocked || timing.isExpired) return
 
         val packageName = event.packageName?.toString() ?: ""
         if (packageName.isBlank()) return
+
+        // 0. Always block Settings & Package Installers regardless of Bag configuration
+        if (packageName == "com.android.settings" || BagStore.PROTECTED_SYSTEM_PACKAGES.contains(packageName)) {
+            performGlobalAction(GLOBAL_ACTION_BACK)
+            performGlobalAction(GLOBAL_ACTION_HOME)
+            snapToVoid(nowElapsed)
+            Log.w("ZeroAccessibility", "Blocked protected system settings/installer: $packageName")
+            return
+        }
 
         // 1. Intercept Status Bar, Quick Settings & Recents/Overview drawer attempts
         if (packageName == "com.android.systemui") {
@@ -56,14 +64,14 @@ class ZeroAccessibilityService : AccessibilityService() {
                     performGlobalAction(GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE)
                 }
                 performGlobalAction(GLOBAL_ACTION_BACK)
-                snapToVoid(now)
+                snapToVoid(nowElapsed)
                 Log.d("ZeroAccessibility", "Blocked SystemUI overlay ($className)")
             }
             return
         }
 
         // 2. Allow temporary Emergency Dialer grace (911/112) triggered from TheVoidActivity
-        if (now <= TheVoidActivity.dialerGraceUntilMillis && bagStore.getAllowedDialerPackages().contains(packageName)) {
+        if (nowElapsed <= TheVoidActivity.dialerGraceUntilElapsed && bagStore.getAllowedDialerPackages().contains(packageName)) {
             return
         }
 
@@ -75,12 +83,12 @@ class ZeroAccessibilityService : AccessibilityService() {
         // 4. Strictly block every other app (Launcher, Settings, Social Media, Browsers, etc.)
         Log.w("ZeroAccessibility", "Blocked app $packageName during lock. Returning to The Void.")
         performGlobalAction(GLOBAL_ACTION_HOME)
-        snapToVoid(now)
+        snapToVoid(nowElapsed)
     }
 
-    private fun snapToVoid(now: Long) {
-        if (now - lastVoidSnapMillis < 180L) return
-        lastVoidSnapMillis = now
+    private fun snapToVoid(nowElapsed: Long) {
+        if (nowElapsed - lastVoidSnapElapsed < 180L) return
+        lastVoidSnapElapsed = nowElapsed
         try {
             val voidIntent = Intent(this, TheVoidActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or

@@ -1,0 +1,11 @@
+# Mandatory Code Owners — Zero Productivity Integrity Protection
+# Any changes to core lock enforcement, monotonic timing, stats/badge/backup verification,
+# or build/release pipelines require explicit maintainer approval.
+
+/android/app/src/main/java/**          @MDYOUSUF20007-oss
+/android/app/src/strict/java/**        @MDYOUSUF20007-oss
+/android/app/src/*/AndroidManifest.xml @MDYOUSUF20007-oss
+/android/app/build.gradle              @MDYOUSUF20007-oss
+/src/core/integrity/**                 @MDYOUSUF20007-oss
+/scripts/verify-integrity.mjs          @MDYOUSUF20007-oss
+/.github/workflows/**                  @MDYOUSUF20007-oss

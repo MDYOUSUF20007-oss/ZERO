@@ -1,7 +1,12 @@
 import type { ProfileAccent, ProfileAvatarId, ZeroProfile } from '../types';
+import {
+  FIRST_DONATION_BONUS_INR,
+  SECONDS_PER_PARACHUTE,
+  computeParachuteBalance,
+} from '../core/integrity/IntegrityEngine';
 
-export const FIRST_DONATION_BONUS_INR = 50;
-export const SECONDS_PER_PARACHUTE_MILESTONE = 72000;
+export { FIRST_DONATION_BONUS_INR, computeParachuteBalance };
+export const SECONDS_PER_PARACHUTE_MILESTONE = SECONDS_PER_PARACHUTE;
 
 export const VALID_AVATAR_IDS: ProfileAvatarId[] = [
   'monk',
@@ -19,31 +24,6 @@ export const VALID_PROFILE_ACCENTS: ProfileAccent[] = [
   'cyan',
 ];
 
-export function computeParachuteBalance(input: {
-  cumulativeSeconds: number;
-  bonusParachutes: number;
-  usedParachutes: number;
-}): {
-  earnedFromHours: number;
-  bonusParachutes: number;
-  lifetimeEarned: number;
-  currentBalance: number;
-} {
-  const safeCumulative = Math.max(0, Math.floor(input.cumulativeSeconds || 0));
-  const safeBonus = Math.max(0, Math.floor(input.bonusParachutes || 0));
-  const safeUsed = Math.max(0, Math.floor(input.usedParachutes || 0));
-  const earnedFromHours = Math.floor(safeCumulative / SECONDS_PER_PARACHUTE_MILESTONE);
-  const lifetimeEarned = earnedFromHours + safeBonus;
-  const currentBalance = Math.max(0, lifetimeEarned - safeUsed);
-
-  return {
-    earnedFromHours,
-    bonusParachutes: safeBonus,
-    lifetimeEarned,
-    currentBalance,
-  };
-}
-
 export function claimFirstTimerProfileBonus(
   alreadyClaimed: boolean,
   currentBonusParachutes: number
@@ -52,7 +32,7 @@ export function claimFirstTimerProfileBonus(
   nextAlreadyClaimed: boolean;
   nextBonusParachutes: number;
 } {
-  const safeBonus = Math.max(0, Math.floor(currentBonusParachutes || 0));
+  const safeBonus = Math.min(2, Math.max(0, Math.floor(currentBonusParachutes || 0)));
   if (alreadyClaimed) {
     return {
       granted: false,
@@ -63,7 +43,7 @@ export function claimFirstTimerProfileBonus(
   return {
     granted: true,
     nextAlreadyClaimed: true,
-    nextBonusParachutes: safeBonus + 1,
+    nextBonusParachutes: Math.min(2, safeBonus + 1),
   };
 }
 
@@ -75,7 +55,7 @@ export function claimFirstDonationParachute(
   nextAlreadyClaimed: boolean;
   nextBonusParachutes: number;
 } {
-  const safeBonus = Math.max(0, Math.floor(currentBonusParachutes || 0));
+  const safeBonus = Math.min(2, Math.max(0, Math.floor(currentBonusParachutes || 0)));
   if (alreadyClaimed) {
     return {
       granted: false,
@@ -86,7 +66,7 @@ export function claimFirstDonationParachute(
   return {
     granted: true,
     nextAlreadyClaimed: true,
-    nextBonusParachutes: safeBonus + 1,
+    nextBonusParachutes: Math.min(2, safeBonus + 1),
   };
 }
 

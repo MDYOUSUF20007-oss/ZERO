@@ -3,6 +3,7 @@ package org.zero.detox.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
 import org.zero.detox.core.LockEngine
@@ -13,7 +14,7 @@ import org.zero.detox.ui.TheVoidActivity
 /**
  * BootReceiver: Anti-tamper watchdog.
  * Catches device reboot intents (BOOT_COMPLETED, LOCKED_BOOT_COMPLETED, QUICKBOOT_POWERON).
- * Ensures that if a user reboots their phone mid-session, The Void immediately takes over.
+ * Re-anchors SystemClock.elapsedRealtime() on reboot and restarts The Void or emits a signed VerifiedCompletionEvent.
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -29,17 +30,23 @@ class BootReceiver : BroadcastReceiver() {
             return
         }
 
-        val targetEndTime = prefs.getLong(LockEngine.KEY_TARGET_END_TIME, 0L)
-        val now = System.currentTimeMillis()
+        val nowWall = System.currentTimeMillis()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val timingBeforeEngine = LockEngine.rebaseAfterRebootIfNeeded(prefs, nowWall, nowElapsed)
+        val parachuteStore = ParachuteStore(context)
+        val lockEngine = LockEngine(context, parachuteStore)
+        val timing = lockEngine.refreshAndCompleteIfExpired()
 
-        if (now < targetEndTime) {
-            // Lock is still active! Immediately restart Watchdog Service & The Void
-            val tag = prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work"
-            Log.w("ZeroAntiTamper", "Device rebooted mid-session! Re-engaging The Void. Remaining: ${(targetEndTime - now)/1000}s")
+        if (timing.isLocked && !timing.isExpired) {
+            val tag = timing.sessionTag
+            Log.w(
+                "ZeroAntiTamper",
+                "Device rebooted mid-session! Re-anchored monotonic timer. Remaining: ${timing.remainingSeconds}s"
+            )
             try {
                 val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
                     setAction(LockForegroundService.ACTION_START_LOCK)
-                    putExtra("EXTRA_TARGET_TIMESTAMP", targetEndTime)
+                    putExtra("EXTRA_TARGET_TIMESTAMP", timing.targetEndTimeMillis)
                     putExtra("EXTRA_TAG", tag)
                 }
                 ContextCompat.startForegroundService(context, serviceIntent)
@@ -54,14 +61,8 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 context.startActivity(voidIntent)
             } catch (_: Exception) {}
-        } else {
-            // Lock expired during reboot / shutdown
-            Log.i("ZeroAntiTamper", "Session completed while powered down. Crediting cumulative hours.")
-            val parachuteStore = ParachuteStore(context)
-            val duration = prefs.getLong(LockEngine.KEY_DURATION_SECONDS, 0L)
-            val tag = prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work"
-            parachuteStore.recordCompletedSession(tag, duration, targetEndTime)
-            prefs.edit().clear().apply()
+        } else if (timingBeforeEngine.isExpired) {
+            Log.i("ZeroAntiTamper", "Session completed while powered down. Signed VerifiedCompletionEvent queued.")
         }
     }
 }

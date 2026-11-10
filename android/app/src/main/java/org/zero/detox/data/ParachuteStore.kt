@@ -7,11 +7,11 @@ import org.json.JSONObject
 
 /**
  * ParachuteStore:
- * Tracks total cumulative blocked seconds, earned parachutes, deployed parachutes,
- * and maintains the 20-Hour progression logic.
+ * Tracks total cumulative blocked seconds, earned Escape Tickets, deployed tickets,
+ * verified native monotonic completion proofs, and maintains the 20-Hour progression logic.
  *
  * Formula:
- * 1 Parachute = 72,000 completed seconds (20 cumulative hours).
+ * 1 Emergency Escape Ticket = 72,000 completed seconds (20 cumulative hours).
  * Rollover progress = completed_blocked_seconds % 72000.
  */
 class ParachuteStore(context: Context) {
@@ -22,7 +22,9 @@ class ParachuteStore(context: Context) {
         const val KEY_DEPLOYED_COUNT = "deployed_parachutes_count"
         const val KEY_BONUS_PARACHUTES = "bonus_parachutes_count"
         const val KEY_TRANSACTION_HISTORY = "parachute_ledger_json"
+        const val KEY_PENDING_VERIFIED_COMPLETIONS = "pending_verified_completions_json"
         const val SECONDS_PER_PARACHUTE = 72_000L // 20 Hours exactly
+        private const val MAX_PENDING_COMPLETIONS = 100
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -48,6 +50,36 @@ class ParachuteStore(context: Context) {
         val delta: Int,
         val tag: String?
     )
+
+    data class VerifiedCompletionEvent(
+        val eventId: String,
+        val sessionId: String,
+        val tag: String,
+        val startTimeMillis: Long,
+        val endTimeMillis: Long,
+        val durationSeconds: Long,
+        val elapsedMonotonicMs: Long,
+        val usedRebootFallback: Boolean,
+        val monotonicSource: String,
+        val strictAccessibilityActive: Boolean,
+        val proofDigest: String
+    ) {
+        fun toJsonObject(): JSONObject {
+            return JSONObject().apply {
+                put("eventId", eventId)
+                put("sessionId", sessionId)
+                put("tag", tag)
+                put("startTime", startTimeMillis)
+                put("endTime", endTimeMillis)
+                put("durationSeconds", durationSeconds)
+                put("elapsedMonotonicMs", elapsedMonotonicMs)
+                put("usedRebootFallback", usedRebootFallback)
+                put("monotonicSource", monotonicSource)
+                put("strictAccessibilityActive", strictAccessibilityActive)
+                put("proofDigest", proofDigest)
+            }
+        }
+    }
 
     /**
      * Compute current metrics in real-time according to formula
@@ -93,7 +125,7 @@ class ParachuteStore(context: Context) {
 
     /**
      * Records a completed lock session.
-     * Credits seconds towards cumulative total and checks if a new 20-hour parachute was earned.
+     * Credits seconds towards cumulative total and checks if a new 20-hour Escape Ticket was earned.
      */
     @Synchronized
     fun recordCompletedSession(tag: String, seconds: Long, timestamp: Long) {
@@ -117,8 +149,80 @@ class ParachuteStore(context: Context) {
         }
     }
 
+    @Synchronized
+    fun enqueueVerifiedCompletion(event: VerifiedCompletionEvent) {
+        val raw = prefs.getString(KEY_PENDING_VERIFIED_COMPLETIONS, "[]") ?: "[]"
+        val current = try {
+            JSONArray(raw)
+        } catch (_: Exception) {
+            JSONArray()
+        }
+
+        for (i in 0 until current.length()) {
+            val item = current.optJSONObject(i) ?: continue
+            if (item.optString("eventId") == event.eventId) {
+                return
+            }
+        }
+
+        current.put(event.toJsonObject())
+
+        val trimmed = if (current.length() > MAX_PENDING_COMPLETIONS) {
+            val next = JSONArray()
+            val start = current.length() - MAX_PENDING_COMPLETIONS
+            for (i in start until current.length()) {
+                next.put(current.get(i))
+            }
+            next
+        } else {
+            current
+        }
+
+        prefs.edit()
+            .putString(KEY_PENDING_VERIFIED_COMPLETIONS, trimmed.toString())
+            .commit()
+    }
+
+    @Synchronized
+    fun getPendingVerifiedCompletionsJson(): JSONArray {
+        val raw = prefs.getString(KEY_PENDING_VERIFIED_COMPLETIONS, "[]") ?: "[]"
+        return try {
+            JSONArray(raw)
+        } catch (_: Exception) {
+            JSONArray()
+        }
+    }
+
+    @Synchronized
+    fun acknowledgeVerifiedCompletions(eventIdsJson: String) {
+        val acknowledgedIds = HashSet<String>()
+        try {
+            val arr = JSONArray(eventIdsJson)
+            for (i in 0 until arr.length()) {
+                val id = arr.optString(i, "").trim()
+                if (id.isNotEmpty()) acknowledgedIds.add(id)
+            }
+        } catch (_: Exception) {
+            return
+        }
+        if (acknowledgedIds.isEmpty()) return
+
+        val existing = getPendingVerifiedCompletionsJson()
+        val kept = JSONArray()
+        for (i in 0 until existing.length()) {
+            val obj = existing.optJSONObject(i) ?: continue
+            val id = obj.optString("eventId", "")
+            if (id.isNotEmpty() && !acknowledgedIds.contains(id)) {
+                kept.put(obj)
+            }
+        }
+        prefs.edit()
+            .putString(KEY_PENDING_VERIFIED_COMPLETIONS, kept.toString())
+            .commit()
+    }
+
     /**
-     * Deploys an emergency parachute.
+     * Deploys an Emergency Escape Ticket.
      * Decrements balance by 1.
      * ANTI-EXPLOIT RULE: The aborted elapsed seconds are VOIDED and not added to cumulative seconds.
      */
@@ -142,7 +246,11 @@ class ParachuteStore(context: Context) {
 
     private fun appendLedgerEntry(type: String, description: String, delta: Int, tag: String?, timestamp: Long) {
         val raw = prefs.getString(KEY_TRANSACTION_HISTORY, "[]") ?: "[]"
-        val array = JSONArray(raw)
+        val array = try {
+            JSONArray(raw)
+        } catch (_: Exception) {
+            JSONArray()
+        }
         val obj = JSONObject().apply {
             put("id", "txn_" + System.currentTimeMillis())
             put("type", type)

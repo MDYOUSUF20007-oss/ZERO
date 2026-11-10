@@ -50,7 +50,13 @@ import {
   verifyDonorUnlockToken,
 } from '../src/utils/donorUnlockToken.ts';
 import { KOFI_URL, SUPPORT_EMAIL } from '../src/utils/supportLinks.ts';
-import type { NativePermissionStatus, SessionRecord, ZeroZbakPayload } from '../src/types.ts';
+import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
+import type {
+  NativePermissionStatus,
+  SessionRecord,
+  VerifiedNativeCompletionEvent,
+  ZeroZbakPayload,
+} from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -693,5 +699,208 @@ failIf(
   'Empty donor token input must be rejected'
 );
 console.log('PASS: Signed Donor Unlock Token & Ko-fi Verification Support Details Verified');
+
+console.log('\n=== TEST 15: Isolated Read-Only IntegrityEngine & Monotonic Native Event Proofs ===');
+failIf(Object.isFrozen(IntegrityEngine) === true, 'IntegrityEngine must be Object.freeze() read-only');
+for (const forbidden of [
+  'addFakeHours',
+  'setStats',
+  'fastForwardSeconds',
+  'setCumulativeSeconds',
+  'setTotalReclaimedSeconds',
+  'setUsedParachutes',
+  'setBonusParachutes',
+  'skipTimer',
+]) {
+  failIf(!(forbidden in IntegrityEngine), `IntegrityEngine must NOT expose cheat setter "${forbidden}"`);
+}
+
+let iState = IntegrityEngine.resetProtectedState(false);
+failIf(
+  iState.cumulativeSeconds === 0 && iState.bonusParachutes === 0 && !iState.isZeroSupporter,
+  'Initial IntegrityEngine protected state must start cleanly at 0'
+);
+
+// 1. Native Android strictly refuses Web Preview timer completion (requires SystemClock.elapsedRealtime proof)
+const refusedWebOnAndroid = IntegrityEngine.commitWebPreviewSessionCompletion(
+  iState,
+  {
+    lock: {
+      isLocked: true,
+      tag: 'Deep Work',
+      startTime: 1000,
+      targetEndTime: 3601000,
+      durationSeconds: 3600,
+      elapsedSeconds: 3600,
+      remainingSeconds: 0,
+    },
+    sleepFarmingMode: 'quarter_credit',
+    isNativeAndroid: true,
+    startPerfMs: 0,
+    nowPerfMs: 5_000_000,
+    nowWallMs: 5_000_000,
+  },
+  false
+);
+failIf(
+  refusedWebOnAndroid.ok === false,
+  'IntegrityEngine must refuse Web fallback completions when running on native Android'
+);
+
+// 2. Web preview refuses completion if browser monotonic performance.now() fell short even if wall clock jumped
+const refusedSpoofedWebWall = IntegrityEngine.commitWebPreviewSessionCompletion(
+  iState,
+  {
+    lock: {
+      isLocked: true,
+      tag: 'Study',
+      startTime: 1_000_000,
+      targetEndTime: 4_600_000,
+      durationSeconds: 3600,
+      elapsedSeconds: 3600,
+      remainingSeconds: 0,
+    },
+    sleepFarmingMode: 'quarter_credit',
+    isNativeAndroid: false,
+    startPerfMs: 1000,
+    nowPerfMs: 61_000, // Only 60s monotonic vs 3600s required
+    nowWallMs: 99_999_999_999,
+  },
+  false
+);
+failIf(
+  refusedSpoofedWebWall.ok === false,
+  'Web preview monotonic check must block wall-clock fast-forward attacks'
+);
+
+// 3. Valid Native Android monotonic event (72,000s = 20h -> unlocks 1 Escape Ticket)
+const validNativeBase = {
+  eventId: 'nat_sess_1_1794300000000',
+  sessionId: 'sess_1',
+  tag: 'Deep Work',
+  startTime: 1794228000000,
+  endTime: 1794300000000,
+  durationSeconds: 72000,
+  elapsedMonotonicMs: 72_000_000,
+  usedRebootFallback: false,
+};
+const validNativeEvent: VerifiedNativeCompletionEvent = {
+  ...validNativeBase,
+  monotonicSource: IntegrityEngine.NATIVE_MONOTONIC_SOURCE,
+  strictAccessibilityActive: true,
+  proofDigest: IntegrityEngine.computeNativeCompletionProofDigest(validNativeBase),
+};
+
+const validRes = IntegrityEngine.commitNativeSessionCompletions(
+  iState,
+  [validNativeEvent],
+  'quarter_credit',
+  false
+);
+iState = validRes.state;
+failIf(
+  validRes.acceptedEventIds.length === 1 &&
+    validRes.committedSessions.length === 1 &&
+    iState.cumulativeSeconds === 72000 &&
+    iState.totalReclaimedSeconds === 72000 &&
+    validRes.rewards.length === 1 &&
+    IntegrityEngine.computeParachuteBalance({
+      cumulativeSeconds: iState.cumulativeSeconds,
+      bonusParachutes: iState.bonusParachutes,
+      usedParachutes: iState.usedParachutes,
+    }).currentBalance === 1,
+  'Verified native SystemClock.elapsedRealtime() completion must credit 20h and mint 1 Escape Ticket'
+);
+
+// 4. Reject tampered HMAC, wrong clock source, short monotonic elapsed time, and duplicate event replay
+const tamperedDigestEv: VerifiedNativeCompletionEvent = {
+  ...validNativeEvent,
+  eventId: 'nat_sess_tamper_1',
+  proofDigest: '0'.repeat(64),
+};
+const badClockEv: VerifiedNativeCompletionEvent = {
+  ...validNativeEvent,
+  eventId: 'nat_sess_badclock_1',
+  monotonicSource: 'wall_clock',
+};
+const shortElapsedBase = {
+  ...validNativeBase,
+  eventId: 'nat_sess_short_1',
+  sessionId: 'sess_short_1',
+  durationSeconds: 3600,
+  elapsedMonotonicMs: 60_000,
+  usedRebootFallback: false,
+};
+const shortElapsedEv: VerifiedNativeCompletionEvent = {
+  ...shortElapsedBase,
+  monotonicSource: IntegrityEngine.NATIVE_MONOTONIC_SOURCE,
+  strictAccessibilityActive: true,
+  proofDigest: IntegrityEngine.computeNativeCompletionProofDigest(shortElapsedBase),
+};
+
+const maliciousRes = IntegrityEngine.commitNativeSessionCompletions(
+  iState,
+  [tamperedDigestEv, badClockEv, shortElapsedEv, validNativeEvent], // includes replay of validNativeEvent!
+  'quarter_credit',
+  false
+);
+failIf(
+  maliciousRes.committedSessions.length === 0 &&
+    maliciousRes.rejectedEventIds.length === 3 &&
+    maliciousRes.state.cumulativeSeconds === 72000,
+  'Tampered digest, non-monotonic clock, short monotonic duration & replay must add 0 seconds'
+);
+
+// 5. Escape ticket abort voids elapsed seconds cleanly
+const abortOk = IntegrityEngine.commitEscapeTicketAbort(
+  iState,
+  {
+    tag: 'Deep Work',
+    startTime: 1794310000000,
+    durationSeconds: 7200,
+    elapsedSeconds: 5400,
+    nowWallMs: 1794315400000,
+  },
+  false
+);
+failIf(abortOk.ok === true, 'Escape ticket deduction should succeed when balance >= 1');
+if (abortOk.ok) {
+  iState = abortOk.state;
+  failIf(
+    iState.usedParachutes === 1 &&
+      iState.cumulativeSeconds === 72000 &&
+      iState.totalReclaimedSeconds === 72000 &&
+      iState.sessions[0].status === 'parachuted' &&
+      iState.sessions[0].earnedParachuteSeconds === 0,
+    'Escape ticket abort must deduct 1 ticket and permanently void aborted elapsed seconds'
+  );
+}
+const abortWhenEmpty = IntegrityEngine.commitEscapeTicketAbort(
+  iState,
+  {
+    tag: 'Study',
+    startTime: 1794320000000,
+    durationSeconds: 3600,
+    elapsedSeconds: 1200,
+  },
+  false
+);
+failIf(abortWhenEmpty.ok === false, 'Escape ticket deduction must fail when balance is 0');
+
+// 6. Donor token activation enforces cryptographic HMAC before unlocking badge + gift ticket
+const badDonorAct = IntegrityEngine.activateDonorUnlockToken(iState, 'ZDON1.fake.0000', false);
+failIf(
+  !badDonorAct.ok && badDonorAct.state.isZeroSupporter === false,
+  'Invalid ZDON1 token must not unlock ZERO-SUPPORTER or bonus ticket'
+);
+const goodDonorAct = IntegrityEngine.activateDonorUnlockToken(iState, donorToken, false);
+failIf(
+  goodDonorAct.ok &&
+    goodDonorAct.grantedNewPerks &&
+    goodDonorAct.state.isZeroSupporter === true &&
+    goodDonorAct.state.bonusParachutes === 1,
+  'Valid ZDON1 token via IntegrityEngine must grant ZERO-SUPPORTER Gold Badge & +1 ticket once'
+);
+console.log('PASS: IntegrityEngine Isolation, Monotonic Proofs & Anti-Cheat Guards Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

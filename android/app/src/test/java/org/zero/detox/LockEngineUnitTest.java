@@ -9,6 +9,8 @@ import android.content.SharedPreferences;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.zero.detox.bridge.PermissionStatusHelper;
 import org.zero.detox.core.LockEngine;
@@ -266,5 +268,144 @@ public class LockEngineUnitTest {
                 "0D:6F:3C:19:9D:C8:F1:81:D1:0F:02:0A:4C:7B:46:2A:CD:08:61:2A:47:70:91:72:D5:D1:9A:8D:BE:89:E6:93"
             )
         );
+    }
+
+    @Test
+    public void monotonicClock_blocksWallClockForwardSpoofAndEmitsSignedProofOnCompletion() throws Exception {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public String getPackageName() {
+                return "org.zero.detox";
+            }
+
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        final long[] fakeElapsedMs = new long[] { 500_000L };
+        final long[] fakeWallMs = new long[] { 1_794_000_000_000L };
+
+        ParachuteStore store = new ParachuteStore(fakeContext);
+        LockEngine engine = new LockEngine(
+            fakeContext,
+            store,
+            () -> fakeElapsedMs[0],
+            () -> fakeWallMs[0]
+        );
+
+        engine.igniteSession(3600L, "Deep Work");
+        assertTrue(engine.getCurrentTiming().isLocked());
+
+        // Attack: User advances device Date/Time clock +12 hours in Android Settings!
+        fakeWallMs[0] += 12L * 3600L * 1000L;
+        fakeElapsedMs[0] += 60_000L; // Only 1 real monotonic minute passed
+
+        LockEngine.LockTimingSnapshot afterSpoof = engine.refreshAndCompleteIfExpired();
+        assertTrue("Wall clock spoof must NOT unlock active session", afterSpoof.isLocked());
+        assertFalse("Wall clock spoof must NOT mark session expired", afterSpoof.isExpired());
+        assertEquals(60L, afterSpoof.getElapsedSeconds());
+        assertFalse("completeSession must reject early wall-clock spoof", engine.completeSession());
+        assertEquals(0, store.getPendingVerifiedCompletionsJson().length());
+        assertEquals(0L, store.getMetrics().getTotalCumulativeSeconds());
+
+        // Legitimate completion: monotonic elapsedRealtime advances remaining 3540s
+        fakeElapsedMs[0] += 3540L * 1000L;
+        assertTrue(engine.completeSession());
+        assertFalse(engine.getCurrentTiming().isLocked());
+        assertEquals(3600L, store.getMetrics().getTotalCumulativeSeconds());
+
+        JSONArray pending = store.getPendingVerifiedCompletionsJson();
+        assertEquals(1, pending.length());
+        JSONObject ev = pending.getJSONObject(0);
+        assertEquals(LockEngine.MONOTONIC_SOURCE, ev.getString("monotonicSource"));
+        assertEquals(3600L, ev.getLong("durationSeconds"));
+        assertFalse(ev.getBoolean("usedRebootFallback"));
+
+        String expectedDigest = LockEngine.computeNativeProofDigest(
+            ev.getString("eventId"),
+            ev.getString("sessionId"),
+            ev.getString("tag"),
+            ev.getLong("startTime"),
+            ev.getLong("endTime"),
+            ev.getLong("durationSeconds"),
+            ev.getLong("elapsedMonotonicMs"),
+            ev.getBoolean("usedRebootFallback")
+        );
+        assertEquals(expectedDigest, ev.getString("proofDigest"));
+
+        store.acknowledgeVerifiedCompletions("[\"" + ev.getString("eventId") + "\"]");
+        assertEquals(0, store.getPendingVerifiedCompletionsJson().length());
+    }
+
+    @Test
+    public void coldRebootFallback_rebasesAndCompletesSafely() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        final long[] fakeElapsedMs = new long[] { 1_000_000L };
+        final long[] fakeWallMs = new long[] { 1_794_100_000_000L };
+
+        ParachuteStore store = new ParachuteStore(fakeContext);
+        LockEngine engine = new LockEngine(
+            fakeContext,
+            store,
+            () -> fakeElapsedMs[0],
+            () -> fakeWallMs[0]
+        );
+
+        engine.igniteSession(3600L, "Study");
+
+        // User cold-reboots phone after 20 minutes: elapsedRealtime resets below bootAnchor!
+        fakeWallMs[0] += 1200L * 1000L;
+        fakeElapsedMs[0] = 15_000L; // 15s since fresh boot
+
+        LockEngine.LockTimingSnapshot rebased = engine.getCurrentTiming();
+        assertTrue(rebased.isLocked());
+        assertFalse(rebased.isExpired());
+        assertTrue(rebased.getUsedRebootFallback());
+        assertEquals(2400L, rebased.getRemainingSeconds());
+
+        // Remaining 2400s tracked monotonically from the new boot's elapsedRealtime
+        fakeElapsedMs[0] += 2400L * 1000L;
+        assertTrue(engine.completeSession());
+        assertEquals(3600L, store.getMetrics().getTotalCumulativeSeconds());
+        assertEquals(1, store.getPendingVerifiedCompletionsJson().length());
+    }
+
+    @Test
+    public void bagStore_stripsProtectedSettingsAndInstallers() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public String getPackageName() {
+                return "org.zero.detox";
+            }
+
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        BagStore bagStore = new BagStore(fakeContext);
+        String sneakyJson = "["
+            + "{\"packageName\":\"com.android.settings\",\"appName\":\"Settings\"},"
+            + "{\"packageName\":\"com.google.android.packageinstaller\",\"appName\":\"Installer\"},"
+            + "{\"packageName\":\"md.obsidian\",\"appName\":\"Obsidian\"}"
+            + "]";
+        bagStore.saveActiveBag("BypassTry", sneakyJson, false, false);
+
+        assertEquals(1, bagStore.getBagApps().size());
+        assertEquals("md.obsidian", bagStore.getBagApps().get(0).getPackageName());
+        assertFalse(bagStore.isPackageAllowedDuringLock("com.android.settings"));
+        assertFalse(bagStore.isPackageAllowedDuringLock("com.google.android.packageinstaller"));
     }
 }

@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -45,10 +46,10 @@ class TheVoidActivity : AppCompatActivity() {
         var isInForeground: Boolean = false
 
         @Volatile
-        var dialerGraceUntilMillis: Long = 0L
+        var dialerGraceUntilElapsed: Long = 0L
 
         @Volatile
-        var bagLaunchGraceUntilMillis: Long = 0L
+        var bagLaunchGraceUntilElapsed: Long = 0L
 
         @Volatile
         var activeBagPackage: String? = null
@@ -271,7 +272,7 @@ class TheVoidActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             setOnClickListener {
-                dialerGraceUntilMillis = System.currentTimeMillis() + 45_000L
+                dialerGraceUntilElapsed = SystemClock.elapsedRealtime() + 45_000L
                 startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
             }
         }
@@ -333,7 +334,7 @@ class TheVoidActivity : AppCompatActivity() {
                     if (pkg != null) {
                         launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
                     } else {
-                        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3000L
+                        bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3000L
                         startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
                     }
                 }
@@ -357,7 +358,7 @@ class TheVoidActivity : AppCompatActivity() {
                     if (pkg != null) {
                         launchAllowedBagPackage(pkg, fallbackIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
                     } else {
-                        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3000L
+                        bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3000L
                         startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
                     }
                 }
@@ -393,7 +394,7 @@ class TheVoidActivity : AppCompatActivity() {
             return
         }
         activeBagPackage = targetPackage
-        bagLaunchGraceUntilMillis = System.currentTimeMillis() + 3_500L
+        bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3_500L
         try {
             val launch = packageManager.getLaunchIntentForPackage(targetPackage) ?: fallbackIntent
             if (launch != null) {
@@ -438,14 +439,39 @@ class TheVoidActivity : AppCompatActivity() {
     }
 
     private fun startTickers() {
-        val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
-        val targetEndTime = prefs.getLong(LockEngine.KEY_TARGET_END_TIME, 0L)
-        val now = System.currentTimeMillis()
-        val remainingMillis = maxOf(0L, targetEndTime - now)
+        countDownTimer?.cancel()
+        val timing = lockEngine.getCurrentTiming()
+        if (!timing.isLocked) {
+            isInForeground = false
+            activeBagPackage = null
+            try { stopLockTask() } catch (_: Exception) {}
+            finish()
+            return
+        }
+        if (timing.isExpired) {
+            isInForeground = false
+            activeBagPackage = null
+            lockEngine.completeSession()
+            try { stopLockTask() } catch (_: Exception) {}
+            Toast.makeText(this@TheVoidActivity, "Lock Completed. Focus Reclaimed!", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        val remainingMillis = maxOf(1L, timing.remainingMillis)
 
         countDownTimer = object : CountDownTimer(remainingMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
-                val totalSec = millisUntilFinished / 1000L
+                val live = lockEngine.getCurrentTiming()
+                if (!live.isLocked) {
+                    cancel()
+                    isInForeground = false
+                    activeBagPackage = null
+                    try { stopLockTask() } catch (_: Exception) {}
+                    finish()
+                    return
+                }
+                val totalSec = live.remainingMillis / 1000L
                 val hours = totalSec / 3600L
                 val minutes = (totalSec % 3600L) / 60L
                 val seconds = totalSec % 60L
@@ -459,6 +485,12 @@ class TheVoidActivity : AppCompatActivity() {
             }
 
             override fun onFinish() {
+                val finalTiming = lockEngine.getCurrentTiming()
+                if (finalTiming.isLocked && !finalTiming.isExpired && finalTiming.remainingMillis > 0L) {
+                    // Never finish early: reschedule against Android's monotonic SystemClock.elapsedRealtime()
+                    startTickers()
+                    return
+                }
                 isInForeground = false
                 activeBagPackage = null
                 lockEngine.completeSession()
@@ -474,6 +506,12 @@ class TheVoidActivity : AppCompatActivity() {
         isInForeground = true
         activeBagPackage = null
         hideSystemUI()
+        val timing = lockEngine.refreshAndCompleteIfExpired()
+        if (!timing.isLocked) {
+            isInForeground = false
+            try { stopLockTask() } catch (_: Exception) {}
+            finish()
+        }
     }
 
     override fun onPause() {

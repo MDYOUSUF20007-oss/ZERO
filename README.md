@@ -111,12 +111,13 @@ usedTickets += 1;
 // abortedSession.earnedSeconds = 0; -> Cumulative seconds do NOT increase!
 ```
 
-### Native Android Subsystem (`android/`)
-- **`LockTaskEngine.kt` / `TheVoidActivity.kt`**: Uses Android Kiosk / `startLockTask()` pinning mode via Device Policy Manager (`setLockTaskPackages`) to disable Home, Recents, and Status Bar drawers.
-- **`ZeroAccessibilityService.kt`**: Intercepts `com.android.systemui` status bar pulldown attempts and closes system notification dialogs; traps unauthorized app switches.
-- **`BootReceiver.kt`**: Listens for `android.intent.action.BOOT_COMPLETED`, checks persistent timestamp in flash storage, and immediately re-surfaces `TheVoidActivity` if rebooted mid-session.
-- **`LockForegroundService.kt`**: High-priority sticky foreground service maintaining OS process priority (`START_STICKY`).
+### Core Integrity & Native Android Subsystem
+- **`src/core/integrity/IntegrityEngine.ts`**: Frozen, read-only module isolating focus time accounting, monotonic proof verification, Escape Ticket deductions, golden `ZERO-SUPPORTER` / `.zbak` HMAC checks, and achievement evaluators (`0` public setter functions exposed to UI components).
+- **`LockEngine.kt` / `TheVoidActivity.kt`**: Tracks lock duration strictly via Android's monotonic `SystemClock.elapsedRealtime()`, computes HMAC-SHA256 `VerifiedCompletionEvent` receipts on completion, and engages Device Owner Kiosk / `startLockTask()` when provisioned.
+- **`ZeroAccessibilityService.kt` / `LockForegroundService.kt`**: Blocks `com.android.settings`, system package installers, status bar / Quick Settings drawers, Recents, and unbagged apps during active locks using monotonic `SystemClock.elapsedRealtime()` timing.
+- **`BootReceiver.kt`**: Listens for `BOOT_COMPLETED` / `MY_PACKAGE_REPLACED`, rebases monotonic progress on cold reboot, and immediately re-surfaces `TheVoidActivity` or finalizes a signed completion proof.
 - **`PreLockScheduleWorker.kt`**: WorkManager job dispatching high-priority heads-up notifications 5 minutes prior to scheduled lock engagements.
+- **Automated Anti-Cheat PR Guard (`node scripts/verify-integrity.mjs` + `.github/CODEOWNERS`):** Runs as the first step in `.github/workflows/build.yml` and `main.yml` — blocking any PR introducing `android:debuggable="true"`, removing `SystemClock.elapsedRealtime()` or `com.android.settings` enforcement, or bypassing `IntegrityEngine`. See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 

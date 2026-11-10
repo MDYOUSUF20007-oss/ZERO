@@ -22,6 +22,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
+        run: node scripts/verify-integrity.mjs
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -33,6 +36,9 @@ jobs:
 
       - name: Run Verification Tests (20h Rollover & Anti-Exploit)
         run: npm test
+
+      - name: Lint Web & Integrity Modules
+        run: npm run lint
 
       - name: Build Production Bundle
         run: npm run build
@@ -80,6 +86,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
+        run: node scripts/verify-integrity.mjs
 
       - name: Compute Monotonic Android Version Code
         run: |

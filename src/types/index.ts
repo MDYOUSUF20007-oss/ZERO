@@ -89,6 +89,39 @@ export interface ActiveLockSession {
   remainingSeconds: number;
 }
 
+export interface VerifiedNativeCompletionEvent {
+  eventId: string;
+  sessionId: string;
+  tag: SessionTag;
+  startTime: number;
+  endTime: number;
+  durationSeconds: number;
+  elapsedMonotonicMs: number;
+  usedRebootFallback: boolean;
+  monotonicSource: string;
+  strictAccessibilityActive: boolean;
+  proofDigest: string;
+}
+
+export interface NativeStateSnapshot {
+  isLocked: boolean;
+  sessionId?: string;
+  sessionTag?: string;
+  startTime?: number;
+  targetEndTime?: number;
+  durationSeconds?: number;
+  elapsedSeconds?: number;
+  remainingSeconds?: number;
+  elapsedMonotonicMs?: number;
+  monotonicNowMs?: number;
+  monotonicSource?: string;
+  cumulativeSeconds: number;
+  deployedCount: number;
+  bonusCount?: number;
+  strictAccessibilityEnabled?: boolean;
+  pendingCompletions?: VerifiedNativeCompletionEvent[];
+}
+
 export interface BagApp {
   packageName: string;
   appName: string;
@@ -259,6 +292,7 @@ export interface ZeroNativeBridgeInterface {
   deployParachute(): boolean;
   getBatteryPercentage(): number;
   getNativeStateJson(): string;
+  acknowledgeVerifiedCompletions?(eventIdsJson: string): void;
 }
 
 type StringOrStr = string;

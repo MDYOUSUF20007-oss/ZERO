@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Process
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Base64
 import android.view.accessibility.AccessibilityManager
@@ -649,9 +650,33 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun getNativeStateJson(): String {
-        val prefs = activity.getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
-        val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
+        val timing = lockEngine.refreshAndCompleteIfExpired()
         val metrics = parachuteStore.getMetrics()
-        return "{\"isLocked\":$isLocked,\"cumulativeSeconds\":${metrics.totalCumulativeSeconds},\"deployedCount\":${metrics.deployedParachutes},\"bonusCount\":${metrics.bonusParachutes}}"
+        val pendingCompletions = parachuteStore.getPendingVerifiedCompletionsJson()
+        val strictAccessibilityEnabled = isAccessibilityEnabled()
+
+        return JSONObject().apply {
+            put("isLocked", timing.isLocked)
+            put("sessionId", timing.sessionId)
+            put("sessionTag", timing.sessionTag)
+            put("startTime", timing.startTimeMillis)
+            put("targetEndTime", timing.targetEndTimeMillis)
+            put("durationSeconds", timing.durationSeconds)
+            put("elapsedSeconds", timing.elapsedSeconds)
+            put("remainingSeconds", timing.remainingSeconds)
+            put("elapsedMonotonicMs", timing.elapsedMonotonicMillis)
+            put("monotonicNowMs", SystemClock.elapsedRealtime())
+            put("monotonicSource", LockEngine.MONOTONIC_SOURCE)
+            put("cumulativeSeconds", metrics.totalCumulativeSeconds)
+            put("deployedCount", metrics.deployedParachutes)
+            put("bonusCount", metrics.bonusParachutes)
+            put("strictAccessibilityEnabled", strictAccessibilityEnabled)
+            put("pendingCompletions", pendingCompletions)
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun acknowledgeVerifiedCompletions(eventIdsJson: String) {
+        parachuteStore.acknowledgeVerifiedCompletions(eventIdsJson)
     }
 }
