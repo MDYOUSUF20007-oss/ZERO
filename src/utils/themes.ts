@@ -186,6 +186,24 @@ export function computeDynamicAccentTokens(hexInput: string): {
   };
 }
 
+export interface ActiveAccentTokens {
+  hex: string;
+  rgb: string;
+  badgeGradient: string;
+  badgeText: string;
+}
+
+export function resolveActiveAccentTokens(
+  config: ThemeConfig,
+  profileAccentTheme: ActiveAccentTokens
+): ActiveAccentTokens {
+  if (config.family === 'amoled' && config.amoledGradient === 'pure') {
+    return profileAccentTheme;
+  }
+  const runtime = computeThemeRuntime(config);
+  return computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#F59E0B');
+}
+
 export function migrateLegacyThemeStyle(style?: ThemeStyle | null): ThemeFamily {
   if (style === 'kindle') return 'kindle';
   if (style === 'matte') return 'matte';

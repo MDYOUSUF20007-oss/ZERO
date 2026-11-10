@@ -31,9 +31,16 @@ import {
   MATTE_STUDIO_PRESETS,
   computeThemeRuntime,
   computeDynamicAccentTokens,
+  resolveActiveAccentTokens,
   getRelativeLuminance,
   sanitizeThemeConfig,
 } from '../src/utils/themes.ts';
+import {
+  PIXEL_GLYPHS_5X7,
+  buildPixelClockLayout,
+  normalizePixelClockText,
+} from '../src/utils/pixelFont.ts';
+import { resolveAppBrandVisual } from '../src/utils/appBrandColors.ts';
 import {
   DEFAULT_WIDGETS_CONFIG,
   computeHeatmapView,
@@ -1277,5 +1284,61 @@ failIf(
   'Dynamic accent token generator must compute crisp dark/light metallic text contrast'
 );
 console.log('PASS: Widget Options, Daily/Weekly/Monthly/Merged-All Heatmaps & Dynamic Accents Verified');
+
+console.log('\n=== TEST 19: Void Pixelated Gradient Clock & WhatsApp-Style Bag Brand Visuals ===');
+failIf(
+  normalizePixelClockText(' 3:39 pm ') === '3:39 PM' &&
+    normalizePixelClockText('???') === '3:39 PM' &&
+    PIXEL_GLYPHS_5X7['3'].length === 7,
+  'Pixel clock normalizer must uppercase valid time chars and safely fallback on invalid strings'
+);
+
+const clockLayout = buildPixelClockLayout('12:45 am', 1, 0.16);
+failIf(
+  clockLayout.normalizedText === '12:45 AM' &&
+    clockLayout.totalRows === 7 &&
+    clockLayout.totalCols > 20 &&
+    clockLayout.rects.length > 60,
+  'Pixelated clock SVG matrix layout must emit crisp non-empty 5x7 rects'
+);
+
+const whatsappBrand = resolveAppBrandVisual({
+  packageName: 'com.whatsapp',
+  appName: 'WhatsApp',
+});
+const spotifyBrand = resolveAppBrandVisual({
+  packageName: 'com.spotify.music',
+  appName: 'Spotify',
+});
+const customBrightBrand = resolveAppBrandVisual({
+  packageName: 'com.example.brightnotes',
+  appName: 'Bright Notes',
+  iconBgColor: '#FDE047',
+});
+failIf(
+  whatsappBrand.bgColor === '#16A34A' &&
+    whatsappBrand.textColor === '#FFFFFF' &&
+    spotifyBrand.bgColor === '#1DB954' &&
+    customBrightBrand.bgColor === '#FDE047' &&
+    customBrightBrand.textColor === '#09090B',
+  'App brand color resolver must match iconic brand hexes and enforce WCAG dark text on bright icons'
+);
+
+const emeraldMock = {
+  hex: '#10B981',
+  rgb: '16, 185, 129',
+  badgeGradient: 'linear-gradient(135deg, #34D399 0%, #059669 100%)',
+  badgeText: '#09090B',
+};
+const pureResolved = resolveActiveAccentTokens(DEFAULT_THEME_CONFIG, emeraldMock);
+const gradientResolved = resolveActiveAccentTokens(
+  { ...DEFAULT_THEME_CONFIG, family: 'amoled', amoledGradient: 'obsidian_violet' },
+  emeraldMock
+);
+failIf(
+  pureResolved.hex === '#10B981' && gradientResolved.hex !== '#10B981',
+  'Active accent token helper must preserve Profile accent in Pure AMOLED and derive finish accent on Gradient themes'
+);
+console.log('PASS: Void Pixelated Gradient Clock & WhatsApp-Style Brand Bag Visuals Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

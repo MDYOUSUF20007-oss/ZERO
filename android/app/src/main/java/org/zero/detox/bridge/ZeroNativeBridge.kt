@@ -31,6 +31,7 @@ import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import org.zero.detox.security.AppSecurityGuard
+import org.zero.detox.ui.VoidThemeStore
 import java.io.File
 
 /**
@@ -496,6 +497,11 @@ class ZeroNativeBridge(
             put("allowSms", bagStore.isSmsAllowed())
             put("apps", arr)
         }.toString()
+    }
+
+    @JavascriptInterface
+    fun setActiveThemeAccent(accentHex: String, accentRgb: String, badgeTextHex: String) {
+        VoidThemeStore.saveAccent(activity, accentHex, accentRgb, badgeTextHex)
     }
 
     @JavascriptInterface

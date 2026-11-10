@@ -22,6 +22,9 @@ import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
 import org.zero.detox.security.AppSecurityGuard;
+import org.zero.detox.ui.PixelFont5x7;
+import org.zero.detox.ui.VoidBrandPalette;
+import org.zero.detox.ui.VoidThemeStore;
 
 public class LockEngineUnitTest {
 
@@ -651,5 +654,61 @@ public class LockEngineUnitTest {
         assertTrue(rootedJson.getJSONObject("restrictions").getBoolean("backupRestoreDisabled"));
         assertTrue(rootedJson.getJSONObject("restrictions").getBoolean("presetBagEditingDisabled"));
         assertEquals(2, rootedJson.getJSONArray("reasons").length());
+    }
+
+    @Test
+    public void voidClockPixelFont_normalizesTimeAndBuildsCrispMatrix() {
+        assertEquals("3:39 PM", PixelFont5x7.normalizeClockText(" 3:39 pm "));
+        assertEquals("3:39 PM", PixelFont5x7.normalizeClockText("invalid"));
+
+        PixelFont5x7.Layout layout = PixelFont5x7.buildLayout("11:42 am");
+        assertEquals("11:42 AM", layout.getNormalizedText());
+        assertEquals(PixelFont5x7.ROWS, layout.getTotalRows());
+        assertTrue(layout.getTotalCols() > 20f);
+        assertTrue(layout.getCells().size() > 50);
+    }
+
+    @Test
+    public void voidBrandPalette_mapsAppsAndComputesContrastCleanly() {
+        assertEquals(
+            "#16A34A",
+            VoidBrandPalette.resolveBrandHexForPackage("com.whatsapp", "WhatsApp", "custom", "#F59E0B")
+        );
+        assertEquals(
+            "#1DB954",
+            VoidBrandPalette.resolveBrandHexForPackage("com.spotify.music", "Spotify", "custom", "#F59E0B")
+        );
+        assertEquals(
+            "#2563EB",
+            VoidBrandPalette.resolveBrandHexForPackage("com.google.android.apps.maps", "Maps", "custom", "#F59E0B")
+        );
+        assertEquals(
+            "#16A34A",
+            VoidBrandPalette.resolveBrandHexForPackage("com.custom.dialer", "Dialer", "calls", "#F59E0B")
+        );
+        assertEquals("#09090B", VoidBrandPalette.contrastTextHexForBg("#FDE047"));
+        assertEquals("#FFFFFF", VoidBrandPalette.contrastTextHexForBg("#16A34A"));
+    }
+
+    @Test
+    public void voidThemeStore_persistsAccentAndParsesSafeColors() {
+        final Map<String, SharedPreferences> prefMap = new HashMap<>();
+        Context fakeContext = new ContextWrapper(null) {
+            @Override
+            public SharedPreferences getSharedPreferences(String name, int mode) {
+                return prefMap.computeIfAbsent(name, k -> createInMemoryPrefs());
+            }
+        };
+
+        assertEquals(0xFF10B981, VoidThemeStore.parseHexColorSafe("#10B981", 0xFFF59E0B));
+        assertEquals(0xFFF59E0B, VoidThemeStore.parseHexColorSafe("not-a-color", 0xFFF59E0B));
+
+        VoidThemeStore.saveAccent(fakeContext, "#10b981", "16, 185, 129", "#09090B");
+        VoidThemeStore.VoidAccentConfig loaded = VoidThemeStore.loadAccent(fakeContext);
+        assertEquals("#10B981", loaded.getAccentHex());
+        assertEquals("16, 185, 129", loaded.getAccentRgb());
+        assertEquals("#09090B", loaded.getBadgeTextHex());
+        assertEquals(0xFF10B981, loaded.getAccentColor());
+        assertEquals(0xFF09090B, loaded.getBadgeTextColor());
     }
 }

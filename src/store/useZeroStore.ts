@@ -41,6 +41,7 @@ import {
   DEFAULT_THEME_CONFIG,
   computeDynamicAccentTokens,
   computeThemeRuntime,
+  resolveActiveAccentTokens,
   sanitizeThemeConfig,
 } from '../utils/themes';
 import {
@@ -787,6 +788,8 @@ export function useZeroStore() {
     }
   }, [applyPostCompletionSideEffects, syncNativeLedger]);
 
+  const activeAccentTokensRef = useRef<{ hex: string; rgb: string; badgeText: string } | null>(null);
+
   useEffect(() => {
     refreshPermissions();
     syncWithNativeState();
@@ -798,6 +801,17 @@ export function useZeroStore() {
         refreshPermissions();
         refreshInstalledApps();
         syncWithNativeState();
+        if (window.ZeroNative && activeAccentTokensRef.current) {
+          try {
+            window.ZeroNative.setActiveThemeAccent?.(
+              activeAccentTokensRef.current.hex,
+              activeAccentTokensRef.current.rgb,
+              activeAccentTokensRef.current.badgeText
+            );
+          } catch {
+            // Ignore bridge error during boot poll
+          }
+        }
         clearInterval(bootPoll);
       }
     }, 150);
@@ -888,20 +902,36 @@ export function useZeroStore() {
     const profileAccentTheme = ACCENT_THEMES[accentKey] || ACCENT_THEMES.Amber;
     const isPureAmoled =
       themeConfig.family === 'amoled' && themeConfig.amoledGradient === 'pure';
+    const activeTokens = resolveActiveAccentTokens(themeConfig, profileAccentTheme);
+    activeAccentTokensRef.current = {
+      hex: activeTokens.hex,
+      rgb: activeTokens.rgb,
+      badgeText: activeTokens.badgeText,
+    };
 
     if (isPureAmoled) {
-      rootEl.style.setProperty('--accent-rgb', profileAccentTheme.rgb);
-      rootEl.style.setProperty('--accent-hex', profileAccentTheme.hex);
-      rootEl.style.setProperty('--accent-badge-gradient', profileAccentTheme.badgeGradient);
-      rootEl.style.setProperty('--accent-badge-text', profileAccentTheme.badgeText);
-      rootEl.style.setProperty('--zero-accent', profileAccentTheme.hex);
-      rootEl.style.setProperty('--zero-dial-stroke', profileAccentTheme.hex);
+      rootEl.style.setProperty('--accent-rgb', activeTokens.rgb);
+      rootEl.style.setProperty('--accent-hex', activeTokens.hex);
+      rootEl.style.setProperty('--accent-badge-gradient', activeTokens.badgeGradient);
+      rootEl.style.setProperty('--accent-badge-text', activeTokens.badgeText);
+      rootEl.style.setProperty('--zero-accent', activeTokens.hex);
+      rootEl.style.setProperty('--zero-dial-stroke', activeTokens.hex);
     } else {
       const derived = computeDynamicAccentTokens(runtime.cssVars['--zero-accent'] || '#F59E0B');
       rootEl.style.setProperty('--accent-rgb', derived.rgb);
       rootEl.style.setProperty('--accent-hex', derived.hex);
       rootEl.style.setProperty('--accent-badge-gradient', derived.badgeGradient);
       rootEl.style.setProperty('--accent-badge-text', derived.badgeText);
+    }
+
+    try {
+      window.ZeroNative?.setActiveThemeAccent?.(
+        activeTokens.hex,
+        activeTokens.rgb,
+        activeTokens.badgeText
+      );
+    } catch {
+      // Ignore on web preview
     }
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -1101,6 +1131,14 @@ export function useZeroStore() {
           integrityStateRef.current.cumulativeSeconds,
           integrityStateRef.current.usedParachutes,
           integrityStateRef.current.bonusParachutes
+        );
+        const accentKeyNow = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
+        const profileThemeNow = ACCENT_THEMES[accentKeyNow] || ACCENT_THEMES.Amber;
+        const activeTokensNow = resolveActiveAccentTokens(themeConfig, profileThemeNow);
+        window.ZeroNative.setActiveThemeAccent?.(
+          activeTokensNow.hex,
+          activeTokensNow.rgb,
+          activeTokensNow.badgeText
         );
         const started = window.ZeroNative.igniteSession(safeDuration, tag);
         if (started === false) {

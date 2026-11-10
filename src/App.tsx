@@ -93,6 +93,8 @@ export function App() {
         activeLock={store.activeLock}
         parachuteMetrics={store.parachuteMetrics}
         activeBag={store.activeBag}
+        profile={store.profile}
+        themeConfig={store.themeConfig}
         onDeployParachute={store.deployParachute}
       />
     );

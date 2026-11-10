@@ -126,6 +126,7 @@ export interface BagApp {
   packageName: string;
   appName: string;
   category?: 'calls' | 'messages' | 'custom';
+  iconBgColor?: string;
 }
 
 export interface OccasionBag {
@@ -322,6 +323,7 @@ export interface ZeroNativeBridgeInterface {
   getBatteryPercentage(): number;
   getNativeStateJson(): string;
   acknowledgeVerifiedCompletions?(eventIdsJson: string): void;
+  setActiveThemeAccent?(accentHex: string, accentRgb: string, badgeTextHex: string): void;
 }
 
 type StringOrStr = string;
