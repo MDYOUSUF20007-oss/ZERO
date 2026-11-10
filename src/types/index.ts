@@ -134,6 +134,51 @@ export interface ZeroBackupPayload {
   activeBagId: string;
   theme: ThemeStyle;
   themeConfig?: ThemeConfig;
+  onboardingComplete?: boolean;
+}
+
+export interface ZeroZbakPayload {
+  schema: 'zero.zbak.v1';
+  appName: 'Zero';
+  exportedAt: string;
+  exportedAtMs: number;
+  onboardingComplete: true;
+  // Focus Statistics
+  cumulativeSeconds: number;
+  totalReclaimedSeconds: number;
+  totalCompletedSessions: number;
+  currentStreak: number;
+  // Escape Tickets & Anti-Cheat Balances
+  usedParachutes: number;
+  bonusParachutes: number;
+  remainingEscapeTickets: number;
+  hasClaimedFirstTimeParachute: boolean;
+  // Donor Badges & Status
+  hasClaimedFirstDonationParachute: boolean;
+  isZeroSupporter: boolean;
+  unlockedBadgeIds: string[];
+  // Preset Bags, Schedules, Theme & Profile
+  bags: OccasionBag[];
+  activeBagId: string;
+  schedules: RecurringSchedule[];
+  sleepFarmingMode: SleepFarmingMode;
+  theme: ThemeStyle;
+  themeConfig: ThemeConfig;
+  profile: ZeroProfile | null;
+  // Full Compact Logs for Exact Heatmap / Analytics Restoration
+  sessions: SessionRecord[];
+  ledger: ParachuteLedgerEntry[];
+}
+
+export interface CloudAutoBackupStatus {
+  supported: boolean;
+  enabled: boolean;
+  uri: string | null;
+  displayName: string | null;
+  providerLabel: string | null;
+  lastBackupTimestamp: number;
+  hasPersistedPermission: boolean;
+  lastError?: string | null;
 }
 
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';

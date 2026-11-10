@@ -12,7 +12,7 @@ import {
 import { evaluateBadges } from '../utils/achievements';
 import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { haptics } from '../utils/haptics';
-import { Sparkles, X, Gift, UserCheck, Flame, Lock } from 'lucide-react';
+import { Sparkles, X, Gift, UserCheck, Flame, Lock, CloudDownload, Loader2 } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -22,6 +22,9 @@ interface ProfileModalProps {
   isZeroSupporter: boolean;
   sessions: SessionRecord[];
   totalReclaimedHours: number;
+  isCloudBusy?: boolean;
+  onRestoreFromCloud?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
+  onRestoreSuccess?: () => void;
   onSaveProfile: (draft: {
     displayName: string;
     handle: string;
@@ -56,6 +59,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isZeroSupporter,
   sessions,
   totalReclaimedHours,
+  isCloudBusy = false,
+  onRestoreFromCloud,
+  onRestoreSuccess,
   onSaveProfile,
   onClose,
 }) => {
@@ -73,6 +79,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     initialProfile?.motto || 'Put your phone facedown. Reclaim your hours.'
   );
   const [errorMsg, setErrorMsg] = useState('');
+  const [restoreFeedback, setRestoreFeedback] = useState<string>('');
+  const [isRestoringLocal, setIsRestoringLocal] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -84,6 +92,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setDailyGoalHours(initialProfile?.dailyGoalHours || 4);
     setMotto(initialProfile?.motto || 'Put your phone facedown. Reclaim your hours.');
     setErrorMsg('');
+    setRestoreFeedback('');
+    setIsRestoringLocal(false);
   }, [isOpen, initialProfile]);
 
   const badgeSummary = useMemo(
@@ -125,6 +135,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       motto,
     });
     onClose();
+  };
+
+  const handleCloudRestoreClick = async () => {
+    if (!onRestoreFromCloud || isCloudBusy || isRestoringLocal) return;
+    setErrorMsg('');
+    setRestoreFeedback('');
+    setIsRestoringLocal(true);
+    try {
+      const res = await onRestoreFromCloud();
+      if (res.ok) {
+        onRestoreSuccess?.();
+        onClose();
+        return;
+      }
+      if (!res.cancelled && res.message) {
+        setRestoreFeedback(res.message);
+      }
+    } finally {
+      setIsRestoringLocal(false);
+    }
   };
 
   return (
@@ -170,6 +200,58 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <X size={16} />
           </button>
         </div>
+
+        {/* 1-Tap Cloud Restore on Reinstall / Onboarding */}
+        {onRestoreFromCloud && (mode === 'welcome' || !initialProfile) && (
+          <div
+            data-amoled-banner="true"
+            className="p-3 rounded-2xl border space-y-2"
+            style={{
+              backgroundColor: '#000000',
+              borderColor: 'rgba(139, 92, 246, 0.58)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="amoled-banner-title text-[11px] font-black uppercase tracking-wider text-white">
+                Reinstalled Zero? Skip Setup
+              </span>
+              <span
+                className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  color: '#C4B5FD',
+                }}
+              >
+                .zbak Sync
+              </span>
+            </div>
+            <p className="amoled-banner-sub text-[10px] leading-relaxed" style={{ color: '#C4B5FD' }}>
+              Restore focus stats, donor badges, emergency escape tickets &amp; preset Bags in 1 tap.
+            </p>
+            <button
+              type="button"
+              onClick={handleCloudRestoreClick}
+              disabled={isCloudBusy || isRestoringLocal}
+              className="w-full py-2.5 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                backgroundColor: '#8B5CF6',
+                color: '#FFFFFF',
+              }}
+            >
+              {isCloudBusy || isRestoringLocal ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <CloudDownload size={14} />
+              )}
+              <span>Restore Backup from Cloud (Drive / OneDrive / JioDrive)</span>
+            </button>
+            {restoreFeedback && (
+              <div className="p-2 rounded-xl bg-red-950/70 border border-red-700/80 text-red-200 text-[10px]">
+                {restoreFeedback}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Live Interactive Profile Badge Preview */}
         <div

@@ -176,6 +176,29 @@ body {
   background-color: #FFFFFF !important;
 }
 
+/* Weekly Cloud Backup Banner strictly preserves Pure AMOLED #000000 + Purple #8B5CF6 */
+[data-amoled-banner="true"],
+[data-zero-theme="kindle"] [data-amoled-banner="true"],
+[data-zero-theme="matte"] [data-amoled-banner="true"] {
+  background-color: #000000 !important;
+  border-color: rgba(139, 92, 246, 0.58) !important;
+  color: #FFFFFF !important;
+}
+
+[data-zero-theme="kindle"] [data-amoled-banner="true"] .amoled-banner-title {
+  color: #FFFFFF !important;
+}
+
+[data-zero-theme="kindle"] [data-amoled-banner="true"] .amoled-banner-sub {
+  color: #C4B5FD !important;
+}
+
+[data-zero-theme="kindle"] [data-amoled-banner="true"] .amoled-banner-secondary {
+  background-color: #09090B !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  color: #E9D5FF !important;
+}
+
 [data-zero-theme="kindle"] .border-zinc-900,
 [data-zero-theme="kindle"] .border-zinc-850,
 [data-zero-theme="kindle"] .border-zinc-800,

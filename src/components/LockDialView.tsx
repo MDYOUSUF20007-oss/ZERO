@@ -27,6 +27,9 @@ import {
   UserPlus,
   Trophy,
   Palette,
+  CloudUpload,
+  CloudCog,
+  Loader2,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -40,6 +43,10 @@ interface LockDialViewProps {
   hasClaimedFirstTimeParachute: boolean;
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
+  showWeeklyBackupBanner?: boolean;
+  isCloudBusy?: boolean;
+  onOneTapUpload?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
+  onTurnOnAutoBackup?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onOpenDashboard: () => void;
   onOpenBagDrawer: () => void;
   onOpenPermissionGate: () => void;
@@ -72,12 +79,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   hasClaimedFirstTimeParachute,
   todayReclaimedHours,
   justEarnedParachute,
+  showWeeklyBackupBanner = false,
+  isCloudBusy = false,
+  onOneTapUpload,
+  onTurnOnAutoBackup,
   onOpenDashboard,
   onOpenBagDrawer,
   onOpenPermissionGate,
   onOpenProfileModal,
   onOpenThemes,
 }) => {
+  const [cloudBannerMsg, setCloudBannerMsg] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
   const [customTagInput, setCustomTagInput] = useState('');
@@ -452,6 +464,112 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             {permissions.strictReady ? 'Check' : 'Grant Now'}
           </span>
         </button>
+      )}
+
+      {/* Mode B: Weekly 1-Tap Cloud Backup Reminder Banner (Pure AMOLED #000000 + Purple #8B5CF6) */}
+      {(showWeeklyBackupBanner || cloudBannerMsg) && (
+        <div
+          data-amoled-banner="true"
+          className="w-full rounded-2xl border p-3 font-mono space-y-2.5 transition-all"
+          style={{
+            backgroundColor: '#000000',
+            borderColor: 'rgba(139, 92, 246, 0.58)',
+            boxShadow: '0 0 24px -10px rgba(139, 92, 246, 0.45)',
+            color: '#FFFFFF',
+          }}
+        >
+          {showWeeklyBackupBanner && (
+            <>
+              <div className="flex items-start gap-2.5">
+                <div
+                  className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border"
+                  style={{
+                    backgroundColor: 'rgba(139, 92, 246, 0.14)',
+                    borderColor: 'rgba(139, 92, 246, 0.45)',
+                    color: '#A78BFA',
+                  }}
+                >
+                  <CloudUpload size={14} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="amoled-banner-title text-[11px] font-black text-white leading-snug">
+                    Weekly Backup Due — Keep your donor badges &amp; stats safe
+                  </div>
+                  <div
+                    className="amoled-banner-sub text-[10px] mt-0.5 leading-snug"
+                    style={{ color: '#C4B5FD' }}
+                  >
+                    Signed <code>zero-backup.zbak</code> saves to Drive, OneDrive, JioDrive or device storage.
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isCloudBusy}
+                  onClick={async () => {
+                    if (!onOneTapUpload) return;
+                    haptics.tick(860);
+                    const res = await onOneTapUpload();
+                    if (!res.cancelled && res.message) {
+                      setCloudBannerMsg(res.message);
+                      setTimeout(() => setCloudBannerMsg(''), 4500);
+                    }
+                  }}
+                  className="py-2 px-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
+                  style={{
+                    backgroundColor: '#8B5CF6',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {isCloudBusy ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <CloudUpload size={12} />
+                  )}
+                  <span>1-Tap Upload</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isCloudBusy}
+                  onClick={async () => {
+                    if (!onTurnOnAutoBackup) return;
+                    haptics.tick(900);
+                    const res = await onTurnOnAutoBackup();
+                    if (!res.cancelled && res.message) {
+                      setCloudBannerMsg(res.message);
+                      setTimeout(() => setCloudBannerMsg(''), 4500);
+                    }
+                  }}
+                  className="amoled-banner-secondary py-2 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
+                  style={{
+                    backgroundColor: '#09090B',
+                    borderColor: 'rgba(139, 92, 246, 0.45)',
+                    color: '#E9D5FF',
+                  }}
+                >
+                  <CloudCog size={12} />
+                  <span>Turn On Auto-Backup</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          {cloudBannerMsg && (
+            <div
+              className="text-[10px] px-2.5 py-1.5 rounded-lg border"
+              style={{
+                backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                borderColor: 'rgba(139, 92, 246, 0.4)',
+                color: '#E9D5FF',
+              }}
+            >
+              {cloudBannerMsg}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Center: Tactile Duration Dial Wheel */}

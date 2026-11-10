@@ -45,10 +45,11 @@ export function App() {
     store.permissions.strictReady,
   ]);
 
-  // First-timer special popup: make an interactive profile & claim 1 free starter Parachute
+  // First-timer special popup: make an interactive profile & claim 1 free starter Escape Ticket
   useEffect(() => {
     if (
       !hasAutoShownWelcomeRef.current &&
+      !store.onboardingComplete &&
       !store.activeLock.isLocked &&
       !showPermissionModal &&
       !store.profile &&
@@ -60,12 +61,22 @@ export function App() {
       setShowProfileModal(true);
     }
   }, [
+    store.onboardingComplete,
     store.activeLock.isLocked,
     showPermissionModal,
     store.profile,
     store.hasClaimedFirstTimeParachute,
     store.hasDismissedWelcomeModal,
   ]);
+
+  const [restoreToast, setRestoreToast] = useState<string>('');
+
+  const handleCloudRestoreSuccess = () => {
+    setShowProfileModal(false);
+    setActiveTab('dashboard');
+    setRestoreToast('Cloud Backup Restored — Welcome back to Zero!');
+    setTimeout(() => setRestoreToast(''), 4200);
+  };
 
   const openInteractiveProfile = () => {
     setProfileModalMode(!store.profile && !store.hasClaimedFirstTimeParachute ? 'welcome' : 'edit');
@@ -119,6 +130,29 @@ export function App() {
         </div>
       )}
 
+      {/* Cloud Restore Confirmation Toast */}
+      {restoreToast && (
+        <div
+          data-amoled-banner="true"
+          className="fixed left-4 right-4 z-50 max-w-md mx-auto p-3 rounded-2xl border shadow-2xl flex items-center justify-between font-mono text-xs"
+          style={{
+            top: 'calc(0.75rem + var(--zero-safe-top))',
+            backgroundColor: '#000000',
+            borderColor: 'rgba(139, 92, 246, 0.7)',
+            color: '#FFFFFF',
+          }}
+        >
+          <span className="amoled-banner-title font-bold">{restoreToast}</span>
+          <button
+            type="button"
+            onClick={() => setRestoreToast('')}
+            className="p-1 text-zinc-400 hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <main
         className="flex-1 flex flex-col justify-start"
@@ -139,6 +173,10 @@ export function App() {
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
+            showWeeklyBackupBanner={store.weeklyBackupDue}
+            isCloudBusy={store.isCloudBusy}
+            onOneTapUpload={store.oneTapCloudUpload}
+            onTurnOnAutoBackup={store.enableCloudAutoBackup}
             onOpenDashboard={() => setActiveTab('dashboard')}
             onOpenBagDrawer={() => {
               store.refreshInstalledApps();
@@ -188,6 +226,14 @@ export function App() {
             onExportData={store.exportData}
             onImportData={store.importData}
             onResetData={store.resetAllData}
+            cloudBackupStatus={store.cloudBackupStatus}
+            isCloudBusy={store.isCloudBusy}
+            onEnableCloudAutoBackup={store.enableCloudAutoBackup}
+            onDisableCloudAutoBackup={store.disableCloudAutoBackup}
+            onSyncCloudBackupNow={store.syncCloudBackupNow}
+            onOneTapCloudUpload={store.oneTapCloudUpload}
+            onRestoreFromCloudPicker={store.restoreBackupFromCloudPicker}
+            onRestoreSuccess={handleCloudRestoreSuccess}
             tipSkipRemaining={store.tipSkipRemaining}
             onResetTipPromptBlock={store.resetTipPromptBlock}
             profile={store.profile}
@@ -251,6 +297,9 @@ export function App() {
         isZeroSupporter={store.isZeroSupporter}
         sessions={store.sessions}
         totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
+        isCloudBusy={store.isCloudBusy}
+        onRestoreFromCloud={store.restoreBackupFromCloudPicker}
+        onRestoreSuccess={handleCloudRestoreSuccess}
         onSaveProfile={store.saveProfileAndClaimGift}
         onClose={() => {
           setShowProfileModal(false);

@@ -27,8 +27,8 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 - **Badges & Achievements Showcase:** Unlock collectible focus milestone badges (`GETTING STARTED` for your 1st 1h completed session, `WOO NICE!` at 50h, `LONG WAY` at 100h, `GETTING DISCIPLINED` at 250h, `FULL CONTROL !` at 500h, `CAME SO FAR` at 1000h) plus the Golden **`ZERO-SUPPORTER`** crest (unlocked strictly after your 1st minimum ₹50 tip) — displayed on your Interactive Profile and rendered onto shareable **Flex Your Focus Card** PNG receipts.
 - **The Anti-Sleep-Farming Rule:** To keep Escape Tickets a genuine badge of daytime focus, sleep blocks earn **0.25x progression** by default (or Daytime-Only 0.0x mode). An 8-hour sleep lock contributes 2.0 hours toward the next ticket instead of allowing users to farm an escape ticket every 2.5 nights.
 - **Aborted Session Penalty (Anti-Exploit):** If a user spends an Escape Ticket mid-session, 1 ticket is consumed and **all elapsed time in that aborted session is permanently voided**, never counting toward the next 20-hour milestone. If you lock for 4 hours and exit at hour 3, you spend 1 Escape Ticket and gain 0 hours.
-- **Ethical Support Model:** Non-intrusive Support section ([Ko-fi](https://ko-fi.com/mdyousuf2620) and UPI ID `md.y2007@ptaxis` with no minimum limit for regular UPI tips) plus an optional post-session tip prompt highlighting UPI as the best zero-fee option, and explicitly noting the strict **minimum ₹50 (1st tip)** requirement to unlock the Golden **`ZERO-SUPPORTER`** Badge + `+1 Free Escape Ticket 🎫`. Dismissible or blockable for 5 sessions at a time, with zero ads.
-- **100% Local-First & Offline:** No accounts, no cloud sync, no tracking SDKs. Works fully offline with local-first persistence.
+- **Ethical Support Model:** Non-intrusive Support section ([Ko-fi](https://ko-fi.com/mdyousuf2620), UPI ID `md.y2007@ptaxis` with no minimum limit for regular UPI tips) plus an optional post-session tip prompt highlighting UPI as the best zero-fee option, and explicitly noting the strict **minimum ₹50 (1st tip)** requirement to unlock the Golden **`ZERO-SUPPORTER`** Badge + `+1 Free Escape Ticket 🎫`. Dismissible or blockable for 5 sessions at a time, with zero ads.
+- **100% Serverless & Private Backup:** No accounts, no backend servers, no OAuth keys, and no tracking SDKs. Works fully offline, with optional **Universal Cloud Auto-Backup (`zero-backup.zbak`)** via Android Storage Access Framework (SAF) directly into your own Google Drive, OneDrive, JioDrive, Dropbox, or Downloads.
 
 ---
 
@@ -69,11 +69,16 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 - **GitHub-Style Contribution Heatmap & Tag Breakdown:** 16-week focus intensity grid and tag chart.
 - **Immutable Escape Ticket Ledger:** Chronological record of +1 Earned/Gift milestones and -1 Escape uses.
 
-### 4. Themes, Schedules, Rules & Support
+### 4. Themes, Schedules, Cloud Auto-Backup, Rules & Support
 - **Auto-Pilot Recurring Schedules:** Unlimited schedules with day-of-week selectors and 5-minute heads-up warnings.
 - **Theme Studio:** Full customization for AMOLED Gradients, Paper like Kindle custom colors, and Matte Studio custom colors.
+- **Universal Cloud Auto-Backup (`zero-backup.zbak`):**
+  - **Signed & Tamper-Proof:** Compacts stats, donor badges, remaining Escape Tickets, preset Bags, and profile into a Base64/XOR obfuscated archive sealed with **SHA-256 HMAC** (`ZBAK1`) so tickets cannot be forged manually.
+  - **Mode A (Android SAF Persistable Auto-Sync):** Native Capacitor `CloudAutoBackupPlugin` acquires `takePersistableUriPermission` across **Google Drive, OneDrive, JioDrive, Dropbox, or Local Storage** and silently overwrites `zero-backup.zbak` whenever a session finishes, a Bag changes, or badges/tickets update.
+  - **Mode B (Weekly 1-Tap Reminder):** If Auto-Backup is off and >7 days pass since `lastBackupTimestamp`, displays a pure AMOLED black/purple (`#8B5CF6`) home banner with **1-Tap Upload** and **Turn On Auto-Backup**.
+  - **1-Tap Reinstall Restore:** **"Restore Backup from Cloud (Drive / OneDrive / JioDrive)"** on Welcome & Settings verifies the `.zbak` HMAC signature, restores stats/badges/tickets/Bags, sets `onboardingComplete = true`, and skips directly to the Dashboard.
 - **Support Zero:** Ethical links ([Ko-fi](https://ko-fi.com/mdyousuf2620), UPI ID `md.y2007@ptaxis`, QR code) plus [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases).
-- **Data Portability:** Complete JSON export, import (including Theme Studio config), and factory reset.
+- **Data Portability:** Complete JSON + signed `.zbak` export/import, clipboard copy/paste, and factory reset.
 
 ---
 

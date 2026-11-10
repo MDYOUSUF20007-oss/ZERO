@@ -14,6 +14,7 @@ import org.zero.detox.bridge.ZeroNativeBridge;
 import org.zero.detox.core.LockEngine;
 import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
+import org.zero.detox.plugin.CloudAutoBackupPlugin;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_ONBOARDING = "zero_onboarding_prefs";
@@ -59,6 +60,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(CloudAutoBackupPlugin.class);
         super.onCreate(savedInstanceState);
         requestStartupNotificationPermissionOnce();
     }

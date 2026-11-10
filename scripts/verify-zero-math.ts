@@ -23,6 +23,7 @@ import {
   ACHIEVEMENT_DEFINITIONS,
   evaluateBadges,
 } from '../src/utils/achievements.ts';
+import { createHmac } from 'node:crypto';
 import {
   AMOLED_GRADIENTS,
   DEFAULT_THEME_CONFIG,
@@ -32,7 +33,15 @@ import {
   getRelativeLuminance,
   sanitizeThemeConfig,
 } from '../src/utils/themes.ts';
-import type { SessionRecord } from '../src/types.ts';
+import {
+  WEEKLY_BACKUP_INTERVAL_MS,
+  ZBAK_PREFIX,
+  decodeAndVerifyZbak,
+  encodeZbakPayload,
+  hmacSha256Hex,
+  isWeeklyBackupDue,
+} from '../src/utils/zbakCodec.ts';
+import type { SessionRecord, ZeroZbakPayload } from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
 
@@ -440,5 +449,127 @@ failIf(
   '3-digit custom hex should normalize cleanly to 6-digit uppercase'
 );
 console.log('PASS: Theme Studio (AMOLED Gradients, Paper Kindle + Custom, Matte + Custom) Verified');
+
+console.log('\n=== TEST 12: Signed .zbak Cloud Archive, Anti-Cheat HMAC & Weekly Reminder Policy ===');
+const nodeExpectedHmac = createHmac('sha256', 'zero-test-key').update('ZBAK1.salt.payload').digest('hex');
+const tsHmac = hmacSha256Hex('zero-test-key', 'ZBAK1.salt.payload');
+failIf(tsHmac === nodeExpectedHmac, 'Pure-TS HMAC-SHA256 must match Node crypto bit-for-bit');
+
+const sampleZbakPayload: ZeroZbakPayload = {
+  schema: 'zero.zbak.v1',
+  appName: 'Zero',
+  exportedAt: '2026-11-10T07:00:00.000Z',
+  exportedAtMs: 1794294000000,
+  onboardingComplete: true,
+  cumulativeSeconds: 144000, // 40h -> 2 earned tickets
+  totalReclaimedSeconds: 180000,
+  totalCompletedSessions: 12,
+  currentStreak: 5,
+  usedParachutes: 1,
+  bonusParachutes: 2,
+  remainingEscapeTickets: 3, // 2 earned + 2 bonus - 1 used = 3
+  hasClaimedFirstTimeParachute: true,
+  hasClaimedFirstDonationParachute: true,
+  isZeroSupporter: true,
+  unlockedBadgeIds: ['zero_supporter', 'getting_started'],
+  bags: [
+    {
+      id: 'bag-work',
+      name: 'Work Bag',
+      occasionLabel: 'Deep Work',
+      apps: [{ packageName: 'md.obsidian', appName: 'Obsidian' }],
+      allowCalls: false,
+      allowSms: false,
+    },
+  ],
+  activeBagId: 'bag-work',
+  schedules: [],
+  sleepFarmingMode: 'quarter_credit',
+  theme: 'amoled',
+  themeConfig: DEFAULT_THEME_CONFIG,
+  profile: {
+    displayName: 'Yousuf',
+    handle: '@yousuf',
+    avatarId: 'monk',
+    accentColor: 'amber',
+    primaryMission: 'Deep Work',
+    dailyGoalHours: 4,
+    motto: 'Discipline beats willpower.',
+    createdAt: 1794000000000,
+    updatedAt: 1794294000000,
+  },
+  sessions: [oneHourCompleted],
+  ledger: [
+    {
+      id: 'txn_test',
+      timestamp: 1794294000000,
+      type: 'EARNED',
+      description: 'Test ticket',
+      delta: 1,
+    },
+  ],
+};
+
+const encodedZbak = encodeZbakPayload(sampleZbakPayload);
+failIf(encodedZbak.startsWith(`${ZBAK_PREFIX}.`), 'Encoded .zbak must use ZBAK1 envelope prefix');
+failIf(!encodedZbak.includes('bonusParachutes'), '.zbak payload must be Base64/XOR obfuscated against plain JSON edits');
+
+const decodedOk = decodeAndVerifyZbak(encodedZbak);
+failIf(decodedOk.ok === true, 'Valid .zbak archive must verify and decode cleanly');
+if (decodedOk.ok) {
+  failIf(decodedOk.payload.onboardingComplete === true, '.zbak must preserve onboardingComplete: true');
+  failIf(decodedOk.payload.isZeroSupporter === true, '.zbak must preserve donor badge flag');
+  failIf(decodedOk.payload.remainingEscapeTickets === 3, '.zbak must preserve exact ticket balance');
+  failIf(decodedOk.payload.bags.length === 1 && decodedOk.payload.profile?.displayName === 'Yousuf', '.zbak must preserve bags and profile');
+}
+
+// Tamper rejection: flipping even a single character in HMAC or ciphertext fails verification
+const zbakParts = encodedZbak.split('.');
+const flippedChar = zbakParts[2][0] === 'A' ? 'B' : 'A';
+const tamperedCipher = `${zbakParts[0]}.${zbakParts[1]}.${flippedChar}${zbakParts[2].slice(1)}.${zbakParts[3]}`;
+failIf(decodeAndVerifyZbak(tamperedCipher).ok === false, 'Tampered .zbak ciphertext must fail HMAC check');
+
+const flippedMacChar = zbakParts[3][0] === '0' ? '1' : '0';
+const tamperedMac = `${zbakParts[0]}.${zbakParts[1]}.${zbakParts[2]}.${flippedMacChar}${zbakParts[3].slice(1)}`;
+failIf(decodeAndVerifyZbak(tamperedMac).ok === false, 'Tampered .zbak HMAC signature must be rejected');
+
+// Forged ticket count rejection (even if encoded via internal encoder)
+const forgedBonusPayload: ZeroZbakPayload = {
+  ...sampleZbakPayload,
+  bonusParachutes: 99,
+  remainingEscapeTickets: 100,
+};
+failIf(
+  decodeAndVerifyZbak(encodeZbakPayload(forgedBonusPayload)).ok === false,
+  'Forged bonus/remaining ticket count exceeding policy bounds must be rejected'
+);
+const forgedNegativePayload: ZeroZbakPayload = {
+  ...sampleZbakPayload,
+  usedParachutes: -5,
+};
+failIf(
+  decodeAndVerifyZbak(encodeZbakPayload(forgedNegativePayload)).ok === false,
+  'Negative usedParachutes must be rejected'
+);
+
+// Mode B weekly reminder boundaries
+const nowTs = 2_000_000_000_000;
+failIf(
+  isWeeklyBackupDue(true, 0, nowTs) === false,
+  'Weekly banner must stay hidden when autoBackupEnabled is true'
+);
+failIf(
+  isWeeklyBackupDue(false, nowTs - (WEEKLY_BACKUP_INTERVAL_MS - 1000), nowTs) === false,
+  'Weekly banner must stay hidden before 7 full days pass'
+);
+failIf(
+  isWeeklyBackupDue(false, nowTs - (WEEKLY_BACKUP_INTERVAL_MS + 1000), nowTs) === true,
+  'Weekly banner must appear once >7 days elapse with autoBackupEnabled=false'
+);
+failIf(
+  isWeeklyBackupDue(false, 0, nowTs) === true,
+  'Weekly banner should remind manual users with legacy timestamp=0'
+);
+console.log('PASS: Signed .zbak Envelope, Tamper Rejection & Weekly Backup Timer Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

@@ -17,6 +17,8 @@ import type {
   ParachuteRewardEvent,
   ProfileAvatarId,
   ProfileAccent,
+  CloudAutoBackupStatus,
+  ZeroZbakPayload,
 } from '../types';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -38,6 +40,20 @@ import {
   computeThemeRuntime,
   sanitizeThemeConfig,
 } from '../utils/themes';
+import {
+  decodeAndVerifyZbak,
+  encodeZbakPayload,
+  isWeeklyBackupDue,
+} from '../utils/zbakCodec';
+import {
+  disableUniversalCloudAutoBackup,
+  enableUniversalCloudAutoBackup,
+  fetchUniversalCloudAutoBackupStatus,
+  isNativeAndroidCloudPluginAvailable,
+  pickCloudBackupFileContent,
+  triggerOneTapCloudUpload,
+  writeUniversalCloudAutoBackup,
+} from '../plugins/cloudAutoBackup';
 
 export const SECONDS_PER_PARACHUTE = 72000; // 20 Hours exactly
 export const MAX_BAG_APPS = 3; // BlockIt-inspired 3-app cap per Bag
@@ -53,6 +69,10 @@ const STORAGE_KEYS = {
   CLAIMED_FIRST_DONATION_PARACHUTE: 'zero_claimed_first_donation_parachute_v1',
   PROFILE: 'zero_user_profile_v1',
   DISMISSED_WELCOME_MODAL: 'zero_dismissed_welcome_modal_v1',
+  ONBOARDING_COMPLETE: 'onboardingComplete',
+  AUTO_BACKUP_ENABLED: 'autoBackupEnabled',
+  LAST_BACKUP_TIMESTAMP: 'lastBackupTimestamp',
+  CLOUD_BACKUP_META: 'zero_cloud_backup_meta_v1',
   LEDGER: 'zero_parachute_ledger_v3',
   SESSIONS: 'zero_sessions_history_v3',
   SCHEDULES: 'zero_recurring_schedules_v3',
@@ -303,6 +323,68 @@ export function useZeroStore() {
     return localStorage.getItem(STORAGE_KEYS.DISMISSED_WELCOME_MODAL) === '1';
   });
 
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
+    if (saved === 'true' || saved === '1') return true;
+    const hasProfile = Boolean(localStorage.getItem(STORAGE_KEYS.PROFILE));
+    const hasClaimed = localStorage.getItem(STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE) === '1';
+    const hasDismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED_WELCOME_MODAL) === '1';
+    const cum = Number(localStorage.getItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS) || '0');
+    return hasProfile || hasClaimed || hasDismissed || cum > 0;
+  });
+
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEYS.AUTO_BACKUP_ENABLED) === 'true';
+  });
+
+  const [lastBackupTimestamp, setLastBackupTimestamp] = useState<number>(() => {
+    const raw = localStorage.getItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP);
+    if (raw !== null && raw !== '') {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    }
+    const hasExistingStats =
+      Number(localStorage.getItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS) || '0') > 0 ||
+      localStorage.getItem(STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE) === '1';
+    const initialTs = hasExistingStats ? 0 : Date.now();
+    localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(initialTs));
+    return initialTs;
+  });
+
+  const [cloudBackupMeta, setCloudBackupMeta] = useState<{
+    uri: string | null;
+    displayName: string | null;
+    providerLabel: string | null;
+    hasPersistedPermission: boolean;
+    lastError: string | null;
+  }>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.CLOUD_BACKUP_META);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<CloudAutoBackupStatus>;
+        return {
+          uri: parsed.uri || null,
+          displayName: parsed.displayName || null,
+          providerLabel: parsed.providerLabel || null,
+          hasPersistedPermission: Boolean(parsed.hasPersistedPermission),
+          lastError: parsed.lastError || null,
+        };
+      }
+    } catch {
+      // Fallback
+    }
+    return {
+      uri: null,
+      displayName: null,
+      providerLabel: null,
+      hasPersistedPermission: false,
+      lastError: null,
+    };
+  });
+
+  const [isCloudBusy, setIsCloudBusy] = useState<boolean>(false);
+  const [weeklyCheckNowMs, setWeeklyCheckNowMs] = useState<number>(() => Date.now());
+
   const [profile, setProfile] = useState<ZeroProfile | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
@@ -458,8 +540,35 @@ export function useZeroStore() {
     }
   }, []);
 
+  const refreshCloudBackupStatus = useCallback(async () => {
+    setWeeklyCheckNowMs(Date.now());
+    const nativeStatus = await fetchUniversalCloudAutoBackupStatus();
+    if (!nativeStatus) return;
+
+    setAutoBackupEnabled(Boolean(nativeStatus.enabled));
+    setCloudBackupMeta((prev) => ({
+      uri: nativeStatus.uri ?? null,
+      displayName: nativeStatus.displayName ?? null,
+      providerLabel: nativeStatus.providerLabel ?? null,
+      hasPersistedPermission: Boolean(nativeStatus.hasPersistedPermission),
+      lastError:
+        nativeStatus.enabled && nativeStatus.uri && !nativeStatus.hasPersistedPermission
+          ? 'Storage write permission lost for this cloud folder. Tap Change Cloud File to relink.'
+          : prev.lastError,
+    }));
+    if (
+      typeof nativeStatus.lastBackupTimestamp === 'number' &&
+      nativeStatus.lastBackupTimestamp > 0
+    ) {
+      setLastBackupTimestamp((prev) =>
+        Math.max(prev, nativeStatus.lastBackupTimestamp || 0)
+      );
+    }
+  }, []);
+
   useEffect(() => {
     refreshPermissions();
+    void refreshCloudBackupStatus();
     let tries = 0;
     const bootPoll = setInterval(() => {
       tries++;
@@ -470,9 +579,15 @@ export function useZeroStore() {
       }
     }, 150);
 
-    const onFocus = () => refreshPermissions();
+    const onFocus = () => {
+      refreshPermissions();
+      void refreshCloudBackupStatus();
+    };
     const onVis = () => {
-      if (document.visibilityState === 'visible') refreshPermissions();
+      if (document.visibilityState === 'visible') {
+        refreshPermissions();
+        void refreshCloudBackupStatus();
+      }
     };
     window.addEventListener('focus', onFocus);
     window.addEventListener('zero-permissions-updated', onFocus);
@@ -483,7 +598,29 @@ export function useZeroStore() {
       window.removeEventListener('zero-permissions-updated', onFocus);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [refreshPermissions, refreshInstalledApps]);
+  }, [refreshPermissions, refreshInstalledApps, refreshCloudBackupStatus]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.ONBOARDING_COMPLETE,
+      onboardingComplete ? 'true' : 'false'
+    );
+  }, [onboardingComplete]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.AUTO_BACKUP_ENABLED,
+      autoBackupEnabled ? 'true' : 'false'
+    );
+  }, [autoBackupEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(lastBackupTimestamp));
+  }, [lastBackupTimestamp]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CLOUD_BACKUP_META, JSON.stringify(cloudBackupMeta));
+  }, [cloudBackupMeta]);
 
   // Persist & apply active Theme Studio runtime CSS tokens
   useEffect(() => {
@@ -1108,6 +1245,8 @@ export function useZeroStore() {
 
       setProfile(sanitized);
       setHasDismissedWelcomeModal(true);
+      setOnboardingComplete(true);
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
 
       const claim = claimFirstTimerProfileBonus(
         hasClaimedFirstTimeRef.current,
@@ -1208,9 +1347,42 @@ export function useZeroStore() {
     setHasDismissedWelcomeModal(true);
   }, []);
 
+  const isZeroSupporter = hasClaimedFirstDonationParachute;
+
+  const badgeSummary = useMemo(
+    () =>
+      evaluateBadges({
+        sessions,
+        totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
+        isZeroSupporter,
+      }),
+    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
+  );
+
+  const currentStreak = useMemo(() => {
+    const completed = sessions.filter((s) => s.status === 'completed');
+    if (completed.length === 0) return 0;
+    const completedDates = new Set(completed.map((s) => s.dateStr));
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const str = d.toISOString().split('T')[0];
+      if (completedDates.has(str)) {
+        streak++;
+      } else if (i === 0) {
+        continue;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [sessions]);
+
   const buildBackupJson = (): string => {
     const payload: ZeroBackupPayload = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       appName: 'Zero',
       exportedAt: new Date().toISOString(),
       cumulativeSeconds,
@@ -1228,9 +1400,71 @@ export function useZeroStore() {
       activeBagId,
       theme,
       themeConfig,
+      onboardingComplete: true,
     };
     return JSON.stringify(payload, null, 2);
   };
+
+  const buildZbakPayloadObject = useCallback((): ZeroZbakPayload => {
+    const now = Date.now();
+    const completedCount = sessions.filter((s) => s.status === 'completed').length;
+    const liveBalance = computeParachuteBalance({
+      cumulativeSeconds,
+      bonusParachutes,
+      usedParachutes,
+    }).currentBalance;
+
+    return {
+      schema: 'zero.zbak.v1',
+      appName: 'Zero',
+      exportedAt: new Date(now).toISOString(),
+      exportedAtMs: now,
+      onboardingComplete: true,
+      cumulativeSeconds,
+      totalReclaimedSeconds,
+      totalCompletedSessions: completedCount,
+      currentStreak,
+      usedParachutes,
+      bonusParachutes,
+      remainingEscapeTickets: liveBalance,
+      hasClaimedFirstTimeParachute,
+      hasClaimedFirstDonationParachute,
+      isZeroSupporter,
+      unlockedBadgeIds: badgeSummary.unlockedBadges.map((b) => b.id),
+      bags,
+      activeBagId,
+      schedules,
+      sleepFarmingMode,
+      theme,
+      themeConfig,
+      profile,
+      sessions: sessions.slice(0, 1000),
+      ledger: ledger.slice(0, 300),
+    };
+  }, [
+    cumulativeSeconds,
+    totalReclaimedSeconds,
+    usedParachutes,
+    bonusParachutes,
+    hasClaimedFirstTimeParachute,
+    hasClaimedFirstDonationParachute,
+    isZeroSupporter,
+    badgeSummary,
+    currentStreak,
+    bags,
+    activeBagId,
+    schedules,
+    sleepFarmingMode,
+    theme,
+    themeConfig,
+    profile,
+    sessions,
+    ledger,
+  ]);
+
+  const buildZbakString = useCallback((): string => {
+    return encodeZbakPayload(buildZbakPayloadObject());
+  }, [buildZbakPayloadObject]);
 
   const exportData = (): string => {
     const json = buildBackupJson();
@@ -1251,123 +1485,381 @@ export function useZeroStore() {
     return json;
   };
 
-  const importData = (rawJson: string): { ok: boolean; message: string } => {
-    try {
-      const parsed = JSON.parse(rawJson.trim()) as Partial<ZeroBackupPayload>;
-      if (typeof parsed !== 'object' || parsed === null) {
-        return { ok: false, message: 'Invalid backup file format.' };
-      }
-      if (
-        typeof parsed.cumulativeSeconds !== 'number' ||
-        !Array.isArray(parsed.sessions) ||
-        !Array.isArray(parsed.ledger)
-      ) {
+  const importData = useCallback(
+    (rawInput: string): { ok: boolean; message: string } => {
+      try {
+        const trimmed = rawInput.trim();
+        if (!trimmed) {
+          return { ok: false, message: 'Selected backup file is empty.' };
+        }
+
+        let parsed: Partial<ZeroBackupPayload> & { isZeroSupporter?: boolean };
+        if (!trimmed.startsWith('{')) {
+          const decoded = decodeAndVerifyZbak(trimmed);
+          if (!decoded.ok) {
+            return { ok: false, message: decoded.error };
+          }
+          parsed = decoded.payload;
+        } else {
+          parsed = JSON.parse(trimmed) as Partial<ZeroBackupPayload>;
+        }
+
+        if (typeof parsed !== 'object' || parsed === null) {
+          return { ok: false, message: 'Invalid backup file format.' };
+        }
+        if (
+          typeof parsed.cumulativeSeconds !== 'number' ||
+          !Array.isArray(parsed.sessions) ||
+          !Array.isArray(parsed.ledger)
+        ) {
+          return {
+            ok: false,
+            message: 'Missing required Zero fields (cumulativeSeconds, sessions, ledger).',
+          };
+        }
+
+        const nextCumulative = Math.max(0, Math.round(parsed.cumulativeSeconds));
+        const nextReclaimed =
+          typeof parsed.totalReclaimedSeconds === 'number'
+            ? Math.max(0, Math.round(parsed.totalReclaimedSeconds))
+            : nextCumulative;
+        const nextUsed =
+          typeof parsed.usedParachutes === 'number' ? Math.max(0, Math.round(parsed.usedParachutes)) : 0;
+
+        const nextClaimedFirstTime = Boolean(parsed.hasClaimedFirstTimeParachute);
+        const nextClaimedFirstDonation = Boolean(
+          parsed.hasClaimedFirstDonationParachute ?? parsed.isZeroSupporter
+        );
+        const minBonusFromFlags = (nextClaimedFirstTime ? 1 : 0) + (nextClaimedFirstDonation ? 1 : 0);
+        const nextBonus =
+          typeof parsed.bonusParachutes === 'number'
+            ? Math.min(2, Math.max(minBonusFromFlags, Math.round(parsed.bonusParachutes)))
+            : minBonusFromFlags;
+        const nextProfile = parsed.profile ? sanitizeZeroProfile(parsed.profile) : null;
+
+        const nextSessions = parsed.sessions.slice(0, 5000);
+        const nextLedger = parsed.ledger.slice(0, 1000);
+        const nextSchedules = Array.isArray(parsed.schedules) ? parsed.schedules : DEFAULT_SCHEDULES;
+        const nextBags =
+          Array.isArray(parsed.bags) && parsed.bags.length > 0
+            ? parsed.bags.slice(0, MAX_BAGS).map((b, i) => ({
+                id: b.id || `bag-${i + 1}`,
+                name: (b.name || `Bag ${i + 1}`).slice(0, 28),
+                occasionLabel: (b.occasionLabel || 'Custom Occasion').slice(0, 40),
+                apps: Array.isArray(b.apps) ? b.apps.slice(0, MAX_BAG_APPS) : [],
+                allowCalls: Boolean(b.allowCalls),
+                allowSms: Boolean(b.allowSms),
+              }))
+            : DEFAULT_BAGS;
+        const nextActiveBagId =
+          parsed.activeBagId && nextBags.some((b) => b.id === parsed.activeBagId)
+            ? parsed.activeBagId
+            : nextBags[0].id;
+        const nextTheme: ThemeStyle = parsed.theme || 'amoled';
+        const nextThemeConfig = sanitizeThemeConfig(parsed.themeConfig, nextTheme);
+        const nextSleepMode: SleepFarmingMode = parsed.sleepFarmingMode || 'quarter_credit';
+        const nextFirstTimeFlag = nextClaimedFirstTime || Boolean(nextProfile && nextBonus > 0);
+        const restoredNow = Date.now();
+
+        setCumulativeSeconds(nextCumulative);
+        cumulativeSecondsRef.current = nextCumulative;
+        setTotalReclaimedSeconds(nextReclaimed);
+        setUsedParachutes(nextUsed);
+        usedParachutesRef.current = nextUsed;
+        setBonusParachutes(nextBonus);
+        bonusParachutesRef.current = nextBonus;
+        setHasClaimedFirstTimeParachute(nextFirstTimeFlag);
+        hasClaimedFirstTimeRef.current = nextFirstTimeFlag;
+        setHasClaimedFirstDonationParachute(nextClaimedFirstDonation);
+        hasClaimedFirstDonationRef.current = nextClaimedFirstDonation;
+        setProfile(nextProfile);
+        setSessions(nextSessions);
+        setLedger(nextLedger);
+        setSchedules(nextSchedules);
+        setBags(nextBags);
+        setActiveBagId(nextActiveBagId);
+        setThemeState(nextThemeConfig.family);
+        setThemeConfigState(nextThemeConfig);
+        setSleepFarmingMode(nextSleepMode);
+        setHasDismissedWelcomeModal(true);
+        setOnboardingComplete(true);
+        setLastBackupTimestamp(restoredNow);
+
+        localStorage.setItem(STORAGE_KEYS.THEME, nextThemeConfig.family);
+        localStorage.setItem(STORAGE_KEYS.THEME_CONFIG, JSON.stringify(nextThemeConfig));
+        localStorage.setItem(STORAGE_KEYS.SLEEP_FARMING_MODE, nextSleepMode);
+        localStorage.setItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS, String(nextCumulative));
+        localStorage.setItem(STORAGE_KEYS.TOTAL_RECLAIMED_SECONDS, String(nextReclaimed));
+        localStorage.setItem(STORAGE_KEYS.USED_PARACHUTES, String(nextUsed));
+        localStorage.setItem(STORAGE_KEYS.BONUS_PARACHUTES, String(nextBonus));
+        localStorage.setItem(
+          STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE,
+          nextFirstTimeFlag ? '1' : '0'
+        );
+        localStorage.setItem(
+          STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE,
+          nextClaimedFirstDonation ? '1' : '0'
+        );
+        if (nextProfile) {
+          localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(nextProfile));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.PROFILE);
+        }
+        localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(nextSessions));
+        localStorage.setItem(STORAGE_KEYS.LEDGER, JSON.stringify(nextLedger));
+        localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(nextSchedules));
+        localStorage.setItem(STORAGE_KEYS.BAGS, JSON.stringify(nextBags));
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_BAG_ID, nextActiveBagId);
+        localStorage.setItem(STORAGE_KEYS.DISMISSED_WELCOME_MODAL, '1');
+        localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+        localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(restoredNow));
+        localStorage.setItem(STORAGE_KEYS.SEED_PURGE_FLAG, '1');
+
+        syncNativeLedger(nextCumulative, nextUsed, nextBonus);
+        haptics.milestoneChime();
+
+        const restoredHours = (nextReclaimed / 3600).toFixed(1);
+        const donorNote = nextClaimedFirstDonation ? ' + ZERO-SUPPORTER Gold Badge' : '';
+        return {
+          ok: true,
+          message: `Restored ${nextSessions.length} sessions (${restoredHours}h reclaimed), ${nextBags.length} Bags${donorNote}.`,
+        };
+      } catch {
         return {
           ok: false,
-          message: 'Missing required Zero fields (cumulativeSeconds, sessions, ledger).',
+          message: 'Could not read backup. Make sure you selected a valid .zbak or .json file.',
         };
       }
+    },
+    [syncNativeLedger]
+  );
 
-      const nextCumulative = Math.max(0, Math.round(parsed.cumulativeSeconds));
-      const nextReclaimed =
-        typeof parsed.totalReclaimedSeconds === 'number'
-          ? Math.max(0, Math.round(parsed.totalReclaimedSeconds))
-          : nextCumulative;
-      const nextUsed =
-        typeof parsed.usedParachutes === 'number' ? Math.max(0, Math.round(parsed.usedParachutes)) : 0;
+  // Mode A: Serialized background writeAutoBackup() trigger on key state mutations
+  const autoWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const autoSyncMountedRef = useRef<boolean>(false);
+  const prevAutoSyncDigestRef = useRef<string>('');
+  const buildZbakStringRef = useRef(buildZbakString);
+  const cloudUriRef = useRef<string | null>(cloudBackupMeta.uri);
 
-      const nextClaimedFirstTime = Boolean(parsed.hasClaimedFirstTimeParachute);
-      const nextClaimedFirstDonation = Boolean(parsed.hasClaimedFirstDonationParachute);
-      const minBonusFromFlags = (nextClaimedFirstTime ? 1 : 0) + (nextClaimedFirstDonation ? 1 : 0);
-      const nextBonus =
-        typeof parsed.bonusParachutes === 'number'
-          ? Math.min(2, Math.max(minBonusFromFlags, Math.round(parsed.bonusParachutes)))
-          : minBonusFromFlags;
-      const nextProfile = parsed.profile ? sanitizeZeroProfile(parsed.profile) : null;
+  useEffect(() => {
+    buildZbakStringRef.current = buildZbakString;
+    cloudUriRef.current = cloudBackupMeta.uri;
+  }, [buildZbakString, cloudBackupMeta.uri]);
 
-      const nextSessions = parsed.sessions.slice(0, 5000);
-      const nextLedger = parsed.ledger.slice(0, 1000);
-      const nextSchedules = Array.isArray(parsed.schedules) ? parsed.schedules : DEFAULT_SCHEDULES;
-      const nextBags =
-        Array.isArray(parsed.bags) && parsed.bags.length > 0
-          ? parsed.bags.slice(0, MAX_BAGS).map((b, i) => ({
-              id: b.id || `bag-${i + 1}`,
-              name: (b.name || `Bag ${i + 1}`).slice(0, 28),
-              occasionLabel: (b.occasionLabel || 'Custom Occasion').slice(0, 40),
-              apps: Array.isArray(b.apps) ? b.apps.slice(0, MAX_BAG_APPS) : [],
-              allowCalls: Boolean(b.allowCalls),
-              allowSms: Boolean(b.allowSms),
-            }))
-          : DEFAULT_BAGS;
-      const nextActiveBagId =
-        parsed.activeBagId && nextBags.some((b) => b.id === parsed.activeBagId)
-          ? parsed.activeBagId
-          : nextBags[0].id;
-      const nextTheme: ThemeStyle = parsed.theme || 'amoled';
-      const nextThemeConfig = sanitizeThemeConfig(parsed.themeConfig, nextTheme);
-      const nextSleepMode: SleepFarmingMode = parsed.sleepFarmingMode || 'quarter_credit';
+  const autoSyncDigest = useMemo(
+    () =>
+      JSON.stringify({
+        cumulativeSeconds,
+        totalReclaimedSeconds,
+        usedParachutes,
+        bonusParachutes,
+        hasClaimedFirstTimeParachute,
+        hasClaimedFirstDonationParachute,
+        bags,
+        activeBagId,
+        sessionsCount: sessions.length,
+        ledgerCount: ledger.length,
+        schedules,
+        sleepFarmingMode,
+        themeConfig,
+        profile,
+      }),
+    [
+      cumulativeSeconds,
+      totalReclaimedSeconds,
+      usedParachutes,
+      bonusParachutes,
+      hasClaimedFirstTimeParachute,
+      hasClaimedFirstDonationParachute,
+      bags,
+      activeBagId,
+      sessions.length,
+      ledger.length,
+      schedules,
+      sleepFarmingMode,
+      themeConfig,
+      profile,
+    ]
+  );
 
-      setCumulativeSeconds(nextCumulative);
-      cumulativeSecondsRef.current = nextCumulative;
-      setTotalReclaimedSeconds(nextReclaimed);
-      setUsedParachutes(nextUsed);
-      usedParachutesRef.current = nextUsed;
-      setBonusParachutes(nextBonus);
-      bonusParachutesRef.current = nextBonus;
-      setHasClaimedFirstTimeParachute(nextClaimedFirstTime || Boolean(nextProfile && nextBonus > 0));
-      hasClaimedFirstTimeRef.current = nextClaimedFirstTime || Boolean(nextProfile && nextBonus > 0);
-      setHasClaimedFirstDonationParachute(nextClaimedFirstDonation);
-      hasClaimedFirstDonationRef.current = nextClaimedFirstDonation;
-      setProfile(nextProfile);
-      setSessions(nextSessions);
-      setLedger(nextLedger);
-      setSchedules(nextSchedules);
-      setBags(nextBags);
-      setActiveBagId(nextActiveBagId);
-      setThemeState(nextThemeConfig.family);
-      setThemeConfigState(nextThemeConfig);
-      setSleepFarmingMode(nextSleepMode);
-      localStorage.setItem(STORAGE_KEYS.THEME_CONFIG, JSON.stringify(nextThemeConfig));
-
-      localStorage.setItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS, String(nextCumulative));
-      localStorage.setItem(STORAGE_KEYS.TOTAL_RECLAIMED_SECONDS, String(nextReclaimed));
-      localStorage.setItem(STORAGE_KEYS.USED_PARACHUTES, String(nextUsed));
-      localStorage.setItem(STORAGE_KEYS.BONUS_PARACHUTES, String(nextBonus));
-      localStorage.setItem(
-        STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE,
-        nextClaimedFirstTime ? '1' : '0'
-      );
-      localStorage.setItem(
-        STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE,
-        nextClaimedFirstDonation ? '1' : '0'
-      );
-      if (nextProfile) {
-        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(nextProfile));
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.PROFILE);
-      }
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(nextSessions));
-      localStorage.setItem(STORAGE_KEYS.LEDGER, JSON.stringify(nextLedger));
-      localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(nextSchedules));
-      localStorage.setItem(STORAGE_KEYS.BAGS, JSON.stringify(nextBags));
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_BAG_ID, nextActiveBagId);
-      localStorage.setItem(STORAGE_KEYS.SEED_PURGE_FLAG, '1');
-
-      syncNativeLedger(nextCumulative, nextUsed, nextBonus);
-
-      const restoredHours = (nextReclaimed / 3600).toFixed(1);
-      return {
-        ok: true,
-        message: `Restored ${nextSessions.length} sessions (${restoredHours}h reclaimed) and ${nextBags.length} Bags.`,
-      };
-    } catch {
-      return { ok: false, message: 'Could not parse JSON backup. Make sure you selected a valid .json file.' };
+  const performSilentCloudWrite = useCallback(async () => {
+    const payload = buildZbakStringRef.current();
+    const res = await writeUniversalCloudAutoBackup(payload, cloudUriRef.current);
+    if (res.ok) {
+      const ts = res.timestamp || Date.now();
+      setLastBackupTimestamp(ts);
+      setCloudBackupMeta((prev) => ({
+        ...prev,
+        hasPersistedPermission: true,
+        lastError: null,
+      }));
+    } else if (res.error) {
+      setCloudBackupMeta((prev) => ({
+        ...prev,
+        hasPersistedPermission: res.permissionRevoked ? false : prev.hasPersistedPermission,
+        lastError: res.error || null,
+      }));
     }
-  };
+    return res;
+  }, []);
+
+  useEffect(() => {
+    if (!autoSyncMountedRef.current) {
+      autoSyncMountedRef.current = true;
+      prevAutoSyncDigestRef.current = autoSyncDigest;
+      return;
+    }
+    if (autoSyncDigest === prevAutoSyncDigestRef.current) return;
+    prevAutoSyncDigestRef.current = autoSyncDigest;
+    if (!autoBackupEnabled) return;
+
+    const timer = setTimeout(() => {
+      autoWriteQueueRef.current = autoWriteQueueRef.current
+        .catch(() => {})
+        .then(async () => {
+          await performSilentCloudWrite();
+        });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [autoSyncDigest, autoBackupEnabled, performSilentCloudWrite]);
+
+  const enableCloudAutoBackup = useCallback(async (): Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    message: string;
+  }> => {
+    setIsCloudBusy(true);
+    try {
+      const payload = buildZbakStringRef.current();
+      const res = await enableUniversalCloudAutoBackup(payload);
+      if (res.ok && res.status) {
+        const ts = res.status.lastBackupTimestamp || Date.now();
+        setAutoBackupEnabled(true);
+        setLastBackupTimestamp(ts);
+        setCloudBackupMeta({
+          uri: res.status.uri || null,
+          displayName: res.status.displayName || null,
+          providerLabel: res.status.providerLabel || null,
+          hasPersistedPermission: Boolean(res.status.hasPersistedPermission),
+          lastError: null,
+        });
+        localStorage.setItem(STORAGE_KEYS.AUTO_BACKUP_ENABLED, 'true');
+        localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(ts));
+        haptics.milestoneChime();
+      }
+      return { ok: res.ok, cancelled: res.cancelled, message: res.message };
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, []);
+
+  const disableCloudAutoBackup = useCallback(async () => {
+    setIsCloudBusy(true);
+    try {
+      await disableUniversalCloudAutoBackup();
+      setAutoBackupEnabled(false);
+      localStorage.setItem(STORAGE_KEYS.AUTO_BACKUP_ENABLED, 'false');
+      setCloudBackupMeta({
+        uri: null,
+        displayName: null,
+        providerLabel: null,
+        hasPersistedPermission: false,
+        lastError: null,
+      });
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, []);
+
+  const syncCloudBackupNow = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
+    setIsCloudBusy(true);
+    try {
+      const res = await performSilentCloudWrite();
+      if (res.ok) {
+        haptics.thud();
+        return { ok: true, message: 'Synced latest zero-backup.zbak to your cloud folder.' };
+      }
+      return { ok: false, message: res.error || 'Could not sync zero-backup.zbak.' };
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, [performSilentCloudWrite]);
+
+  const oneTapCloudUpload = useCallback(async (): Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    message: string;
+  }> => {
+    setIsCloudBusy(true);
+    try {
+      const payload = buildZbakStringRef.current();
+      const res = await triggerOneTapCloudUpload(payload);
+      if (res.ok) {
+        const ts = res.timestamp || Date.now();
+        setLastBackupTimestamp(ts);
+        localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(ts));
+        setCloudBackupMeta((prev) => ({ ...prev, lastError: null }));
+        haptics.milestoneChime();
+      }
+      return { ok: res.ok, cancelled: res.cancelled, message: res.message };
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, []);
+
+  const restoreBackupFromCloudPicker = useCallback(async (): Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    message: string;
+  }> => {
+    setIsCloudBusy(true);
+    try {
+      const pick = await pickCloudBackupFileContent();
+      if (!pick.ok || !pick.data) {
+        return {
+          ok: false,
+          cancelled: pick.cancelled,
+          message: pick.message || 'Cloud backup file selection cancelled.',
+        };
+      }
+      const imported = importData(pick.data);
+      return { ok: imported.ok, message: imported.message };
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, [importData]);
+
+  const cloudBackupStatus: CloudAutoBackupStatus = useMemo(
+    () => ({
+      supported:
+        isNativeAndroidCloudPluginAvailable() ||
+        (typeof window !== 'undefined' &&
+          'showSaveFilePicker' in window),
+      enabled: autoBackupEnabled,
+      uri: cloudBackupMeta.uri,
+      displayName: cloudBackupMeta.displayName,
+      providerLabel: cloudBackupMeta.providerLabel,
+      lastBackupTimestamp,
+      hasPersistedPermission: cloudBackupMeta.hasPersistedPermission,
+      lastError: cloudBackupMeta.lastError,
+    }),
+    [autoBackupEnabled, cloudBackupMeta, lastBackupTimestamp]
+  );
+
+  const weeklyBackupDue = useMemo(
+    () => isWeeklyBackupDue(autoBackupEnabled, lastBackupTimestamp, weeklyCheckNowMs),
+    [autoBackupEnabled, lastBackupTimestamp, weeklyCheckNowMs]
+  );
 
   const resetAllData = () => {
+    void disableUniversalCloudAutoBackup();
     localStorage.clear();
+    const freshNow = Date.now();
     localStorage.setItem(STORAGE_KEYS.SEED_PURGE_FLAG, '1');
+    localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'false');
+    localStorage.setItem(STORAGE_KEYS.AUTO_BACKUP_ENABLED, 'false');
+    localStorage.setItem(STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(freshNow));
     cumulativeSecondsRef.current = 0;
     usedParachutesRef.current = 0;
     bonusParachutesRef.current = 0;
@@ -1380,6 +1872,16 @@ export function useZeroStore() {
     setHasClaimedFirstTimeParachute(false);
     setHasClaimedFirstDonationParachute(false);
     setHasDismissedWelcomeModal(false);
+    setOnboardingComplete(false);
+    setAutoBackupEnabled(false);
+    setLastBackupTimestamp(freshNow);
+    setCloudBackupMeta({
+      uri: null,
+      displayName: null,
+      providerLabel: null,
+      hasPersistedPermission: false,
+      lastError: null,
+    });
     setProfile(null);
     setParachuteRewardEvent(null);
     setJustEarnedParachute(false);
@@ -1422,39 +1924,6 @@ export function useZeroStore() {
     localStorage.setItem(STORAGE_KEYS.TIP_SKIP_REMAINING, '0');
   };
 
-  const isZeroSupporter = hasClaimedFirstDonationParachute;
-
-  const badgeSummary = useMemo(
-    () =>
-      evaluateBadges({
-        sessions,
-        totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
-        isZeroSupporter,
-      }),
-    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
-  );
-
-  const currentStreak = useMemo(() => {
-    const completed = sessions.filter((s) => s.status === 'completed');
-    if (completed.length === 0) return 0;
-    const completedDates = new Set(completed.map((s) => s.dateStr));
-    let streak = 0;
-    const today = new Date();
-    for (let i = 0; i < 365; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const str = d.toISOString().split('T')[0];
-      if (completedDates.has(str)) {
-        streak++;
-      } else if (i === 0) {
-        continue;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }, [sessions]);
-
   return {
     theme,
     setTheme,
@@ -1469,6 +1938,7 @@ export function useZeroStore() {
     hasClaimedFirstTimeParachute,
     hasClaimedFirstDonationParachute,
     hasDismissedWelcomeModal,
+    onboardingComplete,
     todayReclaimedHours,
     parachuteRewardEvent,
     justEarnedParachute,
@@ -1506,8 +1976,19 @@ export function useZeroStore() {
     deleteSchedule,
     triggerTestWarning,
     buildBackupJson,
+    buildZbakString,
     exportData,
     importData,
     resetAllData,
+    autoBackupEnabled,
+    lastBackupTimestamp,
+    cloudBackupStatus,
+    weeklyBackupDue,
+    isCloudBusy,
+    enableCloudAutoBackup,
+    disableCloudAutoBackup,
+    syncCloudBackupNow,
+    oneTapCloudUpload,
+    restoreBackupFromCloudPicker,
   };
 }
