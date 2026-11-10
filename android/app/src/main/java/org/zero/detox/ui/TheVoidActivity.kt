@@ -33,6 +33,14 @@ import java.util.Locale
  */
 class TheVoidActivity : AppCompatActivity() {
 
+    companion object {
+        @Volatile
+        var isInForeground: Boolean = false
+
+        @Volatile
+        var dialerGraceUntilMillis: Long = 0L
+    }
+
     private lateinit var lockEngine: LockEngine
     private lateinit var parachuteStore: ParachuteStore
     private var countDownTimer: CountDownTimer? = null
@@ -45,6 +53,7 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var btnDeployParachute: Button
     private lateinit var textParachuteBalance: TextView
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -66,6 +75,7 @@ class TheVoidActivity : AppCompatActivity() {
         startTickers()
     }
 
+    @Suppress("DEPRECATION")
     private fun hideSystemUI() {
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -211,6 +221,7 @@ class TheVoidActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             setOnClickListener {
+                dialerGraceUntilMillis = System.currentTimeMillis() + 30_000L
                 startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
             }
         }
@@ -237,6 +248,7 @@ class TheVoidActivity : AppCompatActivity() {
             .setPositiveButton("Deploy (-1 Parachute)") { _, _ ->
                 val success = lockEngine.deployParachute()
                 if (success) {
+                    isInForeground = false
                     try { stopLockTask() } catch (_: Exception) {}
                     finish()
                 }
@@ -274,6 +286,7 @@ class TheVoidActivity : AppCompatActivity() {
             }
 
             override fun onFinish() {
+                isInForeground = false
                 lockEngine.completeSession()
                 try { stopLockTask() } catch (_: Exception) {}
                 Toast.makeText(this@TheVoidActivity, "Lock Completed. Focus Reclaimed!", Toast.LENGTH_LONG).show()
@@ -282,9 +295,22 @@ class TheVoidActivity : AppCompatActivity() {
         }.start()
     }
 
+    override fun onResume() {
+        super.onResume()
+        isInForeground = true
+        hideSystemUI()
+    }
+
+    override fun onPause() {
+        isInForeground = false
+        super.onPause()
+    }
+
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {}
 
     override fun onDestroy() {
+        isInForeground = false
         countDownTimer?.cancel()
         super.onDestroy()
     }

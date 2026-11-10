@@ -64,3 +64,25 @@ export interface ActiveLockSession {
 }
 
 export type ThemeStyle = 'monochrome' | 'oled' | 'amber' | 'emerald';
+
+export interface ZeroNativeBridgeInterface {
+  isStrictAccessibilityBuild(): boolean;
+  isDeviceOwner(): boolean;
+  hasOverlayPermission(): boolean;
+  requestOverlayPermission(): void;
+  isAccessibilityEnabled(): boolean;
+  openAccessibilitySettings(): void;
+  startLockTaskMode(): void;
+  stopLockTaskMode(): void;
+  syncLedgerState(cumulativeSeconds: number, deployedCount: number): void;
+  igniteSession(durationSeconds: number, tag: string): void;
+  deployParachute(): boolean;
+  getBatteryPercentage(): number;
+  getNativeStateJson(): string;
+}
+
+declare global {
+  interface Window {
+    ZeroNative?: ZeroNativeBridgeInterface;
+  }
+}

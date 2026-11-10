@@ -54,6 +54,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
+  const [, setNativeTick] = useState(0);
+
+  const hasNativeBridge = typeof window !== 'undefined' && Boolean(window.ZeroNative);
+  const isStrictBuild = hasNativeBridge ? Boolean(window.ZeroNative?.isStrictAccessibilityBuild()) : false;
+  const hasOverlayPerm = hasNativeBridge ? Boolean(window.ZeroNative?.hasOverlayPermission()) : false;
+  const isDeviceOwner = hasNativeBridge ? Boolean(window.ZeroNative?.isDeviceOwner()) : false;
+  const isAccessibilityOn = hasNativeBridge && isStrictBuild ? Boolean(window.ZeroNative?.isAccessibilityEnabled()) : false;
+
+  React.useEffect(() => {
+    if (!hasNativeBridge) return;
+    const refresh = () => setNativeTick((t) => t + 1);
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [hasNativeBridge]);
 
   // New Schedule Form State
   const [newName, setNewName] = useState('Afternoon Focus');
@@ -420,51 +434,90 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {activeSection === 'os_security' && (
         <div className="space-y-4">
           <div className="bg-zinc-950 border-2 border-zinc-800 rounded-3xl p-5 shadow-brutal space-y-3 font-mono">
-            <div className="flex items-center gap-2 text-white font-bold text-sm">
-              <Smartphone size={16} className="text-emerald-400" />
-              <span>OS-LEVEL ENFORCEMENT ARCHITECTURE</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Smartphone size={16} className="text-emerald-400" />
+                <span>OS-LEVEL ENFORCEMENT</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
+                {hasNativeBridge ? (isStrictBuild ? 'STRICT ADB' : 'PLAY-PROTECT SAFE') : 'WEB PREVIEW'}
+              </span>
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              To guarantee that users cannot bypass Zero by swiping home, opening the notification drawer, or rebooting the phone, Zero integrates with 4 core Android OS security APIs:
+              Zero is 100% offline (zero <code>INTERNET</code> permission) and enforces focus locks via Android native OS primitives:
             </p>
 
             {/* Feature 1: LockTaskMode / Device Owner */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1">
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>1. DevicePolicyManager.setLockTaskPackages()</span>
-                <span className="text-[9px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800">
-                  KIOSK PINNING
+                <span>1. LockTaskMode Kiosk Pinning</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                    isDeviceOwner
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-800'
+                  }`}
+                >
+                  {isDeviceOwner ? 'DEVICE OWNER ACTIVE' : 'PINNING READY'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Locks The Void activity into true Kiosk mode. Completely disables the Home gesture, Recent Apps button, and Power Menu.
+                Uses <code>DevicePolicyManager.setLockTaskPackages()</code> and <code>startLockTask()</code> to lock Home, Recent Apps, and notifications inside The Void.
               </p>
             </div>
 
-            {/* Feature 2: Accessibility Service */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1">
+            {/* Feature 2: Foreground Watchdog + SYSTEM_ALERT_WINDOW */}
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>2. ZeroAccessibilityService</span>
-                <span className="text-[9px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800">
-                  ANTI-DRAWER
+                <span>2. Overlay Guard & Watchdog</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                    hasOverlayPerm
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-amber-950 text-amber-300 border-amber-800'
+                  }`}
+                >
+                  {hasNativeBridge ? (hasOverlayPerm ? 'GRANTED' : 'REQUIRED ON ANDROID') : 'TOPMOST LAYER'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Detects attempts to swipe down the status bar or quick settings panel, immediately collapsing it with <code>GLOBAL_ACTION_BACK</code>.
+                Uses <code>SYSTEM_ALERT_WINDOW</code> + <code>LockForegroundService</code> (500ms watchdog) to snap The Void immediately back on top if minimized — without needing flagged Accessibility permissions.
               </p>
+              {hasNativeBridge && !hasOverlayPerm && (
+                <button
+                  onClick={() => window.ZeroNative?.requestOverlayPermission()}
+                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                >
+                  Grant Display Over Other Apps
+                </button>
+              )}
             </div>
 
-            {/* Feature 3: SYSTEM_ALERT_WINDOW */}
-            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-1">
+            {/* Feature 3: Strict Accessibility Service (Strict flavor or optional note) */}
+            <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                <span>3. SYSTEM_ALERT_WINDOW Overlay</span>
-                <span className="text-[9px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800">
-                  TOPMOST LAYER
+                <span>3. Strict Accessibility Guard</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                    isAccessibilityOn
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-800'
+                  }`}
+                >
+                  {isStrictBuild ? (isAccessibilityOn ? 'ENABLED' : 'AVAILABLE') : 'STRICT APK ONLY'}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Draws directly over system popups and incoming floating notifications using <code>TYPE_APPLICATION_OVERLAY</code>.
+                Optional <code>Strict Edition</code> APK adds <code>ZeroAccessibilityService</code> to collapse status-bar drawers on ADB-installed devices. Excluded from Standard APK for clean Play Protect compatibility.
               </p>
+              {hasNativeBridge && isStrictBuild && !isAccessibilityOn && (
+                <button
+                  onClick={() => window.ZeroNative?.openAccessibilitySettings()}
+                  className="w-full py-2 bg-zinc-200 hover:bg-white text-black font-bold text-[11px] rounded-xl active:scale-95 transition-all"
+                >
+                  Enable Accessibility Service
+                </button>
+              )}
             </div>
 
             {/* Feature 4: Priority 999 BootReceiver */}

@@ -7,14 +7,21 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
+import org.zero.detox.core.LockEngine
+import org.zero.detox.data.ParachuteStore
 import org.zero.detox.ui.TheVoidActivity
 
 /**
  * LockForegroundService:
- * Keeps the lock persistent in OS memory, preventing the OS from killing the task.
+ * Keeps the focus lock persistent in OS memory and runs a non-intrusive Watchdog loop
+ * (requiring zero AccessibilityService permissions) that re-surfaces The Void if minimized
+ * prior to targetEndTimeMillis.
  */
 class LockForegroundService : Service() {
 
@@ -23,6 +30,46 @@ class LockForegroundService : Service() {
         const val ACTION_STOP_LOCK = "org.zero.detox.STOP_LOCK"
         const val CHANNEL_ID = "zero_void_channel"
         const val NOTIFICATION_ID = 1001
+        private const val WATCHDOG_INTERVAL_MS = 500L
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var isWatchdogActive = false
+
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+            if (!isWatchdogActive) return
+
+            val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
+            val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)
+            val targetEndTime = prefs.getLong(LockEngine.KEY_TARGET_END_TIME, 0L)
+            val now = System.currentTimeMillis()
+
+            if (!isLocked) {
+                stopWatchdogAndService()
+                return
+            }
+
+            if (now >= targetEndTime) {
+                LockEngine(this@LockForegroundService, ParachuteStore(this@LockForegroundService)).completeSession()
+                stopWatchdogAndService()
+                return
+            }
+
+            if (!TheVoidActivity.isInForeground && now > TheVoidActivity.dialerGraceUntilMillis) {
+                val voidIntent = Intent(this@LockForegroundService, TheVoidActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                }
+                try {
+                    startActivity(voidIntent)
+                } catch (_: Exception) {}
+            }
+
+            handler.postDelayed(this, WATCHDOG_INTERVAL_MS)
+        }
     }
 
     override fun onCreate() {
@@ -32,16 +79,38 @@ class LockForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_LOCK) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            stopWatchdogAndService()
             return START_NOT_STICKY
         }
 
         val tag = intent?.getStringExtra("EXTRA_TAG") ?: "Deep Work"
         val notification = buildLockNotification(tag)
-        startForeground(NOTIFICATION_ID, notification)
+
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+
+        if (!isWatchdogActive) {
+            isWatchdogActive = true
+            handler.postDelayed(watchdogRunnable, WATCHDOG_INTERVAL_MS)
+        }
 
         return START_STICKY
+    }
+
+    private fun stopWatchdogAndService() {
+        isWatchdogActive = false
+        handler.removeCallbacks(watchdogRunnable)
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    override fun onDestroy() {
+        isWatchdogActive = false
+        handler.removeCallbacks(watchdogRunnable)
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

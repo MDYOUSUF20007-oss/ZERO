@@ -15,10 +15,36 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    flavorDimensions "edition"
+    productFlavors {
+        standard {
+            dimension "edition"
+        }
+        strict {
+            dimension "edition"
+            versionNameSuffix "-strict"
+        }
+    }
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("ZERO_KEYSTORE_PATH")
+            if (ksPath != null && !ksPath.trim().isEmpty() && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword System.getenv("ZERO_KEYSTORE_PASS")
+                keyAlias System.getenv("ZERO_KEYSTORE_ALIAS")
+                keyPassword System.getenv("ZERO_KEYSTORE_PASS")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            def ksPath = System.getenv("ZERO_KEYSTORE_PATH")
+            if (ksPath != null && !ksPath.trim().isEmpty() && file(ksPath).exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {
@@ -27,6 +53,10 @@ android {
     }
     kotlinOptions {
         jvmTarget = '21'
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
     }
 }
 

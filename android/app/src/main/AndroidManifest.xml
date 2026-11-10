@@ -2,19 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- OS-Level System Protection & Lock Capabilities -->
+    <!-- OS-Level Focus Lock Capabilities (100% offline: no INTERNET, no SMS, no CALL_PHONE) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.REORDER_TASKS" />
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"
@@ -53,22 +50,14 @@
             android:turnScreenOn="true"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <!-- Foreground Lock Watcher Service -->
+        <!-- Foreground Lock Watcher Service (Android 14+ specialUse declared) -->
         <service
             android:name=".service.LockForegroundService"
-            android:exported="false" />
-
-        <!-- Accessibility Service: Intercepts Notification Shade pull-down and unauthorized app switches -->
-        <service
-            android:name=".service.ZeroAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="digital_detox_focus_lock_watchdog" />
         </service>
 
         <!-- Anti-Tamper Boot Completed Receiver -->

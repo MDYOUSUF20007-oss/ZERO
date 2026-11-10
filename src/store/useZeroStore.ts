@@ -251,6 +251,10 @@ export function useZeroStore() {
   activeLockRef.current = activeLock;
   const sleepFarmingModeRef = useRef(sleepFarmingMode);
   sleepFarmingModeRef.current = sleepFarmingMode;
+  const usedParachutesRef = useRef(usedParachutes);
+  usedParachutesRef.current = usedParachutes;
+  const cumulativeSecondsRef = useRef(cumulativeSeconds);
+  cumulativeSecondsRef.current = cumulativeSeconds;
 
   // Session Completion Handler
   const handleSessionCompletion = useCallback((finishedLock: ActiveLockSession) => {
@@ -331,15 +335,87 @@ export function useZeroStore() {
       remainingSeconds: 0,
     });
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_LOCK);
+
+    try {
+      window.ZeroNative?.stopLockTaskMode();
+    } catch {
+      // Ignore in web mode
+    }
+  }, []);
+
+  const applyParachuteAbort = useCallback((current: ActiveLockSession) => {
+    haptics.parachuteDeploy();
+    const now = Date.now();
+    const dateStr = new Date(now).toISOString().split('T')[0];
+    const abortedTag = current.tag;
+    const elapsedMinutes = Math.max(1, Math.floor(current.elapsedSeconds / 60));
+
+    setUsedParachutes((prev) => prev + 1);
+
+    const abortedSession: SessionRecord = {
+      id: `sess_aborted_${now}`,
+      startTime: current.startTime,
+      endTime: now,
+      durationSeconds: current.durationSeconds,
+      earnedParachuteSeconds: 0,
+      weightMultiplier: 0,
+      tag: abortedTag,
+      status: 'parachuted',
+      dateStr,
+    };
+    setSessions((prev) => [abortedSession, ...prev]);
+
+    const newEntry: ParachuteLedgerEntry = {
+      id: `txn_${now}`,
+      timestamp: now,
+      type: 'DEPLOYED',
+      description: `Emergency Parachute deployed (${abortedTag} session aborted at ${elapsedMinutes}m)`,
+      delta: -1,
+      tag: abortedTag,
+      note: 'Aborted Session Penalty: 0h credited toward Parachute progression (anti-exploit).',
+    };
+    setLedger((prev) => [newEntry, ...prev]);
+
+    setActiveLock({
+      isLocked: false,
+      tag: 'Deep Work',
+      startTime: 0,
+      targetEndTime: 0,
+      durationSeconds: 0,
+      elapsedSeconds: 0,
+      remainingSeconds: 0,
+    });
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_LOCK);
   }, []);
 
   useEffect(() => {
     if (!activeLock.isLocked) return;
 
+    const syncWithNative = () => {
+      try {
+        if (!window.ZeroNative) return;
+        const current = activeLockRef.current;
+        if (!current.isLocked) return;
+        const raw = window.ZeroNative.getNativeStateJson();
+        const nativeState = JSON.parse(raw) as {
+          isLocked: boolean;
+          cumulativeSeconds: number;
+          deployedCount: number;
+        };
+        if (!nativeState.isLocked && nativeState.deployedCount > usedParachutesRef.current) {
+          applyParachuteAbort(current);
+        }
+      } catch {
+        // Ignore bridge errors in browser
+      }
+    };
+
     const interval = setInterval(() => {
       const now = Date.now();
       const current = activeLockRef.current;
       if (!current.isLocked) return;
+
+      syncWithNative();
 
       if (now >= current.targetEndTime) {
         handleSessionCompletion(current);
@@ -354,8 +430,15 @@ export function useZeroStore() {
       }
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [activeLock.isLocked, handleSessionCompletion]);
+    window.addEventListener('focus', syncWithNative);
+    document.addEventListener('visibilitychange', syncWithNative);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', syncWithNative);
+      document.removeEventListener('visibilitychange', syncWithNative);
+    };
+  }, [activeLock.isLocked, handleSessionCompletion, applyParachuteAbort]);
 
   // Ignite Session
   const igniteSession = (durationSeconds: number, tag: SessionTag) => {
@@ -376,59 +459,31 @@ export function useZeroStore() {
 
     setActiveLock(newLock);
     localStorage.setItem(STORAGE_KEYS.ACTIVE_LOCK, JSON.stringify(newLock));
+
+    try {
+      if (window.ZeroNative) {
+        window.ZeroNative.syncLedgerState(cumulativeSecondsRef.current, usedParachutesRef.current);
+        window.ZeroNative.igniteSession(durationSeconds, tag);
+      }
+    } catch {
+      // Ignore in web mode
+    }
   };
 
   // Deploy Parachute (ABORTED SESSION PENALTY ENFORCED)
   const deployParachute = (): boolean => {
     if (currentBalance < 1 || !activeLock.isLocked) return false;
 
-    haptics.parachuteDeploy();
-    const now = Date.now();
-    const dateStr = new Date(now).toISOString().split('T')[0];
-    const abortedTag = activeLock.tag;
-    const elapsedMinutes = Math.max(1, Math.floor(activeLock.elapsedSeconds / 60));
+    applyParachuteAbort(activeLock);
 
-    // Deduct 1 parachute
-    setUsedParachutes((prev) => prev + 1);
-
-    // STRICT ABORTED SESSION PENALTY:
-    // 0 hours credited toward 20-hour parachute progression
-    const abortedSession: SessionRecord = {
-      id: `sess_aborted_${now}`,
-      startTime: activeLock.startTime,
-      endTime: now,
-      durationSeconds: activeLock.durationSeconds,
-      earnedParachuteSeconds: 0, // Voided!
-      weightMultiplier: 0,
-      tag: abortedTag,
-      status: 'parachuted',
-      dateStr,
-    };
-    setSessions((prev) => [abortedSession, ...prev]);
-
-    // Ledger entry
-    const newEntry: ParachuteLedgerEntry = {
-      id: `txn_${now}`,
-      timestamp: now,
-      type: 'DEPLOYED',
-      description: `Emergency Parachute deployed (${abortedTag} session aborted at ${elapsedMinutes}m)`,
-      delta: -1,
-      tag: abortedTag,
-      note: 'Aborted Session Penalty: 0h credited toward Parachute progression (anti-exploit).',
-    };
-    setLedger((prev) => [newEntry, ...prev]);
-
-    // Clear active lock
-    setActiveLock({
-      isLocked: false,
-      tag: 'Deep Work',
-      startTime: 0,
-      targetEndTime: 0,
-      durationSeconds: 0,
-      elapsedSeconds: 0,
-      remainingSeconds: 0,
-    });
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_LOCK);
+    try {
+      if (window.ZeroNative) {
+        window.ZeroNative.deployParachute();
+        window.ZeroNative.stopLockTaskMode();
+      }
+    } catch {
+      // Ignore in web mode
+    }
 
     return true;
   };

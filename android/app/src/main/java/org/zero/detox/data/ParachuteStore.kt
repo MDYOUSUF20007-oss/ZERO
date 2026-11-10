@@ -77,6 +77,14 @@ class ParachuteStore(context: Context) {
 
     fun getParachuteBalance(): Int = getMetrics().currentBalance
 
+    @Synchronized
+    fun syncLedgerState(cumulativeSeconds: Long, deployedCount: Int) {
+        prefs.edit()
+            .putLong(KEY_CUMULATIVE_SECONDS, maxOf(0L, cumulativeSeconds))
+            .putInt(KEY_DEPLOYED_COUNT, maxOf(0, deployedCount))
+            .apply()
+    }
+
     /**
      * Records a completed lock session.
      * Credits seconds towards cumulative total and checks if a new 20-hour parachute was earned.

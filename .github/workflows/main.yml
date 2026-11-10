@@ -68,7 +68,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # ─── JOB 3: Build Installable Android APK ─────────────────────────────────
+  # ─── JOB 3: Build Installable Android Release APKs ────────────────────────
   build-android-apk:
     name: Build Android APK
     needs: build-web
@@ -107,14 +107,40 @@ jobs:
       - name: Grant Executable Permissions to Gradlew
         run: chmod +x android/gradlew
 
-      - name: Compile Android Debug APK
+      - name: Generate Release Signing Keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore "${{ runner.temp }}/zero-release.jks" \
+            -alias zero_release \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass zero_foss_2026 \
+            -keypass zero_foss_2026 \
+            -dname "CN=Zero Digital Detox FOSS, OU=OpenSource, O=Zero, L=Global, C=US"
+
+      - name: Compile Standard & Strict Release APKs
+        env:
+          ZERO_KEYSTORE_PATH: ${{ runner.temp }}/zero-release.jks
+          ZERO_KEYSTORE_PASS: zero_foss_2026
+          ZERO_KEYSTORE_ALIAS: zero_release
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
+          ls -lh app/build/outputs/apk/*/*/*.apk
 
-      - name: Upload Installable Android APK
+      - name: Upload Standard APK (Direct Install / Sideload-Safe)
         uses: actions/upload-artifact@v4
         with:
-          name: Zero-v1.0.0-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Zero-v1.0.0-standard-apk
+          path: android/app/build/outputs/apk/standard/release/app-standard-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Strict Accessibility APK (ADB Edition)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zero-v1.0.0-strict-adb-apk
+          path: android/app/build/outputs/apk/strict/release/app-strict-release.apk
+          if-no-files-found: error
           retention-days: 30
