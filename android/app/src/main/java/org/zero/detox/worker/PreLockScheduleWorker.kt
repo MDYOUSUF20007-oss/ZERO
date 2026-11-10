@@ -41,7 +41,7 @@ class PreLockScheduleWorker(
             // Send 5-minute pre-lock heads-up warning
             val warningNotification = NotificationCompat.Builder(appContext, CHANNEL_SCHEDULE)
                 .setContentTitle("Lock Imminent: $scheduleName")
-                .setContentText("Zero will engage phone lock in 5 minutes. Save your work and finish calls.")
+                .setContentText("Zero App will engage phone lock in 5 minutes. Save your work and finish calls.")
                 .setSmallIcon(android.R.drawable.ic_popup_reminder)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
@@ -63,7 +63,7 @@ class PreLockScheduleWorker(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_SCHEDULE,
-                "Zero Schedules & Warnings",
+                "Zero-Distractions Schedules & Warnings",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for upcoming automated digital detox blocks"

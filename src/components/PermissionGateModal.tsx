@@ -58,7 +58,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                 Permissions &amp; Access Setup
               </h2>
               <p className="text-[11px] text-zinc-400">
-                Strict priority order so Zero cannot be bypassed
+                Strict priority order so Zero App cannot be bypassed
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
           <div>
             Priority order:{' '}
             <strong className="text-white">
-              1. Check Restricted Settings &rarr; 2. {needsAccessibility ? 'Accessibility' : 'Usage Access (Find Zero)'} &rarr; 3. Display Over Apps &rarr; 4. Notifications
+              1. Check Restricted Settings &rarr; 2. {needsAccessibility ? 'Accessibility' : 'Usage Access (Find Zero-Distractions)'} &rarr; 3. Display Over Apps &rarr; 4. Notifications
             </strong>
             .
           </div>
@@ -213,7 +213,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
                     className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
                   >
-                    Grant Usage Access -&gt; Find Zero
+                    Grant Usage Access -&gt; Find Zero-Distractions
                   </button>
 
                   {/* Green Step-by-Step Guide directly under the Usage Access -> Find Zero button */}

@@ -12,7 +12,7 @@ import org.zero.detox.data.BagStore
 import org.zero.detox.ui.TheVoidActivity
 
 /**
- * ZeroAccessibilityService (Strict BlockIt-Grade Guard):
+ * ZeroAccessibilityService (Strict Zero App Guard):
  * - Intercepts Status Bar / Quick Settings / App Switcher (Recents) pull-down attempts
  * - Intercepts Settings & any app outside The Bag (or Phone/SMS if toggled ON in The Bag)
  * - Immediately restores TheVoidActivity without relying on weak Android Screen Pinning

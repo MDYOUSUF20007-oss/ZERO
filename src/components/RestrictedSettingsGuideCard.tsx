@@ -20,7 +20,7 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
   onOpenAppInfo,
   compact = false,
 }) => {
-  const permissionLabel = isStrictBuild ? 'Accessibility' : 'Usage Access -> Find Zero';
+  const permissionLabel = isStrictBuild ? 'Accessibility' : 'Usage Access -> Find Zero-Distractions';
 
   return (
     <div
@@ -32,7 +32,7 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-300">
           <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-          <span>How to Fix If Phone Blocks &ldquo;Find Zero&rdquo;</span>
+          <span>How to Fix If Phone Blocks &ldquo;Find Zero-Distractions&rdquo;</span>
         </div>
         <span
           className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
@@ -67,7 +67,7 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
           </span>
         </li>
         <li>
-          Come back here and tap <strong>{permissionLabel}</strong> &rarr; toggle <strong>Zero ON</strong>.
+          Come back here and tap <strong>{permissionLabel}</strong> &rarr; toggle <strong>Zero-Distractions ON</strong>.
         </li>
       </ol>
 

@@ -1,3 +1,6 @@
+// Zero-Distractions (Zero App) — Android Build & Release Hardening Configuration
+// Display name resolves from res/values/strings.xml ("Zero-Distractions");
+// applicationId stays "org.zero.detox" to preserve seamless in-place APK updates.
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 

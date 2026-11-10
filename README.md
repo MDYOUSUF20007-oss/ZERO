@@ -1,8 +1,8 @@
-# ZERO — Open-Source Digital Detox & Phone Blocker
+# Zero-Distractions — Minimalist Screen-Time & App Blocker
 
 > **"The obstacle is the way. Put your phone facedown."**
 
-Zero is a 100% free and open-source (FOSS) distraction-blocking application inspired by strict focus blockers. Built with an ultra-minimalist, tactile aesthetic, zero paywalls, zero telemetry, live **Theme Studio** (**AMOLED + Gradients**, **Paper like Kindle**, **Matte Studio**), and an **Emergency Escape Ticket** discipline economy.
+**Zero-Distractions** (also referred to as **Zero App**) is a minimalist screen-time and app blocker — 100% free and open-source (FOSS) with an ultra-minimalist, tactile aesthetic, zero paywalls, zero telemetry, live **Theme Studio** (**AMOLED + Gradients**, **Paper like Kindle**, **Matte Studio**), and an **Emergency Escape Ticket** discipline economy.
 
 <a href="https://ko-fi.com/mdyousuf2620" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" width="210">
@@ -14,7 +14,7 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
 
 - **Latest Android APKs:** [GitHub Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases/latest) ([All Releases](https://github.com/MDYOUSUF20007-oss/ZERO/releases))
   - **`ZERO-v<version>.apk` (Standard Edition — Direct Install):** Uses Usage Access + Display Over Other Apps without Accessibility permissions for quick browser/file-manager sideloading.
-  - **`ZERO-requires-adb-v<version>.apk` (Strict Accessibility Edition — Full Kiosk Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service (`adb install -r` / Shizuku or Allow Restricted Settings on Android 14–16).
+  - **`ZERO-requires-adb-v<version>.apk` (Strict Accessibility Edition — Full Zero Mode):** Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps via Accessibility Service (`adb install -r` / Shizuku or Allow Restricted Settings on Android 14–16).
   - *Seamless In-Place Updates:* Releases from `v1.0.19+` are permanently signed with ZERO's release keystore (`v1.0.23+` includes explicit **V1 + V2 + V3 APK signing**) so future APKs update directly over previous versions. *(If migrating from an older `v1.0.18` debug preview, save a backup in **Settings → Export Backup** or **Cloud Auto-Backup**, uninstall the old preview, install the new signed APK, and restore in 1 tap.)*
 - **Web / PWA Preview:** [mdyousuf20007-oss.github.io/ZERO](https://mdyousuf20007-oss.github.io/ZERO/)
 
@@ -78,14 +78,14 @@ Zero is a 100% free and open-source (FOSS) distraction-blocking application insp
   - **Mode A (Android SAF Persistable Auto-Sync):** Native Capacitor `CloudAutoBackupPlugin` acquires `takePersistableUriPermission` across **Google Drive, OneDrive, JioDrive, Dropbox, or Local Storage** and silently overwrites `zero-backup.zbak` whenever a session finishes, a Bag changes, or badges/tickets update.
   - **Mode B (Weekly 1-Tap Reminder):** If Auto-Backup is off and >7 days pass since `lastBackupTimestamp`, displays a pure AMOLED black/purple (`#8B5CF6`) home banner with **1-Tap Upload** and **Turn On Auto-Backup**.
   - **1-Tap Reinstall Restore:** **"Restore Backup from Cloud (Drive / OneDrive / JioDrive)"** on Welcome & Settings verifies the `.zbak` HMAC signature, restores stats/badges/tickets/Bags, sets `onboardingComplete = true`, and skips directly to the Dashboard.
-- **OS Permissions & Green Restricted Settings Fix Guide:** Enforces exact priority setup order (**1. Allow Restricted Settings Check + Zero App Info Shortcut -> 2. Usage Access (Find Zero) / Accessibility -> 3. Display Over Other Apps -> 4. Notifications**) with green step-by-step Android 13–16 Restricted Settings unlock instructions right underneath permission prompts.
+- **OS Permissions & Green Restricted Settings Fix Guide:** Enforces exact priority setup order (**1. Allow Restricted Settings Check + Zero App Info Shortcut -> 2. Usage Access (Find Zero-Distractions) / Accessibility -> 3. Display Over Other Apps -> 4. Notifications**) with green step-by-step Android 13–16 Restricted Settings unlock instructions right underneath permission prompts.
 - **Data Portability:** Complete JSON + signed `.zbak` export/import, clipboard copy/paste, and factory reset.
 
 ---
 
 ## Support & Donor Verification
 
-Zero is 100% free and open-source with zero paywalls. If you choose to support development and unlock the Golden **`ZERO-SUPPORTER`** crest & `+1 Free Emergency Escape Ticket (🎫)` gift:
+Zero-Distractions (Zero App) is 100% free and open-source with zero paywalls. If you choose to support development and unlock the Golden **`ZERO-SUPPORTER`** crest & `+1 Free Emergency Escape Ticket (🎫)` gift:
 
 - **Ko-fi:** [https://ko-fi.com/mdyousuf2620](https://ko-fi.com/mdyousuf2620)
 - **UPI (No minimum limit for regular tips; 1st tip of ₹50+ unlocks Supporter perks):** `md.y2007@ptaxis`
@@ -135,5 +135,5 @@ npm run build
 ---
 
 ## 6. License
-Zero is open-source under the **GNU General Public License v3 (GPL-3.0)** / **MIT License**.
+Zero-Distractions (Zero App) is open-source under the **GNU General Public License v3 (GPL-3.0)** / **MIT License**.
 Built with zero trackers, zero subscriptions, and 100% respect for human agency.

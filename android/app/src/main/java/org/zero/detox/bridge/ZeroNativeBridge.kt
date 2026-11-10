@@ -290,7 +290,7 @@ class ZeroNativeBridge(
                 activity.runOnUiThread {
                     Toast.makeText(
                         activity,
-                        "Find Zero in Accessibility Services (if greyed out: App Info -> Allow restricted settings)",
+                        "Find Zero-Distractions in Accessibility Services (if greyed out: App Info -> Allow restricted settings)",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -300,7 +300,7 @@ class ZeroNativeBridge(
                 activity.runOnUiThread {
                     Toast.makeText(
                         activity,
-                        "Find Zero -> Enable Usage Access (if blocked: tap Open Zero App Info -> Allow restricted settings)",
+                        "Find Zero-Distractions -> Enable Usage Access (if blocked: tap Open Zero App Info -> Allow restricted settings)",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -308,7 +308,7 @@ class ZeroNativeBridge(
             }
             PermissionStatusHelper.NextPermissionAction.GRANT_OVERLAY -> {
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "Allow Display Over Other Apps for Zero", Toast.LENGTH_LONG).show()
+                    Toast.makeText(activity, "Allow Display Over Other Apps for Zero-Distractions", Toast.LENGTH_LONG).show()
                 }
                 requestOverlayPermission()
             }
@@ -523,7 +523,7 @@ class ZeroNativeBridge(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             activity.runOnUiThread {
-                activity.startActivity(Intent.createChooser(intent, "Share Zero Achievement"))
+                activity.startActivity(Intent.createChooser(intent, "Share Zero App Achievement"))
             }
         } catch (e: Exception) {
             activity.runOnUiThread {
@@ -551,11 +551,11 @@ class ZeroNativeBridge(
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/json"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Zero Digital Detox Backup")
+                putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Backup")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             activity.runOnUiThread {
-                activity.startActivity(Intent.createChooser(intent, "Save or Send Zero Backup"))
+                activity.startActivity(Intent.createChooser(intent, "Save or Send Zero App Backup"))
             }
         } catch (e: Exception) {
             activity.runOnUiThread {

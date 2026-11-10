@@ -65,7 +65,7 @@ export function evaluatePermissionPriority(
       nextStep: 'usage_or_accessibility',
       nextButtonLabel: permissions.isStrictAccessibilityBuild
         ? 'Grant Missing Permissions → Accessibility Service'
-        : 'Grant Missing Permissions → Usage Access (Find Zero)',
+        : 'Grant Missing Permissions → Usage Access (Find Zero-Distractions)',
       restrictedStatus,
       coreGuardGranted,
       allRecommendedGranted,

@@ -309,10 +309,10 @@ class CloudAutoBackupPlugin : Plugin() {
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "application/octet-stream"
                     putExtra(Intent.EXTRA_STREAM, contentUri)
-                    putExtra(Intent.EXTRA_SUBJECT, "ZERO Cloud Backup ($fileName)")
+                    putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Cloud Backup ($fileName)")
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "ZERO signed focus backup ($fileName). Save to Google Drive, OneDrive, JioDrive, or Files."
+                        "Zero App signed focus backup ($fileName). Save to Google Drive, OneDrive, JioDrive, or Files."
                     )
                     clipData = android.content.ClipData.newUri(context.contentResolver, fileName, contentUri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -356,7 +356,7 @@ class CloudAutoBackupPlugin : Plugin() {
         val security = AppSecurityGuard.evaluateEnvironment(context)
         if (security.backupRestoreDisabled) {
             call.reject(
-                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.",
+                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect Zero App integrity.",
                 "SECURITY_RESTRICTED"
             )
             return
@@ -379,7 +379,7 @@ class CloudAutoBackupPlugin : Plugin() {
         val security = AppSecurityGuard.evaluateEnvironment(context)
         if (security.backupRestoreDisabled) {
             call.reject(
-                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect ZERO integrity.",
+                "Backup restore is disabled on rooted devices, test-keys ROMs, or debug emulators to protect Zero App integrity.",
                 "SECURITY_RESTRICTED"
             )
             return

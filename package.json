@@ -1,5 +1,6 @@
 {
-  "name": "zero-app",
+  "name": "zero-distractions",
+  "description": "Zero-Distractions, a minimalist screen-time and app blocker",
   "private": true,
   "version": "1.0.0",
   "type": "module",

@@ -52,7 +52,7 @@ import {
 } from '../plugins/cloudAutoBackup';
 
 export { SECONDS_PER_PARACHUTE };
-export const MAX_BAG_APPS = 3; // BlockIt-inspired 3-app cap per Bag
+export const MAX_BAG_APPS = 3; // Zero App 3-app cap per Bag
 export const MAX_BAGS = 4; // 4 customizable occasion Bags
 
 // Strictly UI preferences & non-protected local cache keys.

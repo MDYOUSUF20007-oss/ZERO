@@ -74,7 +74,7 @@ export function App() {
   const handleCloudRestoreSuccess = () => {
     setShowProfileModal(false);
     setActiveTab('dashboard');
-    setRestoreToast('Cloud Backup Restored — Welcome back to Zero!');
+    setRestoreToast('Cloud Backup Restored — Welcome back to Zero App!');
     setTimeout(() => setRestoreToast(''), 4200);
   };
 

@@ -1,6 +1,6 @@
 {
   "appId": "org.zero.detox",
-  "appName": "Zero",
+  "appName": "Zero-Distractions",
   "webDir": "dist",
   "plugins": {
     "SystemBars": {

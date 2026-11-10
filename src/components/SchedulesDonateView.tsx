@@ -987,7 +987,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               Priority setup order:{' '}
               <strong className="text-white">
                 1. Restricted Settings Check &rarr; 2.{' '}
-                {isStrictBuild ? 'Accessibility Service' : 'Usage Access (Find Zero)'} &rarr; 3.
+                {isStrictBuild ? 'Accessibility Service' : 'Usage Access (Find Zero-Distractions)'} &rarr; 3.
                 Display Over Apps &rarr; 4. Notifications
               </strong>
               .
@@ -1045,7 +1045,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             {!isStrictBuild && (
               <div className="p-3 bg-zinc-900 rounded-2xl border border-zinc-800 space-y-2.5">
                 <div className="flex items-center justify-between text-xs font-bold text-zinc-100">
-                  <span>2. Usage Access Guard (Find Zero)</span>
+                  <span>2. Usage Access Guard (Find Zero-Distractions)</span>
                   <span
                     className={`text-[9px] px-1.5 py-0.5 rounded border ${
                       hasUsagePerm
@@ -1066,7 +1066,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       onClick={() => window.ZeroNative?.requestUsageStatsPermission()}
                       className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
                     >
-                      Grant Usage Access -&gt; Find Zero
+                      Grant Usage Access -&gt; Find Zero-Distractions
                     </button>
                     <RestrictedSettingsGuideCard
                       restrictedStatus={permissionPriority.restrictedStatus}
@@ -1104,7 +1104,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       onClick={() => window.ZeroNative?.openAccessibilitySettings()}
                       className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] rounded-xl uppercase tracking-wider active:scale-95 transition-all"
                     >
-                      Enable Accessibility Service -&gt; Find Zero
+                      Enable Accessibility Service -&gt; Find Zero-Distractions
                     </button>
                     <RestrictedSettingsGuideCard
                       restrictedStatus={permissionPriority.restrictedStatus}
@@ -1312,10 +1312,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <div className="bg-zinc-950 border-2 border-zinc-800 rounded-3xl p-5 shadow-brutal space-y-3">
             <div className="flex items-center gap-2 text-white font-mono font-bold text-sm">
               <Heart size={16} className="text-red-500 fill-red-500" />
-              <span>THE ZERO PROMISE</span>
+              <span>THE ZERO-DISTRACTIONS PROMISE</span>
             </div>
             <p className="text-xs font-mono text-zinc-300 leading-relaxed">
-              Zero is 100% free, libre, and open-source software (FOSS). There are no paywalls,
+              Zero App (Zero-Distractions) is 100% free, libre, and open-source software (FOSS). There are no paywalls,
               no subscriptions, no analytics trackers, and no advertisements.
             </p>
             <p className="text-xs font-mono text-zinc-400 leading-relaxed">

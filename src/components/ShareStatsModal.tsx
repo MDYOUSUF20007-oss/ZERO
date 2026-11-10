@@ -459,7 +459,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     badgeSummary.unlockedBadges.length > 0
       ? ` Badges: ${badgeSummary.unlockedBadges.map((b) => b.title).join(', ')}.`
       : '';
-  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${PERIOD_LABELS[period].title}) using Zero Digital Detox (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
+  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${PERIOD_LABELS[period].title}) using Zero-Distractions (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
 
   const handleNativeOrWebShare = async () => {
     if (!cardDataUrl) return;
@@ -475,7 +475,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: 'Zero Focus Receipt',
+          title: 'Zero-Distractions Focus Receipt',
           text: caption,
           files: [file],
         });
@@ -593,7 +593,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
           <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-black">
             <img
               src={cardDataUrl}
-              alt="Zero Focus Receipt Preview"
+              alt="Zero-Distractions Focus Receipt Preview"
               className="w-full h-auto block"
             />
           </div>

@@ -1,6 +1,6 @@
-# Contributing to ZERO
+# Contributing to Zero-Distractions
 
-Thank you for helping improve ZERO — a 100% free, open-source digital detox application built to protect human focus and agency without paywalls, ads, or trackers.
+Thank you for helping improve Zero App (**Zero-Distractions**) — a minimalist screen-time and app blocker, 100% free and open-source, built to protect human focus and agency without paywalls, ads, or trackers.
 
 Contributors are warmly welcome to propose improvements in:
 - UI polish, layouts, animations, and responsive design
