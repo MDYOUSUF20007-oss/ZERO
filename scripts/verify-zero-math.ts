@@ -1311,6 +1311,19 @@ failIf(
   'Pixelated clock SVG matrix layout must emit crisp non-empty 5x7 rects'
 );
 
+const timerTickA = buildPixelClockLayout('00:45:00', 1, 0.16);
+const timerTickB = buildPixelClockLayout('00:44:59', 1, 0.16);
+failIf(
+  timerTickA.normalizedText === '00:45:00' &&
+    timerTickB.normalizedText === '00:44:59' &&
+    timerTickA.totalRows === 7 &&
+    timerTickA.totalCols === timerTickB.totalCols &&
+    timerTickA.totalCols === 41.75 &&
+    timerTickA.rects.length > 80 &&
+    timerTickB.rects.length > 80,
+  'Inverted pixel countdown timer HH:MM:SS layout must maintain fixed columns across ticks with zero jitter'
+);
+
 const whatsappBrand = resolveAppBrandVisual({
   packageName: 'com.whatsapp',
   appName: 'WhatsApp',

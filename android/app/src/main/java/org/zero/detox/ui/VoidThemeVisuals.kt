@@ -272,6 +272,8 @@ class PixelClockView @JvmOverloads constructor(
     private var layoutData: PixelFont5x7.Layout = PixelFont5x7.buildLayout(clockText)
     private var accentColor: Int = 0xFFF59E0B.toInt()
     private var bespokeMinimalist: Boolean = true
+    private var invertedPolarity: Boolean = false
+    private var desiredHeightDp: Float = 34f
 
     private val pixelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -280,6 +282,10 @@ class PixelClockView @JvmOverloads constructor(
         style = Paint.Style.FILL
         color = 0x16FFFFFF
     }
+    private val invertedDotMatrixPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x14000000
+    }
     private val glowUnderlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
@@ -287,10 +293,15 @@ class PixelClockView @JvmOverloads constructor(
         style = Paint.Style.FILL
         color = 0x48000000
     }
+    private val invertedScanlinePaint = Paint().apply {
+        style = Paint.Style.FILL
+        color = 0x10000000
+    }
     private val rectBuffer = RectF()
     private var lastGradientHeight = -1f
     private var lastGradientTop = -1f
     private var lastGradientAccent = 0
+    private var lastGradientInverted = false
 
     fun setClockTime(rawTime: String) {
         val normalized = PixelFont5x7.normalizeClockText(rawTime)
@@ -318,9 +329,24 @@ class PixelClockView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setInvertedPolarity(inverted: Boolean) {
+        if (invertedPolarity == inverted) return
+        invertedPolarity = inverted
+        lastGradientAccent = 0
+        invalidate()
+    }
+
+    fun setDesiredHeightDp(heightDp: Float) {
+        val clamped = heightDp.coerceIn(20f, 72f)
+        if (abs(desiredHeightDp - clamped) < 0.1f) return
+        desiredHeightDp = clamped
+        requestLayout()
+        invalidate()
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val density = resources.displayMetrics.density
-        val desiredHeight = (34f * density).roundToInt()
+        val desiredHeight = (desiredHeightDp * density).roundToInt()
         val cellPx = desiredHeight / PixelFont5x7.ROWS.toFloat()
         val desiredWidth = (layoutData.totalCols * cellPx + 16f * density).roundToInt()
 
@@ -339,24 +365,25 @@ class PixelClockView @JvmOverloads constructor(
 
         if (!bespokeMinimalist) {
             // 1. Subtle Dot-Matrix Underlay
+            val dotPaint = if (invertedPolarity) invertedDotMatrixPaint else dotMatrixPaint
             val dotStep = max(4f * density, 1f)
             val dotRadius = 0.75f * density
             var dy = dotStep * 0.5f
             while (dy < h) {
                 var dx = dotStep * 0.5f
                 while (dx < w) {
-                    canvas.drawCircle(dx, dy, dotRadius, dotMatrixPaint)
+                    canvas.drawCircle(dx, dy, dotRadius, dotPaint)
                     dx += dotStep
                 }
                 dy += dotStep
             }
 
-            // 2. Ambient radial glow tinted with active theme accent
+            // 2. Ambient radial glow / subtle tint
             glowUnderlayPaint.shader = RadialGradient(
                 w * 0.5f,
                 h * 0.55f,
                 max(w * 0.46f, h * 0.9f),
-                VoidThemeStore.withAlpha(accentColor, 44),
+                VoidThemeStore.withAlpha(accentColor, if (invertedPolarity) 20 else 44),
                 0x00000000,
                 Shader.TileMode.CLAMP
             )
@@ -376,25 +403,36 @@ class PixelClockView @JvmOverloads constructor(
 
             if (bespokeMinimalist) {
                 pixelPaint.shader = null
-                pixelPaint.color = 0xFFFAFAFA.toInt()
+                pixelPaint.color = if (invertedPolarity) Color.BLACK else 0xFFFAFAFA.toInt()
             } else if (
                 lastGradientTop != startY ||
                 lastGradientHeight != drawHeight ||
                 lastGradientAccent != accentColor ||
+                lastGradientInverted != invertedPolarity ||
                 pixelPaint.shader == null
             ) {
+                val gradColors = if (invertedPolarity) {
+                    intArrayOf(
+                        Color.BLACK,
+                        Color.BLACK,
+                        VoidThemeStore.darkenColor(accentColor, 0.78f)
+                    )
+                } else {
+                    intArrayOf(Color.WHITE, Color.WHITE, accentColor)
+                }
                 pixelPaint.shader = LinearGradient(
                     0f,
                     startY,
                     0f,
                     startY + drawHeight,
-                    intArrayOf(Color.WHITE, Color.WHITE, accentColor),
+                    gradColors,
                     floatArrayOf(0f, 0.28f, 1f),
                     Shader.TileMode.CLAMP
                 )
                 lastGradientTop = startY
                 lastGradientHeight = drawHeight
                 lastGradientAccent = accentColor
+                lastGradientInverted = invertedPolarity
             }
 
             val gap = cellSize * 0.14f
@@ -415,11 +453,12 @@ class PixelClockView @JvmOverloads constructor(
 
         if (!bespokeMinimalist) {
             // 4. Subtle Terminal CRT Scanlines across display
+            val scanPaint = if (invertedPolarity) invertedScanlinePaint else scanlinePaint
             val scanStep = max(4f * density, 2f)
             val scanThick = max(1.6f * density, 1f)
             var sy = scanStep * 0.5f
             while (sy < h) {
-                canvas.drawRect(0f, sy, w, sy + scanThick, scanlinePaint)
+                canvas.drawRect(0f, sy, w, sy + scanThick, scanPaint)
                 sy += scanStep
             }
         }

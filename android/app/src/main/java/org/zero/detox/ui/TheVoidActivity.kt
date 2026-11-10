@@ -73,7 +73,6 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var accentConfig: VoidThemeStore.VoidAccentConfig
     private var isBespokeStyle: Boolean = true
 
-    private lateinit var textRemainingTime: TextView
     private lateinit var textCurrentTime: TextView
     private lateinit var statusDot: View
     private lateinit var textVoidActive: TextView
@@ -89,6 +88,10 @@ class TheVoidActivity : AppCompatActivity() {
     private lateinit var pixelClockCard: FrameLayout
     private lateinit var pixelClockRim: View
     private lateinit var pixelClockView: PixelClockView
+
+    private lateinit var pixelTimerCard: FrameLayout
+    private lateinit var pixelTimerRim: View
+    private lateinit var pixelTimerView: PixelClockView
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
@@ -267,7 +270,7 @@ class TheVoidActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(20) }
+            ).apply { bottomMargin = dp(12) }
         }
 
         pixelClockRim = View(this).apply {
@@ -302,6 +305,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         pixelClockView = PixelClockView(this).apply {
+            setDesiredHeightDp(34f)
             setClockTime(initialTimeUpper)
             setBespokeMinimalist(isBespokeStyle)
             setAccentTheme(if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor)
@@ -316,32 +320,80 @@ class TheVoidActivity : AppCompatActivity() {
         pixelClockCard.addView(clockInner)
         pixelClockCard.addView(pixelClockRim)
 
-        // Lock Subtitle & Countdown Timer
+        // 2. INVERTED POLARITY PIXELATED TIMER CONTAINER (#FAFAFA light card, #000000 5x7 pixels)
+        pixelTimerCard = FrameLayout(this).apply {
+            clipToOutline = true
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    val radiusDp = if (isBespokeStyle) 6 else 16
+                    outline.setRoundRect(0, 0, view.width, view.height, dp(radiusDp).toFloat())
+                }
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(12) }
+        }
+
+        pixelTimerRim = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                dp(2),
+                Gravity.TOP
+            ).apply {
+                leftMargin = dp(24)
+                rightMargin = dp(24)
+            }
+        }
+
+        val timerInner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(16), dp(14), dp(16), dp(16))
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
         textSessionTag = TextView(this).apply {
             val prefs = getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
             val tag = prefs.getString(LockEngine.KEY_SESSION_TAG, "Deep Work") ?: "Deep Work"
             text = "LOCKED IN #$tag"
-            setTextColor(if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor)
-            textSize = 12.5f
+            isAllCaps = true
+            setTextColor(
+                if (isBespokeStyle) Color.parseColor("#1D4ED8")
+                else VoidThemeStore.darkenColor(accentConfig.accentColor, 0.65f)
+            )
+            textSize = 10f
             typeface = Typeface.create(
                 if (isBespokeStyle) Typeface.SANS_SERIF else Typeface.MONOSPACE,
                 Typeface.BOLD
             )
-            letterSpacing = 0.14f
+            letterSpacing = if (isBespokeStyle) 0.16f else 0.2f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(8))
         }
 
         val initialRemaining = maxOf(0L, lockEngine.getCurrentTiming().remainingSeconds)
-        textRemainingTime = TextView(this).apply {
-            text = formatHms(initialRemaining)
-            setTextColor(Color.WHITE)
-            textSize = 48f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            letterSpacing = -0.02f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, dp(8))
+        val initialRemainingText = formatHms(initialRemaining)
+        pixelTimerView = PixelClockView(this).apply {
+            setDesiredHeightDp(36f)
+            setInvertedPolarity(true)
+            setClockTime(initialRemainingText)
+            contentDescription = "Remaining lock time $initialRemainingText"
+            setBespokeMinimalist(isBespokeStyle)
+            setAccentTheme(if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
+
+        timerInner.addView(textSessionTag)
+        timerInner.addView(pixelTimerView)
+        pixelTimerCard.addView(timerInner)
+        pixelTimerCard.addView(pixelTimerRim)
 
         textQuote = TextView(this).apply {
             text = "\"The obstacle is the way. Stay phone-free.\""
@@ -352,10 +404,10 @@ class TheVoidActivity : AppCompatActivity() {
                 Typeface.ITALIC
             )
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, dp(22))
+            setPadding(0, dp(2), 0, dp(20))
         }
 
-        // 2. WHATSAPP-STYLE BAG CARD (Replacing Plain Square Tiles)
+        // 3. WHATSAPP-STYLE BAG CARD (Replacing Plain Square Tiles)
         bagContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(14), dp(16), dp(14))
@@ -366,8 +418,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         centerBox.addView(pixelClockCard)
-        centerBox.addView(textSessionTag)
-        centerBox.addView(textRemainingTime)
+        centerBox.addView(pixelTimerCard)
         centerBox.addView(textQuote)
         centerBox.addView(bagContainer)
         centerScroll.addView(centerBox)
@@ -448,6 +499,7 @@ class TheVoidActivity : AppCompatActivity() {
         val accent = if (isBespokeStyle) Color.parseColor("#3B82F6") else accentConfig.accentColor
 
         pixelClockCard.invalidateOutline()
+        pixelTimerCard.invalidateOutline()
 
         if (isBespokeStyle) {
             pixelClockCard.background = GradientDrawable().apply {
@@ -456,6 +508,13 @@ class TheVoidActivity : AppCompatActivity() {
                 setStroke(dp(1), Color.parseColor("#262626"))
             }
             pixelClockRim.visibility = View.GONE
+
+            pixelTimerCard.background = GradientDrawable().apply {
+                cornerRadius = dp(6).toFloat()
+                setColor(Color.parseColor("#FAFAFA"))
+                setStroke(dp(1), Color.parseColor("#D4D4D8"))
+            }
+            pixelTimerRim.visibility = View.GONE
 
             bagContainer.background = GradientDrawable().apply {
                 cornerRadius = dp(6).toFloat()
@@ -472,6 +531,8 @@ class TheVoidActivity : AppCompatActivity() {
             textVoidActive.typeface = Typeface.SANS_SERIF
             textClockHeader.typeface = Typeface.SANS_SERIF
             textSessionTag.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            textSessionTag.letterSpacing = 0.16f
+            textSessionTag.setTextColor(Color.parseColor("#1D4ED8"))
             textQuote.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.ITALIC)
             btnDeployParachute.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             btnEmergencyCall.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
@@ -495,6 +556,24 @@ class TheVoidActivity : AppCompatActivity() {
                 intArrayOf(Color.TRANSPARENT, VoidThemeStore.withAlpha(accent, 196), Color.TRANSPARENT)
             )
 
+            val classicTimerStrokePx = maxOf(dp(1), (1.5f * resources.displayMetrics.density).toInt())
+            pixelTimerCard.background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#F4F4F5"))
+            ).apply {
+                cornerRadius = dp(16).toFloat()
+                setStroke(classicTimerStrokePx, VoidThemeStore.withAlpha(VoidThemeStore.darkenColor(accent, 0.15f), 220))
+            }
+            pixelTimerRim.visibility = View.VISIBLE
+            pixelTimerRim.background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(
+                    Color.TRANSPARENT,
+                    VoidThemeStore.withAlpha(VoidThemeStore.darkenColor(accent, 0.25f), 210),
+                    Color.TRANSPARENT
+                )
+            )
+
             bagContainer.background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(Color.parseColor("#EF101014"), Color.parseColor("#FA08080A"))
@@ -511,6 +590,8 @@ class TheVoidActivity : AppCompatActivity() {
             textVoidActive.typeface = Typeface.MONOSPACE
             textClockHeader.typeface = Typeface.MONOSPACE
             textSessionTag.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            textSessionTag.letterSpacing = 0.2f
+            textSessionTag.setTextColor(VoidThemeStore.darkenColor(accent, 0.65f))
             textQuote.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
             btnDeployParachute.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             btnEmergencyCall.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
@@ -524,7 +605,10 @@ class TheVoidActivity : AppCompatActivity() {
 
         pixelClockView.setBespokeMinimalist(isBespokeStyle)
         pixelClockView.setAccentTheme(accent)
-        textSessionTag.setTextColor(accent)
+
+        pixelTimerView.setBespokeMinimalist(isBespokeStyle)
+        pixelTimerView.setInvertedPolarity(true)
+        pixelTimerView.setAccentTheme(accent)
 
         updateParachuteStatus()
     }
@@ -1028,7 +1112,9 @@ class TheVoidActivity : AppCompatActivity() {
                     finish()
                     return
                 }
-                textRemainingTime.text = formatHms(live.remainingMillis / 1000L)
+                val remainingText = formatHms(live.remainingMillis / 1000L)
+                pixelTimerView.setClockTime(remainingText)
+                pixelTimerView.contentDescription = "Remaining lock time $remainingText"
 
                 val formattedClock = SimpleDateFormat("h:mm a", Locale.US).format(Date())
                 textCurrentTime.text = formattedClock.lowercase(Locale.US)
@@ -1071,6 +1157,9 @@ class TheVoidActivity : AppCompatActivity() {
         val nowClock = SimpleDateFormat("h:mm a", Locale.US).format(Date())
         textCurrentTime.text = nowClock.lowercase(Locale.US)
         pixelClockView.setClockTime(nowClock.uppercase(Locale.US))
+        val resumedRemainingText = formatHms(timing.remainingMillis / 1000L)
+        pixelTimerView.setClockTime(resumedRemainingText)
+        pixelTimerView.contentDescription = "Remaining lock time $resumedRemainingText"
         refreshBatteryDisplay()
     }
 

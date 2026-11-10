@@ -38,6 +38,16 @@ function format12HourClock(date: Date): string {
   return `${hour12}:${mins} ${suffix}`;
 }
 
+function darkenRgb(rgbStr: string, factor: number): string {
+  const parts = rgbStr.split(',').map((s) => Number(s.trim()));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) {
+    return '#18181B';
+  }
+  const f = Math.max(0, Math.min(1, 1 - factor));
+  const [r, g, b] = parts.map((c) => Math.max(0, Math.min(255, Math.round(c * f))));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export const TheVoidView: React.FC<TheVoidViewProps> = ({
   activeLock,
   parachuteMetrics,
@@ -63,6 +73,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [emergencyNumber, setEmergencyNumber] = useState<string>('');
   const [tamperWarning, setTamperWarning] = useState<string | null>(null);
   const gradId = useId().replace(/:/g, '');
+  const timerGradId = `${gradId}-timer`;
 
   const profileAccentKey = ACCENT_ID_TO_KEY[profile?.accentColor || 'amber'] || 'Amber';
   const profileAccentTheme = ACCENT_THEMES[profileAccentKey] || ACCENT_THEMES.Amber;
@@ -74,16 +85,19 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     [themeConfig, profileAccentTheme]
   );
 
-  const pixelLayout = useMemo(() => buildPixelClockLayout(clockText, 1, 0.16), [clockText]);
-
   const formatCountdown = (totalSec: number) => {
-    const hours = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
+    const safeSec = Math.max(0, Math.floor(totalSec));
+    const hours = Math.floor(safeSec / 3600);
+    const mins = Math.floor((safeSec % 3600) / 60);
+    const secs = safeSec % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs
       .toString()
       .padStart(2, '0')}`;
   };
+
+  const pixelLayout = useMemo(() => buildPixelClockLayout(clockText, 1, 0.16), [clockText]);
+  const timerText = formatCountdown(activeLock.remainingSeconds);
+  const timerPixelLayout = useMemo(() => buildPixelClockLayout(timerText, 1, 0.16), [timerText]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -201,129 +215,228 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Center Content Container */}
       <div className="flex flex-col items-center justify-center my-auto w-full max-w-md mx-auto gap-5 py-3">
-        {/* 1. PIXELATED CLOCK CONTAINER (Directly Above Timer) */}
-        <div
-          className={
-            isBespoke
-              ? 'relative w-full rounded-md py-4 px-5 text-center bg-black border border-neutral-800'
-              : 'relative w-full rounded-2xl py-3.5 px-4 text-center overflow-hidden transition-all duration-300'
-          }
-          style={
-            isBespoke
-              ? undefined
-              : {
-                  background:
-                    'linear-gradient(180deg, rgba(20, 20, 24, 0.92) 0%, rgba(8, 8, 10, 0.98) 100%)',
-                  border: `1px solid rgba(${activeTheme.rgb}, 0.34)`,
-                  boxShadow: `0 0 24px -5px rgba(${activeTheme.rgb}, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
-                }
-          }
-        >
-          {!isBespoke && (
-            <>
-              {/* Specular Accent Rim */}
-              <div
-                aria-hidden="true"
-                className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, ${activeTheme.hex} 50%, transparent 100%)`,
-                  opacity: 0.78,
-                }}
-              />
-
-              {/* Dot-Matrix Underlay */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-dot-matrix-dense pointer-events-none opacity-35"
-              />
-
-              {/* Ambient Radial Bloom */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse 75% 85% at 50% 60%, rgba(${activeTheme.rgb}, 0.16) 0%, transparent 72%)`,
-                }}
-              />
-
-              {/* Terminal Scanlines Overlay */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.34)_50%)] bg-[length:100%_4px] pointer-events-none opacity-45"
-              />
-            </>
-          )}
-
-          <div className="relative z-10 flex flex-col items-center">
-            <div
-              className={`text-[10px] tracking-[0.2em] uppercase text-neutral-400 mb-2 ${
-                isBespoke ? 'font-sans font-medium' : 'text-[9px] font-mono tracking-[0.24em]'
-              }`}
-            >
-              SYSTEM TIME // SYNCED
-            </div>
-
-            {/* Retro-Digital 5x7 Pixel Matrix Clock */}
-            <svg
-              role="img"
-              aria-label={pixelLayout.normalizedText}
-              viewBox={`0 0 ${pixelLayout.totalCols} ${pixelLayout.totalRows}`}
-              className="h-8 sm:h-9 w-auto max-w-full overflow-visible"
-              shapeRendering="crispEdges"
-              style={
-                isBespoke
-                  ? undefined
-                  : {
-                      filter: `drop-shadow(0 0 10px rgba(${activeTheme.rgb}, 0.34))`,
-                    }
-              }
-            >
-              {!isBespoke && (
-                <defs>
-                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="28%" stopColor="#FFFFFF" />
-                    <stop offset="100%" stopColor={activeTheme.hex} />
-                  </linearGradient>
-                </defs>
-              )}
-              {pixelLayout.rects.map((rect, idx) => (
-                <rect
-                  key={idx}
-                  x={rect.x}
-                  y={rect.y}
-                  width={rect.w}
-                  height={rect.h}
-                  fill={isBespoke ? '#FAFAFA' : `url(#${gradId})`}
-                />
-              ))}
-            </svg>
-          </div>
-        </div>
-
-        {/* Countdown Timer & Focus Subtitle */}
-        <div className="flex flex-col items-center text-center">
+        {/* Matched Dual Timepiece: Dark Clock Card + Inverted Light Timer Card */}
+        <div className="flex flex-col items-center w-full gap-3">
+          {/* 1. PIXELATED CLOCK CONTAINER (Directly Above Timer) */}
           <div
-            className={`text-xs tracking-[0.18em] uppercase mb-2.5 ${
-              isBespoke ? 'font-sans font-semibold text-blue-500' : 'font-mono font-bold'
-            }`}
-            style={isBespoke ? undefined : { color: activeTheme.hex }}
-          >
-            LOCKED IN #{activeLock.tag}
-          </div>
-
-          <div
+            data-void-clock-card="true"
             className={
               isBespoke
-                ? 'text-5xl sm:text-6xl font-semibold font-mono tabular-nums tracking-tight text-neutral-50'
-                : 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.14)]'
+                ? 'relative w-full rounded-md py-4 px-5 text-center border'
+                : 'relative w-full rounded-2xl py-3.5 px-4 text-center overflow-hidden transition-all duration-300'
+            }
+            style={
+              isBespoke
+                ? {
+                    backgroundColor: '#000000',
+                    borderColor: '#262626',
+                  }
+                : {
+                    background:
+                      'linear-gradient(180deg, rgba(20, 20, 24, 0.92) 0%, rgba(8, 8, 10, 0.98) 100%)',
+                    border: `1px solid rgba(${activeTheme.rgb}, 0.34)`,
+                    boxShadow: `0 0 24px -5px rgba(${activeTheme.rgb}, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
+                  }
             }
           >
-            {formatCountdown(activeLock.remainingSeconds)}
+            {!isBespoke && (
+              <>
+                {/* Specular Accent Rim */}
+                <div
+                  aria-hidden="true"
+                  className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
+                  style={{
+                    background: `linear-gradient(90deg, transparent 0%, ${activeTheme.hex} 50%, transparent 100%)`,
+                    opacity: 0.78,
+                  }}
+                />
+
+                {/* Dot-Matrix Underlay */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-dot-matrix-dense pointer-events-none opacity-35"
+                />
+
+                {/* Ambient Radial Bloom */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(ellipse 75% 85% at 50% 60%, rgba(${activeTheme.rgb}, 0.16) 0%, transparent 72%)`,
+                  }}
+                />
+
+                {/* Terminal Scanlines Overlay */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.34)_50%)] bg-[length:100%_4px] pointer-events-none opacity-45"
+                />
+              </>
+            )}
+
+            <div className="relative z-10 flex flex-col items-center">
+              <div
+                className={`text-[10px] tracking-[0.2em] uppercase mb-2 ${
+                  isBespoke ? 'font-sans font-medium' : 'text-[9px] font-mono tracking-[0.24em]'
+                }`}
+                style={{ color: '#A1A1AA' }}
+              >
+                SYSTEM TIME // SYNCED
+              </div>
+
+              {/* Retro-Digital 5x7 Pixel Matrix Clock */}
+              <svg
+                role="img"
+                aria-label={pixelLayout.normalizedText}
+                viewBox={`0 0 ${pixelLayout.totalCols} ${pixelLayout.totalRows}`}
+                className="h-8 sm:h-9 w-auto max-w-full overflow-visible"
+                shapeRendering="crispEdges"
+                style={
+                  isBespoke
+                    ? undefined
+                    : {
+                        filter: `drop-shadow(0 0 10px rgba(${activeTheme.rgb}, 0.34))`,
+                      }
+                }
+              >
+                {!isBespoke && (
+                  <defs>
+                    <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFFFFF" />
+                      <stop offset="28%" stopColor="#FFFFFF" />
+                      <stop offset="100%" stopColor={activeTheme.hex} />
+                    </linearGradient>
+                  </defs>
+                )}
+                {pixelLayout.rects.map((rect, idx) => (
+                  <rect
+                    key={idx}
+                    x={rect.x}
+                    y={rect.y}
+                    width={rect.w}
+                    height={rect.h}
+                    fill={isBespoke ? '#FAFAFA' : `url(#${gradId})`}
+                  />
+                ))}
+              </svg>
+            </div>
+          </div>
+
+          {/* 2. INVERTED POLARITY PIXELATED TIMER CONTAINER (#FAFAFA light card, #000000 5x7 pixels) */}
+          <div
+            data-void-inverted-timer="true"
+            className={
+              isBespoke
+                ? 'relative w-full rounded-md py-4 px-5 text-center border'
+                : 'relative w-full rounded-2xl py-4 px-4 text-center overflow-hidden transition-all duration-300'
+            }
+            style={
+              isBespoke
+                ? {
+                    backgroundColor: '#FAFAFA',
+                    borderColor: '#D4D4D8',
+                  }
+                : {
+                    background: 'linear-gradient(180deg, #FFFFFF 0%, #F4F4F5 100%)',
+                    border: `1.5px solid rgba(${activeTheme.rgb}, 0.62)`,
+                    boxShadow: `0 0 24px -5px rgba(${activeTheme.rgb}, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.9)`,
+                  }
+            }
+          >
+            {!isBespoke && (
+              <>
+                {/* Inverted Specular Rim */}
+                <div
+                  aria-hidden="true"
+                  className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
+                  style={{
+                    background: `linear-gradient(90deg, transparent 0%, ${darkenRgb(
+                      activeTheme.rgb,
+                      0.25
+                    )} 50%, transparent 100%)`,
+                    opacity: 0.78,
+                  }}
+                />
+
+                {/* Inverted Dark Dot-Matrix Underlay */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: 'radial-gradient(rgba(0, 0, 0, 0.085) 1.1px, transparent 1.1px)',
+                    backgroundSize: '14px 14px',
+                  }}
+                />
+
+                {/* Faint Accent Wash */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(ellipse 75% 85% at 50% 58%, rgba(${activeTheme.rgb}, 0.11) 0%, transparent 72%)`,
+                  }}
+                />
+
+                {/* Subtle Dark Scanlines Overlay */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.055) 50%)',
+                    backgroundSize: '100% 4px',
+                  }}
+                />
+              </>
+            )}
+
+            <div className="relative z-10 flex flex-col items-center">
+              <div
+                className={
+                  isBespoke
+                    ? 'text-[10px] font-sans font-semibold tracking-[0.2em] uppercase mb-2'
+                    : 'text-[9px] font-mono font-bold tracking-[0.22em] uppercase mb-2'
+                }
+                style={{
+                  color: isBespoke ? '#1D4ED8' : darkenRgb(activeTheme.rgb, 0.65),
+                }}
+              >
+                LOCKED IN #{activeLock.tag}
+              </div>
+
+              {/* Inverted 5x7 Pixel Matrix Countdown */}
+              <svg
+                role="img"
+                aria-label={`Remaining lock time ${timerPixelLayout.normalizedText}`}
+                viewBox={`0 0 ${timerPixelLayout.totalCols} ${timerPixelLayout.totalRows}`}
+                className="h-9 sm:h-11 w-auto max-w-full overflow-visible"
+                shapeRendering="crispEdges"
+              >
+                {!isBespoke && (
+                  <defs>
+                    <linearGradient id={timerGradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#000000" />
+                      <stop offset="28%" stopColor="#000000" />
+                      <stop offset="100%" stopColor={darkenRgb(activeTheme.rgb, 0.78)} />
+                    </linearGradient>
+                  </defs>
+                )}
+                {timerPixelLayout.rects.map((rect, idx) => (
+                  <rect
+                    key={idx}
+                    x={rect.x}
+                    y={rect.y}
+                    width={rect.w}
+                    height={rect.h}
+                    fill={isBespoke ? '#000000' : `url(#${timerGradId})`}
+                  />
+                ))}
+              </svg>
+            </div>
           </div>
 
           <p
-            className={`mt-2.5 text-xs italic text-neutral-400 max-w-xs ${
+            className={`mt-0.5 text-xs italic text-neutral-400 text-center max-w-xs ${
               isBespoke ? 'font-sans' : 'font-mono'
             }`}
           >
@@ -331,7 +444,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </p>
         </div>
 
-        {/* 2. APP BAG DISPLAY */}
+        {/* 3. APP BAG DISPLAY */}
         <div
           className={
             isBespoke

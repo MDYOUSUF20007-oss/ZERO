@@ -660,12 +660,21 @@ public class LockEngineUnitTest {
     public void voidClockPixelFont_normalizesTimeAndBuildsCrispMatrix() {
         assertEquals("3:39 PM", PixelFont5x7.normalizeClockText(" 3:39 pm "));
         assertEquals("3:39 PM", PixelFont5x7.normalizeClockText("invalid"));
+        assertEquals("00:45:00", PixelFont5x7.normalizeClockText("00:45:00"));
 
         PixelFont5x7.Layout layout = PixelFont5x7.buildLayout("11:42 am");
         assertEquals("11:42 AM", layout.getNormalizedText());
         assertEquals(PixelFont5x7.ROWS, layout.getTotalRows());
         assertTrue(layout.getTotalCols() > 20f);
         assertTrue(layout.getCells().size() > 50);
+
+        PixelFont5x7.Layout timerA = PixelFont5x7.buildLayout("00:45:00");
+        PixelFont5x7.Layout timerB = PixelFont5x7.buildLayout("00:44:59");
+        assertEquals("00:45:00", timerA.getNormalizedText());
+        assertEquals(PixelFont5x7.ROWS, timerA.getTotalRows());
+        assertEquals(41.75f, timerA.getTotalCols(), 0.01f);
+        assertEquals(timerA.getTotalCols(), timerB.getTotalCols(), 0.001f);
+        assertTrue(timerA.getCells().size() > 80);
     }
 
     @Test
