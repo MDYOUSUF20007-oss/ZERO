@@ -1,6 +1,7 @@
 package org.zero.detox;
 
 import android.os.Bundle;
+import android.util.Log;
 import com.getcapacitor.BridgeActivity;
 import org.zero.detox.bridge.ZeroNativeBridge;
 import org.zero.detox.core.LockEngine;
@@ -11,12 +12,16 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        ParachuteStore parachuteStore = new ParachuteStore(this);
-        LockEngine lockEngine = new LockEngine(this, parachuteStore);
-        ZeroNativeBridge nativeBridge = new ZeroNativeBridge(this, lockEngine, parachuteStore);
+        try {
+            ParachuteStore parachuteStore = new ParachuteStore(this);
+            LockEngine lockEngine = new LockEngine(this, parachuteStore);
+            ZeroNativeBridge nativeBridge = new ZeroNativeBridge(this, lockEngine, parachuteStore);
 
-        if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().addJavascriptInterface(nativeBridge, "ZeroNative");
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().addJavascriptInterface(nativeBridge, "ZeroNative");
+            }
+        } catch (Throwable t) {
+            Log.e("ZeroMainActivity", "Failed to initialize native bridge", t);
         }
     }
 }

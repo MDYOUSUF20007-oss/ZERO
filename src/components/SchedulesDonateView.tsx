@@ -444,7 +444,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </span>
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Zero is 100% offline (zero <code>INTERNET</code> permission) and enforces focus locks via Android native OS primitives:
+              Zero is 100% local-first and offline (zero cloud sync, telemetry, or trackers) and enforces focus locks via Android native OS primitives:
             </p>
 
             {/* Feature 1: LockTaskMode / Device Owner */}

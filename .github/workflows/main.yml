@@ -126,7 +126,7 @@ jobs:
           ZERO_KEYSTORE_ALIAS: zero_release
         run: |
           cd android
-          ./gradlew assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
+          ./gradlew testStandardReleaseUnitTest assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
           ls -lh app/build/outputs/apk/*/*/*.apk
 
       - name: Upload Standard APK (Direct Install / Sideload-Safe)

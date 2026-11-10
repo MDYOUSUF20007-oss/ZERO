@@ -29,7 +29,8 @@ class ZeroNativeBridge(
     private val parachuteStore: ParachuteStore
 ) {
 
-    private val dpm = activity.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    private val dpm: DevicePolicyManager? =
+        activity.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
     private val adminComponent = ComponentName(activity, ZeroDeviceAdminReceiver::class.java)
 
     /**
@@ -51,7 +52,7 @@ class ZeroNativeBridge(
      */
     @JavascriptInterface
     fun isDeviceOwner(): Boolean {
-        return dpm.isDeviceOwnerApp(activity.packageName)
+        return dpm?.isDeviceOwnerApp(activity.packageName) == true
     }
 
     /**
@@ -113,7 +114,7 @@ class ZeroNativeBridge(
     fun startLockTaskMode() {
         activity.runOnUiThread {
             try {
-                if (dpm.isDeviceOwnerApp(activity.packageName)) {
+                if (dpm?.isDeviceOwnerApp(activity.packageName) == true) {
                     dpm.setLockTaskPackages(
                         adminComponent,
                         arrayOf(activity.packageName, "com.android.dialer")

@@ -25,9 +25,6 @@ class LockEngine(private val context: Context, private val parachuteStore: Parac
         val remainingSeconds: Long = 0L
     )
 
-    private val _sessionState = MutableStateFlow(loadPersistedState())
-    val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
-
     companion object {
         const val PREFS_NAME = "zero_lock_engine_state"
         const val KEY_IS_LOCKED = "is_locked"
@@ -37,7 +34,11 @@ class LockEngine(private val context: Context, private val parachuteStore: Parac
         const val KEY_DURATION_SECONDS = "duration_seconds"
     }
 
+    // Must be declared BEFORE _sessionState so loadPersistedState() sees an initialized prefs instance
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    private val _sessionState = MutableStateFlow(loadPersistedState())
+    val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
     /**
      * Arm and ignite a new lock session.
@@ -134,10 +135,10 @@ class LockEngine(private val context: Context, private val parachuteStore: Parac
         prefs.edit().clear().commit()
         _sessionState.value = SessionState(isLocked = false)
 
-        val serviceIntent = Intent(context, LockForegroundService::class.java).apply {
-            action = LockForegroundService.ACTION_STOP_LOCK
-        }
-        context.startService(serviceIntent)
+        try {
+            val serviceIntent = Intent(context, LockForegroundService::class.java)
+            context.stopService(serviceIntent)
+        } catch (_: Exception) {}
     }
 
     private fun loadPersistedState(): SessionState {
