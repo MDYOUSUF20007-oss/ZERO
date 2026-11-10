@@ -1,5 +1,6 @@
 import type {
   ActiveLockSession,
+  CloudReminderInterval,
   NativeEnvironmentSecurity,
   NativePermissionStatus,
   OccasionBag,
@@ -28,6 +29,7 @@ export const ZBAK_FILE_NAME = 'zero-backup.zbak';
 export const ZBAK_PREFIX = 'ZBAK1';
 export const ZDON_PREFIX = 'ZDON1';
 export const WEEKLY_BACKUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const MONTHLY_BACKUP_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const NATIVE_MONOTONIC_SOURCE = 'android_elapsed_realtime';
 
 const MAX_BONUS_PARACHUTES = 2; // Strictly 1 starter profile gift + 1 first ₹50+ tip gift
@@ -387,6 +389,72 @@ export function isWeeklyBackupDue(
   if (autoBackupEnabled) return false;
   if (!Number.isFinite(lastBackupTimestamp) || lastBackupTimestamp <= 0) return true;
   return nowMs - lastBackupTimestamp > WEEKLY_BACKUP_INTERVAL_MS;
+}
+
+export function sanitizeCloudReminderInterval(raw: unknown): CloudReminderInterval {
+  if (raw === 'monthly' || raw === 'off' || raw === 'weekly') return raw;
+  return 'weekly';
+}
+
+export function getCloudReminderIntervalMs(interval: CloudReminderInterval): number {
+  if (interval === 'monthly') return MONTHLY_BACKUP_INTERVAL_MS;
+  if (interval === 'weekly') return WEEKLY_BACKUP_INTERVAL_MS;
+  return 0;
+}
+
+export function isCloudUploadReminderDue(
+  interval: CloudReminderInterval,
+  lastCloudUploadTimestamp: number,
+  nowMs: number = Date.now()
+): boolean {
+  const intervalMs = getCloudReminderIntervalMs(sanitizeCloudReminderInterval(interval));
+  if (intervalMs <= 0) return false;
+  if (!Number.isFinite(lastCloudUploadTimestamp) || lastCloudUploadTimestamp <= 0) return true;
+  return nowMs - lastCloudUploadTimestamp >= intervalMs;
+}
+
+export interface CloudReminderScheduleInfo {
+  interval: CloudReminderInterval;
+  intervalMs: number;
+  isDue: boolean;
+  nextReminderAtMs: number | null;
+  remainingMs: number | null;
+}
+
+export function getNextCloudReminderInfo(
+  interval: CloudReminderInterval,
+  lastCloudUploadTimestamp: number,
+  nowMs: number = Date.now()
+): CloudReminderScheduleInfo {
+  const safeInterval = sanitizeCloudReminderInterval(interval);
+  const intervalMs = getCloudReminderIntervalMs(safeInterval);
+  if (intervalMs <= 0) {
+    return {
+      interval: 'off',
+      intervalMs: 0,
+      isDue: false,
+      nextReminderAtMs: null,
+      remainingMs: null,
+    };
+  }
+  if (!Number.isFinite(lastCloudUploadTimestamp) || lastCloudUploadTimestamp <= 0) {
+    return {
+      interval: safeInterval,
+      intervalMs,
+      isDue: true,
+      nextReminderAtMs: nowMs,
+      remainingMs: 0,
+    };
+  }
+  const nextReminderAtMs = lastCloudUploadTimestamp + intervalMs;
+  const remainingMs = Math.max(0, nextReminderAtMs - nowMs);
+  return {
+    interval: safeInterval,
+    intervalMs,
+    isDue: nowMs - lastCloudUploadTimestamp >= intervalMs,
+    nextReminderAtMs,
+    remainingMs,
+  };
 }
 
 export interface ZeroDonorTokenPayload {
@@ -1919,6 +1987,7 @@ export const IntegrityEngine = Object.freeze({
   ZBAK_PREFIX,
   ZDON_PREFIX,
   WEEKLY_BACKUP_INTERVAL_MS,
+  MONTHLY_BACKUP_INTERVAL_MS,
   OFFICIAL_KOFI_URL,
   OFFICIAL_SUPPORT_EMAIL,
   OFFICIAL_GITHUB_REPO_URL,
@@ -1944,6 +2013,10 @@ export const IntegrityEngine = Object.freeze({
   encodeDonorUnlockToken,
   verifyDonorUnlockToken,
   isWeeklyBackupDue,
+  sanitizeCloudReminderInterval,
+  getCloudReminderIntervalMs,
+  isCloudUploadReminderDue,
+  getNextCloudReminderInfo,
   computeParachuteBalance,
   computeParachuteMetrics,
   computeCurrentStreak,

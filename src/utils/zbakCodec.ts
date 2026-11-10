@@ -2,6 +2,7 @@ export {
   ZBAK_FILE_NAME,
   ZBAK_PREFIX,
   WEEKLY_BACKUP_INTERVAL_MS,
+  MONTHLY_BACKUP_INTERVAL_MS,
   sha256Bytes,
   hmacSha256Hex,
   timingSafeEqualHex,
@@ -10,4 +11,8 @@ export {
   encodeZbakPayload,
   decodeAndVerifyZbak,
   isWeeklyBackupDue,
+  sanitizeCloudReminderInterval,
+  getCloudReminderIntervalMs,
+  isCloudUploadReminderDue,
+  getNextCloudReminderInfo,
 } from '../core/integrity/IntegrityEngine';

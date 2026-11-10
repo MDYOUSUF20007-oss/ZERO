@@ -23,6 +23,7 @@ import type {
   ProfileAvatarId,
   ProfileAccent,
   CloudAutoBackupStatus,
+  CloudReminderInterval,
   ThemeConfig,
   InterfaceStyle,
   DashboardWidgetsConfig,
@@ -58,7 +59,9 @@ import {
   enableUniversalCloudAutoBackup,
   fetchUniversalCloudAutoBackupStatus,
   isNativeAndroidCloudPluginAvailable,
+  oneTapSaveZbakToStorage,
   pickCloudBackupFileContent,
+  syncCloudReminderSchedule,
   triggerOneTapCloudUpload,
   writeUniversalCloudAutoBackup,
 } from '../plugins/cloudAutoBackup';
@@ -76,6 +79,8 @@ const UI_STORAGE_KEYS = {
   ONBOARDING_COMPLETE: 'onboardingComplete',
   AUTO_BACKUP_ENABLED: 'autoBackupEnabled',
   LAST_BACKUP_TIMESTAMP: 'lastBackupTimestamp',
+  LAST_CLOUD_UPLOAD_TIMESTAMP: 'zero_last_cloud_upload_ts_v1',
+  CLOUD_REMINDER_INTERVAL: 'zero_cloud_reminder_interval_v1',
   CLOUD_BACKUP_META: 'zero_cloud_backup_meta_v1',
   SCHEDULES: 'zero_recurring_schedules_v3',
   BAGS: 'zero_occasion_bags_v4',
@@ -432,6 +437,37 @@ export function useZeroStore() {
     return initialTs;
   });
 
+  const [cloudReminderInterval, setCloudReminderIntervalState] = useState<CloudReminderInterval>(
+    () =>
+      IntegrityEngine.sanitizeCloudReminderInterval(
+        localStorage.getItem(UI_STORAGE_KEYS.CLOUD_REMINDER_INTERVAL)
+      )
+  );
+
+  const [lastCloudUploadTimestamp, setLastCloudUploadTimestamp] = useState<number>(() => {
+    const raw = localStorage.getItem(UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP);
+    if (raw !== null && raw !== '') {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    }
+    const inheritedRaw = localStorage.getItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP);
+    const inherited = Number(inheritedRaw);
+    const initialCloudTs =
+      inheritedRaw !== null && Number.isFinite(inherited) && inherited >= 0
+        ? inherited
+        : Date.now();
+    localStorage.setItem(UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP, String(initialCloudTs));
+    return initialCloudTs;
+  });
+
+  const [weeklyCheckNowMs, setWeeklyCheckNowMs] = useState<number>(() => Date.now());
+  const setCloudReminderInterval = useCallback((next: CloudReminderInterval) => {
+    const safe = IntegrityEngine.sanitizeCloudReminderInterval(next);
+    setCloudReminderIntervalState(safe);
+    localStorage.setItem(UI_STORAGE_KEYS.CLOUD_REMINDER_INTERVAL, safe);
+    setWeeklyCheckNowMs(Date.now());
+  }, []);
+
   const [cloudBackupMeta, setCloudBackupMeta] = useState<{
     uri: string | null;
     displayName: string | null;
@@ -464,7 +500,6 @@ export function useZeroStore() {
   });
 
   const [isCloudBusy, setIsCloudBusy] = useState<boolean>(false);
-  const [weeklyCheckNowMs, setWeeklyCheckNowMs] = useState<number>(() => Date.now());
   const [parachuteRewardEvent, setParachuteRewardEvent] = useState<ParachuteRewardEvent | null>(
     null
   );
@@ -641,6 +676,14 @@ export function useZeroStore() {
     ) {
       setLastBackupTimestamp((prev) =>
         Math.max(prev, nativeStatus.lastBackupTimestamp || 0)
+      );
+    }
+    if (
+      typeof nativeStatus.lastCloudUploadTimestamp === 'number' &&
+      nativeStatus.lastCloudUploadTimestamp > 0
+    ) {
+      setLastCloudUploadTimestamp((prev) =>
+        Math.max(prev, nativeStatus.lastCloudUploadTimestamp || 0)
       );
     }
   }, []);
@@ -887,6 +930,21 @@ export function useZeroStore() {
       String(lastBackupTimestamp)
     );
   }, [lastBackupTimestamp]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP,
+      String(lastCloudUploadTimestamp)
+    );
+  }, [lastCloudUploadTimestamp]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      UI_STORAGE_KEYS.CLOUD_REMINDER_INTERVAL,
+      cloudReminderInterval
+    );
+    void syncCloudReminderSchedule(cloudReminderInterval, lastCloudUploadTimestamp);
+  }, [cloudReminderInterval, lastCloudUploadTimestamp]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.CLOUD_BACKUP_META, JSON.stringify(cloudBackupMeta));
@@ -1594,6 +1652,8 @@ export function useZeroStore() {
       setHasDismissedWelcomeModal(true);
       setOnboardingComplete(true);
       setLastBackupTimestamp(restoredNow);
+      setLastCloudUploadTimestamp(restoredNow);
+      setWeeklyCheckNowMs(restoredNow);
 
       localStorage.setItem(UI_STORAGE_KEYS.THEME, nextThemeConfig.family);
       localStorage.setItem(UI_STORAGE_KEYS.THEME_CONFIG, JSON.stringify(nextThemeConfig));
@@ -1609,6 +1669,7 @@ export function useZeroStore() {
       localStorage.setItem(UI_STORAGE_KEYS.DISMISSED_WELCOME_MODAL, '1');
       localStorage.setItem(UI_STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
       localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(restoredNow));
+      localStorage.setItem(UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP, String(restoredNow));
 
       syncNativeLedger(
         nextState.cumulativeSeconds,
@@ -1781,6 +1842,27 @@ export function useZeroStore() {
     }
   }, [performSilentCloudWrite]);
 
+  const oneTapSaveBackup = useCallback(async (): Promise<{
+    ok: boolean;
+    message: string;
+  }> => {
+    setIsCloudBusy(true);
+    try {
+      const payload = buildZbakStringRef.current();
+      const res = await oneTapSaveZbakToStorage(payload);
+      if (res.ok) {
+        const ts = res.timestamp || Date.now();
+        setLastBackupTimestamp(ts);
+        localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(ts));
+        setCloudBackupMeta((prev) => ({ ...prev, lastError: null }));
+        haptics.thud();
+      }
+      return { ok: res.ok, message: res.message };
+    } finally {
+      setIsCloudBusy(false);
+    }
+  }, []);
+
   const oneTapCloudUpload = useCallback(async (): Promise<{
     ok: boolean;
     cancelled?: boolean;
@@ -1791,17 +1873,22 @@ export function useZeroStore() {
       const payload = buildZbakStringRef.current();
       const res = await triggerOneTapCloudUpload(payload);
       if (res.ok) {
-        const ts = res.timestamp || Date.now();
-        setLastBackupTimestamp(ts);
-        localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(ts));
+        const uploadTs = res.lastCloudUploadTimestamp || res.timestamp || Date.now();
+        const backupTs = res.timestamp || uploadTs;
+        setLastBackupTimestamp(backupTs);
+        setLastCloudUploadTimestamp(uploadTs);
+        setWeeklyCheckNowMs(uploadTs);
+        localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(backupTs));
+        localStorage.setItem(UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP, String(uploadTs));
         setCloudBackupMeta((prev) => ({ ...prev, lastError: null }));
+        void syncCloudReminderSchedule(cloudReminderInterval, uploadTs);
         haptics.milestoneChime();
       }
       return { ok: res.ok, cancelled: res.cancelled, message: res.message };
     } finally {
       setIsCloudBusy(false);
     }
-  }, []);
+  }, [cloudReminderInterval]);
 
   const restoreBackupFromCloudPicker = useCallback(async (): Promise<{
     ok: boolean;
@@ -1845,21 +1932,31 @@ export function useZeroStore() {
       displayName: cloudBackupMeta.displayName,
       providerLabel: cloudBackupMeta.providerLabel,
       lastBackupTimestamp,
+      lastCloudUploadTimestamp,
+      reminderInterval: cloudReminderInterval,
       hasPersistedPermission: cloudBackupMeta.hasPersistedPermission,
       lastError: cloudBackupMeta.lastError,
     }),
-    [autoBackupEnabled, cloudBackupMeta, lastBackupTimestamp]
+    [
+      autoBackupEnabled,
+      cloudBackupMeta,
+      lastBackupTimestamp,
+      lastCloudUploadTimestamp,
+      cloudReminderInterval,
+    ]
   );
 
-  const weeklyBackupDue = useMemo(
+  const nextCloudReminderInfo = useMemo(
     () =>
-      IntegrityEngine.isWeeklyBackupDue(
-        autoBackupEnabled,
-        lastBackupTimestamp,
+      IntegrityEngine.getNextCloudReminderInfo(
+        cloudReminderInterval,
+        lastCloudUploadTimestamp,
         weeklyCheckNowMs
       ),
-    [autoBackupEnabled, lastBackupTimestamp, weeklyCheckNowMs]
+    [cloudReminderInterval, lastCloudUploadTimestamp, weeklyCheckNowMs]
   );
+
+  const weeklyBackupDue = nextCloudReminderInfo.isDue;
 
   const resetAllData = () => {
     void disableUniversalCloudAutoBackup();
@@ -1872,12 +1969,18 @@ export function useZeroStore() {
     localStorage.setItem(UI_STORAGE_KEYS.ONBOARDING_COMPLETE, 'false');
     localStorage.setItem(UI_STORAGE_KEYS.AUTO_BACKUP_ENABLED, 'false');
     localStorage.setItem(UI_STORAGE_KEYS.LAST_BACKUP_TIMESTAMP, String(freshNow));
+    localStorage.setItem(UI_STORAGE_KEYS.LAST_CLOUD_UPLOAD_TIMESTAMP, String(freshNow));
+    localStorage.setItem(UI_STORAGE_KEYS.CLOUD_REMINDER_INTERVAL, 'weekly');
 
     webStartPerfMsRef.current = null;
     setHasDismissedWelcomeModal(false);
     setOnboardingComplete(false);
     setAutoBackupEnabled(false);
     setLastBackupTimestamp(freshNow);
+    setLastCloudUploadTimestamp(freshNow);
+    setCloudReminderIntervalState('weekly');
+    setWeeklyCheckNowMs(freshNow);
+    void syncCloudReminderSchedule('weekly', freshNow);
     setCloudBackupMeta({
       uri: null,
       displayName: null,
@@ -1985,12 +2088,17 @@ export function useZeroStore() {
     resetAllData,
     autoBackupEnabled,
     lastBackupTimestamp,
+    lastCloudUploadTimestamp,
+    cloudReminderInterval,
+    setCloudReminderInterval,
+    nextCloudReminderInfo,
     cloudBackupStatus,
     weeklyBackupDue,
     isCloudBusy,
     enableCloudAutoBackup,
     disableCloudAutoBackup,
     syncCloudBackupNow,
+    oneTapSaveBackup,
     oneTapCloudUpload,
     restoreBackupFromCloudPicker,
     FIRST_DONATION_BONUS_INR,

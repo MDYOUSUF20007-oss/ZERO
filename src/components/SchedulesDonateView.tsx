@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
 import {
   FIRST_DONATION_BONUS_INR,
@@ -11,6 +11,7 @@ import {
   copyTextSafely,
   handleOpenExternalUrl,
 } from '../utils/supportLinks';
+import type { CloudReminderScheduleInfo } from '../core/integrity/IntegrityEngine';
 import type {
   RecurringSchedule,
   SessionTag,
@@ -22,6 +23,7 @@ import type {
   NativeEnvironmentSecurity,
   ZeroProfile,
   CloudAutoBackupStatus,
+  CloudReminderInterval,
 } from '../types';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { evaluatePermissionPriority } from '../utils/permissionPriority';
@@ -39,7 +41,6 @@ import {
   Coffee,
   Copy,
   Check,
-  Download,
   Upload,
   RotateCcw,
   ExternalLink,
@@ -55,13 +56,12 @@ import {
   CheckCircle2,
   UserPlus,
   CloudUpload,
-  RefreshCw,
   Loader2,
   KeyRound,
   ShieldCheck,
   HardDrive,
-  AlertTriangle,
   Sliders,
+  Save,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -85,17 +85,18 @@ interface SchedulesDonateViewProps {
   viewMode?: 'all' | 'settings_os' | 'support';
   sleepFarmingMode: SleepFarmingMode;
   onSleepFarmingModeChange: (mode: SleepFarmingMode) => void;
-  onBuildBackupJson: () => string;
-  onBuildZbakString?: () => string;
-  onExportData: () => string;
   onExportZbakData?: () => string;
+  onOneTapSaveBackup?: () => Promise<{ ok: boolean; message: string }>;
   onImportData: (rawJson: string) => { ok: boolean; message: string };
   onResetData: () => void;
   cloudBackupStatus?: CloudAutoBackupStatus;
+  cloudReminderInterval?: CloudReminderInterval;
+  lastCloudUploadTimestamp?: number;
+  nextCloudReminderInfo?: CloudReminderScheduleInfo;
+  onCloudReminderIntervalChange?: (next: CloudReminderInterval) => void;
   isCloudBusy?: boolean;
   onEnableCloudAutoBackup?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onDisableCloudAutoBackup?: () => Promise<void>;
-  onSyncCloudBackupNow?: () => Promise<{ ok: boolean; message: string }>;
   onOneTapCloudUpload?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onRestoreFromCloudPicker?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
   onRestoreSuccess?: () => void;
@@ -112,6 +113,36 @@ interface SchedulesDonateViewProps {
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TAGS: SessionTag[] = ['Deep Work', 'Study', 'Sleep', 'Detox', 'Family'];
+
+const REMINDER_OPTIONS: Array<{ id: CloudReminderInterval; label: string }> = [
+  { id: 'weekly', label: '1 Week' },
+  { id: 'monthly', label: '1 Month' },
+  { id: 'off', label: 'Off' },
+];
+
+function formatCloudReminderCountdown(
+  interval: CloudReminderInterval,
+  info?: CloudReminderScheduleInfo,
+  lastCloudUploadTs?: number
+): string {
+  if (interval === 'off') return 'Reminders paused';
+  if (info?.isDue) return 'Due now — upload to reset timer';
+  const targetMs =
+    info?.nextReminderAtMs ??
+    (lastCloudUploadTs && lastCloudUploadTs > 0
+      ? lastCloudUploadTs + (interval === 'monthly' ? 30 : 7) * 24 * 60 * 60 * 1000
+      : null);
+  if (!targetMs) return 'Due now — upload to reset timer';
+  const remainingMs = Math.max(0, targetMs - Date.now());
+  if (remainingMs <= 0) return 'Due now — upload to reset timer';
+  const totalHours = Math.floor(remainingMs / (60 * 60 * 1000));
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const mins = Math.max(1, Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000)));
+  if (days > 0) return `Next reminder in ${days}d ${hours}h`;
+  if (hours > 0) return `Next reminder in ${hours}h ${mins}m`;
+  return `Next reminder in ${mins}m`;
+}
 
 export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   schedules,
@@ -131,17 +162,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   viewMode = 'all',
   sleepFarmingMode,
   onSleepFarmingModeChange,
-  onBuildBackupJson,
-  onBuildZbakString,
-  onExportData,
   onExportZbakData,
+  onOneTapSaveBackup,
   onImportData,
   onResetData,
   cloudBackupStatus,
+  cloudReminderInterval = 'weekly',
+  lastCloudUploadTimestamp,
+  nextCloudReminderInfo,
+  onCloudReminderIntervalChange,
   isCloudBusy = false,
   onEnableCloudAutoBackup,
   onDisableCloudAutoBackup,
-  onSyncCloudBackupNow,
   onOneTapCloudUpload,
   onRestoreFromCloudPicker,
   onRestoreSuccess,
@@ -185,10 +217,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [showUPIQR, setShowUPIQR] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState<string>('');
   const [confirmingDonationClaim, setConfirmingDonationClaim] = useState(false);
-  const [showPasteRestore, setShowPasteRestore] = useState(false);
-  const [pasteJsonInput, setPasteJsonInput] = useState('');
   const [backupNotice, setBackupNotice] = useState<{ ok: boolean; message: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!showUPIQR || upiQrUrl) return;
@@ -222,31 +251,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [newStartTime, setNewStartTime] = useState('14:00');
   const [newEndTime, setNewEndTime] = useState('16:30');
   const [newTag, setNewTag] = useState<SessionTag>('Deep Work');
-
-  const handleFileRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const content = typeof reader.result === 'string' ? reader.result : '';
-      const result = onImportData(content);
-      setBackupNotice(result);
-    };
-    reader.onerror = () => {
-      setBackupNotice({ ok: false, message: 'Failed to read selected backup file.' });
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const handlePasteRestore = () => {
-    const res = onImportData(pasteJsonInput);
-    setBackupNotice(res);
-    if (res.ok) {
-      setPasteJsonInput('');
-      setShowPasteRestore(false);
-    }
-  };
 
   const handleOpenExternal = (e: React.MouseEvent, url: string) => {
     handleOpenExternalUrl(e, url);
@@ -771,7 +775,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             accent={profileAccentKey}
             ambientGlow={!isBespoke}
             className={isBespoke ? 'font-sans' : 'font-mono'}
-            headerClassName={isBespoke ? 'p-5 space-y-3.5' : 'p-4 space-y-3'}
+            headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
             footerClassName={
               isBespoke
                 ? 'px-5 py-3 text-[11px] text-zinc-400 leading-relaxed flex items-center justify-between gap-2 flex-wrap'
@@ -783,17 +787,20 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                        isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
                       }`}
                     >
-                      <HardDrive size={16} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
+                      <HardDrive
+                        size={16}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs text-white font-semibold uppercase tracking-wider">
                         Backup and Restore Everything
                       </div>
                       <div className="text-[11px] text-zinc-400 truncate">
-                        Auto-saves on session start &amp; end • .ZBAK &amp; .JSON
+                        Our stats, Escape Tickets, donor perks &amp; config (.zbak)
                       </div>
                     </div>
                   </div>
@@ -810,49 +817,37 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </span>
                 </div>
 
-                {/* Required Cloud Upload Warning Banner */}
-                <div
-                  className={`p-3 border flex items-start gap-2.5 ${
-                    isBespoke
-                      ? 'rounded-md bg-neutral-950 border-amber-500/40 text-zinc-200'
-                      : 'rounded-xl bg-amber-950/45 border-amber-500/60 text-amber-100'
-                  }`}
-                >
-                  <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5 text-[11px] leading-relaxed">
-                    <div className="font-semibold text-amber-300 uppercase tracking-wide">
-                      Make sure to upload everything in cloud.
-                    </div>
-                    <div className={isBespoke ? 'text-zinc-400' : 'text-amber-100/85'}>
-                      Auto-Sync saves locally to Device Storage when sessions start or end. Use{' '}
-                      <strong className="text-zinc-200">1-Tap Upload (.zbak)</strong> below to send a copy to Drive, OneDrive, or JioDrive.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Auto-Sync Storage File Status */}
+                {/* Compact Sync & Upload Status */}
                 <div
                   className={`p-3 obsidian-inset-neutral space-y-1.5 text-[11px] ${
-                    isBespoke ? 'rounded-md' : 'rounded-xl text-[10px]'
+                    isBespoke ? 'rounded-md bg-neutral-950 border border-neutral-800' : 'rounded-xl text-[10px]'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-zinc-400">Storage Sync File:</span>
+                    <span className="text-zinc-400">Storage Auto-Sync:</span>
                     <span className="text-white font-semibold truncate font-mono">
                       {cloudBackupStatus?.enabled
                         ? `${cloudBackupStatus.providerLabel || 'Device Storage'} • ${
                             cloudBackupStatus.displayName || 'zero-backup.zbak'
                           }`
-                        : 'Not set (create once to auto-sync)'}
+                        : 'Not set'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-zinc-400">Last Backup Saved:</span>
+                    <span className="text-zinc-400">Last Saved:</span>
                     <span className="text-zinc-200 font-semibold truncate font-mono tabular-nums">
                       {cloudBackupStatus?.lastBackupTimestamp &&
                       cloudBackupStatus.lastBackupTimestamp > 0
                         ? new Date(cloudBackupStatus.lastBackupTimestamp).toLocaleString()
-                        : 'No backup created yet'}
+                        : 'Not saved yet'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-zinc-400">Last Cloud Upload:</span>
+                    <span className="text-zinc-200 font-semibold truncate font-mono tabular-nums">
+                      {lastCloudUploadTimestamp && lastCloudUploadTimestamp > 0
+                        ? new Date(lastCloudUploadTimestamp).toLocaleString()
+                        : 'Not uploaded yet'}
                     </span>
                   </div>
                 </div>
@@ -875,7 +870,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   >
                     <ShieldAlert size={13} className="text-amber-400 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Backup restore is disabled; manual exports remain active.
+                      <strong>Integrity Protection Active:</strong> Root access, custom test-keys ROM, or debug emulator detected. Backup restore is disabled; saves and uploads remain active.
                     </span>
                   </div>
                 )}
@@ -894,15 +889,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                 )}
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".zbak,.json,application/json,application/octet-stream,*/*"
-                  onChange={handleFileRestore}
-                  className="hidden"
-                />
-
-                {/* Auto-Sync File Setup / Controls */}
+                {/* 1. Create Auto-Sync File in Storage */}
                 {onEnableCloudAutoBackup && (
                   <>
                     {!cloudBackupStatus?.enabled ? (
@@ -916,10 +903,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             setCloudNotice({ ok: res.ok, message: res.message });
                           }
                         }}
-                        className={`w-full py-2.5 px-3 obsidian-pill-active font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-60 ${
+                        className={`w-full py-2.5 px-3 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-60 ${
                           isBespoke
-                            ? 'rounded-md transition-colors duration-75'
-                            : 'rounded-xl font-black active:scale-95 transition-all'
+                            ? 'rounded-md bg-blue-600 hover:bg-blue-500 border border-blue-500 text-white transition-colors duration-75'
+                            : 'rounded-xl obsidian-pill-active font-black active:scale-95 transition-all'
                         }`}
                       >
                         {isCloudBusy ? (
@@ -930,90 +917,96 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <span>Create Auto-Sync File in Storage</span>
                       </button>
                     ) : (
-                      <div className="grid grid-cols-3 gap-2">
-                        {onSyncCloudBackupNow && (
+                      <div
+                        className={`p-2.5 border flex items-center justify-between gap-2 ${
+                          isBespoke
+                            ? 'rounded-md bg-neutral-950 border-neutral-800'
+                            : 'rounded-xl obsidian-inset-neutral'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-semibold text-emerald-300 truncate">
+                            Auto-Sync Linked
+                          </div>
+                          <div className="text-[10px] text-zinc-400 truncate font-mono">
+                            {cloudBackupStatus.displayName || 'zero-backup.zbak'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             type="button"
                             disabled={isCloudBusy}
                             onClick={async () => {
                               setBackupNotice(null);
-                              const res = await onSyncCloudBackupNow();
-                              setCloudNotice(res);
+                              const res = await onEnableCloudAutoBackup();
+                              if (!res.cancelled) {
+                                setCloudNotice({ ok: res.ok, message: res.message });
+                              }
                             }}
-                            className={`py-2 px-2 obsidian-pill-active font-semibold text-[10px] uppercase flex items-center justify-center gap-1 disabled:opacity-60 ${
-                              isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-black'
+                            className={`py-1.5 px-2.5 obsidian-inset-neutral hover:border-white/30 text-white font-semibold text-[10px] uppercase ${
+                              isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg font-bold'
                             }`}
                           >
-                            <RefreshCw size={11} className={isCloudBusy ? 'animate-spin' : ''} />
-                            <span>Sync Now</span>
+                            Change File
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={isCloudBusy}
-                          onClick={async () => {
-                            setBackupNotice(null);
-                            const res = await onEnableCloudAutoBackup();
-                            if (!res.cancelled) {
-                              setCloudNotice({ ok: res.ok, message: res.message });
-                            }
-                          }}
-                          className={`py-2 px-2 obsidian-inset-neutral hover:border-white/30 text-white font-semibold text-[10px] uppercase ${
-                            isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
-                          }`}
-                        >
-                          Change File
-                        </button>
-                        {onDisableCloudAutoBackup && (
-                          <button
-                            type="button"
-                            disabled={isCloudBusy}
-                            onClick={async () => {
-                              setBackupNotice(null);
-                              await onDisableCloudAutoBackup();
-                              setCloudNotice({
-                                ok: true,
-                                message: 'Automatic storage sync turned off. Weekly 7-day upload reminder re-armed.',
-                              });
-                            }}
-                            className={`py-2 px-2 bg-zinc-950 border border-red-900/70 text-red-400 hover:text-red-300 font-semibold text-[10px] uppercase ${
-                              isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
-                            }`}
-                          >
-                            Turn Off
-                          </button>
-                        )}
+                          {onDisableCloudAutoBackup && (
+                            <button
+                              type="button"
+                              disabled={isCloudBusy}
+                              onClick={async () => {
+                                setBackupNotice(null);
+                                await onDisableCloudAutoBackup();
+                                setCloudNotice({
+                                  ok: true,
+                                  message: 'Auto-sync storage file unlinked.',
+                                });
+                              }}
+                              className={`py-1.5 px-2.5 bg-zinc-950 border border-red-900/70 text-red-400 hover:text-red-300 font-semibold text-[10px] uppercase ${
+                                isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg font-bold'
+                              }`}
+                            >
+                              Turn Off
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </>
                 )}
 
-                {/* 1-Tap Upload to Cloud Apps */}
-                {onOneTapCloudUpload && (
+                {/* 2 & 3. One-Tap Save + Restore Data Picker */}
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     disabled={isCloudBusy}
                     onClick={async () => {
-                      setBackupNotice(null);
-                      const res = await onOneTapCloudUpload();
-                      if (!res.cancelled) {
-                        setCloudNotice({ ok: res.ok, message: res.message });
+                      setCloudNotice(null);
+                      if (onOneTapSaveBackup) {
+                        const res = await onOneTapSaveBackup();
+                        setBackupNotice({ ok: res.ok, message: res.message });
+                      } else if (onExportZbakData) {
+                        onExportZbakData();
+                        setBackupNotice({
+                          ok: true,
+                          message: 'Saved zero-backup.zbak to storage.',
+                        });
                       }
                     }}
-                    className={`w-full py-2.5 px-3 obsidian-inset hover:border-white/30 text-white font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-60 ${
+                    className={`p-2.5 font-semibold flex items-center justify-center gap-1.5 text-[11px] disabled:opacity-60 ${
                       isBespoke
-                        ? 'rounded-md transition-colors duration-75'
-                        : 'rounded-xl font-black active:scale-95 transition-all'
+                        ? 'rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-neutral-100 transition-colors duration-75'
+                        : 'rounded-xl obsidian-inset-neutral hover:border-white/25 text-white font-bold active:scale-95 transition-all'
                     }`}
                   >
-                    <CloudUpload size={14} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
-                    <span>1-Tap Upload (.zbak) to Cloud</span>
+                    <Save
+                      size={13}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                      className={isBespoke ? 'text-blue-400' : undefined}
+                    />
+                    <span>One-Tap Save</span>
                   </button>
-                )}
 
-                {/* Manual File Restore Buttons */}
-                <div className={hasNativeBridge && onRestoreFromCloudPicker ? 'grid grid-cols-2 gap-2' : ''}>
-                  {hasNativeBridge && onRestoreFromCloudPicker && (
+                  {onRestoreFromCloudPicker && (
                     <button
                       type="button"
                       disabled={isCloudBusy || restoreDisabled}
@@ -1027,204 +1020,159 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           setBackupNotice({ ok: false, message: res.message });
                         }
                       }}
-                      className={`p-2.5 obsidian-inset text-white font-semibold flex items-center justify-center gap-1.5 text-[11px] disabled:opacity-45 disabled:cursor-not-allowed ${
+                      className={`p-2.5 font-semibold flex items-center justify-center gap-1.5 text-[11px] disabled:opacity-45 disabled:cursor-not-allowed ${
                         isBespoke
-                          ? 'rounded-md transition-colors duration-75'
-                          : 'rounded-xl font-bold active:scale-95 transition-all'
+                          ? 'rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-neutral-100 transition-colors duration-75'
+                          : 'rounded-xl obsidian-inset text-white font-bold active:scale-95 transition-all'
                       }`}
                     >
-                      <Upload size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
-                      <span>Restore File Picker</span>
+                      <Upload
+                        size={13}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        className={isBespoke ? 'text-blue-400' : undefined}
+                      />
+                      <span>Restore Data Picker</span>
                     </button>
                   )}
-
-                  <button
-                    type="button"
-                    disabled={restoreDisabled}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`${
-                      hasNativeBridge && onRestoreFromCloudPicker ? '' : 'w-full'
-                    } p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 font-semibold flex items-center justify-center gap-1.5 text-[11px] disabled:opacity-45 disabled:cursor-not-allowed ${
-                      isBespoke
-                        ? 'rounded-md transition-colors duration-75'
-                        : 'rounded-xl font-bold active:scale-95 transition-all'
-                    }`}
-                  >
-                    <Upload size={13} />
-                    <span>
-                      {hasNativeBridge && onRestoreFromCloudPicker
-                        ? 'Browse Device File'
-                        : 'Restore .ZBAK / .JSON File'}
-                    </span>
-                  </button>
                 </div>
 
-                {/* Manual Export Buttons (.ZBAK + .JSON) */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* 4. Upload Stats to Cloud (opens chosen cloud app) */}
+                {onOneTapCloudUpload && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setCloudNotice(null);
-                      if (onExportZbakData) {
-                        onExportZbakData();
-                      } else {
-                        onExportData();
+                    disabled={isCloudBusy}
+                    onClick={async () => {
+                      setBackupNotice(null);
+                      const res = await onOneTapCloudUpload();
+                      if (!res.cancelled) {
+                        setCloudNotice({ ok: res.ok, message: res.message });
                       }
-                      setBackupNotice({
-                        ok: true,
-                        message: hasNativeBridge
-                          ? 'Signed zero-backup.zbak created. Choose Files, Drive, OneDrive, or JioDrive.'
-                          : 'Signed .zbak backup file downloaded.',
-                      });
                     }}
-                    className={`p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-100 font-semibold flex items-center justify-center gap-1.5 text-[11px] ${
+                    className={`w-full py-2.5 px-3 font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-60 ${
                       isBespoke
-                        ? 'rounded-md transition-colors duration-75'
-                        : 'rounded-xl font-bold active:scale-95 transition-all'
+                        ? 'rounded-md bg-neutral-950 border border-neutral-800 hover:border-blue-500 text-neutral-100 transition-colors duration-75'
+                        : 'rounded-xl obsidian-inset hover:border-white/30 text-white font-black active:scale-95 transition-all'
                     }`}
                   >
-                    <Download size={13} style={{ color: 'var(--accent-hex, #F59E0B)' }} />
-                    <span>Export .ZBAK</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCloudNotice(null);
-                      onExportData();
-                      setBackupNotice({
-                        ok: true,
-                        message: hasNativeBridge
-                          ? 'JSON backup generated. Choose Save to Files / Drive or Share.'
-                          : 'Backup .json file downloaded.',
-                      });
-                    }}
-                    className={`p-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 font-semibold flex items-center justify-center gap-1.5 text-[11px] ${
-                      isBespoke
-                        ? 'rounded-md transition-colors duration-75'
-                        : 'rounded-xl font-bold active:scale-95 transition-all'
-                    }`}
-                  >
-                    <Download size={13} />
-                    <span>Export .JSON</span>
-                  </button>
-                </div>
-
-                {/* Clipboard Copy (.ZBAK / .JSON) + Paste Text Restore */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {onBuildZbakString && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCloudNotice(null);
-                        handleCopy(onBuildZbakString(), 'backup_zbak');
-                        setBackupNotice({
-                          ok: true,
-                          message: 'Signed ZBAK1 token copied to clipboard.',
-                        });
-                      }}
-                      className={`py-2 px-2 obsidian-inset-neutral hover:border-white/25 text-[10px] text-zinc-200 flex items-center justify-center gap-1 font-semibold ${
-                        isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
-                      }`}
-                    >
-                      {copiedId === 'backup_zbak' ? (
-                        <Check size={11} className="text-emerald-400 shrink-0" />
-                      ) : (
-                        <Copy size={11} className="shrink-0" />
-                      )}
-                      <span className="truncate">Copy .ZBAK</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCloudNotice(null);
-                      handleCopy(onBuildBackupJson(), 'backup_json');
-                      setBackupNotice({
-                        ok: true,
-                        message: 'Full JSON backup copied to clipboard.',
-                      });
-                    }}
-                    className={`py-2 px-2 obsidian-inset-neutral hover:border-white/25 text-[10px] text-zinc-200 flex items-center justify-center gap-1 font-semibold ${
-                      isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
-                    }`}
-                  >
-                    {copiedId === 'backup_json' ? (
-                      <Check size={11} className="text-emerald-400 shrink-0" />
+                    {isCloudBusy ? (
+                      <Loader2 size={14} className="animate-spin" />
                     ) : (
-                      <Copy size={11} className="shrink-0" />
+                      <CloudUpload
+                        size={14}
+                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                        className={isBespoke ? 'text-blue-400' : undefined}
+                      />
                     )}
-                    <span className="truncate">Copy .JSON</span>
+                    <span>Upload Stats to Cloud</span>
                   </button>
+                )}
 
-                  <button
-                    type="button"
-                    disabled={restoreDisabled}
-                    onClick={() => setShowPasteRestore(!showPasteRestore)}
-                    className={`py-2 px-2 text-[10px] font-semibold flex items-center justify-center truncate disabled:opacity-45 disabled:cursor-not-allowed ${
-                      isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-bold'
-                    } ${
-                      showPasteRestore
-                        ? 'obsidian-pill-active font-bold'
-                        : 'obsidian-inset-neutral hover:border-white/25 text-zinc-200'
+                {/* Cloud Upload Reminder Timer (1 Week / 1 Month / Off) */}
+                {onCloudReminderIntervalChange && (
+                  <div
+                    className={`p-3 border space-y-2.5 ${
+                      isBespoke
+                        ? 'rounded-md bg-neutral-950 border-neutral-800'
+                        : 'rounded-xl obsidian-inset-neutral'
                     }`}
                   >
-                    {showPasteRestore ? 'Hide Paste' : 'Paste Backup'}
-                  </button>
-                </div>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white uppercase tracking-wider">
+                        <Bell
+                          size={12}
+                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #F59E0B)' }}
+                          className={isBespoke ? 'text-blue-400' : undefined}
+                        />
+                        <span>Cloud Upload Reminder</span>
+                      </span>
+                      <span
+                        className={`text-[10px] font-mono tabular-nums ${
+                          nextCloudReminderInfo?.isDue
+                            ? 'text-amber-300 font-semibold'
+                            : 'text-zinc-400'
+                        }`}
+                      >
+                        {formatCloudReminderCountdown(
+                          cloudReminderInterval,
+                          nextCloudReminderInfo,
+                          lastCloudUploadTimestamp
+                        )}
+                      </span>
+                    </div>
 
-                {showPasteRestore && !restoreDisabled && (
-                  <div className="space-y-2 pt-1">
-                    <textarea
-                      rows={4}
-                      value={pasteJsonInput}
-                      onChange={(e) => setPasteJsonInput(e.target.value)}
-                      placeholder="Paste signed ZBAK1... token or full Zero JSON backup text here..."
-                      className={`w-full obsidian-input font-mono p-2.5 text-[11px] outline-none ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handlePasteRestore}
-                      className={`w-full py-2.5 obsidian-pill-active font-semibold text-xs uppercase tracking-wider ${
-                        isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl font-black'
-                      }`}
+                    <div
+                      role="radiogroup"
+                      aria-label="Cloud Upload Reminder Timer"
+                      className="grid grid-cols-3 gap-1.5"
                     >
-                      Restore Pasted Backup
-                    </button>
+                      {REMINDER_OPTIONS.map((opt) => {
+                        const selected = cloudReminderInterval === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => onCloudReminderIntervalChange(opt.id)}
+                            className={`py-2 px-2 text-[11px] font-semibold ${
+                              isBespoke
+                                ? `rounded-md border transition-colors duration-75 ${
+                                    selected
+                                      ? 'bg-blue-600 border-blue-500 text-white'
+                                      : 'bg-black border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200'
+                                  }`
+                                : `rounded-lg transition-all ${
+                                    selected
+                                      ? 'obsidian-pill-active font-black'
+                                      : 'bg-black/50 border border-white/10 text-zinc-400 hover:text-white'
+                                  }`
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        'Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.'
-                      )
-                    ) {
-                      setCloudNotice(null);
-                      onResetData();
-                      setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
-                    }
-                  }}
-                  className={`w-full p-2.5 bg-black/75 border border-red-950/90 hover:border-red-700 text-red-400 hover:text-red-300 flex items-center justify-center gap-2 text-xs ${
-                    isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-xl transition-colors'
+                {/* Subtle Bottom Reset Divider */}
+                <div
+                  className={`pt-2 border-t ${
+                    isBespoke ? 'border-neutral-800' : 'border-white/10'
                   }`}
                 >
-                  <RotateCcw size={13} />
-                  <span>Factory Reset App State</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          'Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.'
+                        )
+                      ) {
+                        setCloudNotice(null);
+                        onResetData();
+                        setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
+                      }
+                    }}
+                    className={`w-full py-2 px-3 bg-black/75 border border-red-950/90 hover:border-red-700 text-red-400 hover:text-red-300 flex items-center justify-center gap-2 text-[11px] font-medium ${
+                      isBespoke
+                        ? 'rounded-md transition-colors duration-75'
+                        : 'rounded-xl transition-colors'
+                    }`}
+                  >
+                    <RotateCcw size={12} />
+                    <span>Factory Reset App State</span>
+                  </button>
+                </div>
               </>
             }
             footerContent={
               <>
                 <span>
-                  Saves stats, Escape Tickets, donor badges, bags, schedules, widgets &amp; theme.
+                  Our stats, Escape Tickets &amp; donor perks &mdash; zero telemetry.
                 </span>
-                <span className="font-semibold text-zinc-300 font-mono">SHA-256 .ZBAK &amp; .JSON</span>
+                <span className="font-semibold text-zinc-300 font-mono">SHA-256 .ZBAK</span>
               </>
             }
           />

@@ -25,6 +25,7 @@ import org.zero.detox.security.AppSecurityGuard;
 import org.zero.detox.ui.PixelFont5x7;
 import org.zero.detox.ui.VoidBrandPalette;
 import org.zero.detox.ui.VoidThemeStore;
+import org.zero.detox.worker.CloudUploadReminderWorker;
 
 public class LockEngineUnitTest {
 
@@ -727,5 +728,29 @@ public class LockEngineUnitTest {
         assertTrue(VoidThemeStore.isBespokeStyle(fakeContext));
         VoidThemeStore.saveInterfaceStyle(fakeContext, "unexpected-value");
         assertEquals("classic", VoidThemeStore.loadInterfaceStyle(fakeContext));
+    }
+
+    @Test
+    public void cloudUploadReminderWorker_calculatesWeeklyMonthlyAndOffIntervals() {
+        assertEquals("weekly", CloudUploadReminderWorker.sanitizeInterval(null));
+        assertEquals("weekly", CloudUploadReminderWorker.sanitizeInterval("invalid"));
+        assertEquals("monthly", CloudUploadReminderWorker.sanitizeInterval("MONTHLY"));
+        assertEquals("off", CloudUploadReminderWorker.sanitizeInterval("off"));
+
+        long weekMs = 7L * 24L * 60L * 60L * 1000L;
+        long monthMs = 30L * 24L * 60L * 60L * 1000L;
+        assertEquals(weekMs, CloudUploadReminderWorker.intervalMillis("weekly"));
+        assertEquals(monthMs, CloudUploadReminderWorker.intervalMillis("monthly"));
+        assertEquals(0L, CloudUploadReminderWorker.intervalMillis("off"));
+
+        long now = 2_000_000_000_000L;
+        assertEquals(-1L, CloudUploadReminderWorker.computeDelayMillis("off", now - monthMs, now));
+        assertEquals(weekMs, CloudUploadReminderWorker.computeDelayMillis("weekly", 0L, now));
+        assertEquals(monthMs, CloudUploadReminderWorker.computeDelayMillis("monthly", 0L, now));
+        assertEquals(
+            10L * 24L * 60L * 60L * 1000L,
+            CloudUploadReminderWorker.computeDelayMillis("monthly", now - (20L * 24L * 60L * 60L * 1000L), now)
+        );
+        assertEquals(0L, CloudUploadReminderWorker.computeDelayMillis("weekly", now - weekMs - 5000L, now));
     }
 }

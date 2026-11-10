@@ -243,9 +243,10 @@ export function App() {
             todayReclaimedHours={store.todayReclaimedHours}
             justEarnedParachute={store.justEarnedParachute}
             showWeeklyBackupBanner={store.weeklyBackupDue}
+            cloudReminderInterval={store.cloudReminderInterval}
             isCloudBusy={store.isCloudBusy}
             onOneTapUpload={store.oneTapCloudUpload}
-            onTurnOnAutoBackup={store.enableCloudAutoBackup}
+            onOneTapSave={store.oneTapSaveBackup}
             onExportZbakData={store.exportZbakData}
             onOpenTicketModal={() => setShowTicketModal(true)}
             onOpenBagDrawer={() => {
@@ -304,17 +305,18 @@ export function App() {
             viewMode={activeTab === 'support' ? 'support' : 'settings_os'}
             sleepFarmingMode={store.sleepFarmingMode}
             onSleepFarmingModeChange={store.setSleepFarmingMode}
-            onBuildBackupJson={store.buildBackupJson}
-            onBuildZbakString={store.buildZbakString}
-            onExportData={store.exportData}
             onExportZbakData={store.exportZbakData}
+            onOneTapSaveBackup={store.oneTapSaveBackup}
             onImportData={store.importData}
             onResetData={store.resetAllData}
             cloudBackupStatus={store.cloudBackupStatus}
+            cloudReminderInterval={store.cloudReminderInterval}
+            lastCloudUploadTimestamp={store.lastCloudUploadTimestamp}
+            nextCloudReminderInfo={store.nextCloudReminderInfo}
+            onCloudReminderIntervalChange={store.setCloudReminderInterval}
             isCloudBusy={store.isCloudBusy}
             onEnableCloudAutoBackup={store.enableCloudAutoBackup}
             onDisableCloudAutoBackup={store.disableCloudAutoBackup}
-            onSyncCloudBackupNow={store.syncCloudBackupNow}
             onOneTapCloudUpload={store.oneTapCloudUpload}
             onRestoreFromCloudPicker={store.restoreBackupFromCloudPicker}
             onRestoreSuccess={handleCloudRestoreSuccess}

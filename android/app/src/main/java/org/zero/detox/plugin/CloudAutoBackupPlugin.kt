@@ -2,9 +2,13 @@ package org.zero.detox.plugin
 
 import android.app.Activity
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
@@ -17,6 +21,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import org.json.JSONObject
 import org.zero.detox.core.EndpointSecurityPolicy
 import org.zero.detox.security.AppSecurityGuard
+import org.zero.detox.worker.CloudUploadReminderWorker
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.Executors
@@ -43,6 +48,8 @@ class CloudAutoBackupPlugin : Plugin() {
         private const val KEY_DISPLAY_NAME = "backup_display_name"
         private const val KEY_PROVIDER_LABEL = "backup_provider_label"
         private const val KEY_LAST_BACKUP_TS = "last_backup_timestamp"
+        private const val KEY_LAST_CLOUD_UPLOAD_TS = CloudUploadReminderWorker.KEY_LAST_CLOUD_UPLOAD_TS
+        private const val KEY_CLOUD_REMINDER_INTERVAL = CloudUploadReminderWorker.KEY_CLOUD_REMINDER_INTERVAL
         private const val MAX_RESTORE_BYTES = 10 * 1024 * 1024 // 10 MB safety cap
     }
 
@@ -260,6 +267,10 @@ class CloudAutoBackupPlugin : Plugin() {
             }
         }
         val lastTs = prefs.getLong(KEY_LAST_BACKUP_TS, 0L)
+        val lastCloudTs = prefs.getLong(KEY_LAST_CLOUD_UPLOAD_TS, 0L)
+        val reminderInterval = CloudUploadReminderWorker.sanitizeInterval(
+            prefs.getString(KEY_CLOUD_REMINDER_INTERVAL, CloudUploadReminderWorker.INTERVAL_WEEKLY)
+        )
         prefs.edit()
             .putBoolean(KEY_ENABLED, false)
             .remove(KEY_URI)
@@ -275,6 +286,179 @@ class CloudAutoBackupPlugin : Plugin() {
                 put("providerLabel", JSONObject.NULL)
                 put("hasPersistedPermission", false)
                 put("lastBackupTimestamp", lastTs)
+                put("lastCloudUploadTimestamp", lastCloudTs)
+                put("reminderInterval", reminderInterval)
+            }
+        )
+    }
+
+    @PluginMethod
+    fun saveManualBackupToStorage(call: PluginCall) {
+        val data = call.getString("data")
+        if (data.isNullOrEmpty()) {
+            call.reject("Missing .zbak payload to save.", "INVALID_DATA")
+            return
+        }
+        val fileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+            call.getString("fileName"),
+            EndpointSecurityPolicy.DEFAULT_BACKUP_FILE_NAME
+        )
+
+        ioExecutor.execute {
+            val prefs = getPrefs()
+            val storedUriStr = prefs.getString(KEY_URI, null)
+            val isAutoEnabled = prefs.getBoolean(KEY_ENABLED, false)
+            if (isAutoEnabled &&
+                !storedUriStr.isNullOrBlank() &&
+                EndpointSecurityPolicy.validateSafDocumentUriString(storedUriStr, context.packageName)
+            ) {
+                try {
+                    val linkedUri = Uri.parse(storedUriStr)
+                    writeContentToUri(linkedUri, data)
+                    val ts = System.currentTimeMillis()
+                    prefs.edit().putLong(KEY_LAST_BACKUP_TS, ts).apply()
+                    val displayName = prefs.getString(KEY_DISPLAY_NAME, fileName) ?: fileName
+                    val providerLabel = prefs.getString(
+                        KEY_PROVIDER_LABEL,
+                        EndpointSecurityPolicy.resolveSafProviderLabel(linkedUri.authority)
+                    ) ?: "Device Storage"
+                    call.resolve(
+                        JSObject().apply {
+                            put("ok", true)
+                            put("timestamp", ts)
+                            put("fileName", displayName)
+                            put("locationLabel", "$providerLabel • $displayName")
+                            put("usedAutoSyncTarget", true)
+                        }
+                    )
+                    return@execute
+                } catch (_: Exception) {
+                    // Fall through to local Downloads save when linked SAF permission lapsed
+                }
+            }
+
+            try {
+                val ts = System.currentTimeMillis()
+                val bytes = data.toByteArray(Charsets.UTF_8)
+                val locationLabel: String
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val cr = context.contentResolver
+                    val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                    val relPath = "${Environment.DIRECTORY_DOWNLOADS}/Zero/"
+                    var targetUri: Uri? = null
+
+                    try {
+                        cr.query(
+                            collection,
+                            arrayOf(MediaStore.Downloads._ID),
+                            "${MediaStore.Downloads.DISPLAY_NAME}=? AND ${MediaStore.Downloads.RELATIVE_PATH}=?",
+                            arrayOf(fileName, relPath),
+                            null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID))
+                                targetUri = Uri.withAppendedPath(collection, id.toString())
+                            }
+                        }
+                    } catch (_: Exception) {
+                        targetUri = null
+                    }
+
+                    var wroteExisting = false
+                    if (targetUri != null) {
+                        try {
+                            (cr.openOutputStream(targetUri!!, "wt") ?: cr.openOutputStream(targetUri!!, "w"))?.use { out ->
+                                out.write(bytes)
+                                out.flush()
+                                wroteExisting = true
+                            }
+                        } catch (_: Exception) {
+                            wroteExisting = false
+                        }
+                    }
+
+                    if (!wroteExisting) {
+                        val values = ContentValues().apply {
+                            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                            put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream")
+                            put(MediaStore.Downloads.RELATIVE_PATH, relPath)
+                            put(MediaStore.Downloads.IS_PENDING, 1)
+                        }
+                        val inserted = cr.insert(collection, values)
+                            ?: throw IllegalStateException("Could not create backup file in Downloads/Zero.")
+                        try {
+                            cr.openOutputStream(inserted, "w")?.use { out ->
+                                out.write(bytes)
+                                out.flush()
+                            } ?: throw IllegalStateException("Could not open Downloads output stream.")
+                            val clearPending = ContentValues().apply {
+                                put(MediaStore.Downloads.IS_PENDING, 0)
+                            }
+                            cr.update(inserted, clearPending, null, null)
+                        } catch (writeErr: Exception) {
+                            try {
+                                cr.delete(inserted, null, null)
+                            } catch (_: Exception) {}
+                            throw writeErr
+                        }
+                    }
+                    locationLabel = "Downloads/Zero"
+                } else {
+                    val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+                        ?: context.filesDir
+                    val outDir = File(baseDir, "Zero")
+                    if (!outDir.exists()) outDir.mkdirs()
+                    val outFile = File(outDir, fileName)
+                    if (!outFile.canonicalPath.startsWith(outDir.canonicalPath)) {
+                        throw SecurityException("Invalid local backup output path.")
+                    }
+                    outFile.writeBytes(bytes)
+                    locationLabel = "Documents/Zero"
+                }
+
+                prefs.edit().putLong(KEY_LAST_BACKUP_TS, ts).apply()
+                call.resolve(
+                    JSObject().apply {
+                        put("ok", true)
+                        put("timestamp", ts)
+                        put("fileName", fileName)
+                        put("locationLabel", locationLabel)
+                        put("usedAutoSyncTarget", false)
+                    }
+                )
+            } catch (e: Exception) {
+                call.reject("Could not save $fileName locally: ${e.localizedMessage}", "SAVE_FAILED")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun configureCloudReminder(call: PluginCall) {
+        val prefs = getPrefs()
+        val interval = CloudUploadReminderWorker.sanitizeInterval(call.getString("interval"))
+        val rawTs = call.data.optLong("lastCloudUploadTimestamp", -1L)
+        val existingTs = prefs.getLong(KEY_LAST_CLOUD_UPLOAD_TS, 0L)
+        val effectiveTs = if (rawTs >= 0L) maxOf(rawTs, existingTs) else existingTs
+
+        val editor = prefs.edit().putString(KEY_CLOUD_REMINDER_INTERVAL, interval)
+        if (rawTs >= 0L) {
+            editor.putLong(KEY_LAST_CLOUD_UPLOAD_TS, effectiveTs)
+        }
+        editor.apply()
+
+        val nextReminderAtMs = CloudUploadReminderWorker.scheduleOrCancel(
+            context,
+            interval,
+            effectiveTs
+        )
+
+        call.resolve(
+            JSObject().apply {
+                put("ok", true)
+                put("interval", interval)
+                put("lastCloudUploadTimestamp", effectiveTs)
+                put("nextReminderAtMs", nextReminderAtMs)
             }
         )
     }
@@ -309,10 +493,10 @@ class CloudAutoBackupPlugin : Plugin() {
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "application/octet-stream"
                     putExtra(Intent.EXTRA_STREAM, contentUri)
-                    putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Cloud Backup ($fileName)")
+                    putExtra(Intent.EXTRA_SUBJECT, "ZERO Stats & Donor Backup ($fileName)")
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Zero App signed focus backup ($fileName). Save to Google Drive, OneDrive, JioDrive, or Files."
+                        "Zero App signed stats & donor perks backup ($fileName). Choose your cloud app (Drive, OneDrive, Proton Drive, JioDrive, etc.) to upload."
                     )
                     clipData = android.content.ClipData.newUri(context.contentResolver, fileName, contentUri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -320,33 +504,42 @@ class CloudAutoBackupPlugin : Plugin() {
 
                 val chooser = Intent.createChooser(
                     sendIntent,
-                    "Save or Upload $fileName to Cloud"
+                    "Upload ZERO Stats ($fileName) to Cloud"
                 ).apply {
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 val act = activity
                 if (act == null) {
-                    call.reject("Activity unavailable to open Share sheet.", "SHARE_FAILED")
+                    call.reject("Activity unavailable to open cloud chooser.", "SHARE_FAILED")
                     return@execute
                 }
                 act.runOnUiThread {
                     try {
                         act.startActivity(chooser)
                         val ts = System.currentTimeMillis()
-                        getPrefs().edit().putLong(KEY_LAST_BACKUP_TS, ts).apply()
+                        val prefs = getPrefs()
+                        val interval = CloudUploadReminderWorker.sanitizeInterval(
+                            prefs.getString(KEY_CLOUD_REMINDER_INTERVAL, CloudUploadReminderWorker.INTERVAL_WEEKLY)
+                        )
+                        prefs.edit()
+                            .putLong(KEY_LAST_BACKUP_TS, ts)
+                            .putLong(KEY_LAST_CLOUD_UPLOAD_TS, ts)
+                            .apply()
+                        CloudUploadReminderWorker.scheduleOrCancel(context, interval, ts, ts)
                         call.resolve(
                             JSObject().apply {
                                 put("ok", true)
                                 put("timestamp", ts)
+                                put("lastCloudUploadTimestamp", ts)
                                 put("fileName", fileName)
                             }
                         )
                     } catch (e: Exception) {
-                        call.reject("Unable to launch Share sheet: ${e.localizedMessage}", "SHARE_FAILED")
+                        call.reject("Unable to open cloud app chooser: ${e.localizedMessage}", "SHARE_FAILED")
                     }
                 }
             } catch (e: Exception) {
-                call.reject("Failed preparing $fileName for upload: ${e.localizedMessage}", "SHARE_FAILED")
+                call.reject("Failed preparing $fileName for cloud upload: ${e.localizedMessage}", "SHARE_FAILED")
             }
         }
     }
@@ -487,6 +680,10 @@ class CloudAutoBackupPlugin : Plugin() {
         val displayName = prefs.getString(KEY_DISPLAY_NAME, null)
         val providerLabel = prefs.getString(KEY_PROVIDER_LABEL, null)
         val lastTs = prefs.getLong(KEY_LAST_BACKUP_TS, 0L)
+        val lastCloudTs = prefs.getLong(KEY_LAST_CLOUD_UPLOAD_TS, 0L)
+        val reminderInterval = CloudUploadReminderWorker.sanitizeInterval(
+            prefs.getString(KEY_CLOUD_REMINDER_INTERVAL, CloudUploadReminderWorker.INTERVAL_WEEKLY)
+        )
 
         return JSObject().apply {
             put("enabled", enabled && validUri != null)
@@ -495,6 +692,8 @@ class CloudAutoBackupPlugin : Plugin() {
             put("providerLabel", providerLabel ?: JSONObject.NULL)
             put("hasPersistedPermission", validUri != null && hasPersistedPermission)
             put("lastBackupTimestamp", lastTs)
+            put("lastCloudUploadTimestamp", lastCloudTs)
+            put("reminderInterval", reminderInterval)
         }
     }
 }

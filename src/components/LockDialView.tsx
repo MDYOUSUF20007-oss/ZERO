@@ -6,6 +6,7 @@ import type {
   OccasionBag,
   NativePermissionStatus,
   ZeroProfile,
+  CloudReminderInterval,
 } from '../types';
 import { MAX_BAG_APPS } from '../store/useZeroStore';
 import { haptics } from '../utils/haptics';
@@ -30,10 +31,8 @@ import {
   Trophy,
   Palette,
   CloudUpload,
-  CloudCog,
   Loader2,
   Download,
-  HardDrive,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -48,9 +47,10 @@ interface LockDialViewProps {
   todayReclaimedHours: number;
   justEarnedParachute: boolean;
   showWeeklyBackupBanner?: boolean;
+  cloudReminderInterval?: CloudReminderInterval;
   isCloudBusy?: boolean;
   onOneTapUpload?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
-  onTurnOnAutoBackup?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
+  onOneTapSave?: () => Promise<{ ok: boolean; message: string }>;
   onExportZbakData?: () => string;
   onOpenTicketModal: () => void;
   onOpenBagDrawer: () => void;
@@ -88,9 +88,10 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   todayReclaimedHours,
   justEarnedParachute,
   showWeeklyBackupBanner = false,
+  cloudReminderInterval = 'weekly',
   isCloudBusy = false,
   onOneTapUpload,
-  onTurnOnAutoBackup,
+  onOneTapSave,
   onExportZbakData,
   onOpenTicketModal,
   onOpenBagDrawer,
@@ -603,7 +604,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         />
       )}
 
-      {/* Weekly 1-Tap Cloud Backup Reminder Banner */}
+      {/* Weekly / Monthly Cloud Upload Reminder Banner */}
       {(showWeeklyBackupBanner || cloudBannerMsg) && (
         <ObsidianCard
           data-amoled-banner="true"
@@ -655,17 +656,18 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                             : 'amoled-banner-title text-[11px] font-black text-white leading-snug'
                         }
                       >
-                        Weekly Backup Due — Keep your donor badges &amp; stats safe
+                        {cloudReminderInterval === 'monthly'
+                          ? 'Monthly Cloud Upload Due — Keep your donor perks & stats safe'
+                          : 'Weekly Cloud Upload Due — Keep your donor perks & stats safe'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  {onOneTapUpload && (
                     <button
                       type="button"
                       disabled={isCloudBusy}
                       onClick={async () => {
-                        if (!onOneTapUpload) return;
                         haptics.tick(860);
                         const res = await onOneTapUpload();
                         if (!res.cancelled && res.message) {
@@ -675,8 +677,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       }}
                       className={
                         isBespoke
-                          ? 'py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
-                          : 'py-2 px-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
+                          ? 'w-full py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
+                          : 'w-full py-2.5 px-3 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
                       }
                       style={
                         isBespoke
@@ -692,56 +694,31 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                       ) : (
                         <CloudUpload size={12} />
                       )}
-                      <span>1-Tap Upload</span>
+                      <span>Upload Stats to Cloud</span>
                     </button>
+                  )}
 
-                    <button
-                      type="button"
-                      disabled={isCloudBusy}
-                      onClick={async () => {
-                        if (!onTurnOnAutoBackup) return;
-                        haptics.tick(900);
-                        const res = await onTurnOnAutoBackup();
-                        if (!res.cancelled && res.message) {
-                          setCloudBannerMsg(res.message);
-                          setTimeout(() => setCloudBannerMsg(''), 4500);
-                        }
-                      }}
-                      className={
-                        isBespoke
-                          ? 'py-2.5 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
-                          : 'amoled-banner-secondary py-2 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
-                      }
-                      style={
-                        isBespoke
-                          ? undefined
-                          : {
-                              backgroundColor: '#09090B',
-                              borderColor: 'rgba(139, 92, 246, 0.45)',
-                              color: '#E9D5FF',
-                            }
-                      }
-                    >
-                      <CloudCog size={12} />
-                      <span>Auto-Sync Storage</span>
-                    </button>
-                  </div>
-
-                  {(onExportZbakData || onOpenManualBackup) && (
+                  {(onOneTapSave || onExportZbakData || onOpenManualBackup) && (
                     <div className="grid grid-cols-2 gap-2.5">
-                      {onExportZbakData && (
+                      {(onOneTapSave || onExportZbakData) && (
                         <button
                           type="button"
-                          onClick={() => {
+                          disabled={isCloudBusy}
+                          onClick={async () => {
                             haptics.tick(820);
-                            onExportZbakData();
-                            setCloudBannerMsg('Saved signed zero-backup.zbak manually.');
+                            if (onOneTapSave) {
+                              const res = await onOneTapSave();
+                              setCloudBannerMsg(res.message);
+                            } else {
+                              onExportZbakData?.();
+                              setCloudBannerMsg('Saved zero-backup.zbak to storage.');
+                            }
                             setTimeout(() => setCloudBannerMsg(''), 4500);
                           }}
                           className={
                             isBespoke
-                              ? 'py-2 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
-                              : 'amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
+                              ? 'py-2 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
+                              : 'amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
                           }
                           style={
                             isBespoke
@@ -754,7 +731,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                           }
                         >
                           <Download size={11} />
-                          <span>Export .zbak</span>
+                          <span>One-Tap Save</span>
                         </button>
                       )}
                       {onOpenManualBackup && (
@@ -779,8 +756,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                                 }
                           }
                         >
-                          <HardDrive size={11} />
-                          <span>Backup Options &rarr;</span>
+                          <Clock size={11} />
+                          <span>Timer / Settings &rarr;</span>
                         </button>
                       )}
                     </div>
@@ -819,7 +796,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               }
               style={isBespoke ? undefined : { color: '#C4B5FD' }}
             >
-              Make sure to upload <code className="font-mono">zero-backup.zbak</code> to Drive, OneDrive, or JioDrive via 1-Tap Upload.
+              Saves only your stats, Escape Tickets &amp; donor perks (<code className="font-mono">zero-backup.zbak</code>).
             </div>
           }
         />

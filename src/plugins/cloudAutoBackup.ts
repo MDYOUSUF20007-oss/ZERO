@@ -1,6 +1,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { IntegrityEngine } from '../core/integrity/IntegrityEngine';
-import type { CloudAutoBackupStatus } from '../types';
+import type { CloudAutoBackupStatus, CloudReminderInterval } from '../types';
 import { ZBAK_FILE_NAME } from '../utils/zbakCodec';
 
 export const ALLOWED_CLOUD_DESTINATIONS = IntegrityEngine.HARDCODED_CLOUD_SAF_DESTINATIONS;
@@ -16,6 +16,8 @@ export interface CloudAutoBackupPluginInterface {
     providerLabel: string | null;
     hasPersistedPermission: boolean;
     lastBackupTimestamp: number;
+    lastCloudUploadTimestamp?: number;
+    reminderInterval?: CloudReminderInterval;
     bytesWritten?: number;
     synced?: boolean;
   }>;
@@ -37,6 +39,8 @@ export interface CloudAutoBackupPluginInterface {
     providerLabel: string | null;
     hasPersistedPermission: boolean;
     lastBackupTimestamp: number;
+    lastCloudUploadTimestamp?: number;
+    reminderInterval?: CloudReminderInterval;
   }>;
   disableAutoBackup(): Promise<{
     enabled: boolean;
@@ -45,6 +49,27 @@ export interface CloudAutoBackupPluginInterface {
     providerLabel: null;
     hasPersistedPermission: boolean;
     lastBackupTimestamp: number;
+    lastCloudUploadTimestamp?: number;
+    reminderInterval?: CloudReminderInterval;
+  }>;
+  saveManualBackupToStorage(options: {
+    data: string;
+    fileName?: string;
+  }): Promise<{
+    ok: boolean;
+    timestamp: number;
+    fileName: string;
+    locationLabel?: string;
+    usedAutoSyncTarget?: boolean;
+  }>;
+  configureCloudReminder(options: {
+    interval: CloudReminderInterval;
+    lastCloudUploadTimestamp?: number;
+  }): Promise<{
+    ok: boolean;
+    interval: CloudReminderInterval;
+    lastCloudUploadTimestamp: number;
+    nextReminderAtMs: number;
   }>;
   shareManualBackup(options: {
     data: string;
@@ -52,6 +77,7 @@ export interface CloudAutoBackupPluginInterface {
   }): Promise<{
     ok: boolean;
     timestamp: number;
+    lastCloudUploadTimestamp?: number;
     fileName: string;
   }>;
   pickAndReadBackupFile(): Promise<{
@@ -264,6 +290,11 @@ export async function fetchUniversalCloudAutoBackupStatus(): Promise<Partial<Clo
       providerLabel: safeUri ? res.providerLabel || null : null,
       hasPersistedPermission: Boolean(safeUri && res.hasPersistedPermission),
       lastBackupTimestamp: Number(res.lastBackupTimestamp) || 0,
+      lastCloudUploadTimestamp:
+        typeof res.lastCloudUploadTimestamp === 'number' ? res.lastCloudUploadTimestamp : undefined,
+      reminderInterval: res.reminderInterval
+        ? IntegrityEngine.sanitizeCloudReminderInterval(res.reminderInterval)
+        : undefined,
     };
   } catch {
     return null;
@@ -282,10 +313,88 @@ export async function disableUniversalCloudAutoBackup(): Promise<{ ok: boolean }
   return { ok: true };
 }
 
+export async function oneTapSaveZbakToStorage(zbakContent: string): Promise<{
+  ok: boolean;
+  timestamp?: number;
+  locationLabel?: string;
+  fileName?: string;
+  message: string;
+}> {
+  if (isNativeAndroidCloudPluginAvailable()) {
+    try {
+      const res = await NativeCloudAutoBackup.saveManualBackupToStorage({
+        data: zbakContent,
+        fileName: ZBAK_FILE_NAME,
+      });
+      const where = res.locationLabel || 'Device Storage';
+      return {
+        ok: Boolean(res.ok),
+        timestamp: res.timestamp || Date.now(),
+        locationLabel: where,
+        fileName: res.fileName || ZBAK_FILE_NAME,
+        message: res.usedAutoSyncTarget
+          ? `Saved latest stats & donor data to ${where}.`
+          : `Saved ${res.fileName || ZBAK_FILE_NAME} to ${where}.`,
+      };
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      return {
+        ok: false,
+        message: e?.message || 'Could not save zero-backup.zbak to storage.',
+      };
+    }
+  }
+
+  if (webFileHandle) {
+    try {
+      const writable = await webFileHandle.createWritable();
+      await writable.write(zbakContent);
+      await writable.close();
+      return {
+        ok: true,
+        timestamp: Date.now(),
+        locationLabel: webFileHandle.name || ZBAK_FILE_NAME,
+        fileName: webFileHandle.name || ZBAK_FILE_NAME,
+        message: `Saved ${webFileHandle.name || ZBAK_FILE_NAME} to linked local file.`,
+      };
+    } catch {
+      // Fall back to direct download
+    }
+  }
+
+  downloadZbakBlob(zbakContent);
+  return {
+    ok: true,
+    timestamp: Date.now(),
+    locationLabel: 'Downloads',
+    fileName: ZBAK_FILE_NAME,
+    message: `Saved ${ZBAK_FILE_NAME} (stats, tickets & donor perks) to Downloads.`,
+  };
+}
+
+export async function syncCloudReminderSchedule(
+  interval: CloudReminderInterval,
+  lastCloudUploadTimestamp: number
+): Promise<void> {
+  if (!isNativeAndroidCloudPluginAvailable()) return;
+  try {
+    await NativeCloudAutoBackup.configureCloudReminder({
+      interval: IntegrityEngine.sanitizeCloudReminderInterval(interval),
+      lastCloudUploadTimestamp:
+        Number.isFinite(lastCloudUploadTimestamp) && lastCloudUploadTimestamp > 0
+          ? Math.round(lastCloudUploadTimestamp)
+          : 0,
+    });
+  } catch {
+    // Non-fatal in case plugin is unavailable in web preview
+  }
+}
+
 export async function triggerOneTapCloudUpload(zbakContent: string): Promise<{
   ok: boolean;
   cancelled?: boolean;
   timestamp?: number;
+  lastCloudUploadTimestamp?: number;
   message: string;
 }> {
   if (isNativeAndroidCloudPluginAvailable()) {
@@ -294,16 +403,18 @@ export async function triggerOneTapCloudUpload(zbakContent: string): Promise<{
         data: zbakContent,
         fileName: ZBAK_FILE_NAME,
       });
+      const ts = res.lastCloudUploadTimestamp || res.timestamp || Date.now();
       return {
         ok: true,
-        timestamp: res.timestamp || Date.now(),
-        message: 'Choose Google Drive, OneDrive, JioDrive, or Files to upload zero-backup.zbak.',
+        timestamp: res.timestamp || ts,
+        lastCloudUploadTimestamp: ts,
+        message: 'Choose your cloud app (Drive, OneDrive, Proton Drive, JioDrive) to upload zero-backup.zbak.',
       };
     } catch (err: unknown) {
       const e = err as { message?: string };
       return {
         ok: false,
-        message: e?.message || 'Could not launch Android Share sheet.',
+        message: e?.message || 'Could not launch Android Cloud app chooser.',
       };
     }
   }
@@ -315,28 +426,32 @@ export async function triggerOneTapCloudUpload(zbakContent: string): Promise<{
     });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
-        title: 'ZERO Cloud Backup (zero-backup.zbak)',
-        text: 'Save zero-backup.zbak to Google Drive, OneDrive, JioDrive, or local storage.',
+        title: 'ZERO Stats & Donor Backup (zero-backup.zbak)',
+        text: 'Upload zero-backup.zbak (stats, Escape Tickets & donor perks) to your cloud app.',
         files: [file],
       });
+      const now = Date.now();
       return {
         ok: true,
-        timestamp: Date.now(),
-        message: 'Shared zero-backup.zbak — 7-day weekly backup timer reset.',
+        timestamp: now,
+        lastCloudUploadTimestamp: now,
+        message: 'Shared zero-backup.zbak to your cloud app & reset reminder timer.',
       };
     }
   } catch (err: unknown) {
     const e = err as { name?: string };
     if (e?.name === 'AbortError') {
-      return { ok: false, cancelled: true, message: 'Share cancelled.' };
+      return { ok: false, cancelled: true, message: 'Cloud upload cancelled.' };
     }
   }
 
   downloadZbakBlob(zbakContent);
+  const now = Date.now();
   return {
     ok: true,
-    timestamp: Date.now(),
-    message: 'Downloaded zero-backup.zbak! Save it in your Drive / OneDrive / JioDrive app.',
+    timestamp: now,
+    lastCloudUploadTimestamp: now,
+    message: 'Downloaded zero-backup.zbak! Upload it in your Drive / OneDrive / cloud app.',
   };
 }
 

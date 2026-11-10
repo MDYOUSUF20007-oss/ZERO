@@ -52,12 +52,16 @@ import {
   shiftMonthAnchor,
 } from '../src/utils/heatmapAnalytics.ts';
 import {
+  MONTHLY_BACKUP_INTERVAL_MS,
   WEEKLY_BACKUP_INTERVAL_MS,
   ZBAK_PREFIX,
   decodeAndVerifyZbak,
   encodeZbakPayload,
+  getNextCloudReminderInfo,
   hmacSha256Hex,
+  isCloudUploadReminderDue,
   isWeeklyBackupDue,
+  sanitizeCloudReminderInterval,
 } from '../src/utils/zbakCodec.ts';
 import {
   evaluatePermissionPriority,
@@ -612,7 +616,36 @@ failIf(
   isWeeklyBackupDue(false, 0, nowTs) === true,
   'Weekly banner should remind manual users with legacy timestamp=0'
 );
-console.log('PASS: Signed .zbak Envelope, Tamper Rejection & Weekly Backup Timer Verified');
+
+// Configurable Cloud Upload Reminder Timer (1 Week / 1 Month / Off) — independent of local Auto-Sync
+failIf(
+  MONTHLY_BACKUP_INTERVAL_MS === 30 * 24 * 60 * 60 * 1000 &&
+    sanitizeCloudReminderInterval('monthly') === 'monthly' &&
+    sanitizeCloudReminderInterval('off') === 'off' &&
+    sanitizeCloudReminderInterval('bogus') === 'weekly',
+  'Cloud reminder interval sanitizer must allow weekly/monthly/off and fallback invalid inputs to weekly'
+);
+failIf(
+  isCloudUploadReminderDue('weekly', nowTs - (WEEKLY_BACKUP_INTERVAL_MS - 1000), nowTs) === false &&
+    isCloudUploadReminderDue('weekly', nowTs - WEEKLY_BACKUP_INTERVAL_MS, nowTs) === true &&
+    isCloudUploadReminderDue('monthly', nowTs - (WEEKLY_BACKUP_INTERVAL_MS + 1000), nowTs) === false &&
+    isCloudUploadReminderDue('monthly', nowTs - MONTHLY_BACKUP_INTERVAL_MS, nowTs) === true &&
+    isCloudUploadReminderDue('off', 0, nowTs) === false,
+  'Cloud upload reminder due checks must enforce exact 7d weekly, 30d monthly, and disabled off boundaries'
+);
+const monthlyInfoDueIn10d = getNextCloudReminderInfo(
+  'monthly',
+  nowTs - (20 * 24 * 60 * 60 * 1000),
+  nowTs
+);
+failIf(
+  monthlyInfoDueIn10d.interval === 'monthly' &&
+    monthlyInfoDueIn10d.isDue === false &&
+    monthlyInfoDueIn10d.remainingMs === 10 * 24 * 60 * 60 * 1000 &&
+    getNextCloudReminderInfo('off', 0, nowTs).nextReminderAtMs === null,
+  'Next cloud reminder info must compute accurate remaining milliseconds for monthly schedule and null for off'
+);
+console.log('PASS: Signed .zbak Envelope, Tamper Rejection & Weekly/Monthly Cloud Reminder Timer Verified');
 
 console.log('\n=== TEST 13: Android Permission Priority Order & Restricted Settings State ===');
 const baseMissingPerms: NativePermissionStatus = {

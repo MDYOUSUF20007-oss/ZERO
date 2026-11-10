@@ -230,6 +230,8 @@ export interface ZeroZbakPayload {
   ledger: ParachuteLedgerEntry[];
 }
 
+export type CloudReminderInterval = 'weekly' | 'monthly' | 'off';
+
 export interface CloudAutoBackupStatus {
   supported: boolean;
   enabled: boolean;
@@ -237,6 +239,8 @@ export interface CloudAutoBackupStatus {
   displayName: string | null;
   providerLabel: string | null;
   lastBackupTimestamp: number;
+  lastCloudUploadTimestamp?: number;
+  reminderInterval?: CloudReminderInterval;
   hasPersistedPermission: boolean;
   lastError?: string | null;
 }
