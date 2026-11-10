@@ -74,13 +74,16 @@ jobs:
     needs: build-web
     runs-on: ubuntu-latest
     env:
-      ZERO_VERSION_CODE: ${{ 100 + github.run_number }}
       ZERO_VERSION_NAME: 1.0.${{ github.run_number }}
       EXPECTED_CERT_SHA256: A1:4A:36:1E:D4:B7:F7:D6:6E:57:69:92:99:9D:02:8A:05:32:65:85:0A:6C:A4:AF:EE:4F:C1:2F:29:48:CE:11
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Compute Monotonic Android Version Code
+        run: |
+          echo "ZERO_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -112,17 +115,19 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Decode Persistent Release Signing Keystore
+        id: keystore
         env:
           KEYSTORE_B64: ${{ secrets.ZERO_KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.ZERO_KEYSTORE_PASS }}
           KS_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
         run: |
           if [ -z "$KEYSTORE_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KS_ALIAS" ]; then
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
               echo "::error::Missing persistent signing secrets (ZERO_KEYSTORE_BASE64, ZERO_KEYSTORE_PASS, ZERO_KEYSTORE_ALIAS). Refusing to generate disposable keys so user updates never require uninstalling."
               exit 1
             else
               echo "PR build without secrets: skipping release signing."
+              echo "signed=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
@@ -131,6 +136,7 @@ jobs:
             -keystore "${{ runner.temp }}/zero-release.p12" \
             -storepass "$KS_PASS" \
             -alias "$KS_ALIAS" | grep -E "Alias name:|SHA256:"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: Compile Standard & Strict Release APKs (v${{ env.ZERO_VERSION_NAME }} / code ${{ env.ZERO_VERSION_CODE }})
         env:
@@ -144,7 +150,7 @@ jobs:
           ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
 
       - name: Verify APK Signing Certificate & Stage Release Assets
-        if: secrets.ZERO_KEYSTORE_BASE64 != ''
+        if: steps.keystore.outputs.signed == 'true'
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
           mkdir -p release-assets
@@ -166,7 +172,7 @@ jobs:
           cat release-assets/SHA256SUMS.txt
 
       - name: Upload Strict Accessibility APK Artifact (Full BlockIt Mode)
-        if: secrets.ZERO_KEYSTORE_BASE64 != ''
+        if: steps.keystore.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Zero-strict-accessibility-apk
@@ -175,7 +181,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Standard Sideload APK Artifact (Usage Access + Overlay)
-        if: secrets.ZERO_KEYSTORE_BASE64 != ''
+        if: steps.keystore.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Zero-standard-sideload-apk
@@ -184,7 +190,7 @@ jobs:
           retention-days: 30
 
       - name: Publish Direct Download GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.ZERO_KEYSTORE_BASE64 != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
