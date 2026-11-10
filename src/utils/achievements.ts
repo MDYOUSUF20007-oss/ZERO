@@ -46,8 +46,9 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'zero_supporter',
     title: 'ZERO-SUPPORTER',
-    requirementLabel: '₹50+ Tip',
-    description: 'Golden supporter badge unlocked by backing Zero with your first ₹50+ tip.',
+    requirementLabel: 'Min ₹50 1st Tip',
+    description:
+      'Golden crest unlocked strictly after your 1st tip of minimum ₹50 (also gifts +1 Escape Ticket).',
     kind: 'supporter',
     thresholdHours: 0,
     tierColor: 'gold',
@@ -133,7 +134,9 @@ export function evaluateBadges(input: {
         ...def,
         unlocked: Boolean(input.isZeroSupporter),
         progressPct: input.isZeroSupporter ? 100 : 0,
-        progressText: input.isZeroSupporter ? 'Unlocked' : '₹50+ tip unlocks gold badge',
+        progressText: input.isZeroSupporter
+          ? 'Unlocked'
+          : 'Min ₹50 1st tip unlocks gold crest',
       };
     }
 

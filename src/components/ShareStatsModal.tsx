@@ -365,7 +365,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ctx.fillText('NEXT UNLOCK: COMPLETE 1H LOCK -> GETTING STARTED', badgeBoxX + 26, badgeBoxY + 104, badgeBoxW - 52);
       ctx.fillStyle = '#FBBF24';
       ctx.font = '600 19px monospace';
-      ctx.fillText('SUPPORTER CREST: TIP RS.50+ -> ZERO-SUPPORTER (GOLD)', badgeBoxX + 26, badgeBoxY + 148, badgeBoxW - 52);
+      ctx.fillText('SUPPORTER CREST: MIN RS.50 1ST TIP -> ZERO-SUPPORTER', badgeBoxX + 26, badgeBoxY + 148, badgeBoxW - 52);
     } else {
       let curX = badgeBoxX + 26;
       let curY = badgeBoxY + 62;
@@ -411,13 +411,13 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       }
     }
 
-    // Footer Manifesto & Earned Parachute Badge
+    // Footer Manifesto & Escape Tickets Badge
     ctx.fillStyle = '#18181B';
     drawRoundedRectPath(ctx, 96, 1156, W - 192, 104, 14);
     ctx.fill();
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '700 25px monospace';
-    ctx.fillText(`EARNED PARACHUTES: ${parachuteMetrics.currentBalance}  |  FOSS • ZERO PAYWALLS`, 124, 1202);
+    ctx.fillText(`ESCAPE TICKETS: ${parachuteMetrics.currentBalance}  |  FOSS • ZERO PAYWALLS`, 124, 1202);
     ctx.fillStyle = '#A1A1AA';
     ctx.font = '500 21px monospace';
     const mottoText = profile?.motto
@@ -566,7 +566,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
           ) : (
             <div className="text-[10px] text-zinc-500">
               Complete a 1h lock for <span className="text-zinc-300 font-bold">GETTING STARTED</span>{' '}
-              or tip ₹50+ for the Golden{' '}
+              or make your 1st min ₹50 tip for the Golden{' '}
               <span className="text-amber-300 font-bold">ZERO-SUPPORTER</span> badge.
             </div>
           )}

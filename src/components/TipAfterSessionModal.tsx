@@ -151,7 +151,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
           helped you today, you can leave a small optional tip to support development.
         </p>
 
-        {/* BEST OFFER: UPI (Zero Minimum Limit) + First ₹50+ Parachute Bonus */}
+        {/* BEST OFFER: UPI (Zero Minimum Limit) + Strict Min ₹50 First Tip Bonus */}
         <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-400/70 space-y-3 shadow-brutal">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider">
@@ -159,7 +159,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               <span>Best Offer • Best Option</span>
             </span>
             <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-700/70 px-2 py-0.5 rounded-md">
-              NO MINIMUM LIMIT
+              NO MINIMUM LIMIT (GENERAL UPI)
             </span>
           </div>
 
@@ -169,22 +169,29 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
               <div className="text-[11px] font-bold text-amber-200">{UPI_ID}</div>
             </div>
             <p className="text-[11px] text-zinc-300 leading-relaxed">
-              UPI has <strong>no minimum limit</strong> — tip even ₹1 or any amount you like with
-              zero platform fees.
+              Regular UPI tips have <strong>no minimum limit</strong> — tip even ₹1 with zero
+              platform fees.
             </p>
           </div>
 
-          {/* 1st ₹50+ Donation Bonus Callout */}
+          {/* 1st Minimum ₹50 Donation Bonus Callout */}
           {!hasClaimedFirstDonationParachute ? (
             <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
-              <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-black uppercase tracking-wide">
-                <Gift size={13} className="text-emerald-400 shrink-0" />
-                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 🪂 &amp; Gold Badge</span>
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-black uppercase tracking-wide">
+                  <Gift size={13} className="text-emerald-400 shrink-0" />
+                  <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 🎫 &amp; Gold Badge</span>
+                </div>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-black shrink-0">
+                  Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
+                </span>
               </div>
               <p className="text-[10px] text-zinc-300 leading-relaxed">
-                As a thank-you, your <strong>very first ₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
-                donation (UPI or Ko-fi) unlocks <strong>+1 bonus Parachute</strong> &amp; the Golden{' '}
-                <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge on your Profile &amp; Flex cards.
+                <strong>Strict Requirement:</strong> The Golden{' '}
+                <strong className="text-amber-300">ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
+                <strong>+1 Free Emergency Escape Ticket (🎫)</strong>{' '}
+                <strong>ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
+                (tips under ₹{FIRST_DONATION_BONUS_INR} do not unlock this badge).
               </p>
 
               {!confirmingDonationClaim ? (
@@ -197,7 +204,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     }}
                     className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                   >
-                    <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂 &amp; Gold)</span>
+                    <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 🎫 &amp; Gold)</span>
                     <ExternalLink size={12} />
                   </a>
                   <button
@@ -205,15 +212,16 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                     onClick={() => setConfirmingDonationClaim(true)}
                     className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-emerald-700/60 text-emerald-200 text-[10px] font-bold"
                   >
-                    Already Sent ₹{FIRST_DONATION_BONUS_INR}+?
+                    Sent Min ₹{FIRST_DONATION_BONUS_INR}?
                   </button>
                 </div>
               ) : (
                 <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2">
                   <div className="text-[10px] text-emerald-200 leading-relaxed">
-                    Confirm you completed your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong>{' '}
-                    donation to claim your <strong>+1 Free Parachute</strong> &amp; Golden{' '}
-                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge:
+                    Confirm you completed your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
+                    to unlock the Golden{' '}
+                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge &amp;{' '}
+                    <strong>+1 Free Emergency Escape Ticket (🎫)</strong>:
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -224,7 +232,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
                       }}
                       className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all"
                     >
-                      Claim +1 🪂 &amp; Gold Badge
+                      Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
                     </button>
                     <button
                       type="button"
@@ -241,7 +249,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
             <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] text-emerald-300">
               <span className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={12} />
-                <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Bonus Claimed</span>
+                <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
               </span>
               <ZeroSupporterGoldenBadge compact />
             </div>
@@ -293,7 +301,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
           {showQr && (
             <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex flex-col items-center justify-center text-center space-y-2">
               {upiQrUrl ? (
-                <div className="bg-white p-2 rounded-xl shadow-md">
+                <div data-qr-surface="true" className="bg-white p-2 rounded-xl shadow-md">
                   <img
                     src={upiQrUrl}
                     alt={`UPI QR code for ${UPI_ID}`}

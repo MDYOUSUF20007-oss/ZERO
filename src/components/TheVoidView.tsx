@@ -89,7 +89,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between items-center px-6 select-none overflow-hidden bg-dot-matrix"
+      className="fixed inset-0 z-50 zero-app-shell flex flex-col justify-between items-center px-6 select-none overflow-hidden bg-dot-matrix"
       style={{
         paddingTop: 'calc(1.25rem + var(--zero-safe-top))',
         paddingBottom: 'calc(1.25rem + var(--zero-safe-bottom))',
@@ -142,7 +142,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
 
         <p className="text-xs font-mono text-zinc-300 tracking-wide max-w-xs mt-1">
-          "The obstacle is the way. Put your phone facedown."
+          &ldquo;The obstacle is the way. Put your phone facedown.&rdquo;
         </p>
 
         {/* Active Bag Card */}
@@ -203,24 +203,24 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             className="w-full h-14 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] border border-amber-500/50 rounded-2xl flex items-center justify-between px-4 font-mono transition-all shadow-brutal text-amber-200"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-xl">🪂</span>
+              <span className="text-xl">🎫</span>
               <div className="text-left">
-                <div className="font-bold text-sm tracking-wide">Deploy Emergency Parachute</div>
+                <div className="font-bold text-sm tracking-wide">Use Emergency Escape Ticket</div>
                 <div className="text-[11px] text-amber-300/80">
-                  {parachuteMetrics.currentBalance} Available (Consumes 1 & voids session)
+                  {parachuteMetrics.currentBalance} Available (Consumes 1 &amp; voids session)
                 </div>
               </div>
             </div>
             <div className="text-xs uppercase font-extrabold bg-amber-500 text-black px-2.5 py-1 rounded-lg">
-              UNLOCK
+              ESCAPE
             </div>
           </button>
         ) : (
           <div className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between text-zinc-300 font-mono text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-lg opacity-40">🪂</span>
+              <span className="text-lg opacity-40">🎫</span>
               <div className="text-left">
-                <span className="font-semibold text-zinc-300">0 Parachutes Available</span>
+                <span className="font-semibold text-zinc-300">0 Escape Tickets Available</span>
                 <p className="text-[11px] text-zinc-400">
                   Earn 1 per 20h completed blockage ({parachuteMetrics.hoursUntilNextParachute}h left)
                 </p>
@@ -305,13 +305,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           <div className="w-full max-w-sm bg-zinc-950 border-2 border-amber-500/80 rounded-2xl p-6 shadow-brutal font-mono text-left">
             <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
               <AlertTriangle size={18} />
-              <span>DEPLOY EMERGENCY PARACHUTE?</span>
+              <span>USE EMERGENCY ESCAPE TICKET?</span>
             </div>
 
             <div className="space-y-3 text-xs text-zinc-300 mb-5 leading-relaxed">
               <p>
-                You are about to deploy 1 of your{' '}
-                <strong className="text-white">{parachuteMetrics.currentBalance}</strong> earned Parachutes.
+                You are about to use 1 of your{' '}
+                <strong className="text-white">{parachuteMetrics.currentBalance}</strong> Emergency
+                Escape Tickets.
               </p>
               <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-amber-200 text-[11px]">
                 <strong>Strict Anti-Exploit Rule:</strong> All elapsed time in this session ({Math.floor(activeLock.elapsedSeconds / 60)}m) will be <strong>permanently voided</strong> and will NOT count toward your next 20-hour milestone.
@@ -326,13 +327,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 onClick={handleConfirmDeploy}
                 className="w-full py-3 bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all"
               >
-                Yes, Deploy Parachute (-1 Balance)
+                Use Escape Ticket (-1 Balance)
               </button>
               <button
                 onClick={() => setShowParachuteConfirm(false)}
                 className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-zinc-800"
               >
-                Cancel & Stay Focused
+                Cancel &amp; Stay Focused
               </button>
             </div>
           </div>

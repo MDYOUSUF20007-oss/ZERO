@@ -98,6 +98,7 @@ export const ZeroSupporterGoldenBadge: React.FC<{
   compact?: boolean;
 }> = ({ compact = false }) => (
   <span
+    data-gold-badge="true"
     className={`inline-flex items-center gap-1 rounded-full font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 text-black border border-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.55)] shrink-0 ${
       compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-0.5 text-[10px]'
     }`}

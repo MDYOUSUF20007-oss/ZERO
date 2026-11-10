@@ -16,6 +16,10 @@ import { Clock, Heart, BellRing, X } from 'lucide-react';
 export function App() {
   const store = useZeroStore();
   const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules'>('dial');
+  const [rulesSectionOverride, setRulesSectionOverride] = useState<{
+    section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
+    key: number;
+  } | null>(null);
   const [showBagModal, setShowBagModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -81,11 +85,11 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between relative selection:bg-white selection:text-black">
+    <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
       {/* Top Status Bar Safe-Area Scrim (prevents scrolled content from clashing with Android system icons) */}
       <div
         aria-hidden="true"
-        className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md pointer-events-none"
+        className="fixed top-0 left-0 right-0 z-40 zero-top-scrim backdrop-blur-md pointer-events-none"
         style={{ height: 'var(--zero-safe-top)' }}
       />
 
@@ -145,6 +149,10 @@ export function App() {
               setShowPermissionModal(true);
             }}
             onOpenProfileModal={openInteractiveProfile}
+            onOpenThemes={() => {
+              setRulesSectionOverride({ section: 'themes', key: Date.now() });
+              setActiveTab('schedules');
+            }}
           />
         )}
 
@@ -171,8 +179,9 @@ export function App() {
             onAddSchedule={store.addSchedule}
             onDeleteSchedule={store.deleteSchedule}
             onTriggerTestWarning={store.triggerTestWarning}
-            theme={store.theme}
-            onThemeChange={store.setTheme}
+            themeConfig={store.themeConfig}
+            onThemeConfigChange={store.setThemeConfig}
+            sectionOverride={rulesSectionOverride}
             sleepFarmingMode={store.sleepFarmingMode}
             onSleepFarmingModeChange={store.setSleepFarmingMode}
             onBuildBackupJson={store.buildBackupJson}
@@ -258,7 +267,7 @@ export function App() {
 
       {/* Neo-Brutalist Bottom Navigation Bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-t border-zinc-900 pt-2 px-4"
+        className="fixed bottom-0 left-0 right-0 z-40 zero-bottom-nav backdrop-blur-md border-t border-zinc-900 pt-2 px-4"
         style={{ paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))' }}
       >
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
@@ -289,7 +298,7 @@ export function App() {
             }`}
           >
             <div className="relative">
-              <span className="text-sm">🪂</span>
+              <span className="text-sm">🎫</span>
               {store.parachuteMetrics.currentBalance > 0 && (
                 <span className="absolute -top-1.5 -right-3 text-[9px] font-mono bg-amber-400 text-black px-1 rounded-full font-black">
                   {store.parachuteMetrics.currentBalance}

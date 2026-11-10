@@ -26,6 +26,7 @@ import {
   Sparkles,
   UserPlus,
   Trophy,
+  Palette,
 } from 'lucide-react';
 
 interface LockDialViewProps {
@@ -43,6 +44,7 @@ interface LockDialViewProps {
   onOpenBagDrawer: () => void;
   onOpenPermissionGate: () => void;
   onOpenProfileModal: () => void;
+  onOpenThemes: () => void;
 }
 
 const PRESET_DURATIONS = [
@@ -74,6 +76,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   onOpenBagDrawer,
   onOpenPermissionGate,
   onOpenProfileModal,
+  onOpenThemes,
 }) => {
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
@@ -262,90 +265,106 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col items-center justify-between px-4 py-3 pb-24 max-w-md mx-auto w-full select-none gap-3">
-      {/* Interactive Profile Strip */}
-      {profile ? (
-        <div
-          className={`w-full bg-zinc-950/90 border rounded-2xl p-2.5 flex items-center justify-between gap-2.5 transition-all ${profileAccent.border}`}
-        >
-          <ProfileAvatar
-            avatarId={profile.avatarId}
-            accent={profile.accentColor}
-            size="sm"
-            interactive
-          />
+      {/* Interactive Profile Strip + 1-Tap Theme Studio Shortcut */}
+      <div className="w-full flex items-stretch gap-2">
+        {profile ? (
+          <div
+            className={`flex-1 min-w-0 bg-zinc-950/90 border rounded-2xl p-2.5 flex items-center justify-between gap-2.5 transition-all ${profileAccent.border}`}
+          >
+            <ProfileAvatar
+              avatarId={profile.avatarId}
+              accent={profile.accentColor}
+              size="sm"
+              interactive
+            />
+            <button
+              type="button"
+              onClick={onOpenProfileModal}
+              className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-xs text-white truncate">
+                    {profile.displayName}
+                  </span>
+                  <span
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`}
+                  >
+                    {profileRank.title}
+                  </span>
+                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                </div>
+                <div className="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
+                  <span>
+                    {todayReclaimedHours}h / {profile.dailyGoalHours}h • #{profile.primaryMission}
+                  </span>
+                  {badgeSummary.unlockedBadges.length > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-amber-300 font-bold shrink-0">
+                      <Trophy size={9} />
+                      {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-8 bg-zinc-800 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                  <div
+                    className={`h-full rounded-full transition-all ${profileAccent.bar}`}
+                    style={{ width: `${dailyGoalPct}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
+                  Edit
+                </span>
+              </div>
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
             onClick={onOpenProfileModal}
-            className="flex-1 min-w-0 text-left font-mono group flex items-center justify-between gap-2"
+            className="flex-1 min-w-0 bg-amber-500/10 border border-amber-400/60 hover:border-amber-300 rounded-2xl p-2.5 px-3 flex items-center justify-between gap-2 font-mono transition-all active:scale-[0.99]"
           >
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-xs text-white truncate">
-                  {profile.displayName}
-                </span>
-                <span
-                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${profileAccent.badgeBg}`}
-                >
-                  {profileRank.title}
-                </span>
-                {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+                {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
               </div>
-              <div className="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
-                <span>
-                  {todayReclaimedHours}h / {profile.dailyGoalHours}h • #{profile.primaryMission}
-                </span>
-                {badgeSummary.unlockedBadges.length > 0 && (
-                  <span className="inline-flex items-center gap-0.5 text-amber-300 font-bold shrink-0">
-                    <Trophy size={9} />
-                    {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
-                  </span>
-                )}
+              <div className="text-left min-w-0">
+                <div className="text-xs font-bold text-white truncate">
+                  {hasClaimedFirstTimeParachute
+                    ? 'Create Profile'
+                    : 'Make Profile • +1 Free 🎫'}
+                </div>
+                <div className="text-[10px] text-amber-200/80 truncate">
+                  {hasClaimedFirstTimeParachute
+                    ? 'Emblem, daily goal & pledge'
+                    : 'Free starter Escape Ticket'}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-10 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${profileAccent.bar}`}
-                  style={{ width: `${dailyGoalPct}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-zinc-400 group-hover:text-white font-bold">
-                Edit
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
+              <Sparkles size={11} />
+              <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
+            </span>
           </button>
-        </div>
-      ) : (
+        )}
+
         <button
           type="button"
-          onClick={onOpenProfileModal}
-          className="w-full bg-amber-500/10 border border-amber-400/60 hover:border-amber-300 rounded-2xl p-2.5 px-3 flex items-center justify-between gap-2 font-mono transition-all active:scale-[0.99]"
+          onClick={() => {
+            haptics.tick(820);
+            onOpenThemes();
+          }}
+          className="px-2.5 rounded-2xl bg-zinc-950/90 border border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white shrink-0 transition-all active:scale-95"
+          title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
+          aria-label="Open Theme Studio"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
-              {hasClaimedFirstTimeParachute ? <UserPlus size={15} /> : <Gift size={15} />}
-            </div>
-            <div className="text-left min-w-0">
-              <div className="text-xs font-bold text-white truncate">
-                {hasClaimedFirstTimeParachute
-                  ? 'Create Interactive Profile'
-                  : 'Make Profile & Claim +1 Free 🪂'}
-              </div>
-              <div className="text-[10px] text-amber-200/80 truncate">
-                {hasClaimedFirstTimeParachute
-                  ? 'Choose emblem, daily goal & personal lock pledge'
-                  : 'First-timer special starter Parachute waiting'}
-              </div>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black uppercase shrink-0">
-            <Sparkles size={11} />
-            <span>{hasClaimedFirstTimeParachute ? 'Create' : 'Claim'}</span>
-          </span>
+          <Palette size={15} style={{ color: 'var(--zero-accent)' }} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Theme</span>
         </button>
-      )}
+      </div>
 
-      {/* Top Banner: Parachute Balance & Milestone Progress */}
+      {/* Top Banner: Escape Ticket Balance & Milestone Progress */}
       <button
         onClick={onOpenDashboard}
         className={`w-full bg-zinc-950/80 border rounded-2xl p-3 flex items-center justify-between transition-all group active:scale-[0.98] shadow-brutal relative overflow-hidden ${
@@ -369,14 +388,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             }`}
           >
             <span className={justEarnedParachute ? 'animate-parachute-float inline-block' : ''}>
-              🪂
+              🎫
             </span>
           </div>
           <div className="text-left">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-mono font-bold text-sm text-zinc-100">
                 {parachuteMetrics.currentBalance}{' '}
-                {parachuteMetrics.currentBalance === 1 ? 'Parachute' : 'Parachutes'}
+                {parachuteMetrics.currentBalance === 1 ? 'Escape Ticket' : 'Escape Tickets'}
               </span>
               <span
                 className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
@@ -441,7 +460,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           ref={dialRef}
           onMouseDown={startDialScrub}
           onTouchStart={startDialScrub}
-          className="relative w-60 h-60 sm:w-68 sm:h-68 rounded-full border-2 border-zinc-800/80 bg-zinc-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl transition-shadow hover:border-zinc-700"
+          className="zero-dial-ring relative w-60 h-60 sm:w-68 sm:h-68 rounded-full border-2 border-zinc-800/80 bg-zinc-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl transition-shadow hover:border-zinc-700"
           style={{ touchAction: 'none' }}
         >
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 288 288">
@@ -450,7 +469,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               cy="144"
               r="132"
               fill="none"
-              stroke="rgba(255, 255, 255, 0.05)"
+              stroke="var(--zero-border, rgba(255, 255, 255, 0.12))"
+              strokeOpacity="0.45"
               strokeWidth="12"
               strokeDasharray="2 10"
             />
@@ -459,7 +479,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               cy="144"
               r="132"
               fill="none"
-              stroke="#EDEDED"
+              stroke="var(--zero-dial-stroke, #EDEDED)"
               strokeWidth="5"
               strokeDasharray={`${(currentAngle / 360) * 829.38} 829.38`}
               strokeLinecap="round"
@@ -472,7 +492,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             className="absolute w-full h-full pointer-events-none transition-transform duration-75"
             style={{ transform: `rotate(${currentAngle}deg)` }}
           >
-            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] border border-black" />
+            <div
+              className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full shadow-[0_0_12px_rgba(255,255,255,0.45)] border"
+              style={{
+                backgroundColor: 'var(--zero-dial-stroke, #FFFFFF)',
+                borderColor: 'var(--zero-bg-primary, #000000)',
+              }}
+            />
           </div>
 
           <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
@@ -622,17 +648,21 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             style={{ touchAction: 'none' }}
           >
             <div
-              className="absolute left-0 top-0 bottom-0 bg-white transition-all pointer-events-none"
+              className="absolute left-0 top-0 bottom-0 transition-all pointer-events-none"
               style={{
                 width: `${holdProgress * 100}%`,
                 opacity: isHolding ? 0.95 : 0,
+                backgroundColor: 'var(--zero-inverted-bg, #FFFFFF)',
               }}
             />
 
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors ${
-                holdProgress > 0.5 ? 'text-black font-extrabold' : 'text-zinc-100'
+                holdProgress > 0.5 ? 'font-extrabold' : 'text-zinc-100'
               }`}
+              style={{
+                color: holdProgress > 0.5 ? 'var(--zero-inverted-text, #000000)' : undefined,
+              }}
             >
               {isHolding ? (
                 <>

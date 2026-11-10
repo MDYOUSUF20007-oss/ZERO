@@ -32,6 +32,12 @@ import {
   computeParachuteBalance,
   sanitizeZeroProfile,
 } from '../utils/parachuteRewardsPolicy';
+import type { ThemeConfig } from '../types';
+import {
+  DEFAULT_THEME_CONFIG,
+  computeThemeRuntime,
+  sanitizeThemeConfig,
+} from '../utils/themes';
 
 export const SECONDS_PER_PARACHUTE = 72000; // 20 Hours exactly
 export const MAX_BAG_APPS = 3; // BlockIt-inspired 3-app cap per Bag
@@ -53,6 +59,7 @@ const STORAGE_KEYS = {
   BAGS: 'zero_occasion_bags_v4',
   ACTIVE_BAG_ID: 'zero_active_bag_id_v4',
   THEME: 'zero_active_theme_v3',
+  THEME_CONFIG: 'zero_theme_config_v1',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   SEED_PURGE_FLAG: 'zero_seed_purged_v4',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
@@ -224,8 +231,35 @@ export function useZeroStore() {
   });
 
   const [theme, setThemeState] = useState<ThemeStyle>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.THEME) as ThemeStyle) || 'oled';
+    return (localStorage.getItem(STORAGE_KEYS.THEME) as ThemeStyle) || 'amoled';
   });
+
+  const [themeConfig, setThemeConfigState] = useState<ThemeConfig>(() => {
+    const legacy = (localStorage.getItem(STORAGE_KEYS.THEME) as ThemeStyle) || 'amoled';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.THEME_CONFIG);
+      if (saved) {
+        return sanitizeThemeConfig(JSON.parse(saved) as Partial<ThemeConfig>, legacy);
+      }
+    } catch {
+      // Ignore malformed stored theme
+    }
+    return sanitizeThemeConfig(DEFAULT_THEME_CONFIG, legacy);
+  });
+
+  const setThemeConfig = useCallback((next: ThemeConfig) => {
+    const sanitized = sanitizeThemeConfig(next);
+    setThemeConfigState(sanitized);
+    setThemeState(sanitized.family);
+  }, []);
+
+  const setTheme = useCallback(
+    (nextStyle: ThemeStyle) => {
+      setThemeState(nextStyle);
+      setThemeConfigState((prev) => sanitizeThemeConfig({ ...prev, family: nextStyle === 'kindle' ? 'kindle' : nextStyle === 'matte' ? 'matte' : 'amoled' }, nextStyle));
+    },
+    []
+  );
 
   const [sleepFarmingMode, setSleepFarmingMode] = useState<SleepFarmingMode>(() => {
     return (localStorage.getItem(STORAGE_KEYS.SLEEP_FARMING_MODE) as SleepFarmingMode) || 'quarter_credit';
@@ -451,11 +485,29 @@ export function useZeroStore() {
     };
   }, [refreshPermissions, refreshInstalledApps]);
 
-  // Persist to localStorage
+  // Persist & apply active Theme Studio runtime CSS tokens
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
-    document.documentElement.className = 'dark';
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.THEME_CONFIG, JSON.stringify(themeConfig));
+    const runtime = computeThemeRuntime(themeConfig);
+    const rootEl = document.documentElement;
+    rootEl.className = runtime.mode === 'light' ? 'light' : 'dark';
+    rootEl.setAttribute('data-zero-theme', runtime.family);
+    rootEl.setAttribute(
+      'data-zero-has-gradient',
+      String(themeConfig.family === 'amoled' && themeConfig.amoledGradient !== 'pure')
+    );
+    Object.entries(runtime.cssVars).forEach(([cssVar, val]) => {
+      rootEl.style.setProperty(cssVar, val);
+    });
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', runtime.metaThemeColor);
+    }
+  }, [themeConfig]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SLEEP_FARMING_MODE, sleepFarmingMode);
@@ -721,7 +773,7 @@ export function useZeroStore() {
         id: `txn_${now}`,
         timestamp: now,
         type: 'EARNED',
-        description: `20-Hour Milestone reached! (+${delta} Emergency Parachute earned)`,
+        description: `20-Hour Milestone reached! (+${delta} Emergency Escape Ticket earned)`,
         delta,
         tag: finishedLock.tag,
         note: isSleep ? `Completed Sleep session (credited at ${multiplier}x rate)` : 'Full daytime focus credit',
@@ -732,7 +784,7 @@ export function useZeroStore() {
         source: 'milestone_20h',
         delta,
         newBalance: updatedBalance,
-        title: delta > 1 ? `+${delta} Parachutes Earned!` : '20h Milestone Parachute!',
+        title: delta > 1 ? `+${delta} Escape Tickets Earned!` : '20h Milestone Escape Ticket!',
         subtitle: `You completed 20 cumulative hours of phone-free discipline in #${finishedLock.tag}.`,
       });
     }
@@ -795,10 +847,10 @@ export function useZeroStore() {
       id: `txn_${now}`,
       timestamp: now,
       type: 'DEPLOYED',
-      description: `Emergency Parachute deployed (${abortedTag} session aborted at ${elapsedMinutes}m)`,
+      description: `Emergency Escape Ticket used (${abortedTag} session aborted at ${elapsedMinutes}m)`,
       delta: -1,
       tag: abortedTag,
-      note: 'Aborted Session Penalty: 0h credited toward Parachute progression (anti-exploit).',
+      note: 'Aborted Session Penalty: 0h credited toward Escape Ticket progression (anti-exploit).',
     };
     setLedger((prev) => [newEntry, ...prev]);
 
@@ -1084,7 +1136,7 @@ export function useZeroStore() {
           id: `txn_welcome_${now}`,
           timestamp: now,
           type: 'EARNED',
-          description: 'First-Timer Profile Gift: Starter Emergency Parachute (+1 Free)',
+          description: 'First-Timer Profile Gift: Starter Emergency Escape Ticket (+1 Free)',
           delta: 1,
           tag: 'Onboarding',
           note: `Profile created for ${sanitized.handle}`,
@@ -1095,8 +1147,8 @@ export function useZeroStore() {
           source: 'first_timer_profile',
           delta: 1,
           newBalance,
-          title: 'Starter Parachute Unlocked!',
-          subtitle: `Welcome aboard, ${sanitized.displayName}! Your first free Parachute is armed in your vault.`,
+          title: 'Starter Escape Ticket Unlocked!',
+          subtitle: `Welcome aboard, ${sanitized.displayName}! Your first free Emergency Escape Ticket is armed in your vault.`,
         });
       }
 
@@ -1133,10 +1185,10 @@ export function useZeroStore() {
       id: `txn_supporter_${now}`,
       timestamp: now,
       type: 'EARNED',
-      description: `First ₹${FIRST_DONATION_BONUS_INR}+ Supporter Bonus (+1 Free Parachute & Gold Badge)`,
+      description: `First ₹${FIRST_DONATION_BONUS_INR}+ Supporter Bonus (+1 Free Escape Ticket & Gold Badge)`,
       delta: 1,
       tag: 'Support',
-      note: 'One-time gratitude reward: +1 Parachute & Golden ZERO-SUPPORTER Badge unlocked',
+      note: 'One-time gratitude reward: +1 Escape Ticket & Golden ZERO-SUPPORTER Badge unlocked',
     };
     setLedger((prev) => [entry, ...prev]);
     setPostSessionTipPrompt(null);
@@ -1145,8 +1197,8 @@ export function useZeroStore() {
       source: 'first_donation_50',
       delta: 1,
       newBalance,
-      title: 'Thank-You Parachute Unlocked!',
-      subtitle: `Thank you for supporting Zero with ₹${FIRST_DONATION_BONUS_INR}+! +1 bonus Parachute & the Golden ZERO-SUPPORTER Badge are unlocked on your profile.`,
+      title: 'Thank-You Escape Ticket Unlocked!',
+      subtitle: `Thank you for supporting Zero with ₹${FIRST_DONATION_BONUS_INR}+! +1 bonus Escape Ticket & your Golden ZERO-SUPPORTER Badge are unlocked.`,
     });
 
     return true;
@@ -1175,6 +1227,7 @@ export function useZeroStore() {
       bags,
       activeBagId,
       theme,
+      themeConfig,
     };
     return JSON.stringify(payload, null, 2);
   };
@@ -1250,7 +1303,8 @@ export function useZeroStore() {
         parsed.activeBagId && nextBags.some((b) => b.id === parsed.activeBagId)
           ? parsed.activeBagId
           : nextBags[0].id;
-      const nextTheme: ThemeStyle = parsed.theme || 'oled';
+      const nextTheme: ThemeStyle = parsed.theme || 'amoled';
+      const nextThemeConfig = sanitizeThemeConfig(parsed.themeConfig, nextTheme);
       const nextSleepMode: SleepFarmingMode = parsed.sleepFarmingMode || 'quarter_credit';
 
       setCumulativeSeconds(nextCumulative);
@@ -1270,8 +1324,10 @@ export function useZeroStore() {
       setSchedules(nextSchedules);
       setBags(nextBags);
       setActiveBagId(nextActiveBagId);
-      setThemeState(nextTheme);
+      setThemeState(nextThemeConfig.family);
+      setThemeConfigState(nextThemeConfig);
       setSleepFarmingMode(nextSleepMode);
+      localStorage.setItem(STORAGE_KEYS.THEME_CONFIG, JSON.stringify(nextThemeConfig));
 
       localStorage.setItem(STORAGE_KEYS.CUMULATIVE_PARACHUTE_SECONDS, String(nextCumulative));
       localStorage.setItem(STORAGE_KEYS.TOTAL_RECLAIMED_SECONDS, String(nextReclaimed));
@@ -1332,6 +1388,8 @@ export function useZeroStore() {
     setSchedules(DEFAULT_SCHEDULES);
     setBags(DEFAULT_BAGS);
     setActiveBagId(DEFAULT_BAGS[0].id);
+    setThemeState('amoled');
+    setThemeConfigState(DEFAULT_THEME_CONFIG);
     setTipSkipRemaining(0);
     tipSkipRemainingRef.current = 0;
     setPostSessionTipPrompt(null);
@@ -1399,7 +1457,9 @@ export function useZeroStore() {
 
   return {
     theme,
-    setTheme: setThemeState,
+    setTheme,
+    themeConfig,
+    setThemeConfig,
     sleepFarmingMode,
     setSleepFarmingMode,
     profile,

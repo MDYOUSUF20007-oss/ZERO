@@ -232,10 +232,10 @@ jobs:
             - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Uses Android Accessibility Service to block Notification shade, Quick Settings, Settings, Recents, and unbagged apps. *(On Android 14–16 devices, install via `adb install -r` or Shizuku / "Install with Options", or tap **App Info → Allow restricted settings**.)*
 
             #### What's New
-            - **Golden `ZERO-SUPPORTER` Profile Badge:** Supporting Zero with a ₹50+ tip unlocks the **Golden `ZERO-SUPPORTER`** crest on your Interactive Profile alongside `+1 Free Parachute`.
-            - **Focus Achievement Badges:** Earn collectible badges across real focus milestones — **`GETTING STARTED`** (1st 1h session), **`WOO NICE!`** (50h), **`LONG WAY`** (100h), **`GETTING DISCIPLINED`** (250h), **`FULL CONTROL !`** (500h), and **`CAME SO FAR`** (1000h).
-            - **Flex Receipt Badges Showcase:** Earned achievements & your Golden **`ZERO-SUPPORTER`** badge now render right inside your shareable **`Flex Your Focus Card`** (`1080×1350` PNG receipt), with a 1-tap **Flex Session Results** button after sessions complete.
-            - **First-Timer Profile & Free Starter Parachute (+1 🪂):** Build your Interactive Profile, claim **1 free starter Parachute**, and enjoy animated Parachute Card celebrations.
+            - **Full Theme Studio (`AMOLED`, `Paper like Kindle`, `Matte Studio`):** Switch live between **Pure & Gradient AMOLED** (6 finishes), **Paper like Kindle** (5 E-Ink presets + custom Paper Color & Ink Accent pickers), and **Matte Studio** (5 low-glare charcoal finishes + custom Surface & Accent pickers).
+            - **Copyright-Safe Emergency Escape Tickets (`🎫`):** Renamed *Emergency Parachutes* to **Emergency Escape Tickets** across the app, receipts, notifications, and Android lock screen.
+            - **Strict Min ₹50 Rule for `ZERO-SUPPORTER`:** Clearly highlighted in the Tip popup and Support section — the Golden **`ZERO-SUPPORTER`** Profile Badge ONLY unlocks on your **1st tip of minimum ₹50** (with `+1 Free Escape Ticket`), while general UPI tips under ₹50 still have zero minimum limit.
+            - **Focus Achievement Badges & Flex Receipt Showcase:** **`GETTING STARTED`** (1st 1h session), **`WOO NICE!`** (50h), **`LONG WAY`** (100h), **`GETTING DISCIPLINED`** (250h), **`FULL CONTROL !`** (500h), **`CAME SO FAR`** (1000h), and **`ZERO-SUPPORTER`** render inside Profile & **`Flex Your Focus Card`** PNG exports.
 
       - name: Publish Direct Download GitHub Release (Debug-Signed Preview)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.keystore.outputs.signed != 'true'
@@ -259,6 +259,6 @@ jobs:
             - **`ZERO-requires-adb-v${{ env.ZERO_VERSION_NAME }}-preview.apk` (Strict Accessibility Edition — Full BlockIt Mode):** Full Accessibility Service lock blocking Notification shade, Settings, Recents, and unbagged apps (use `adb install -r`, Shizuku, or Allow Restricted Settings on Android 14–16).
 
             #### What's New
-            - **Golden `ZERO-SUPPORTER` Profile Badge** + 6 Focus Achievement Badges (**`GETTING STARTED`**, **`WOO NICE!`**, **`LONG WAY`**, **`GETTING DISCIPLINED`**, **`FULL CONTROL !`**, **`CAME SO FAR`**).
-            - **Flex Receipt Badges Showcase:** All earned badges + Golden **`ZERO-SUPPORTER`** crest render right on the shareable Focus Receipt PNG card.
-            - **Animated Parachute Card & 1st ₹50+ Tip Bonus (+1 Free 🪂)** inside the post-session UPI Tip popup (**Best Offer • No Minimum Limit**).
+            - **Full Theme Studio (`AMOLED`, `Paper like Kindle`, `Matte Studio`):** Pure & Gradient AMOLED finishes, Paper like Kindle presets + custom paper/ink pickers, and Matte Studio + custom surface/accent pickers.
+            - **Emergency Escape Tickets (`🎫`) & Strict Min ₹50 `ZERO-SUPPORTER` Rule:** Renamed *Parachutes* to **Emergency Escape Tickets**; Golden **`ZERO-SUPPORTER`** Badge strictly requires your **1st tip of minimum ₹50**.
+            - **Flex Receipt Badges Showcase:** All 6 milestone badges + Golden **`ZERO-SUPPORTER`** crest render right on the shareable Focus Receipt PNG card.

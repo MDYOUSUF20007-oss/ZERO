@@ -12,7 +12,7 @@ import {
 import { evaluateBadges } from '../utils/achievements';
 import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { haptics } from '../utils/haptics';
-import { Sparkles, X, Gift, UserCheck, Flame } from 'lucide-react';
+import { Sparkles, X, Gift, UserCheck, Flame, Lock } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -147,8 +147,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <Gift size={11} />
                 <span>
                   {mode === 'welcome'
-                    ? 'First-Timer Special • +1 Free Parachute'
-                    : 'Profile Bonus • +1 Free Parachute'}
+                    ? 'First-Timer Special • +1 Free Escape Ticket'
+                    : 'Profile Bonus • +1 Free Escape Ticket'}
                 </span>
               </div>
             )}
@@ -157,7 +157,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </h2>
             <p className="text-[11px] text-zinc-400 mt-0.5">
               {showGiftOffer
-                ? 'Set your avatar, mission & daily focus goal to claim your free starter Parachute.'
+                ? 'Set your avatar, mission & daily focus goal to claim your free starter Emergency Escape Ticket (🎫).'
                 : 'Customize your focus identity, daily goal & lock pledge.'}
             </p>
           </div>
@@ -211,12 +211,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Unlocked Badges Preview Strip */}
+          {/* Unlocked Badges & Locked Gold Crest Hint Strip */}
           {unlockedFocusBadges.length > 0 && (
             <div className="mt-2.5 pt-2.5 border-t border-zinc-900 flex flex-wrap gap-1.5">
               {unlockedFocusBadges.map((b) => (
                 <AchievementBadgePill key={b.id} badge={b} />
               ))}
+            </div>
+          )}
+          {!isZeroSupporter && (
+            <div className="mt-2 pt-2 border-t border-zinc-900 flex items-center gap-1.5 text-[10px] text-amber-300/90">
+              <Lock size={10} className="shrink-0 text-amber-400" />
+              <span>
+                <strong>ZERO-SUPPORTER</strong> Gold Badge unlocks strictly after your 1st ₹50+ tip
+                (min ₹50)
+              </span>
             </div>
           )}
         </div>
@@ -415,7 +424,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {showGiftOffer ? (
               <>
                 <Sparkles size={15} />
-                <span>Create Profile &amp; Claim +1 Free 🪂</span>
+                <span>Create Profile &amp; Claim +1 Free 🎫</span>
               </>
             ) : (
               <>

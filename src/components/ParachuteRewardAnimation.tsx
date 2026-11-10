@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { ParachuteRewardEvent } from '../types';
+import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';
 import { Sparkles, X, CheckCircle2 } from 'lucide-react';
@@ -37,7 +38,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
     reward.source === 'first_timer_profile'
       ? 'FIRST-TIMER GIFT'
       : reward.source === 'first_donation_50'
-      ? '₹50+ SUPPORTER BONUS'
+      ? 'MIN ₹50 SUPPORTER BONUS'
       : '20-HOUR MILESTONE';
 
   return (
@@ -50,7 +51,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
       onClick={onDismiss}
       role="dialog"
       aria-modal="true"
-      aria-label="Parachute Unlocked Celebration"
+      aria-label="Escape Ticket Unlocked Celebration"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -68,7 +69,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
           type="button"
           onClick={onDismiss}
           className="absolute top-3.5 right-3.5 p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white z-10"
-          aria-label="Close Parachute Celebration"
+          aria-label="Close Escape Ticket Celebration"
         >
           <X size={15} />
         </button>
@@ -81,7 +82,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
           </span>
         </div>
 
-        {/* Descending + Floating Parachute Graphic with Expanding Halo Rings */}
+        {/* Descending + Floating Escape Ticket Graphic with Expanding Halo Rings */}
         <div className="relative h-32 flex items-center justify-center">
           <div
             aria-hidden="true"
@@ -98,7 +99,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
             className="relative z-10 w-24 h-24 rounded-3xl bg-zinc-900 border-2 border-amber-400/70 flex items-center justify-center shadow-[0_0_24px_rgba(245,158,11,0.4)] animate-parachute-descend active:scale-95 transition-transform cursor-pointer"
           >
             <span className="text-5xl animate-parachute-float select-none" aria-hidden="true">
-              🪂
+              🎫
             </span>
             <span className="absolute -top-2.5 -right-2.5 px-2 py-0.5 rounded-full bg-emerald-400 text-black text-[11px] font-black shadow-md border border-black">
               +{reward.delta}
@@ -111,6 +112,11 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
           <h2 className="text-lg font-black text-white tracking-tight">
             {reward.title}
           </h2>
+          {reward.source === 'first_donation_50' && (
+            <div className="flex justify-center pt-1">
+              <ZeroSupporterGoldenBadge />
+            </div>
+          )}
           <p className="text-xs text-zinc-300 leading-relaxed">
             {reward.subtitle}
           </p>
@@ -120,7 +126,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
         <div className="relative z-10 bg-black/80 border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between">
           <div className="text-left">
             <div className="text-[10px] uppercase tracking-wider text-zinc-400">
-              Parachute Balance
+              Escape Ticket Balance
             </div>
             <div className="text-xl font-black text-amber-300 flex items-center gap-1.5">
               <span>{reward.newBalance}</span>

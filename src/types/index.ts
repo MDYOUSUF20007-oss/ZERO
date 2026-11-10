@@ -133,9 +133,41 @@ export interface ZeroBackupPayload {
   bags: OccasionBag[];
   activeBagId: string;
   theme: ThemeStyle;
+  themeConfig?: ThemeConfig;
 }
 
-export type ThemeStyle = 'monochrome' | 'oled' | 'amber' | 'emerald';
+export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
+
+export type AmoledGradientId =
+  | 'pure'
+  | 'ember'
+  | 'aurora'
+  | 'cosmic'
+  | 'crimson'
+  | 'cobalt';
+
+export type KindlePaperPresetId = 'classic' | 'warm' | 'sage' | 'slate' | 'blush' | 'custom';
+
+export type MatteStudioPresetId =
+  | 'graphite'
+  | 'taupe'
+  | 'nordic'
+  | 'olive'
+  | 'espresso'
+  | 'custom';
+
+export interface ThemeConfig {
+  family: ThemeFamily;
+  amoledGradient: AmoledGradientId;
+  kindlePreset: KindlePaperPresetId;
+  kindlePaperColor: string;
+  kindleInkAccent: string;
+  mattePreset: MatteStudioPresetId;
+  matteBaseColor: string;
+  matteAccentColor: string;
+}
+
+export type ThemeStyle = 'amoled' | 'kindle' | 'matte' | 'monochrome' | 'oled' | 'amber' | 'emerald';
 
 export interface ZeroNativeBridgeInterface {
   isStrictAccessibilityBuild(): boolean;

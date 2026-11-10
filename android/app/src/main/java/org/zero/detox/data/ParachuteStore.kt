@@ -109,7 +109,7 @@ class ParachuteStore(context: Context) {
             val earnedCount = newMilestones - previousMilestones
             appendLedgerEntry(
                 type = "EARNED",
-                description = "20-Hour Phone Blockage Milestone reached (+${earnedCount} Parachute)",
+                description = "20-Hour Phone Blockage Milestone reached (+${earnedCount} Escape Ticket)",
                 delta = earnedCount,
                 tag = tag,
                 timestamp = timestamp
@@ -132,7 +132,7 @@ class ParachuteStore(context: Context) {
 
         appendLedgerEntry(
             type = "DEPLOYED",
-            description = "Parachute deployed ($abortedTag session aborted at ${abortedElapsedSeconds / 60}m; progress forfeited)",
+            description = "Emergency Escape Ticket used ($abortedTag session aborted at ${abortedElapsedSeconds / 60}m; progress forfeited)",
             delta = -1,
             tag = abortedTag,
             timestamp = timestamp

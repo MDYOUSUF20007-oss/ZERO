@@ -14,13 +14,14 @@ import {
 import type {
   RecurringSchedule,
   SessionTag,
-  ThemeStyle,
+  ThemeConfig,
   SleepFarmingMode,
   NativePermissionStatus,
   ZeroProfile,
 } from '../types';
 import { ACCENT_STYLES, ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { ThemeSelectorCard } from './ThemeSelectorCard';
 import {
   Plus,
   Trash2,
@@ -55,8 +56,12 @@ interface SchedulesDonateViewProps {
   onAddSchedule: (sched: Omit<RecurringSchedule, 'id'>) => void;
   onDeleteSchedule: (id: string) => void;
   onTriggerTestWarning: (scheduleName: string) => void;
-  theme: ThemeStyle;
-  onThemeChange: (theme: ThemeStyle) => void;
+  themeConfig: ThemeConfig;
+  onThemeConfigChange: (next: ThemeConfig) => void;
+  sectionOverride?: {
+    section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
+    key: number;
+  } | null;
   sleepFarmingMode: SleepFarmingMode;
   onSleepFarmingModeChange: (mode: SleepFarmingMode) => void;
   onBuildBackupJson: () => string;
@@ -84,8 +89,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onAddSchedule,
   onDeleteSchedule,
   onTriggerTestWarning,
-  theme,
-  onThemeChange,
+  themeConfig,
+  onThemeConfigChange,
+  sectionOverride = null,
   sleepFarmingMode,
   onSleepFarmingModeChange,
   onBuildBackupJson,
@@ -102,8 +108,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onClaimFirstDonationBonus,
 }) => {
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
-  const [activeSection, setActiveSection] = useState<'schedules' | 'support' | 'settings' | 'os_security'>('schedules');
+  const [activeSection, setActiveSection] = useState<'schedules' | 'themes' | 'settings' | 'os_security' | 'support'>(
+    sectionOverride?.section || 'schedules'
+  );
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    if (sectionOverride?.section) {
+      setActiveSection(sectionOverride.section);
+    }
+  }, [sectionOverride?.key, sectionOverride?.section]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showUPIQR, setShowUPIQR] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState<string>('');
@@ -210,18 +224,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {/* View Header */}
       <div>
         <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
-          <span>SCHEDULES & RULES</span>
+          <span>THEMES, RULES &amp; OS</span>
         </h1>
         <p className="text-xs font-mono text-zinc-400">
-          Auto-Pilot Blocks, Anti-Exploit Rules & Ethical Support
+          Auto-Pilot Schedules, Theme Studio &amp; Ethical Support
         </p>
       </div>
 
       {/* Sub-Nav Pill */}
-      <div className="grid grid-cols-4 gap-1 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl text-[11px] font-mono">
+      <div className="grid grid-cols-5 gap-1 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl text-[10px] font-mono">
         <button
           onClick={() => setActiveSection('schedules')}
-          className={`py-2 rounded-xl transition-all font-semibold ${
+          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'schedules'
               ? 'bg-zinc-200 text-black shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
@@ -230,8 +244,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           Schedules
         </button>
         <button
+          onClick={() => setActiveSection('themes')}
+          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
+            activeSection === 'themes'
+              ? 'bg-zinc-200 text-black shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Themes
+        </button>
+        <button
           onClick={() => setActiveSection('settings')}
-          className={`py-2 rounded-xl transition-all font-semibold ${
+          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'settings'
               ? 'bg-zinc-200 text-black shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
@@ -241,17 +265,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </button>
         <button
           onClick={() => setActiveSection('os_security')}
-          className={`py-2 rounded-xl transition-all font-semibold ${
+          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'os_security'
               ? 'bg-zinc-200 text-black shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          OS Security
+          OS
         </button>
         <button
           onClick={() => setActiveSection('support')}
-          className={`py-2 rounded-xl transition-all font-semibold ${
+          className={`py-2 rounded-xl transition-all font-semibold truncate px-1 ${
             activeSection === 'support'
               ? 'bg-zinc-200 text-black shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
@@ -260,6 +284,23 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           Support
         </button>
       </div>
+
+      {/* SECTION 0: THEME STUDIO (AMOLED + GRADIENTS, PAPER LIKE KINDLE, MATTE STUDIO) */}
+      {activeSection === 'themes' && (
+        <div className="space-y-4">
+          <ThemeSelectorCard
+            themeConfig={themeConfig}
+            onChange={onThemeConfigChange}
+          />
+          <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-3.5 font-mono text-[11px] text-zinc-400 leading-relaxed">
+            Pick between <strong className="text-zinc-200">AMOLED</strong> (pure black &amp; subtle
+            gradients), <strong className="text-zinc-200">Paper like Kindle</strong> (E-Ink light
+            mode with custom paper &amp; ink pickers), or{' '}
+            <strong className="text-zinc-200">Matte Studio</strong> (charcoal studio finishes with
+            custom surface &amp; accent colors). Changes save locally and export inside JSON backups.
+          </div>
+        </div>
+      )}
 
       {/* SECTION 1: AUTO-PILOT RECURRING SCHEDULES */}
       {activeSection === 'schedules' && (
@@ -378,12 +419,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </div>
 
             <p className="text-xs font-mono text-zinc-300 leading-relaxed">
-              If a user locks their phone for 8 hours every night while asleep, they could farm a free Parachute every 2.5 nights without resisting waking temptation.
+              If a user locks their phone for 8 hours every night while asleep, they could farm a free Emergency Escape Ticket every 2.5 nights without resisting waking temptation.
             </p>
 
             <div className="space-y-2 pt-2">
               <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold block">
-                Select Parachute Rate for #Sleep:
+                Select Escape Ticket Rate for #Sleep:
               </label>
 
               {/* Option 1: 0.25x Credit (Recommended) */}
@@ -398,13 +439,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               >
                 <div>
                   <div className="font-bold flex items-center gap-2 text-zinc-100">
-                    <span>0.25x Sleep Parachute Credit</span>
+                    <span>0.25x Sleep Ticket Credit</span>
                     <span className="text-[9px] bg-amber-500 text-black px-1.5 py-0.2 rounded font-black uppercase">
                       Recommended
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-1">
-                    An 8-hour sleep session earns 2.0 hours towards the 20h Parachute milestone. Keeps rewards meaningful.
+                    An 8-hour sleep session earns 2.0 hours towards the 20h Escape Ticket milestone. Keeps rewards meaningful.
                   </p>
                 </div>
                 {sleepFarmingMode === 'quarter_credit' && (
@@ -425,7 +466,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div>
                   <div className="font-bold text-zinc-100">Daytime Focus Only (0.0x Sleep Credit)</div>
                   <p className="text-[11px] text-zinc-400 mt-1">
-                    Parachutes can only be earned during daytime waking hours. Sleep blocks still track total reclaimed time, but 0h toward Parachutes.
+                    Escape Tickets can only be earned during daytime waking hours. Sleep blocks still track total reclaimed time, but 0h toward Escape Tickets.
                   </p>
                 </div>
                 {sleepFarmingMode === 'daytime_only' && (
@@ -446,7 +487,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div>
                   <div className="font-bold text-zinc-100">Full 1.0x Credit (Relaxed)</div>
                   <p className="text-[11px] text-zinc-400 mt-1">
-                    Every hour locked (day or night) counts 1:1 toward emergency parachutes.
+                    Every hour locked (day or night) counts 1:1 toward emergency escape tickets.
                   </p>
                 </div>
                 {sleepFarmingMode === 'full_credit' && (
@@ -463,10 +504,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <span>Aborted Session Penalty (Anti-Exploit)</span>
             </div>
             <p className="text-zinc-400 leading-relaxed text-[11px]">
-              Deploying an emergency Parachute forfeits all accumulated hours in that specific broken session toward the 20-hour meter.
+              Using an Emergency Escape Ticket forfeits all accumulated hours in that specific broken session toward the 20-hour meter.
             </p>
             <div className="p-2.5 bg-zinc-900 rounded-xl text-[11px] text-zinc-300 border border-zinc-800">
-              <strong>Example:</strong> If you set a 4-hour lock and deploy a parachute at hour 3, you lose 1 Parachute and receive <strong>0 hours</strong> toward your next one. This prevents locking for 20 hours just to refund the parachute used to exit.
+              <strong>Example:</strong> If you set a 4-hour lock and use an escape ticket at hour 3, you spend 1 Escape Ticket and receive <strong>0 hours</strong> toward your next one. This prevents locking for 20 hours just to refund the ticket used to exit.
             </div>
           </div>
 
@@ -480,7 +521,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </span>
                 {!hasClaimedFirstTimeParachute && (
                   <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-black">
-                    +1 Free 🪂 Gift
+                    +1 Free 🎫 Gift
                   </span>
                 )}
               </div>
@@ -528,45 +569,39 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <span>
                     {hasClaimedFirstTimeParachute
                       ? 'Create Interactive Profile'
-                      : 'Make Profile & Claim +1 Free 🪂'}
+                      : 'Make Profile & Claim +1 Free 🎫'}
                   </span>
                 </button>
               )}
             </div>
           )}
 
-          {/* Theme Palette */}
-          <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl space-y-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-zinc-300 font-bold uppercase tracking-wider">
-              <Palette size={14} />
-              <span>Color Themes</span>
+          {/* Theme Studio Launcher */}
+          <button
+            type="button"
+            onClick={() => setActiveSection('themes')}
+            className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 p-4 rounded-2xl flex items-center justify-between gap-3 text-left font-mono transition-all"
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs text-zinc-200 font-bold uppercase tracking-wider">
+                <Palette size={14} style={{ color: 'var(--zero-accent)' }} />
+                <span>Theme Studio</span>
+              </div>
+              <div className="text-[11px] text-zinc-400">
+                Active:{' '}
+                <strong className="text-white uppercase">
+                  {themeConfig.family === 'amoled'
+                    ? `AMOLED (${themeConfig.amoledGradient})`
+                    : themeConfig.family === 'kindle'
+                    ? 'Paper like Kindle'
+                    : 'Matte Studio'}
+                </strong>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onThemeChange('oled')}
-                className={`p-3 rounded-xl border text-left font-mono text-xs transition-all ${
-                  theme === 'oled'
-                    ? 'border-white bg-zinc-900 text-white font-bold'
-                    : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full bg-black border border-white mb-1.5" />
-                Pure OLED Void
-              </button>
-
-              <button
-                onClick={() => onThemeChange('monochrome')}
-                className={`p-3 rounded-xl border text-left font-mono text-xs transition-all ${
-                  theme === 'monochrome'
-                    ? 'border-white bg-zinc-900 text-white font-bold'
-                    : 'border-zinc-850 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full bg-zinc-300 mb-1.5" />
-                Neo Monochrome
-              </button>
-            </div>
-          </div>
+            <span className="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-[10px] font-bold text-white uppercase shrink-0">
+              Customize →
+            </span>
+          </button>
 
           {/* Data Management: Full Export, Restore & Reset */}
           <div className="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-2xl space-y-3 font-mono">
@@ -574,7 +609,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               Backup &amp; Restore Everything
             </div>
             <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Save all sessions, 20h Parachute progress, streaks, schedules, and all 4 Bags to a local <code>.json</code> file so you can restore cleanly across phones or reinstalls.
+              Save all sessions, 20h Escape Ticket progress, streaks, schedules, themes, and all 4 Bags to a local <code>.json</code> file so you can restore cleanly across phones or reinstalls.
             </p>
 
             {backupNotice && (
@@ -668,7 +703,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
             <button
               onClick={() => {
-                if (window.confirm('Reset all Zero data to factory defaults? This clears your Parachutes, bags, and streaks.')) {
+                if (window.confirm('Reset all Zero data to factory defaults? This clears your Escape Tickets, bags, and streaks.')) {
                   onResetData();
                   setBackupNotice({ ok: true, message: 'All data reset cleanly to Zero.' });
                 }
@@ -890,10 +925,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </p>
             <p className="text-xs font-mono text-zinc-400 leading-relaxed">
               We believe your attention belongs to you—not to algorithms or paywalled apps.
-              Emergency Parachutes can never be purchased outright; earn 1 every 20 focus hours,
-              plus one-time free gifts (+1 starter on first profile, +1 thank-you &amp; Golden{' '}
-              <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge on first ₹
-              {FIRST_DONATION_BONUS_INR}+ tip).
+              Emergency Escape Tickets can never be purchased outright; earn 1 every 20 focus
+              hours, plus one-time free gifts (+1 starter on first profile, and strictly on your
+              1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}: +1 thank-you ticket &amp; Golden{' '}
+              <strong className="text-amber-300">ZERO-SUPPORTER</strong> badge).
             </p>
             <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-zinc-900 text-zinc-400 gap-2">
               <a
@@ -976,17 +1011,24 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 UPI has <strong>no minimum limit</strong> — tip even ₹1 or any amount you want with zero platform fees.
               </p>
 
-              {/* 1st ₹50+ Supporter Bonus */}
+              {/* 1st Minimum ₹50 Supporter Bonus */}
               {!hasClaimedFirstDonationParachute ? (
                 <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 space-y-2">
-                  <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-mono font-black uppercase">
-                    <Gift size={13} className="text-emerald-400 shrink-0" />
-                    <span>1st ₹{FIRST_DONATION_BONUS_INR}+ Tip = +1 🪂 &amp; Gold Badge</span>
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-mono font-black uppercase">
+                      <Gift size={13} className="text-emerald-400 shrink-0" />
+                      <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 🎫 &amp; Gold Badge</span>
+                    </div>
+                    <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-black shrink-0">
+                      Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
+                    </span>
                   </div>
                   <p className="text-[10px] font-mono text-zinc-300 leading-relaxed">
-                    Your very first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> support donation gifts a one-time thank-you{' '}
-                    <strong>+1 Parachute</strong> &amp; unlocks the Golden{' '}
-                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Profile Badge.
+                    <strong>Strict Rule:</strong> The Golden{' '}
+                    <strong className="text-amber-300">ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
+                    <strong>+1 Free Emergency Escape Ticket (🎫)</strong>{' '}
+                    <strong>ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
+                    (smaller tips have no minimum limit via UPI but do not unlock the badge).
                   </p>
                   {!confirmingDonationClaim ? (
                     <div className="flex flex-col sm:flex-row gap-2">
@@ -998,7 +1040,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         }}
                         className="flex-1 py-2 px-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-mono font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                       >
-                        <span>Tip ₹{FIRST_DONATION_BONUS_INR} (+1 🪂 &amp; Gold)</span>
+                        <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 🎫 &amp; Gold)</span>
                         <ExternalLink size={12} />
                       </a>
                       {onClaimFirstDonationBonus && (
@@ -1007,16 +1049,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           onClick={() => setConfirmingDonationClaim(true)}
                           className="px-3 py-2 rounded-xl bg-zinc-900 border border-emerald-700/60 text-emerald-200 font-mono text-[10px] font-bold"
                         >
-                          Sent ₹{FIRST_DONATION_BONUS_INR}+?
+                          Sent Min ₹{FIRST_DONATION_BONUS_INR}?
                         </button>
                       )}
                     </div>
                   ) : (
                     <div className="p-2.5 rounded-xl bg-black/70 border border-emerald-600/60 space-y-2 font-mono">
                       <div className="text-[10px] text-emerald-200">
-                        Confirm your first <strong>₹{FIRST_DONATION_BONUS_INR}+</strong> tip to unlock your{' '}
-                        <strong>+1 Free Parachute</strong> &amp; Golden{' '}
-                        <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge:
+                        Confirm you sent your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
+                        to unlock the Golden{' '}
+                        <strong className="text-amber-300">ZERO-SUPPORTER</strong> Badge &amp;{' '}
+                        <strong>+1 Free Emergency Escape Ticket (🎫)</strong>:
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -1027,7 +1070,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           }}
                           className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[10px] uppercase tracking-wider"
                         >
-                          Claim +1 🪂 &amp; Gold Badge
+                          Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
                         </button>
                         <button
                           type="button"
@@ -1044,7 +1087,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div className="px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/40 flex items-center justify-between gap-2 flex-wrap text-[10px] font-mono text-emerald-300">
                   <span className="flex items-center gap-1.5 font-bold">
                     <CheckCircle2 size={12} />
-                    <span>₹{FIRST_DONATION_BONUS_INR}+ Bonus Claimed</span>
+                    <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
                   </span>
                   <ZeroSupporterGoldenBadge compact />
                 </div>
@@ -1062,7 +1105,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               {showUPIQR && (
                 <div className="p-3.5 bg-zinc-900 rounded-xl flex flex-col items-center justify-center text-center space-y-2 border border-zinc-800">
                   {upiQrUrl ? (
-                    <div className="bg-white p-2 rounded-xl shadow-md">
+                    <div data-qr-surface="true" className="bg-white p-2 rounded-xl shadow-md">
                       <img
                         src={upiQrUrl}
                         alt={`UPI QR code for ${UPI_ID}`}

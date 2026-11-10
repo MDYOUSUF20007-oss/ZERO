@@ -23,6 +23,15 @@ import {
   ACHIEVEMENT_DEFINITIONS,
   evaluateBadges,
 } from '../src/utils/achievements.ts';
+import {
+  AMOLED_GRADIENTS,
+  DEFAULT_THEME_CONFIG,
+  KINDLE_PAPER_PRESETS,
+  MATTE_STUDIO_PRESETS,
+  computeThemeRuntime,
+  getRelativeLuminance,
+  sanitizeThemeConfig,
+} from '../src/utils/themes.ts';
 import type { SessionRecord } from '../src/types.ts';
 
 const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
@@ -362,5 +371,74 @@ failIf(
   'All 7 badges must unlock when all criteria are satisfied'
 );
 console.log('PASS: Golden ZERO-SUPPORTER & All 6 Achievement Milestone Badges Verified');
+
+console.log('\n=== TEST 11: Theme Studio Palette Derivation & WCAG Contrast Safety ===');
+failIf(AMOLED_GRADIENTS.length === 6, 'Should define Pure + 5 Gradient AMOLED presets (6 total)');
+failIf(KINDLE_PAPER_PRESETS.length >= 5, 'Should define at least 5 Paper like Kindle presets');
+failIf(MATTE_STUDIO_PRESETS.length >= 5, 'Should define at least 5 Matte Studio presets');
+
+for (const preset of AMOLED_GRADIENTS) {
+  const rt = computeThemeRuntime({
+    ...DEFAULT_THEME_CONFIG,
+    family: 'amoled',
+    amoledGradient: preset.id,
+  });
+  failIf(rt.family === 'amoled' && rt.mode === 'dark', `AMOLED ${preset.id} must be dark`);
+  failIf(rt.cssVars['--zero-bg-primary'] === '#000000', `AMOLED ${preset.id} keeps 0% pitch black base`);
+  if (preset.id === 'pure') {
+    failIf(rt.cssVars['--zero-bg-image'] === 'none', 'Pure Pitch AMOLED must have no gradient');
+  } else {
+    failIf(rt.cssVars['--zero-bg-image'].includes('gradient'), `Gradient AMOLED ${preset.id} must render gradient`);
+  }
+}
+
+const kindleCustom = computeThemeRuntime({
+  ...DEFAULT_THEME_CONFIG,
+  family: 'kindle',
+  kindlePreset: 'custom',
+  kindlePaperColor: '#FAF3E0',
+  kindleInkAccent: '#1E40AF',
+});
+failIf(kindleCustom.mode === 'light', 'Paper like Kindle must use light color-scheme');
+failIf(kindleCustom.cssVars['--zero-bg-primary'] === '#FAF3E0', 'Custom Kindle paper hex should apply');
+failIf(kindleCustom.cssVars['--zero-accent'] === '#1E40AF', 'Custom Kindle ink accent should apply');
+
+// Safety clamp against illegible custom hex picks in Kindle light mode
+const kindleSafeClamp = computeThemeRuntime({
+  ...DEFAULT_THEME_CONFIG,
+  family: 'kindle',
+  kindlePreset: 'custom',
+  kindlePaperColor: '#09090B',
+  kindleInkAccent: '#FFFFFF',
+});
+failIf(
+  getRelativeLuminance(kindleSafeClamp.cssVars['--zero-bg-primary']) >= 0.55,
+  'Kindle paper safety clamp must keep background readable for dark E-Ink text'
+);
+failIf(
+  getRelativeLuminance(kindleSafeClamp.cssVars['--zero-accent']) <= 0.55,
+  'Kindle ink safety clamp must keep custom ink legible against light paper'
+);
+
+const matteCustom = computeThemeRuntime({
+  ...DEFAULT_THEME_CONFIG,
+  family: 'matte',
+  mattePreset: 'custom',
+  matteBaseColor: '#161B22',
+  matteAccentColor: '#38BDF8',
+});
+failIf(matteCustom.mode === 'dark', 'Matte Studio must stay dark low-glare studio mode');
+failIf(matteCustom.cssVars['--zero-bg-primary'] === '#161B22', 'Custom Matte surface hex should apply');
+failIf(matteCustom.cssVars['--zero-accent'] === '#38BDF8', 'Custom Matte accent hex should apply');
+
+// Legacy ThemeStyle migration & short hex normalization
+failIf(sanitizeThemeConfig(null, 'oled').family === 'amoled', 'Legacy oled migrates to amoled');
+failIf(sanitizeThemeConfig(null, 'kindle').family === 'kindle', 'Legacy kindle stays kindle');
+failIf(sanitizeThemeConfig(null, 'matte').family === 'matte', 'Legacy matte stays matte');
+failIf(
+  sanitizeThemeConfig({ family: 'kindle', kindlePreset: 'custom', kindlePaperColor: '#abc' }).kindlePaperColor === '#AABBCC',
+  '3-digit custom hex should normalize cleanly to 6-digit uppercase'
+);
+console.log('PASS: Theme Studio (AMOLED Gradients, Paper Kindle + Custom, Matte + Custom) Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

@@ -175,7 +175,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-mono font-black tracking-tight text-white flex items-center gap-2">
-            <span>PARACHUTE &amp; METRICS</span>
+            <span>ESCAPE TICKETS &amp; METRICS</span>
           </h1>
           <p className="text-xs font-mono text-zinc-400">
             100% Real Focus Metrics • Zero Fake Data
@@ -274,7 +274,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="text-xs font-black text-white">
                 {hasClaimedFirstTimeParachute
                   ? 'Make Your Interactive Profile'
-                  : 'Make Profile & Claim +1 Free 🪂'}
+                  : 'Make Profile & Claim +1 Free 🎫'}
               </div>
               <p className="text-[11px] text-zinc-300 leading-snug mt-0.5">
                 Pick an interactive emblem, daily target hours &amp; personal pledge.
@@ -292,7 +292,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         </div>
       )}
 
-      {/* Hero 20-Hour Parachute Progression Card */}
+      {/* Hero 20-Hour Escape Ticket Progression Card */}
       <div
         className={`bg-zinc-950 border-2 rounded-3xl p-5 shadow-brutal relative overflow-hidden transition-all ${
           justEarnedParachute
@@ -307,7 +307,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           />
         )}
         <div className="absolute right-3 -bottom-4 text-7xl opacity-5 pointer-events-none select-none font-mono">
-          🪂
+          🎫
         </div>
 
         <div className="flex items-start justify-between mb-4">
@@ -320,17 +320,17 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               }`}
             >
               <span className={parachuteMetrics.currentBalance > 0 ? 'animate-parachute-float inline-block' : ''}>
-                🪂
+                🎫
               </span>
             </div>
             <div>
               <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                Emergency Parachute Balance
+                Emergency Escape Tickets
               </div>
               <div className="text-3xl font-mono font-black text-white flex items-baseline gap-2">
                 <span>{parachuteMetrics.currentBalance}</span>
                 <span className="text-xs font-normal text-zinc-400">
-                  {parachuteMetrics.currentBalance === 1 ? 'Parachute Ready' : 'Parachutes Ready'}
+                  {parachuteMetrics.currentBalance === 1 ? 'Ticket Ready' : 'Tickets Ready'}
                 </span>
               </div>
             </div>
@@ -351,7 +351,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         {/* 20-Hour Progress Bar */}
         <div className="space-y-2 mt-4 pt-3 border-t border-zinc-900">
           <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-zinc-300 font-semibold">Next Parachute Progress</span>
+            <span className="text-zinc-300 font-semibold">Next Escape Ticket Progress</span>
             <span className="font-bold text-amber-400">
               {parachuteMetrics.currentProgressHours} / 20.0 hrs
             </span>
@@ -405,7 +405,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          Parachute Log
+          Ticket Log
         </button>
         <button
           onClick={() => setActiveTab('sessions')}
@@ -431,7 +431,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 {totalReclaimedHours}h
               </div>
               <span className="text-[10px] font-mono text-zinc-400">
-                ({totalParachuteHours}h Parachute eligible)
+                ({totalParachuteHours}h Escape Ticket eligible)
               </span>
             </div>
 
@@ -496,7 +496,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
             <p className="text-[10px] font-mono text-zinc-400">
               Tap any badge to inspect unlock criteria. All earned badges &amp; the Golden{' '}
-              <strong className="text-amber-300">ZERO-SUPPORTER</strong> crest appear on your shared Flex Receipt card.
+              <strong className="text-amber-300">ZERO-SUPPORTER</strong> crest (unlocks strictly on
+              your 1st minimum ₹50 tip) appear on your Flex Receipt card.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -586,12 +587,12 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {activeTab === 'ledger' && (
         <div className="space-y-3">
           <div className="text-xs font-mono text-zinc-400">
-            Immutable log of Parachutes earned via 20-hour milestones and emergency deployments.
+            Immutable log of Escape Tickets earned via 20-hour milestones and emergency exits.
           </div>
 
           {ledger.length === 0 ? (
             <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-8 text-center text-zinc-500 font-mono text-xs">
-              No parachute transactions yet. Complete 20 hours of blockage to earn your first parachute!
+              No escape ticket transactions yet. Complete 20 hours of blockage to earn your first ticket!
             </div>
           ) : (
             <div className="space-y-2">
@@ -644,7 +645,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {activeTab === 'sessions' && (
         <div className="space-y-2.5">
           <div className="text-xs font-mono text-zinc-400">
-            Recent blocking sessions. Parachuted sessions award 0 parachute seconds (Anti-Exploit).
+            Recent blocking sessions. Escaped sessions award 0 ticket seconds (Anti-Exploit).
           </div>
 
           {sessions.length === 0 ? (
@@ -678,7 +679,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           )}
                         </div>
                         <div className="text-[10px] text-zinc-500">
-                          {sess.dateStr} • {sess.status === 'completed' ? 'Completed' : 'Aborted with Parachute'}
+                          {sess.dateStr} • {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
                         </div>
                       </div>
                     </div>
@@ -698,7 +699,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
                       </div>
                       <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                        {sess.status}
+                        {isAborted ? 'escaped' : sess.status}
                       </span>
                     </div>
                   </div>

@@ -248,7 +248,7 @@ class TheVoidActivity : AppCompatActivity() {
         }
 
         btnDeployParachute = Button(this).apply {
-            text = "DEPLOY EMERGENCY PARACHUTE"
+            text = "USE EMERGENCY ESCAPE TICKET"
             setTextColor(Color.BLACK)
             setBackgroundColor(Color.parseColor("#F59E0B"))
             typeface = Typeface.MONOSPACE
@@ -410,14 +410,14 @@ class TheVoidActivity : AppCompatActivity() {
     private fun handleDeployParachute() {
         val balance = parachuteStore.getParachuteBalance()
         if (balance <= 0) {
-            Toast.makeText(this, "0 Parachutes available. Earn 1 per 20 cumulative hours.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "0 Escape Tickets available. Earn 1 per 20 cumulative hours.", Toast.LENGTH_LONG).show()
             return
         }
 
         AlertDialog.Builder(this)
-            .setTitle("Deploy Emergency Parachute?")
-            .setMessage("You have $balance Parachute(s).\n\nDeploying consumes 1 Parachute and terminates the lock.\n\nABORTED SESSION PENALTY: All elapsed time in this session is VOIDED and will NOT count toward your next 20h Parachute.")
-            .setPositiveButton("Deploy (-1 Parachute)") { _, _ ->
+            .setTitle("Use Emergency Escape Ticket?")
+            .setMessage("You have $balance Emergency Escape Ticket(s).\n\nUsing 1 ticket consumes it and terminates the lock.\n\nABORTED SESSION PENALTY: All elapsed time in this session is VOIDED and will NOT count toward your next 20h Escape Ticket.")
+            .setPositiveButton("Use (-1 Escape Ticket)") { _, _ ->
                 val success = lockEngine.deployParachute()
                 if (success) {
                     isInForeground = false
@@ -432,7 +432,7 @@ class TheVoidActivity : AppCompatActivity() {
 
     private fun updateParachuteStatus() {
         val balance = parachuteStore.getParachuteBalance()
-        textParachuteBalance.text = "$balance Parachute(s) Available"
+        textParachuteBalance.text = "$balance Escape Ticket(s) Available"
         btnDeployParachute.isEnabled = (balance > 0)
         btnDeployParachute.alpha = if (balance > 0) 1.0f else 0.4f
     }
