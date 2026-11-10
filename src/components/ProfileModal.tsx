@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   NativeEnvironmentSecurity,
   ProfileAccent,
@@ -7,18 +7,19 @@ import type {
   ZeroProfile,
 } from '../types';
 import {
+  ACCENT_ID_TO_KEY,
   ACCENT_STYLES,
+  AVATAR_ID_TO_EMBLEM,
   AVATAR_OPTIONS,
   ProfileAvatar,
 } from './ProfileAvatar';
+import { ZeroProfilePreviewCard } from './ZeroProfilePreviewCard';
 import {
   getZeroRankFromHours,
   normalizeProfileHandle,
 } from '../utils/parachuteRewardsPolicy';
-import { evaluateBadges } from '../utils/achievements';
-import { AchievementBadgePill, ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { haptics } from '../utils/haptics';
-import { Sparkles, X, Gift, UserCheck, Flame, Lock, CloudDownload, Loader2 } from 'lucide-react';
+import { Sparkles, X, Gift, UserCheck, Flame, CloudDownload, Loader2 } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -64,7 +65,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   initialProfile,
   hasClaimedFirstTimeParachute,
   isZeroSupporter,
-  sessions,
+  sessions: _sessions,
   totalReclaimedHours,
   isCloudBusy = false,
   environmentSecurity,
@@ -104,21 +105,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setIsRestoringLocal(false);
   }, [isOpen, initialProfile]);
 
-  const badgeSummary = useMemo(
-    () =>
-      evaluateBadges({
-        sessions,
-        totalReclaimedHours,
-        isZeroSupporter,
-      }),
-    [sessions, totalReclaimedHours, isZeroSupporter]
-  );
-
   if (!isOpen) return null;
 
-  const unlockedFocusBadges = badgeSummary.unlockedBadges.filter(
-    (b) => b.id !== 'zero_supporter'
-  );
   const rank = getZeroRankFromHours(totalReclaimedHours);
   const accentStyle = ACCENT_STYLES[accentColor] || ACCENT_STYLES.amber;
   const previewName = displayName.trim() || 'Zero Monk';
@@ -268,63 +256,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         )}
 
         {/* Live Interactive Profile Badge Preview */}
-        <div
-          className={`p-3.5 rounded-2xl bg-black border-2 transition-all ${accentStyle.border} ${accentStyle.glow}`}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <ProfileAvatar
-                avatarId={avatarId}
-                accent={accentColor}
-                size="lg"
-                interactive
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-black text-sm text-white truncate">
-                    {previewName}
-                  </span>
-                  <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${accentStyle.badgeBg}`}
-                  >
-                    {rank.title}
-                  </span>
-                  {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
-                </div>
-                <div className="text-[11px] text-zinc-400 truncate">
-                  {previewHandle} • #{primaryMission}
-                </div>
-                <div className="text-[10px] text-zinc-500 mt-0.5 italic truncate">
-                  &ldquo;{motto.trim() || MOTTO_PRESETS[0]}&rdquo;
-                </div>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className={`text-sm font-black ${accentStyle.text}`}>
-                {dailyGoalHours}h/day
-              </div>
-              <div className="text-[9px] text-zinc-500 uppercase">Target</div>
-            </div>
-          </div>
-
-          {/* Unlocked Badges & Locked Gold Crest Hint Strip */}
-          {unlockedFocusBadges.length > 0 && (
-            <div className="mt-2.5 pt-2.5 border-t border-zinc-900 flex flex-wrap gap-1.5">
-              {unlockedFocusBadges.map((b) => (
-                <AchievementBadgePill key={b.id} badge={b} />
-              ))}
-            </div>
-          )}
-          {!isZeroSupporter && (
-            <div className="mt-2 pt-2 border-t border-zinc-900 flex items-center gap-1.5 text-[10px] text-amber-300/90">
-              <Lock size={10} className="shrink-0 text-amber-400" />
-              <span>
-                <strong>ZERO-SUPPORTER</strong> Gold Badge unlocks strictly after your 1st ₹50+ tip
-                (min ₹50)
-              </span>
-            </div>
-          )}
-        </div>
+        <ZeroProfilePreviewCard
+          callsign={previewName}
+          handle={previewHandle}
+          emblem={AVATAR_ID_TO_EMBLEM[avatarId] || 'Monk'}
+          accent={ACCENT_ID_TO_KEY[accentColor] || 'Amber'}
+          mission={primaryMission}
+          dailyGoalHours={dailyGoalHours}
+          pledge={motto}
+          rankTitle={rank.title.toUpperCase()}
+          isZeroSupporter={isZeroSupporter}
+        />
 
         {/* Name & Handle */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -382,7 +324,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       : 'border-zinc-850 bg-black text-zinc-400 hover:border-zinc-700'
                   }`}
                 >
-                  <ProfileAvatar avatarId={opt.id} accent={accentColor} size="sm" />
+                  <ProfileAvatar
+                    avatarId={opt.id}
+                    accent={accentColor}
+                    size="sm"
+                    glowHighlighted={active}
+                  />
                   <span className="text-[10px] font-bold">{opt.label}</span>
                 </button>
               );
