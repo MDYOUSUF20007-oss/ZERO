@@ -29,7 +29,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
   onRefresh,
   onProceedReady,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   if (!isOpen) return null;
 
   const priority = evaluatePermissionPriority(permissions);
@@ -49,6 +49,266 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
   const openAppInfoShortcut = () => {
     window.ZeroNative?.openAppSettingsDetails();
   };
+
+  if (isLiquidGlass) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+      >
+        <ObsidianCard
+          ambientGlow
+          className="w-full max-w-md max-h-full font-sans"
+          headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
+          footerClassName="p-4 flex items-center gap-2.5"
+          headerContent={
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="liquid-squircle text-cyan-200">
+                    {permissions.strictReady ? (
+                      <CheckCircle2 size={17} strokeWidth={1.75} />
+                    ) : (
+                      <ShieldAlert size={17} strokeWidth={1.75} />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-white">
+                      Permissions Setup
+                    </h2>
+                    <p className="text-[11px] tabular-nums text-zinc-400 mt-0.5">
+                      {readyCount} of 3 ready &bull; Required for locking
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-2 rounded-xl liquid-pill text-zinc-400 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X size={16} strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* STEP 1 */}
+                <div
+                  className={`rounded-2xl transition-colors ${
+                    !coreGranted ? 'p-4 liquid-inset space-y-3' : 'p-3.5 liquid-row'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
+                      <div className="liquid-squircle !w-7 !h-7 !rounded-lg text-cyan-200">
+                        {needsAccessibility ? (
+                          <Accessibility size={14} strokeWidth={1.75} />
+                        ) : (
+                          <Activity size={14} strokeWidth={1.75} />
+                        )}
+                      </div>
+                      <span className="truncate">
+                        1. {needsAccessibility ? 'Accessibility Service' : 'Usage Access'}
+                      </span>
+                    </div>
+
+                    {coreGranted ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-200 bg-cyan-400/15 border border-cyan-300/35 px-2.5 py-0.5 rounded-full shrink-0">
+                        <CheckCircle2 size={10} strokeWidth={1.75} /> GRANTED
+                      </span>
+                    ) : isBlockedNow ? (
+                      <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full border border-red-400/50 bg-red-500/20 text-red-200 shrink-0">
+                        BLOCKED
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
+                        STEP 1
+                      </span>
+                    )}
+                  </div>
+
+                  {!coreGranted && (
+                    <>
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                        {needsAccessibility
+                          ? 'Blocks Recents, Settings, Notification shade & apps outside Bag.'
+                          : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          needsAccessibility
+                            ? window.ZeroNative?.openAccessibilitySettings()
+                            : window.ZeroNative?.requestUsageStatsPermission()
+                        }
+                        className={`w-full py-2.5 px-3 rounded-xl text-xs uppercase tracking-wider liquid-spring ${
+                          isBlockedNow
+                            ? 'liquid-pill font-semibold'
+                            : 'liquid-pill-active font-semibold'
+                        }`}
+                      >
+                        {needsAccessibility ? 'Enable Accessibility Service' : 'Grant Usage Access'}
+                      </button>
+
+                      <RestrictedSettingsGuideCard
+                        restrictedStatus={priority.restrictedStatus}
+                        isStrictBuild={needsAccessibility}
+                        onOpenAppInfo={openAppInfoShortcut}
+                        compact
+                      />
+                    </>
+                  )}
+                </div>
+
+                {/* STEP 2 */}
+                <div
+                  className={`rounded-2xl transition-colors ${
+                    isStep2Active ? 'p-4 liquid-inset space-y-3' : 'p-3.5 liquid-row'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
+                      <div
+                        className={`liquid-squircle !w-7 !h-7 !rounded-lg ${
+                          permissions.hasOverlayPermission || isStep2Active
+                            ? 'text-cyan-200'
+                            : 'text-zinc-400'
+                        }`}
+                      >
+                        <Layers size={14} strokeWidth={1.75} />
+                      </div>
+                      <span className="truncate">2. Display Over Other Apps</span>
+                    </div>
+
+                    {permissions.hasOverlayPermission ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-200 bg-cyan-400/15 border border-cyan-300/35 px-2.5 py-0.5 rounded-full shrink-0">
+                        <CheckCircle2 size={10} strokeWidth={1.75} /> GRANTED
+                      </span>
+                    ) : isStep2Active ? (
+                      <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
+                        STEP 2
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => window.ZeroNative?.requestOverlayPermission()}
+                        className="px-3 py-1 rounded-xl liquid-pill text-[11px] font-medium shrink-0"
+                      >
+                        Allow
+                      </button>
+                    )}
+                  </div>
+
+                  {isStep2Active && (
+                    <>
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                        Lets The Void return over blocked distractions from the background.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => window.ZeroNative?.requestOverlayPermission()}
+                        className="w-full py-2.5 px-3 rounded-xl liquid-pill-active font-semibold text-xs uppercase tracking-wider"
+                      >
+                        Allow Display Over Other Apps
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* STEP 3 */}
+                <div
+                  className={`rounded-2xl transition-colors ${
+                    isStep3Active ? 'p-4 liquid-inset space-y-3' : 'p-3.5 liquid-row'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white min-w-0">
+                      <div
+                        className={`liquid-squircle !w-7 !h-7 !rounded-lg ${
+                          permissions.hasNotificationPermission || isStep3Active
+                            ? 'text-cyan-200'
+                            : 'text-zinc-400'
+                        }`}
+                      >
+                        <Bell size={14} strokeWidth={1.75} />
+                      </div>
+                      <span className="truncate">3. Lock Alerts (Optional)</span>
+                    </div>
+
+                    {permissions.hasNotificationPermission ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-200 bg-cyan-400/15 border border-cyan-300/35 px-2.5 py-0.5 rounded-full shrink-0">
+                        <CheckCircle2 size={10} strokeWidth={1.75} /> GRANTED
+                      </span>
+                    ) : isStep3Active ? (
+                      <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
+                        OPTIONAL
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => window.ZeroNative?.requestNotificationPermission()}
+                        className="px-3 py-1 rounded-xl liquid-pill text-[11px] font-medium shrink-0"
+                      >
+                        Allow
+                      </button>
+                    )}
+                  </div>
+
+                  {isStep3Active && (
+                    <>
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                        Shows active lock countdowns and 5-minute pre-lock alerts.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => window.ZeroNative?.requestNotificationPermission()}
+                        className="w-full py-2.5 px-3 rounded-xl liquid-pill-active font-semibold text-xs uppercase tracking-wider"
+                      >
+                        Allow Notifications
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          }
+          footerContent={
+            <>
+              <button
+                type="button"
+                onClick={onRefresh}
+                className="px-4 py-2.5 rounded-xl liquid-pill text-xs font-medium"
+              >
+                Re-check
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRefresh();
+                  if (permissions.strictReady && onProceedReady) {
+                    onProceedReady();
+                  } else {
+                    onClose();
+                  }
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs uppercase tracking-wider ${
+                  permissions.strictReady
+                    ? 'liquid-pill-active font-semibold'
+                    : 'liquid-pill font-medium'
+                }`}
+              >
+                {permissions.strictReady ? 'All Armed — Ready to Lock' : 'Done for Now'}
+              </button>
+            </>
+          }
+        />
+      </div>
+    );
+  }
 
   if (isBespoke) {
     return (

@@ -8,7 +8,9 @@ try {
   const savedStyle = localStorage.getItem('zero_interface_style_v1');
   document.documentElement.setAttribute(
     'data-zero-style',
-    migrated && savedStyle === 'bespoke' ? 'bespoke' : 'classic'
+    migrated && (savedStyle === 'bespoke' || savedStyle === 'liquid_glass')
+      ? savedStyle
+      : 'classic'
   );
 } catch {
   document.documentElement.setAttribute('data-zero-style', 'classic');

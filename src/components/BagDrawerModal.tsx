@@ -51,7 +51,8 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   onDeleteCustomBag,
   onRefreshInstalledApps,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isLiquidGlass;
   const [searchQuery, setSearchQuery] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [showNewBagForm, setShowNewBagForm] = useState(false);
@@ -101,7 +102,9 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center px-4"
+        className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${
+          isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+        }`}
         style={{
           paddingTop: 'calc(1rem + var(--zero-safe-top))',
           paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
@@ -109,7 +112,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
       >
         <ObsidianCard
           ambientGlow
-          className={`w-full max-w-md max-h-full ${isBespoke ? 'font-sans' : 'font-mono'}`}
+          className={`w-full max-w-md max-h-full ${isModernFont ? 'font-sans' : 'font-mono'}`}
           headerClassName="p-5 flex-1 min-h-0 flex flex-col space-y-4 overflow-hidden"
           footerClassName="p-4"
           headerContent={
@@ -118,24 +121,29 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
               <div className="flex items-start justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle text-cyan-200'
+                        : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Briefcase
                       size={17}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      strokeWidth={1.75}
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <div>
                     <h2
                       className={`text-sm uppercase tracking-wider ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                        isModernFont ? 'font-semibold text-white' : 'font-black text-white'
                       }`}
                     >
                       Occasion Bags &amp; Rules
                     </h2>
-                    <p className="text-[11px] text-neutral-400">
+                    <p className="text-[11px] text-zinc-400">
                       Phone Calls always ON • Unlimited apps &amp; custom Bags
                     </p>
                   </div>
@@ -143,13 +151,15 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 <button
                   onClick={onClose}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'p-1.5 rounded-xl liquid-pill text-zinc-400 hover:text-white'
+                      : isBespoke
                       ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75'
                       : 'p-1.5 rounded-xl obsidian-inset-neutral text-zinc-400 hover:text-white'
                   }
                   aria-label="Close"
                 >
-                  <X size={16} />
+                  <X size={16} strokeWidth={1.75} />
                 </button>
               </div>
 
@@ -170,153 +180,155 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 </div>
               )}
 
-              {/* Unlimited Occasion Bag Switcher + Create Custom Bag */}
-              <div className="space-y-2 shrink-0">
-                <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-0.5">
-                  {bags.map((bag, idx) => {
-                    const isActive = bag.id === selectedBag.id;
-                    const controlledCount = bag.apps.filter(
-                      (a) => resolveEffectiveAppRuleConfig(a).mode === 'controlled'
-                    ).length;
-                    return (
-                      <button
-                        key={bag.id}
-                        type="button"
-                        disabled={bagEditingDisabled && !isActive}
-                        onClick={() => {
-                          if (bagEditingDisabled) return;
-                          onSelectActiveBag(bag.id);
-                          setEditingName(false);
-                        }}
-                        className={
-                          isBespoke
-                            ? `p-3 rounded-md border text-left transition-colors duration-75 ${
-                                isActive
-                                  ? 'bg-blue-600 border-blue-500 text-white font-semibold'
-                                  : bagEditingDisabled
-                                  ? 'bg-neutral-950 border-neutral-900 text-neutral-500 opacity-50 cursor-not-allowed'
-                                  : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
-                              }`
-                            : `p-2.5 rounded-2xl text-left transition-all ${
-                                isActive
-                                  ? 'obsidian-pill-active font-black shadow-sm'
-                                  : bagEditingDisabled
-                                  ? 'obsidian-inset-neutral text-zinc-500 opacity-50 cursor-not-allowed'
-                                  : 'obsidian-inset-neutral text-zinc-300 hover:border-white/25'
-                              }`
-                        }
-                      >
-                        <div className="flex items-center justify-between text-[10px] font-mono tabular-nums opacity-85">
-                          <span>BAG #{idx + 1}</span>
-                          <span>
-                            {bag.apps.length} app{bag.apps.length === 1 ? '' : 's'}
-                            {controlledCount > 0 ? ` · ${controlledCount}R` : ''}
-                          </span>
-                        </div>
-                        <div
-                          className={`text-xs truncate mt-0.5 ${
-                            isBespoke ? 'font-semibold' : 'font-bold'
-                          }`}
+              {/* Single Smooth Scrollable Modal Body (prevents nested scroll clipping) */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+                {/* Unlimited Occasion Bag Switcher + Create Custom Bag */}
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    {bags.map((bag, idx) => {
+                      const isActive = bag.id === selectedBag.id;
+                      const controlledCount = bag.apps.filter(
+                        (a) => resolveEffectiveAppRuleConfig(a).mode === 'controlled'
+                      ).length;
+                      return (
+                        <button
+                          key={bag.id}
+                          type="button"
+                          disabled={bagEditingDisabled && !isActive}
+                          onClick={() => {
+                            if (bagEditingDisabled) return;
+                            onSelectActiveBag(bag.id);
+                            setEditingName(false);
+                          }}
+                          className={
+                            isLiquidGlass
+                              ? `p-3 rounded-2xl text-left liquid-spring ${
+                                  isActive
+                                    ? 'liquid-pill-active font-semibold'
+                                    : bagEditingDisabled
+                                    ? 'liquid-row text-zinc-500 opacity-50 cursor-not-allowed'
+                                    : 'liquid-row text-zinc-200 hover:brightness-110'
+                                }`
+                              : isBespoke
+                              ? `p-3 rounded-md border text-left transition-colors duration-75 ${
+                                  isActive
+                                    ? 'bg-blue-600 border-blue-500 text-white font-semibold'
+                                    : bagEditingDisabled
+                                    ? 'bg-neutral-950 border-neutral-900 text-neutral-500 opacity-50 cursor-not-allowed'
+                                    : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
+                                }`
+                              : `p-2.5 rounded-2xl text-left transition-all ${
+                                  isActive
+                                    ? 'obsidian-pill-active font-black shadow-sm'
+                                    : bagEditingDisabled
+                                    ? 'obsidian-inset-neutral text-zinc-500 opacity-50 cursor-not-allowed'
+                                    : 'obsidian-inset-neutral text-zinc-300 hover:border-white/25'
+                                }`
+                          }
                         >
-                          {bag.name}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="flex items-center justify-between text-[10px] font-mono tabular-nums opacity-85">
+                            <span>BAG #{idx + 1}</span>
+                            <span>
+                              {bag.apps.length} app{bag.apps.length === 1 ? '' : 's'}
+                              {controlledCount > 0 ? ` · ${controlledCount}R` : ''}
+                            </span>
+                          </div>
+                          <div
+                            className={`text-xs truncate mt-0.5 ${
+                              isBespoke ? 'font-semibold' : 'font-bold'
+                            }`}
+                          >
+                            {bag.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {!bagEditingDisabled && (
+                    <div>
+                      {showNewBagForm ? (
+                        <form
+                          onSubmit={handleCreateBag}
+                          className={
+                            isBespoke
+                              ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
+                              : 'p-3 rounded-2xl obsidian-inset space-y-2.5'
+                          }
+                        >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              maxLength={28}
+                              value={newBagName}
+                              onChange={(e) => setNewBagName(e.target.value)}
+                              placeholder="Bag Name (Out, Sports...)"
+                              className={`w-full obsidian-input px-3 py-2 text-xs text-white outline-none ${
+                                isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono'
+                              }`}
+                            />
+                            <input
+                              type="text"
+                              maxLength={40}
+                              value={newBagNote}
+                              onChange={(e) => setNewBagNote(e.target.value)}
+                              placeholder="Occasion note (Optional)"
+                              className={`w-full obsidian-input px-3 py-2 text-xs text-zinc-200 outline-none ${
+                                isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono'
+                              }`}
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowNewBagForm(false);
+                                setNewBagName('');
+                                setNewBagNote('');
+                              }}
+                              className={
+                                isBespoke
+                                  ? 'px-3 py-1.5 rounded-md bg-black border border-neutral-800 hover:border-neutral-600 text-[11px] font-medium uppercase text-neutral-300 transition-colors duration-75'
+                                  : 'px-3 py-1.5 rounded-xl obsidian-inset-neutral hover:border-white/25 text-[10px] font-bold uppercase text-zinc-300 hover:text-white transition-all'
+                              }
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={!newBagName.trim()}
+                              className={
+                                isBespoke
+                                  ? 'px-3.5 py-1.5 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white text-[11px] font-semibold uppercase tracking-wide disabled:opacity-40 transition-colors duration-75'
+                                  : 'px-3.5 py-1.5 rounded-xl obsidian-pill-active text-[10px] font-black uppercase tracking-wider disabled:opacity-40 transition-all'
+                              }
+                            >
+                              Create Bag
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowNewBagForm(true)}
+                          className={
+                            isBespoke
+                              ? 'w-full py-2 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-600 text-xs font-medium uppercase tracking-wider text-neutral-200 hover:text-white flex items-center justify-center gap-1.5 transition-colors duration-75'
+                              : 'w-full py-2 px-3 rounded-2xl obsidian-inset-neutral hover:border-white/25 text-[11px] font-bold uppercase tracking-wider text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all'
+                          }
+                        >
+                          <Plus
+                            size={13}
+                            className={isBespoke ? 'text-blue-400' : undefined}
+                            style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                          />
+                          <span>New Custom Bag</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {!bagEditingDisabled && (
-                  <div>
-                    {showNewBagForm ? (
-                      <form
-                        onSubmit={handleCreateBag}
-                        style={{
-                          backgroundColor: '#000000',
-                          border: '1px solid #222222',
-                          borderRadius: '0px',
-                        }}
-                        className="p-2.5 space-y-2"
-                      >
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <input
-                            type="text"
-                            maxLength={28}
-                            value={newBagName}
-                            onChange={(e) => setNewBagName(e.target.value)}
-                            placeholder="Bag Name (Out, Sports...)"
-                            style={{
-                              backgroundColor: '#050505',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="px-2.5 py-1.5 text-xs font-mono text-white outline-none"
-                          />
-                          <input
-                            type="text"
-                            maxLength={40}
-                            value={newBagNote}
-                            onChange={(e) => setNewBagNote(e.target.value)}
-                            placeholder="Occasion note"
-                            style={{
-                              backgroundColor: '#050505',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="px-2.5 py-1.5 text-xs font-mono text-zinc-200 outline-none"
-                          />
-                        </div>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowNewBagForm(false);
-                              setNewBagName('');
-                              setNewBagNote('');
-                            }}
-                            style={{
-                              backgroundColor: '#000000',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="px-2.5 py-1 text-[10px] font-mono uppercase text-zinc-300"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={!newBagName.trim()}
-                            style={{
-                              backgroundColor: '#FFFFFF',
-                              border: '1px solid #FFFFFF',
-                              borderRadius: '0px',
-                            }}
-                            className="px-3 py-1 text-[10px] font-mono font-bold uppercase text-black disabled:opacity-40"
-                          >
-                            Create Bag
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowNewBagForm(true)}
-                        style={{
-                          backgroundColor: '#000000',
-                          border: '1px solid #222222',
-                          borderRadius: '0px',
-                        }}
-                        className="w-full py-1.5 px-3 text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-200 hover:text-white flex items-center justify-center gap-1.5"
-                      >
-                        <Plus size={12} />
-                        <span>New Custom Bag</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Selected Bag Config (Scrollable body) */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-0.5">
                 {/* Bag Name Editor */}
                 <div
                   className={
@@ -385,7 +397,11 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                           <button
                             type="button"
                             onClick={() => onDeleteCustomBag(selectedBag.id)}
-                            className="p-1.5 rounded-sm bg-black border border-neutral-800 text-red-400 hover:text-red-300"
+                            className={
+                              isBespoke
+                                ? 'p-1.5 rounded-sm bg-black border border-neutral-800 hover:border-red-500/60 text-red-400 hover:text-red-300 transition-colors duration-75'
+                                : 'p-1.5 rounded-xl bg-red-950/35 border border-red-500/45 text-red-400 hover:text-red-300 transition-all'
+                            }
                             title="Delete Custom Bag"
                           >
                             <Trash2 size={12} />
@@ -475,7 +491,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                           : `p-3 rounded-2xl border text-left transition-all flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed ${
                               selectedBag.allowSms
                                 ? 'text-white'
-                                : 'bg-zinc-900/50 border-white/10 text-zinc-400'
+                                : 'obsidian-inset-neutral text-zinc-400'
                             }`
                       }
                     >
@@ -509,28 +525,32 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
 
                 {/* Packed Bag Apps & Custom Quotas / Friction Rules */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-neutral-400 font-semibold">
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-neutral-400 font-semibold gap-2">
                     <span>
                       Configured Bag Apps (
                       <span className="font-mono tabular-nums">{selectedBag.apps.length}</span>)
                     </span>
-                    <span className="font-mono text-neutral-400">Tap any app to configure</span>
+                    <span
+                      className="font-mono truncate"
+                      style={{ color: isBespoke ? '#60A5FA' : 'var(--accent-hex, #FFFFFF)' }}
+                    >
+                      Tap to configure
+                    </span>
                   </div>
 
                   {selectedBag.apps.length === 0 ? (
                     <div
-                      style={{
-                        backgroundColor: '#000000',
-                        border: '1px solid #222222',
-                        borderRadius: '0px',
-                      }}
-                      className="p-3.5 text-xs font-mono text-zinc-400 text-center"
+                      className={
+                        isBespoke
+                          ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 text-xs text-neutral-400 text-center leading-relaxed'
+                          : 'p-3.5 rounded-2xl obsidian-inset-neutral text-xs text-zinc-400 text-center leading-relaxed'
+                      }
                     >
                       Monk Mode: 0 apps in {selectedBag.name}. Select any installed app below to set
                       Quotas, Friction, or Short-Video rules.
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {selectedBag.apps.map((app) => {
                         const effRule = resolveEffectiveAppRuleConfig(app);
                         const modeBadge =
@@ -542,12 +562,11 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                         return (
                           <div
                             key={app.packageName}
-                            style={{
-                              backgroundColor: '#000000',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="p-2.5 flex items-center justify-between gap-2"
+                            className={
+                              isBespoke
+                                ? 'p-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center justify-between gap-2 transition-colors duration-75'
+                                : 'p-2.5 rounded-2xl obsidian-inset flex items-center justify-between gap-2 transition-all'
+                            }
                           >
                             <button
                               type="button"
@@ -558,53 +577,84 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                                 <span className="text-xs font-semibold text-white truncate">
                                   {app.appName}
                                 </span>
-                                <span
-                                  style={{
-                                    backgroundColor:
-                                      effRule.mode === 'hard_block'
-                                        ? '#18181B'
-                                        : effRule.mode === 'controlled'
-                                        ? '#FFFFFF'
-                                        : '#09090B',
-                                    color:
-                                      effRule.mode === 'controlled' ? '#000000' : '#E4E4E7',
-                                    border: '1px solid #222222',
-                                    borderRadius: '0px',
-                                  }}
-                                  className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase shrink-0"
-                                >
-                                  {modeBadge}
-                                </span>
+                                {effRule.mode === 'hard_block' ? (
+                                  <span
+                                    className={
+                                      isBespoke
+                                        ? 'px-1.5 py-0.5 rounded-sm bg-red-950/60 border border-red-500/50 text-red-300 text-[9px] font-mono font-semibold uppercase shrink-0'
+                                        : 'px-2 py-0.5 rounded-lg bg-red-950/55 border border-red-500/50 text-red-300 text-[9px] font-black uppercase shrink-0'
+                                    }
+                                  >
+                                    {modeBadge}
+                                  </span>
+                                ) : effRule.mode === 'controlled' ? (
+                            <span
+                              className={
+                                isLiquidGlass
+                                  ? 'px-2 py-0.5 rounded-lg bg-cyan-400/20 border border-cyan-300/35 text-cyan-100 text-[9px] font-mono font-semibold uppercase shrink-0'
+                                  : isBespoke
+                                  ? 'px-1.5 py-0.5 rounded-sm bg-blue-600 border border-blue-500 text-white text-[9px] font-mono font-semibold uppercase shrink-0'
+                                  : 'px-2 py-0.5 rounded-lg obsidian-pill-active text-[9px] font-black uppercase shrink-0'
+                              }
+                            >
+                              {modeBadge}
+                            </span>
+                                ) : (
+                                  <span
+                                    style={
+                                      isBespoke
+                                        ? undefined
+                                        : {
+                                            backgroundColor:
+                                              'rgba(var(--accent-rgb, 255, 255, 255), 0.14)',
+                                            borderColor:
+                                              'rgba(var(--accent-rgb, 255, 255, 255), 0.42)',
+                                            color: 'var(--accent-hex, #FFFFFF)',
+                                          }
+                                    }
+                                    className={
+                                      isBespoke
+                                        ? 'px-1.5 py-0.5 rounded-sm bg-black border border-blue-500/45 text-blue-300 text-[9px] font-mono font-semibold uppercase shrink-0'
+                                        : 'px-2 py-0.5 rounded-lg border text-[9px] font-bold uppercase shrink-0'
+                                    }
+                                  >
+                                    {modeBadge}
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[10px] font-mono text-zinc-400 truncate mt-0.5">
                                 {formatRuleSummary(effRule)}
                               </div>
                             </button>
 
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => openAppRulePanel(app)}
-                                style={{
-                                  backgroundColor: '#000000',
-                                  border: '1px solid #222222',
-                                  borderRadius: '0px',
-                                }}
-                                className="p-1.5 text-zinc-300 hover:text-white"
+                                className={
+                                  isBespoke
+                                    ? 'p-1.5 rounded-sm bg-black border border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white transition-colors duration-75'
+                                    : 'p-1.5 rounded-xl obsidian-inset-neutral hover:border-white/25 transition-all'
+                                }
                                 title="Configure App Quotas & Friction"
                               >
-                                <SlidersHorizontal size={13} />
+                                <SlidersHorizontal
+                                  size={13}
+                                  className={isBespoke ? 'text-blue-400' : undefined}
+                                  style={
+                                    isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }
+                                  }
+                                />
                               </button>
                               <button
                                 type="button"
                                 disabled={bagEditingDisabled}
                                 onClick={() => onToggleBagApp(selectedBag.id, app)}
-                                style={{
-                                  backgroundColor: '#000000',
-                                  border: '1px solid #222222',
-                                  borderRadius: '0px',
-                                }}
-                                className="p-1.5 text-red-400 hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className={
+                                  isBespoke
+                                    ? 'p-1.5 rounded-sm bg-black border border-neutral-800 hover:border-red-500/60 text-red-400 hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-75'
+                                    : 'p-1.5 rounded-xl bg-red-950/35 border border-red-500/40 text-red-400 hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all'
+                                }
                                 title="Remove from Bag"
                               >
                                 <Trash2 size={13} />
@@ -648,7 +698,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                     </button>
                   </div>
 
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                  <div className="space-y-1.5">
                     {filteredApps.map((app) => {
                       const packedEntry = selectedBag.apps.find(
                         (a) => a.packageName === app.packageName
@@ -660,19 +710,24 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                       return (
                         <div
                           key={app.packageName}
-                          style={{
-                            backgroundColor: '#000000',
-                            border: `1px solid ${isPacked ? '#FFFFFF' : '#222222'}`,
-                            borderRadius: '0px',
-                          }}
-                          className="w-full flex items-center justify-between gap-2 px-2.5 py-2"
+                          className={
+                            isBespoke
+                              ? `w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md border transition-colors duration-75 ${
+                                  isPacked
+                                    ? 'bg-neutral-950 border-blue-500/60'
+                                    : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
+                                }`
+                              : `w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-2xl transition-all ${
+                                  isPacked ? 'obsidian-inset' : 'obsidian-inset-neutral'
+                                }`
+                          }
                         >
                           <button
                             type="button"
                             onClick={() => openAppRulePanel(app)}
                             className="flex-1 min-w-0 text-left"
                           >
-                            <div className="text-xs font-mono font-semibold text-white truncate">
+                            <div className="text-xs font-semibold text-white truncate">
                               {app.appName}
                             </div>
                             <div className="text-[10px] font-mono text-zinc-400 truncate">
@@ -683,13 +738,19 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                           <button
                             type="button"
                             onClick={() => openAppRulePanel(app)}
-                            style={{
-                              backgroundColor: isPacked ? '#FFFFFF' : '#000000',
-                              color: isPacked ? '#000000' : '#E4E4E7',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="px-2 py-1 text-[10px] font-mono font-bold uppercase shrink-0"
+                            className={
+                              isBespoke
+                                ? `px-2.5 py-1 rounded-sm border text-[10px] font-semibold uppercase shrink-0 transition-colors duration-75 ${
+                                    isPacked
+                                      ? 'bg-blue-600 border-blue-500 text-white'
+                                      : 'bg-black border-neutral-800 hover:border-neutral-600 text-neutral-200'
+                                  }`
+                                : `px-2.5 py-1 rounded-lg text-[10px] uppercase shrink-0 transition-all ${
+                                    isPacked
+                                      ? 'obsidian-pill-active font-black'
+                                      : 'obsidian-inset-neutral hover:border-white/25 text-zinc-200 hover:text-white font-bold'
+                                  }`
+                            }
                           >
                             {isPacked ? 'Edit Rule' : 'Configure'}
                           </button>
@@ -698,15 +759,32 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                             type="button"
                             disabled={bagEditingDisabled}
                             onClick={() => onToggleBagApp(selectedBag.id, app)}
-                            style={{
-                              backgroundColor: '#000000',
-                              border: '1px solid #222222',
-                              borderRadius: '0px',
-                            }}
-                            className="p-1.5 text-zinc-300 hover:text-white disabled:opacity-40 shrink-0"
+                            className={
+                              isBespoke
+                                ? `p-1.5 rounded-sm border disabled:opacity-40 shrink-0 transition-colors duration-75 ${
+                                    isPacked
+                                      ? 'bg-black border-blue-500/60 text-blue-400'
+                                      : 'bg-black border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white'
+                                  }`
+                                : `p-1.5 rounded-xl disabled:opacity-40 shrink-0 transition-all ${
+                                    isPacked
+                                      ? 'obsidian-inset'
+                                      : 'obsidian-inset-neutral hover:border-white/25 text-zinc-300 hover:text-white'
+                                  }`
+                            }
                             title={isPacked ? 'Quick Remove from Bag' : 'Quick Pack Unrestricted'}
                           >
-                            {isPacked ? <Check size={14} /> : <Plus size={14} />}
+                            {isPacked ? (
+                              <Check
+                                size={14}
+                                className={isBespoke ? 'text-blue-400' : undefined}
+                                style={
+                                  isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }
+                                }
+                              />
+                            ) : (
+                              <Plus size={14} />
+                            )}
                           </button>
                         </div>
                       );
@@ -726,6 +804,12 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                       bagEditingDisabled
                         ? 'bg-neutral-950 border-neutral-800 text-neutral-200'
                         : 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white'
+                    }`
+                  : isLiquidGlass
+                  ? `w-full py-3 rounded-2xl font-semibold text-xs uppercase tracking-wider transition-all ${
+                      bagEditingDisabled
+                        ? 'liquid-pill text-white/50'
+                        : 'liquid-pill-active active:scale-[0.99]'
                     }`
                   : `w-full py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all ${
                       bagEditingDisabled

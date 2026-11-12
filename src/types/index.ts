@@ -279,7 +279,7 @@ export interface CloudAutoBackupStatus {
 
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
 
-export type InterfaceStyle = 'bespoke' | 'classic';
+export type InterfaceStyle = 'bespoke' | 'classic' | 'liquid_glass';
 
 export type AmoledGradientId =
   | 'pure'

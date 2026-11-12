@@ -4,12 +4,14 @@ import type { InterfaceStyle } from '../types';
 export interface InterfaceStyleContextValue {
   interfaceStyle: InterfaceStyle;
   isBespoke: boolean;
+  isLiquidGlass: boolean;
   setInterfaceStyle: (next: InterfaceStyle) => void;
 }
 
 const DEFAULT_CONTEXT: InterfaceStyleContextValue = {
   interfaceStyle: 'classic',
   isBespoke: false,
+  isLiquidGlass: false,
   setInterfaceStyle: () => {},
 };
 
@@ -25,6 +27,7 @@ export const InterfaceStyleProvider: React.FC<{
       value={{
         interfaceStyle,
         isBespoke: interfaceStyle === 'bespoke',
+        isLiquidGlass: interfaceStyle === 'liquid_glass',
         setInterfaceStyle,
       }}
     >

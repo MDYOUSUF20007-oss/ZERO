@@ -23,9 +23,71 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
   onOpenAppInfo,
   compact = false,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const isBlockedNow = restrictedStatus === 'blocked';
   const actionName = isStrictBuild ? 'Enable Accessibility' : 'Grant Usage Access';
+
+  if (isLiquidGlass) {
+    return (
+      <div
+        data-restricted-guide="true"
+        className={`rounded-2xl font-sans transition-colors ${
+          compact ? 'p-3.5 space-y-2.5' : 'p-4 space-y-3'
+        } ${isBlockedNow ? 'liquid-inset' : 'liquid-row'}`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-200">
+            {isBlockedNow
+              ? 'Blocked by Android — Allow in App Info'
+              : 'If Google blocks first try (Android 13–16)'}
+          </span>
+          {isBlockedNow && (
+            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
+              Unlock Now
+            </span>
+          )}
+        </div>
+
+        <ol className="text-xs text-zinc-400 leading-relaxed space-y-1 pl-4 list-decimal">
+          <li>
+            Tap <span className="text-zinc-100 font-medium">{actionName}</span> above{' '}
+            <span className="text-zinc-500">(if denied, tap OK)</span>.
+          </li>
+          <li>
+            Tap <span className="text-zinc-100 font-medium">Open Zero App Info</span> &rarr;{' '}
+            <span className="text-zinc-100 font-medium">&#8942;</span> &rarr;{' '}
+            <span className="text-zinc-100 font-medium">Allow restricted settings</span>.
+          </li>
+          <li>
+            Return &amp; tap <span className="text-zinc-100 font-medium">{actionName}</span> again to allow.
+          </li>
+        </ol>
+
+        <div className="pt-0.5 space-y-1.5">
+          <button
+            type="button"
+            onClick={onOpenAppInfo}
+            className={`w-full py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 liquid-spring ${
+              isBlockedNow
+                ? 'liquid-pill-active font-semibold uppercase tracking-wider'
+                : 'liquid-pill font-medium'
+            }`}
+          >
+            <Settings
+              size={13}
+              strokeWidth={1.75}
+              className={!isBlockedNow ? 'text-cyan-300' : undefined}
+            />
+            <span>Open Zero App Info</span>
+            <ExternalLink size={11} strokeWidth={1.75} className="opacity-75" />
+          </button>
+          <p className="text-[10px] text-zinc-400 text-center">
+            Xiaomi / HyperOS: scroll to bottom of App Info.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isBespoke) {
     return (

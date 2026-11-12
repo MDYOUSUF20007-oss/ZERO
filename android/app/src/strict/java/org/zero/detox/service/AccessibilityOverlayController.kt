@@ -26,11 +26,13 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import org.zero.detox.engage.EngageConfig
+import org.zero.detox.ui.VoidThemeStore
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * AccessibilityOverlayController:
- * Renders pure AMOLED (#000000) + 1dp #222222 brutalist overlays strictly via
+ * Renders pure AMOLED (#000000) theme-synced overlays strictly via
  * WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY on the AccessibilityService context.
  *
  * Focusability safeguard:
@@ -51,6 +53,23 @@ class AccessibilityOverlayController(
         SCROLL_INTERVENTION
     }
 
+    private data class OverlayPalette(
+        val isBespoke: Boolean,
+        val isLiquidGlass: Boolean = false,
+        val accentColor: Int,
+        val primaryFillColor: Int,
+        val primaryTextColor: Int,
+        val cardBgColor: Int,
+        val cardBorderColor: Int,
+        val insetBgColor: Int,
+        val insetBorderColor: Int,
+        val secondaryBgColor: Int,
+        val secondaryBorderColor: Int,
+        val cornerRadiusPx: Float,
+        val controlRadiusPx: Float,
+        val typeface: Typeface
+    )
+
     private class GeometricBreathingRingView(context: Context) : View(context) {
         private var progressFraction: Float = 0.55f
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -66,6 +85,13 @@ class AccessibilityOverlayController(
         private val corePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             style = Paint.Style.FILL
+        }
+
+        fun setThemeColors(ringColor: Int, guideColor: Int) {
+            ringPaint.color = ringColor
+            corePaint.color = ringColor
+            guidePaint.color = guideColor
+            invalidate()
         }
 
         fun setExpansionFraction(fraction: Float) {
@@ -105,6 +131,84 @@ class AccessibilityOverlayController(
         return maxOf(1, (value * serviceContext.resources.displayMetrics.density).toInt())
     }
 
+    private fun dpF(value: Float): Int {
+        return maxOf(1, (value * serviceContext.resources.displayMetrics.density).roundToInt())
+    }
+
+    private fun resolveOverlayPalette(): OverlayPalette {
+        val bespoke = VoidThemeStore.isBespokeStyle(serviceContext)
+        if (bespoke) {
+            val accent = Color.parseColor("#3B82F6")
+            val fill = Color.parseColor("#2563EB")
+            return OverlayPalette(
+                isBespoke = true,
+                isLiquidGlass = false,
+                accentColor = accent,
+                primaryFillColor = fill,
+                primaryTextColor = Color.WHITE,
+                cardBgColor = Color.BLACK,
+                cardBorderColor = Color.parseColor("#262626"),
+                insetBgColor = Color.parseColor("#0A0A0A"),
+                insetBorderColor = Color.parseColor("#262626"),
+                secondaryBgColor = Color.parseColor("#0A0A0A"),
+                secondaryBorderColor = Color.parseColor("#262626"),
+                cornerRadiusPx = dp(6).toFloat(),
+                controlRadiusPx = dp(6).toFloat(),
+                typeface = Typeface.SANS_SERIF
+            )
+        }
+
+        // Liquid Glass palette: Acrylic translucent overlay with #4FACFE accent
+        val liquidGlass = VoidThemeStore.isLiquidGlassStyle(serviceContext)
+        if (liquidGlass) {
+            val accent = Color.parseColor("#4FACFE")
+            val fill = Color.parseColor("#4FACFE")
+            return OverlayPalette(
+                isBespoke = false,
+                isLiquidGlass = true,
+                accentColor = accent,
+                primaryFillColor = fill,
+                primaryTextColor = Color.parseColor("#09090B"),
+                cardBgColor = Color.parseColor("#0D1018"),   // EB 10% translucent handled by FLAG_DIM
+                cardBorderColor = Color.parseColor("#38FFFFFF").let {
+                    // #38 = 56/255 ≈ 22% alpha white hairline
+                    (0x38 shl 24) or (Color.WHITE and 0x00FFFFFF)
+                },
+                insetBgColor = Color.parseColor("#0F1218"),
+                insetBorderColor = (0x1F shl 24) or (Color.WHITE and 0x00FFFFFF),
+                secondaryBgColor = Color.parseColor("#111520"),
+                secondaryBorderColor = (0x0F shl 24) or (Color.WHITE and 0x00FFFFFF),
+                cornerRadiusPx = dp(18).toFloat(),
+                controlRadiusPx = dp(14).toFloat(),
+                typeface = Typeface.SANS_SERIF
+            )
+        }
+
+        val accentCfg = VoidThemeStore.loadAccent(serviceContext)
+        val readableAccent = VoidThemeStore.ensureReadableOnBlack(accentCfg.accentColor)
+        val badgeText = if (VoidThemeStore.relativeLuminance(readableAccent) >= 0.34) {
+            Color.parseColor("#09090B")
+        } else {
+            Color.WHITE
+        }
+        return OverlayPalette(
+            isBespoke = false,
+            isLiquidGlass = false,
+            accentColor = readableAccent,
+            primaryFillColor = readableAccent,
+            primaryTextColor = badgeText,
+            cardBgColor = Color.parseColor("#0C0C10"),
+            cardBorderColor = VoidThemeStore.withAlpha(readableAccent, 128),
+            insetBgColor = Color.parseColor("#111116"),
+            insetBorderColor = VoidThemeStore.withAlpha(readableAccent, 96),
+            secondaryBgColor = Color.parseColor("#0D0D11"),
+            secondaryBorderColor = Color.parseColor("#27272A"),
+            cornerRadiusPx = dp(16).toFloat(),
+            controlRadiusPx = dp(12).toFloat(),
+            typeface = Typeface.MONOSPACE
+        )
+    }
+
     fun isBlockingOverlayVisible(): Boolean = blockingView != null
 
     fun getBlockingPackageName(): String? = blockingPackageName
@@ -127,11 +231,16 @@ class AccessibilityOverlayController(
         }
         hideBlockingOverlay()
 
-        val (root, card) = buildBrutalistRoot(allowKeyboardFocus = false, onBackAction = onExitToVoid)
-        card.addView(buildEyebrowText("ZERO // ENFORCEMENT LAYER"))
-        card.addView(buildTitleText(title))
-        card.addView(buildBodyText(body))
-        card.addView(buildPrimaryButton("RETURN TO ZERO") { onExitToVoid() })
+        val palette = resolveOverlayPalette()
+        val (root, card) = buildThemedRoot(
+            palette = palette,
+            allowKeyboardFocus = false,
+            onBackAction = onExitToVoid
+        )
+        card.addView(buildEyebrowText("ZERO // ENFORCEMENT LAYER", palette))
+        card.addView(buildTitleText(title, palette))
+        card.addView(buildBodyText(body, palette))
+        card.addView(buildPrimaryButton("RETURN TO ZERO", palette) { onExitToVoid() })
 
         attachBlockingView(root, mode, pkg, allowKeyboardFocus = false)
     }
@@ -149,30 +258,40 @@ class AccessibilityOverlayController(
         }
         hideBlockingOverlay()
 
-        val (root, card) = buildBrutalistRoot(allowKeyboardFocus = false, onBackAction = onExitToVoid)
-        card.addView(buildEyebrowText("ZERO // CONTINUOUS SESSION LIMIT"))
-        card.addView(buildTitleText("$appLabel LOCKED"))
+        val palette = resolveOverlayPalette()
+        val (root, card) = buildThemedRoot(
+            palette = palette,
+            allowKeyboardFocus = false,
+            onBackAction = onExitToVoid
+        )
+        card.addView(buildEyebrowText("ZERO // CONTINUOUS SESSION LIMIT", palette))
+        card.addView(buildTitleText("$appLabel LOCKED", palette))
         card.addView(
             buildBodyText(
-                "Continuous streak cap reached for $appLabel. Step away until your cooldown expires."
+                "Continuous streak cap reached for $appLabel. Step away until your cooldown expires.",
+                palette
             )
         )
 
         val timerBanner = TextView(serviceContext).apply {
             text = "COOLDOWN REMAINING: $formattedTime"
-            setTextColor(Color.WHITE)
+            setTextColor(palette.accentColor)
             textSize = 15f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(dp(12), dp(14), dp(12), dp(14))
-            background = sharpBoxDrawable(Color.parseColor("#0A0A0A"), Color.parseColor("#222222"))
+            background = boxDrawable(
+                fillColor = palette.insetBgColor,
+                borderColor = palette.insetBorderColor,
+                cornerRadiusPx = palette.controlRadiusPx
+            )
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { bottomMargin = dp(16) }
         }
         card.addView(timerBanner)
-        card.addView(buildPrimaryButton("RETURN TO ZERO") { onExitToVoid() })
+        card.addView(buildPrimaryButton("RETURN TO ZERO", palette) { onExitToVoid() })
 
         if (attachBlockingView(root, OverlayMode.COOLDOWN, pkg, allowKeyboardFocus = false)) {
             cooldownTimerView = timerBanner
@@ -191,14 +310,16 @@ class AccessibilityOverlayController(
         }
         hideBlockingOverlay()
 
+        val palette = resolveOverlayPalette()
         val allowKeyboard = rule.requireIntentText
-        val (root, card) = buildBrutalistRoot(
+        val (root, card) = buildThemedRoot(
+            palette = palette,
             allowKeyboardFocus = allowKeyboard,
             onBackAction = onCancelToVoid
         )
 
-        card.addView(buildEyebrowText("ZERO // MINDFUL FRICTION"))
-        card.addView(buildTitleText("PAUSE BEFORE $appLabel"))
+        card.addView(buildEyebrowText("ZERO // MINDFUL FRICTION", palette))
+        card.addView(buildTitleText("PAUSE BEFORE $appLabel", palette))
 
         val subtitle = buildString {
             append("Confirm your intention before opening $appLabel.")
@@ -206,7 +327,7 @@ class AccessibilityOverlayController(
                 append(" (${formatDuration(rule.reEntryGraceSeconds.toLong())} re-entry grace after proceeding)")
             }
         }
-        card.addView(buildBodyText(subtitle))
+        card.addView(buildBodyText(subtitle, palette))
 
         var pendingAnimator: ValueAnimator? = null
         if (rule.showBreathingCircle) {
@@ -217,11 +338,15 @@ class AccessibilityOverlayController(
                 ).apply { bottomMargin = dp(14) }
             }
             val ringView = GeometricBreathingRingView(serviceContext).apply {
+                setThemeColors(
+                    ringColor = palette.accentColor,
+                    guideColor = VoidThemeStore.withAlpha(palette.accentColor, 65)
+                )
                 layoutParams = FrameLayout.LayoutParams(dp(96), dp(96), Gravity.CENTER)
             }
             val breatheLabel = TextView(serviceContext).apply {
                 text = "BREATHE"
-                setTextColor(Color.parseColor("#9CA3AF"))
+                setTextColor(palette.accentColor)
                 textSize = 9f
                 typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
                 letterSpacing = 0.14f
@@ -259,12 +384,16 @@ class AccessibilityOverlayController(
             } else {
                 "FRICTION TIMER READY"
             }
-            setTextColor(Color.WHITE)
+            setTextColor(palette.accentColor)
             textSize = 12f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(dp(10), dp(10), dp(10), dp(10))
-            background = sharpBoxDrawable(Color.parseColor("#0A0A0A"), Color.parseColor("#222222"))
+            background = boxDrawable(
+                fillColor = palette.insetBgColor,
+                borderColor = palette.insetBorderColor,
+                cornerRadiusPx = palette.controlRadiusPx
+            )
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -280,7 +409,7 @@ class AccessibilityOverlayController(
                 setTextColor(Color.WHITE)
                 setHintTextColor(Color.parseColor("#6B7280"))
                 textSize = 13f
-                typeface = Typeface.MONOSPACE
+                typeface = palette.typeface
                 isFocusable = true
                 isFocusableInTouchMode = true
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -289,7 +418,11 @@ class AccessibilityOverlayController(
                 minLines = 2
                 gravity = Gravity.TOP or Gravity.START
                 setPadding(dp(12), dp(12), dp(12), dp(12))
-                background = sharpBoxDrawable(Color.parseColor("#080808"), Color.parseColor("#333333"))
+                background = boxDrawable(
+                    fillColor = palette.insetBgColor,
+                    borderColor = VoidThemeStore.withAlpha(palette.accentColor, 110),
+                    cornerRadiusPx = palette.controlRadiusPx
+                )
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -313,8 +446,9 @@ class AccessibilityOverlayController(
 
         val proceedBtn = Button(serviceContext).apply {
             isAllCaps = true
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(palette.typeface, Typeface.BOLD)
             textSize = 12f
+            setPadding(dp(14), dp(12), dp(14), dp(12))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -332,11 +466,19 @@ class AccessibilityOverlayController(
                 else -> "PROCEED TO $appLabel"
             }
             if (unlocked) {
-                proceedBtn.setTextColor(Color.BLACK)
-                proceedBtn.background = sharpBoxDrawable(Color.WHITE, Color.WHITE)
+                proceedBtn.setTextColor(palette.primaryTextColor)
+                proceedBtn.background = boxDrawable(
+                    fillColor = palette.primaryFillColor,
+                    borderColor = palette.accentColor,
+                    cornerRadiusPx = palette.controlRadiusPx
+                )
             } else {
-                proceedBtn.setTextColor(Color.parseColor("#6B7280"))
-                proceedBtn.background = sharpBoxDrawable(Color.parseColor("#0D0D0D"), Color.parseColor("#222222"))
+                proceedBtn.setTextColor(Color.parseColor("#71717A"))
+                proceedBtn.background = boxDrawable(
+                    fillColor = palette.secondaryBgColor,
+                    borderColor = palette.secondaryBorderColor,
+                    cornerRadiusPx = palette.controlRadiusPx
+                )
             }
         }
 
@@ -346,7 +488,11 @@ class AccessibilityOverlayController(
                 currentIntentLength = s?.toString()?.trim()?.length ?: 0
                 charCountView?.text = "INTENT LENGTH: $currentIntentLength / $minCharsRequired CHARS"
                 charCountView?.setTextColor(
-                    if (currentIntentLength >= minCharsRequired) Color.WHITE else Color.parseColor("#9CA3AF")
+                    if (currentIntentLength >= minCharsRequired) {
+                        palette.accentColor
+                    } else {
+                        Color.parseColor("#9CA3AF")
+                    }
                 )
                 updateProceedButtonState()
             }
@@ -360,7 +506,7 @@ class AccessibilityOverlayController(
         }
 
         card.addView(proceedBtn)
-        card.addView(buildSecondaryButton("CANCEL & RETURN TO ZERO") { onCancelToVoid() })
+        card.addView(buildSecondaryButton("CANCEL & RETURN TO ZERO", palette) { onCancelToVoid() })
         updateProceedButtonState()
 
         if (!attachBlockingView(root, OverlayMode.FRICTION, pkg, allowKeyboardFocus = allowKeyboard)) {
@@ -404,16 +550,22 @@ class AccessibilityOverlayController(
         }
         hideBlockingOverlay()
 
-        val (root, card) = buildBrutalistRoot(allowKeyboardFocus = false, onBackAction = onLeaveShorts)
-        card.addView(buildEyebrowText("ZERO // SURGICAL SHORT-VIDEO BLOCKER"))
-        card.addView(buildTitleText("SHORT-FORM FEED BLOCKED"))
+        val palette = resolveOverlayPalette()
+        val (root, card) = buildThemedRoot(
+            palette = palette,
+            allowKeyboardFocus = false,
+            onBackAction = onLeaveShorts
+        )
+        card.addView(buildEyebrowText("ZERO // SURGICAL SHORT-VIDEO BLOCKER", palette))
+        card.addView(buildTitleText("SHORT-FORM FEED BLOCKED", palette))
         card.addView(
             buildBodyText(
-                "Short-form video playback inside $appLabel is blocked during this Bag session. Long-form views & messages remain allowed."
+                "Short-form video playback inside $appLabel is blocked during this Bag session. Long-form views & messages remain allowed.",
+                palette
             )
         )
-        card.addView(buildPrimaryButton("EXIT SHORTS / REELS") { onLeaveShorts() })
-        card.addView(buildSecondaryButton("RETURN TO ZERO") { onExitToVoid() })
+        card.addView(buildPrimaryButton("EXIT SHORTS / REELS", palette) { onLeaveShorts() })
+        card.addView(buildSecondaryButton("RETURN TO ZERO", palette) { onExitToVoid() })
 
         attachBlockingView(root, OverlayMode.SHORT_VIDEO, pkg, allowKeyboardFocus = false)
     }
@@ -430,12 +582,18 @@ class AccessibilityOverlayController(
         }
         hideBlockingOverlay()
 
-        val (root, card) = buildBrutalistRoot(allowKeyboardFocus = false, onBackAction = onExitToVoid)
-        card.addView(buildEyebrowText("ZERO // SCROLL VELOCITY GUARD"))
-        card.addView(buildTitleText("DOOMSCROLL INTERRUPTED"))
+        val palette = resolveOverlayPalette()
+        val (root, card) = buildThemedRoot(
+            palette = palette,
+            allowKeyboardFocus = false,
+            onBackAction = onExitToVoid
+        )
+        card.addView(buildEyebrowText("ZERO // SCROLL VELOCITY GUARD", palette))
+        card.addView(buildTitleText("DOOMSCROLL INTERRUPTED", palette))
         card.addView(
             buildBodyText(
-                "Detected rapid scrolling (>$scrollLimit scroll events in 10s) inside $appLabel. Take a deliberate pause before resuming."
+                "Detected rapid scrolling (>$scrollLimit scroll events in 10s) inside $appLabel. Take a deliberate pause before resuming.",
+                palette
             )
         )
 
@@ -444,10 +602,15 @@ class AccessibilityOverlayController(
             isAllCaps = true
             isEnabled = false
             text = "PAUSE BREAK (${holdSec}S)..."
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(palette.typeface, Typeface.BOLD)
             textSize = 12f
-            setTextColor(Color.parseColor("#6B7280"))
-            background = sharpBoxDrawable(Color.parseColor("#0D0D0D"), Color.parseColor("#222222"))
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setTextColor(Color.parseColor("#71717A"))
+            background = boxDrawable(
+                fillColor = palette.secondaryBgColor,
+                borderColor = palette.secondaryBorderColor,
+                cornerRadiusPx = palette.controlRadiusPx
+            )
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -459,7 +622,7 @@ class AccessibilityOverlayController(
             }
         }
         card.addView(resumeBtn)
-        card.addView(buildSecondaryButton("RETURN TO ZERO") { onExitToVoid() })
+        card.addView(buildSecondaryButton("RETURN TO ZERO", palette) { onExitToVoid() })
 
         if (!attachBlockingView(root, OverlayMode.SCROLL_INTERVENTION, pkg, allowKeyboardFocus = false)) {
             return
@@ -475,8 +638,12 @@ class AccessibilityOverlayController(
                 } else {
                     resumeBtn.isEnabled = true
                     resumeBtn.text = "RESUME $appLabel"
-                    resumeBtn.setTextColor(Color.BLACK)
-                    resumeBtn.background = sharpBoxDrawable(Color.WHITE, Color.WHITE)
+                    resumeBtn.setTextColor(palette.primaryTextColor)
+                    resumeBtn.background = boxDrawable(
+                        fillColor = palette.primaryFillColor,
+                        borderColor = palette.accentColor,
+                        cornerRadiusPx = palette.controlRadiusPx
+                    )
                 }
             }
         }
@@ -492,6 +659,7 @@ class AccessibilityOverlayController(
         val wm = windowManager ?: return
         hideNudgeBanner()
 
+        val palette = resolveOverlayPalette()
         val quotaText = if (remainingQuotaSec > 0L) {
             "QUOTA LEFT ${formatDuration(remainingQuotaSec)}"
         } else {
@@ -507,12 +675,17 @@ class AccessibilityOverlayController(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(14), dp(10), dp(14), dp(10))
-            background = sharpBoxDrawable(Color.parseColor("#F0000000"), Color.WHITE)
+            background = boxDrawable(
+                fillColor = VoidThemeStore.withAlpha(palette.cardBgColor, 240),
+                borderColor = palette.accentColor,
+                cornerRadiusPx = palette.controlRadiusPx,
+                strokePx = dpF(if (palette.isBespoke) 1f else 1.5f)
+            )
         }
 
         val msg = TextView(serviceContext).apply {
             text = "ZERO NUDGE // ${appLabel.uppercase(Locale.US)} · ELAPSED ${formatDuration(elapsedSec)} · $quotaText"
-            setTextColor(Color.WHITE)
+            setTextColor(palette.accentColor)
             textSize = 10.5f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
@@ -635,7 +808,8 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun buildBrutalistRoot(
+    private fun buildThemedRoot(
+        palette: OverlayPalette,
         allowKeyboardFocus: Boolean,
         onBackAction: () -> Unit
     ): Pair<FrameLayout, LinearLayout> {
@@ -676,7 +850,12 @@ class AccessibilityOverlayController(
         val card = LinearLayout(serviceContext).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(22), dp(20), dp(22))
-            background = sharpBoxDrawable(Color.BLACK, Color.parseColor("#222222"))
+            background = boxDrawable(
+                fillColor = palette.cardBgColor,
+                borderColor = palette.cardBorderColor,
+                cornerRadiusPx = palette.cornerRadiusPx,
+                strokePx = dpF(if (palette.isBespoke) 1f else 1.5f)
+            )
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -689,10 +868,10 @@ class AccessibilityOverlayController(
         return Pair(root, card)
     }
 
-    private fun buildEyebrowText(textValue: String): TextView {
+    private fun buildEyebrowText(textValue: String, palette: OverlayPalette): TextView {
         return TextView(serviceContext).apply {
             text = textValue
-            setTextColor(Color.parseColor("#737373"))
+            setTextColor(palette.accentColor)
             textSize = 10f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             letterSpacing = 0.14f
@@ -703,12 +882,12 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun buildTitleText(textValue: String): TextView {
+    private fun buildTitleText(textValue: String, palette: OverlayPalette): TextView {
         return TextView(serviceContext).apply {
             text = textValue.uppercase(Locale.US)
             setTextColor(Color.WHITE)
             textSize = 19f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            typeface = Typeface.create(palette.typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -716,12 +895,12 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun buildBodyText(textValue: String): TextView {
+    private fun buildBodyText(textValue: String, palette: OverlayPalette): TextView {
         return TextView(serviceContext).apply {
             text = textValue
             setTextColor(Color.parseColor("#D4D4D8"))
             textSize = 13f
-            typeface = Typeface.MONOSPACE
+            typeface = palette.typeface
             setLineSpacing(dp(4).toFloat(), 1f)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -730,14 +909,22 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun buildPrimaryButton(label: String, onClick: () -> Unit): Button {
+    private fun buildPrimaryButton(
+        label: String,
+        palette: OverlayPalette,
+        onClick: () -> Unit
+    ): Button {
         return Button(serviceContext).apply {
             text = label
             isAllCaps = true
-            setTextColor(Color.BLACK)
+            setTextColor(palette.primaryTextColor)
             textSize = 12f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            background = sharpBoxDrawable(Color.WHITE, Color.WHITE)
+            typeface = Typeface.create(palette.typeface, Typeface.BOLD)
+            background = boxDrawable(
+                fillColor = palette.primaryFillColor,
+                borderColor = palette.accentColor,
+                cornerRadiusPx = palette.controlRadiusPx
+            )
             setPadding(dp(14), dp(12), dp(14), dp(12))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -747,14 +934,22 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun buildSecondaryButton(label: String, onClick: () -> Unit): Button {
+    private fun buildSecondaryButton(
+        label: String,
+        palette: OverlayPalette,
+        onClick: () -> Unit
+    ): Button {
         return Button(serviceContext).apply {
             text = label
             isAllCaps = true
             setTextColor(Color.WHITE)
             textSize = 11.5f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            background = sharpBoxDrawable(Color.BLACK, Color.parseColor("#222222"))
+            typeface = Typeface.create(palette.typeface, Typeface.BOLD)
+            background = boxDrawable(
+                fillColor = palette.secondaryBgColor,
+                borderColor = palette.secondaryBorderColor,
+                cornerRadiusPx = palette.controlRadiusPx
+            )
             setPadding(dp(14), dp(11), dp(14), dp(11))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -764,12 +959,17 @@ class AccessibilityOverlayController(
         }
     }
 
-    private fun sharpBoxDrawable(fillColor: Int, borderColor: Int): GradientDrawable {
+    private fun boxDrawable(
+        fillColor: Int,
+        borderColor: Int,
+        cornerRadiusPx: Float = 0f,
+        strokePx: Int = dp(1)
+    ): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = 0f
+            cornerRadius = cornerRadiusPx
             setColor(fillColor)
-            setStroke(dp(1), borderColor)
+            setStroke(strokePx, borderColor)
         }
     }
 

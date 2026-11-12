@@ -91,8 +91,67 @@ function getHeatmapCellStyle(
   level: 0 | 1 | 2 | 3 | 4,
   isSelected: boolean,
   isToday: boolean = false,
-  isBespoke: boolean = false
+  isBespoke: boolean = false,
+  isLiquidGlass: boolean = false
 ): CSSProperties {
+  if (isLiquidGlass) {
+    const ringShadow = isSelected
+      ? '0 0 0 2px #FFFFFF'
+      : isToday
+      ? '0 0 0 1.5px #00F2FE'
+      : undefined;
+
+    switch (level) {
+      case 1:
+        return {
+          background: 'rgba(79, 172, 254, 0.16)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.22)',
+          borderLeft: '1px solid rgba(79, 172, 254, 0.28)',
+          borderRight: '1px solid rgba(79, 172, 254, 0.14)',
+          borderBottom: '1px solid rgba(79, 172, 254, 0.08)',
+          boxShadow: ringShadow,
+        };
+      case 2:
+        return {
+          background: 'rgba(79, 172, 254, 0.34)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.32)',
+          borderLeft: '1px solid rgba(0, 242, 254, 0.42)',
+          borderRight: '1px solid rgba(79, 172, 254, 0.22)',
+          borderBottom: '1px solid rgba(79, 172, 254, 0.12)',
+          boxShadow: ringShadow,
+        };
+      case 3:
+        return {
+          background: 'rgba(0, 242, 254, 0.56)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.48)',
+          borderLeft: '1px solid rgba(0, 242, 254, 0.65)',
+          borderRight: '1px solid rgba(79, 172, 254, 0.35)',
+          borderBottom: '1px solid rgba(79, 172, 254, 0.2)',
+          boxShadow: ringShadow ?? '0 0 10px -2px rgba(0, 242, 254, 0.28)',
+        };
+      case 4:
+        return {
+          background:
+            'linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(186, 230, 253, 0.94) 55%, rgba(79, 172, 254, 0.95) 100%)',
+          borderTop: '1px solid #FFFFFF',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.78)',
+          borderRight: '1px solid rgba(79, 172, 254, 0.5)',
+          borderBottom: '1px solid rgba(79, 172, 254, 0.3)',
+          boxShadow: ringShadow ?? '0 0 14px -2px rgba(79, 172, 254, 0.48)',
+        };
+      case 0:
+      default:
+        return {
+          background: 'rgba(14, 16, 24, 0.72)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.07)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.04)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.02)',
+          boxShadow: ringShadow,
+        };
+    }
+  }
+
   if (isBespoke) {
     const borderFor = (fallback: string) =>
       isSelected ? '2px solid #FFFFFF' : isToday ? '1.5px solid #93C5FD' : `1px solid ${fallback}`;
@@ -181,7 +240,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   onOpenProfileModal,
   onOpenTicketModal,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isLiquidGlass;
   const [localWidgetsFallback, setLocalWidgetsFallback] = useState<DashboardWidgetsConfig>(
     () => sanitizeWidgetsConfig(widgetsConfig ?? DEFAULT_WIDGETS_CONFIG)
   );
@@ -365,17 +425,19 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
     if (widgetId === 'overview_kpis') {
       return (
-        <div key="overview_kpis" className={isBespoke ? 'space-y-3' : 'space-y-2'}>
+        <div key="overview_kpis" className={isModernFont ? 'space-y-3' : 'space-y-2'}>
           {kpiSyncActive && (
             <div
               className={`flex items-center justify-between text-[11px] px-1 ${
-                isBespoke ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
+                isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
               }`}
             >
               <span className="uppercase tracking-wider">Metrics Synced to Heatmap</span>
               <span
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'px-2.5 py-0.5 rounded-full liquid-row font-sans font-semibold text-cyan-200 uppercase'
+                    : isBespoke
                     ? 'px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 font-mono font-semibold text-neutral-100 uppercase'
                     : 'px-2 py-0.5 rounded-md obsidian-inset font-bold text-white uppercase'
                 }
@@ -386,40 +448,54 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           )}
           <div className="grid grid-cols-2 gap-3">
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
-              footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
+              headerClassName={isModernFont ? 'p-4' : 'p-3.5'}
+              footerClassName={isModernFont ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div
                       className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider mb-1 ${
-                        isBespoke ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
+                        isModernFont ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
                       }`}
                     >
                       <Clock
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        className={
+                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                        }
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>{kpiSyncActive ? `${scopedSummary.scopeLabel}` : 'Reclaimed'}</span>
                     </div>
                     <div
-                      className={`font-mono tabular-nums text-2xl ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                      className={`tabular-nums text-2xl ${
+                        isLiquidGlass
+                          ? 'liquid-metric font-sans font-bold'
+                          : isBespoke
+                          ? 'font-mono font-semibold text-neutral-50'
+                          : 'font-mono font-black text-white'
                       }`}
                     >
                       {displayedReclaimedHours}h
                     </div>
                   </div>
                   <div
-                    className={`w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Clock
-                      size={14}
-                      className={isBespoke ? 'text-blue-500' : undefined}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 16 : 14}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={
+                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                      }
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -427,7 +503,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={
                 <span
                   className={`text-[11px] block ${
-                    isBespoke ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
+                    isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
                   }`}
                 >
                   {kpiSyncActive
@@ -438,40 +514,54 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             />
 
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
-              footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
+              headerClassName={isModernFont ? 'p-4' : 'p-3.5'}
+              footerClassName={isModernFont ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div
                       className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider mb-1 ${
-                        isBespoke ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
+                        isModernFont ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
                       }`}
                     >
                       <Flame
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        className={
+                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                        }
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Current Streak</span>
                     </div>
                     <div
-                      className={`font-mono tabular-nums text-2xl ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                      className={`tabular-nums text-2xl ${
+                        isLiquidGlass
+                          ? 'liquid-metric font-sans font-bold'
+                          : isBespoke
+                          ? 'font-mono font-semibold text-neutral-50'
+                          : 'font-mono font-black text-white'
                       }`}
                     >
                       {currentStreak} Days
                     </div>
                   </div>
                   <div
-                    className={`w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Flame
-                      size={14}
-                      className={isBespoke ? 'text-blue-500' : undefined}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 16 : 14}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={
+                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                      }
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -479,7 +569,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={
                 <span
                   className={`text-[11px] block ${
-                    isBespoke ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
+                    isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
                   }`}
                 >
                   {currentStreak > 0 ? 'Consistent discipline' : 'Complete a session today'}
@@ -488,40 +578,54 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             />
 
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
-              footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
+              headerClassName={isModernFont ? 'p-4' : 'p-3.5'}
+              footerClassName={isModernFont ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div
                       className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider mb-1 ${
-                        isBespoke ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
+                        isModernFont ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
                       }`}
                     >
                       <TrendingUp
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        className={
+                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                        }
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Completion</span>
                     </div>
                     <div
-                      className={`font-mono tabular-nums text-2xl ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                      className={`tabular-nums text-2xl ${
+                        isLiquidGlass
+                          ? 'liquid-metric font-sans font-bold'
+                          : isBespoke
+                          ? 'font-mono font-semibold text-neutral-50'
+                          : 'font-mono font-black text-white'
                       }`}
                     >
                       {displayedCompletionRate}%
                     </div>
                   </div>
                   <div
-                    className={`w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <TrendingUp
-                      size={14}
-                      className={isBespoke ? 'text-blue-500' : undefined}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 16 : 14}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={
+                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                      }
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -529,50 +633,70 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={
                 <span
                   className={`text-[11px] block ${
-                    isBespoke ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
+                    isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
                   }`}
                 >
-                  <span className="font-mono tabular-nums">{displayedCompletedCount}</span> done /{' '}
-                  <span className="font-mono tabular-nums">{displayedAbortedCount}</span> aborted
+                  <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                    {displayedCompletedCount}
+                  </span>{' '}
+                  done /{' '}
+                  <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                    {displayedAbortedCount}
+                  </span>{' '}
+                  aborted
                 </span>
               }
             />
 
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-4' : 'p-3.5'}
-              footerClassName={isBespoke ? 'px-4 py-2.5' : 'px-3.5 py-2'}
+              headerClassName={isModernFont ? 'p-4' : 'p-3.5'}
+              footerClassName={isModernFont ? 'px-4 py-2.5' : 'px-3.5 py-2'}
               headerContent={
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div
                       className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider mb-1 ${
-                        isBespoke ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
+                        isModernFont ? 'font-sans font-medium text-neutral-400' : 'font-mono text-zinc-400'
                       }`}
                     >
                       <Award
                         size={12}
-                        className={isBespoke ? 'text-blue-500' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        className={
+                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                        }
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>Avg Session</span>
                     </div>
                     <div
-                      className={`font-mono tabular-nums text-2xl ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                      className={`tabular-nums text-2xl ${
+                        isLiquidGlass
+                          ? 'liquid-metric font-sans font-bold'
+                          : isBespoke
+                          ? 'font-mono font-semibold text-neutral-50'
+                          : 'font-mono font-black text-white'
                       }`}
                     >
                       {displayedAvgMins}m
                     </div>
                   </div>
                   <div
-                    className={`w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Award
-                      size={14}
-                      className={isBespoke ? 'text-blue-500' : undefined}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 16 : 14}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={
+                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                      }
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                 </div>
@@ -580,7 +704,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={
                 <span
                   className={`text-[11px] block ${
-                    isBespoke ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
+                    isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
                   }`}
                 >
                   Mean locked duration
@@ -597,10 +721,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <ObsidianCard
           key="discipline_heatmap"
           ambientGlow
-          className={isBespoke ? 'font-sans' : 'font-mono'}
-          headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
+          className={isModernFont ? 'font-sans' : 'font-mono'}
+          headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 space-y-3'}
           footerClassName={
-            isBespoke
+            isModernFont
               ? 'px-5 py-3 flex items-center justify-between gap-2 text-[11px] font-sans text-neutral-400'
               : 'px-4 py-2.5 flex items-center justify-between gap-2 text-[10px] font-mono text-zinc-400'
           }
@@ -610,26 +734,36 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Calendar
                       size={16}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <div className="min-w-0">
                     <div
                       className={`text-xs uppercase tracking-wider ${
-                        isBespoke ? 'font-semibold text-neutral-50' : 'font-black text-white'
+                        isModernFont ? 'font-semibold text-neutral-50' : 'font-black text-white'
                       }`}
                     >
                       Discipline Heatmap
                     </div>
                     <div
                       className={`truncate ${
-                        isBespoke ? 'text-[11px] font-mono text-neutral-400' : 'text-[10px] text-zinc-400'
+                        isLiquidGlass
+                          ? 'text-[11px] font-sans text-zinc-400'
+                          : isBespoke
+                          ? 'text-[11px] font-mono text-neutral-400'
+                          : 'text-[10px] text-zinc-400'
                       }`}
                     >
                       {heatmapView.periodLabel}
@@ -638,21 +772,29 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
 
                 <div
-                  className={`px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
-                    isBespoke ? 'rounded-md' : 'rounded-xl'
-                  }`}
+                  className={
+                    isLiquidGlass
+                      ? 'px-3 py-1.5 liquid-inset rounded-xl text-center shrink-0'
+                      : `px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
+                          isBespoke ? 'rounded-md' : 'rounded-xl'
+                        }`
+                  }
                 >
                   <div
-                    className={`text-xs font-mono tabular-nums leading-none ${
-                      isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
+                    className={`text-xs tabular-nums leading-none ${
+                      isLiquidGlass
+                        ? 'font-sans font-bold text-cyan-200'
+                        : isBespoke
+                        ? 'font-mono font-semibold text-blue-500'
+                        : 'font-mono font-extrabold'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {heatmapView.totalHours}h
                   </div>
                   <div
                     className={`mt-0.5 text-[8px] tracking-[0.16em] uppercase ${
-                      isBespoke ? 'text-neutral-400 font-medium' : 'text-zinc-400'
+                      isModernFont ? 'text-neutral-400 font-medium' : 'text-zinc-400'
                     }`}
                   >
                     {heatmapTimeframe === 'merged_all' ? 'MERGED' : 'FOCUS'}
@@ -663,7 +805,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {/* Dynamic Timeframe Segmented Switcher */}
               <div
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'bg-black/45 border border-white/10 rounded-full p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
+                    : isBespoke
                     ? 'bg-neutral-950 border border-neutral-800 rounded-md p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
                     : 'obsidian-shell-bar rounded-xl p-1 grid grid-cols-4 gap-1 text-[10px]'
                 }
@@ -676,7 +820,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       type="button"
                       onClick={() => handleSelectTimeframe(opt.id)}
                       className={
-                        isBespoke
+                        isLiquidGlass
+                          ? `py-1.5 px-1 rounded-full liquid-spring truncate ${
+                              active
+                                ? 'liquid-pill-active font-semibold'
+                                : 'text-zinc-400 hover:text-white font-medium'
+                            }`
+                          : isBespoke
                           ? `py-1.5 px-1 rounded-sm transition-colors duration-75 truncate ${
                               active
                                 ? 'bg-blue-600 text-white font-semibold'
@@ -699,7 +849,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {heatmapTimeframe !== 'merged_all' && (
                 <div
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl liquid-row text-[11px]'
+                      : isBespoke
                       ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md bg-neutral-950 border border-neutral-800 text-[11px]'
                       : 'flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl obsidian-inset-neutral text-[10px]'
                   }
@@ -708,7 +860,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => handleShiftPeriod(-1)}
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'p-1.5 rounded-lg liquid-pill text-zinc-200'
+                        : isBespoke
                         ? 'p-1 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white transition-colors duration-75'
                         : 'p-1 rounded-lg bg-zinc-900/80 border border-white/10 text-zinc-300 hover:text-white active:scale-95'
                     }
@@ -720,7 +874,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className={`truncate ${
-                        isBespoke ? 'font-mono font-medium text-neutral-200' : 'font-bold text-zinc-200'
+                        isLiquidGlass
+                          ? 'font-sans font-medium text-zinc-200'
+                          : isBespoke
+                          ? 'font-mono font-medium text-neutral-200'
+                          : 'font-bold text-zinc-200'
                       }`}
                     >
                       {heatmapView.periodLabel}
@@ -734,7 +892,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           setSelectedCell(null);
                         }}
                         className={
-                          isBespoke
+                          isLiquidGlass
+                            ? 'px-2 py-0.5 rounded-full liquid-pill text-[10px] font-sans font-medium uppercase'
+                            : isBespoke
                             ? 'px-1.5 py-0.5 rounded-sm bg-black border border-neutral-800 text-[10px] font-sans font-medium uppercase text-neutral-100 hover:border-neutral-700 transition-colors duration-75'
                             : 'px-1.5 py-0.5 rounded bg-zinc-800 border border-white/15 text-[9px] font-bold uppercase text-white hover:border-white/30'
                         }
@@ -749,7 +909,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     disabled={!heatmapView.canGoNext}
                     onClick={() => handleShiftPeriod(1)}
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed'
+                        : isBespoke
                         ? 'p-1 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-75'
                         : 'p-1 rounded-lg bg-zinc-900/80 border border-white/10 text-zinc-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed active:scale-95'
                     }
@@ -777,9 +939,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               isSel ? null : { key, detail: cell.detailLabel }
                             );
                           }}
-                          style={getHeatmapCellStyle(cell.level, isSel, false, isBespoke)}
+                          style={getHeatmapCellStyle(cell.level, isSel, false, isBespoke, isLiquidGlass)}
                           className={
-                            isBespoke
+                            isLiquidGlass
+                              ? 'h-11 rounded-xl flex flex-col items-center justify-center px-1 liquid-spring font-sans tabular-nums'
+                              : isBespoke
                               ? 'h-11 rounded-sm flex flex-col items-center justify-center px-1 transition-colors duration-75 font-mono tabular-nums'
                               : 'h-11 rounded-xl flex flex-col items-center justify-center px-1 transition-all active:scale-95'
                           }
@@ -836,9 +1000,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             isSel ? null : { key, detail: cell.detailLabel }
                           );
                         }}
-                        style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke)}
+                        style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
                         className={
-                          isBespoke
+                          isLiquidGlass
+                            ? 'h-20 rounded-xl p-1.5 flex flex-col items-center justify-between liquid-spring font-sans tabular-nums'
+                            : isBespoke
                             ? 'h-20 rounded-sm p-1.5 flex flex-col items-center justify-between transition-colors duration-75 font-mono tabular-nums'
                             : 'h-20 rounded-xl p-1.5 flex flex-col items-center justify-between transition-all active:scale-95'
                         }
@@ -899,6 +1065,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                                     ? cell.level >= 3
                                       ? '#FFFFFF'
                                       : '#3B82F6'
+                                    : isLiquidGlass
+                                    ? '#00F2FE'
                                     : 'var(--accent-hex, #FFFFFF)',
                               }}
                             />
@@ -935,9 +1103,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               isSel ? null : { key, detail: cell.detailLabel }
                             );
                           }}
-                          style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke)}
+                          style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
                           className={
-                            isBespoke
+                            isLiquidGlass
+                              ? `h-9 rounded-lg flex flex-col items-center justify-center liquid-spring font-sans tabular-nums ${
+                                  cell.isFuture ? 'opacity-40' : ''
+                                }`
+                              : isBespoke
                               ? `h-9 rounded-sm flex flex-col items-center justify-center transition-colors duration-75 font-mono tabular-nums ${
                                   cell.isFuture ? 'opacity-40' : ''
                                 }`
@@ -986,11 +1158,17 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   {/* Merged Summary Mini-Stat Tiles */}
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div
-                      className={`p-2 obsidian-inset-neutral ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
+                      className={
+                        isLiquidGlass
+                          ? 'p-2 liquid-row rounded-xl'
+                          : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
+                      }
                     >
-                      <div className="text-xs font-mono tabular-nums font-semibold text-white">
+                      <div
+                        className={`text-xs tabular-nums font-semibold ${
+                          isLiquidGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
+                        }`}
+                      >
                         {heatmapView.totalHours}h
                       </div>
                       <div className="text-[9px] font-sans uppercase text-neutral-400 mt-0.5">
@@ -998,11 +1176,17 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </div>
                     </div>
                     <div
-                      className={`p-2 obsidian-inset-neutral ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
+                      className={
+                        isLiquidGlass
+                          ? 'p-2 liquid-row rounded-xl'
+                          : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
+                      }
                     >
-                      <div className="text-xs font-mono tabular-nums font-semibold text-white">
+                      <div
+                        className={`text-xs tabular-nums font-semibold ${
+                          isLiquidGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
+                        }`}
+                      >
                         {heatmapView.activeCount}d
                       </div>
                       <div className="text-[9px] font-sans uppercase text-neutral-400 mt-0.5">
@@ -1010,15 +1194,21 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </div>
                     </div>
                     <div
-                      className={`p-2 obsidian-inset-neutral ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
+                      className={
+                        isLiquidGlass
+                          ? 'p-2 liquid-row rounded-xl'
+                          : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
+                      }
                     >
                       <div
-                        className={`text-xs font-mono tabular-nums font-semibold truncate ${
-                          isBespoke ? 'text-blue-400' : ''
+                        className={`text-xs tabular-nums font-semibold truncate ${
+                          isLiquidGlass
+                            ? 'font-sans text-cyan-300'
+                            : isBespoke
+                            ? 'font-mono text-blue-400'
+                            : 'font-mono'
                         }`}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         {heatmapView.mergedBestDay
                           ? `${heatmapView.mergedBestDay.hours}h`
@@ -1029,15 +1219,21 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </div>
                     </div>
                     <div
-                      className={`p-2 obsidian-inset-neutral ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
+                      className={
+                        isLiquidGlass
+                          ? 'p-2 liquid-row rounded-xl'
+                          : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
+                      }
                     >
                       <div
-                        className={`text-xs font-mono tabular-nums font-semibold ${
-                          isBespoke ? 'text-blue-400' : 'font-black'
+                        className={`text-xs tabular-nums font-semibold ${
+                          isLiquidGlass
+                            ? 'font-sans text-cyan-300'
+                            : isBespoke
+                            ? 'font-mono text-blue-400'
+                            : 'font-mono font-black'
                         }`}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         {heatmapView.mergedLongestStreak}d
                       </div>
@@ -1049,7 +1245,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
                   {/* Continuous Mon..Sun Matrix Across ALL Session History */}
                   <div className="flex gap-1.5 items-start">
-                    <div className="grid grid-rows-7 gap-1 py-1 text-[8px] font-mono font-bold text-neutral-500 shrink-0 leading-3">
+                    <div className="grid grid-rows-7 gap-1 py-1 text-[8px] font-sans font-bold text-neutral-500 shrink-0 leading-3">
                       <span className="h-3 flex items-center">M</span>
                       <span className="h-3" />
                       <span className="h-3 flex items-center">W</span>
@@ -1076,7 +1272,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               );
                             }}
                             title={cell.detailLabel}
-                            style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke)}
+                            style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
                             className={
                               isBespoke
                                 ? `w-3 h-3 rounded-none transition-colors duration-75 ${
@@ -1094,14 +1290,18 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
                   <div className="flex items-center justify-between text-[10px] font-sans text-neutral-400">
                     <span>
-                      Merged across <span className="font-mono tabular-nums">{heatmapView.mergedWeekCount}</span> weeks (earliest &rarr; today)
+                      Merged across{' '}
+                      <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                        {heatmapView.mergedWeekCount}
+                      </span>{' '}
+                      weeks (earliest &rarr; today)
                     </span>
                     <div className="flex items-center gap-1">
                       <span>Less</span>
                       {([0, 1, 2, 3, 4] as const).map((lvl) => (
                         <span
                           key={lvl}
-                          style={getHeatmapCellStyle(lvl, false, false, isBespoke)}
+                          style={getHeatmapCellStyle(lvl, false, false, isBespoke, isLiquidGlass)}
                           className={`w-2.5 h-2.5 inline-block ${
                             isBespoke ? 'rounded-none' : 'rounded-[2px]'
                           }`}
@@ -1124,7 +1324,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     {([0, 1, 2, 3, 4] as const).map((lvl) => (
                       <span
                         key={lvl}
-                        style={getHeatmapCellStyle(lvl, false, false, isBespoke)}
+                        style={getHeatmapCellStyle(lvl, false, false, isBespoke, isLiquidGlass)}
                         className={`w-2.5 h-2.5 inline-block ${
                           isBespoke ? 'rounded-none' : 'rounded-[2px]'
                         }`}
@@ -1139,7 +1339,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           footerContent={
             selectedCell ? (
               <div className="w-full flex items-center justify-between gap-2">
-                <span className="text-neutral-200 font-medium truncate font-mono tabular-nums">
+                <span className="text-neutral-200 font-medium truncate font-sans tabular-nums">
                   {selectedCell.detail}
                 </span>
                 <button
@@ -1155,11 +1355,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <>
                 <span>
                   Peak:{' '}
-                  <strong className="text-neutral-200 font-mono tabular-nums">
+                  <strong className="text-neutral-200 font-sans tabular-nums">
                     {heatmapView.peakLabel}
                   </strong>
                 </span>
-                <span className="text-neutral-300 font-mono tabular-nums font-medium">
+                <span className="text-neutral-300 font-sans tabular-nums font-medium">
                   {heatmapTimeframe === 'daily'
                     ? `${heatmapView.sessionCount} locks • ${heatmapView.activeCount} active hrs`
                     : `${heatmapView.sessionCount} locks • ${heatmapView.goalMetDays} goal days`}
@@ -1175,9 +1375,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       return (
         <ObsidianCard
           key="badges"
-          headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
+          headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 space-y-3'}
           footerClassName={
-            isBespoke
+            isModernFont
               ? 'px-5 py-3 text-[11px] font-sans text-neutral-400 leading-relaxed'
               : 'px-4 py-2.5 text-[10px] font-mono text-zinc-400 leading-relaxed'
           }
@@ -1186,17 +1386,25 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div
                   className={`flex items-center gap-2.5 text-xs uppercase tracking-wider ${
-                    isBespoke ? 'font-sans text-neutral-50 font-semibold' : 'font-mono text-white font-black'
+                    isModernFont
+                      ? 'font-sans text-neutral-50 font-semibold'
+                      : 'font-mono text-white font-black'
                   }`}
                 >
                   <div
-                    className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <Trophy
-                      size={13}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 15 : 13}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <span>Badges &amp; Achievements</span>
@@ -1204,7 +1412,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div className="flex items-center gap-2">
                   <span
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'text-[10px] font-sans tabular-nums font-semibold px-2.5 py-0.5 rounded-full liquid-row text-zinc-200'
+                        : isBespoke
                         ? 'text-[10px] font-mono tabular-nums font-semibold px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-200'
                         : 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg obsidian-inset text-white'
                     }
@@ -1215,7 +1425,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => setShowShareModal(true)}
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'text-[10px] font-sans font-semibold uppercase px-3 py-1 rounded-full liquid-pill-active'
+                        : isBespoke
                         ? 'text-[10px] font-sans font-semibold uppercase px-2.5 py-1 rounded-md bg-blue-600 border border-blue-500 text-white hover:bg-blue-500 transition-colors duration-75'
                         : 'text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded-lg obsidian-pill-active'
                     }
@@ -1243,8 +1455,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <p>
               Tap any badge to inspect unlock criteria. All earned badges &amp; the{' '}
               <strong
-                className={isBespoke ? 'text-blue-400' : ''}
-                style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                className={
+                  isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-400' : undefined
+                }
+                style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
               >
                 ZERO-SUPPORTER
               </strong>{' '}
@@ -1259,9 +1473,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
     return (
       <ObsidianCard
         key="tag_breakdown"
-        headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
+        headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 space-y-3'}
         footerClassName={
-          isBespoke
+          isModernFont
             ? 'px-5 py-2.5 flex items-center justify-between text-[11px] font-sans text-neutral-400'
             : 'px-4 py-2 flex items-center justify-between text-[10px] font-mono text-zinc-400'
         }
@@ -1270,7 +1484,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div
                 className={`text-xs uppercase tracking-wider ${
-                  isBespoke ? 'font-sans text-neutral-100 font-semibold' : 'font-mono text-zinc-200 font-bold'
+                  isModernFont
+                    ? 'font-sans text-neutral-100 font-semibold'
+                    : 'font-mono text-zinc-200 font-bold'
                 }`}
               >
                 Focus Time by Tag
@@ -1278,7 +1494,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {kpiSyncActive && (
                 <span
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'text-[10px] font-sans px-2.5 py-0.5 rounded-full liquid-row text-cyan-200 font-semibold uppercase'
+                      : isBespoke
                       ? 'text-[10px] font-mono px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-100 font-semibold uppercase'
                       : 'text-[9px] font-mono px-2 py-0.5 rounded-md obsidian-inset text-white font-bold uppercase'
                   }
@@ -1290,7 +1508,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             {displayedTagBreakdown.length === 0 ? (
               <p
                 className={`text-xs py-1 ${
-                  isBespoke ? 'font-sans text-neutral-400' : 'text-[11px] font-mono text-zinc-400'
+                  isModernFont ? 'font-sans text-neutral-400' : 'text-[11px] font-mono text-zinc-400'
                 }`}
               >
                 {kpiSyncActive
@@ -1302,31 +1520,51 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 {displayedTagBreakdown.map((item) => (
                   <div key={item.tag} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className={isBespoke ? 'font-sans text-neutral-200 font-medium' : 'font-mono text-zinc-200 font-medium'}>
+                      <span
+                        className={
+                          isModernFont ? 'font-sans text-neutral-200 font-medium' : 'font-mono text-zinc-200 font-medium'
+                        }
+                      >
                         #{item.tag}
                       </span>
-                      <span className={isBespoke ? 'font-mono tabular-nums text-neutral-300 font-semibold' : 'font-mono text-zinc-300 font-bold'}>
+                      <span
+                        className={
+                          isLiquidGlass
+                            ? 'font-sans tabular-nums text-zinc-200 font-semibold'
+                            : isBespoke
+                            ? 'font-mono tabular-nums text-neutral-300 font-semibold'
+                            : 'font-mono text-zinc-300 font-bold'
+                        }
+                      >
                         {item.hours} hrs
                       </span>
                     </div>
                     <div
                       className={
-                        isBespoke
+                        isLiquidGlass
+                          ? 'w-full liquid-track rounded-full h-2.5 overflow-hidden p-[1px]'
+                          : isBespoke
                           ? 'w-full bg-neutral-950 border border-neutral-800 rounded-none h-2 overflow-hidden'
                           : 'w-full obsidian-inset-neutral rounded-full h-2 overflow-hidden p-[1px]'
                       }
                     >
                       <div
                         className={
-                          isBespoke
+                          isLiquidGlass
+                            ? 'h-full liquid-mercury-fill rounded-full'
+                            : isBespoke
                             ? 'h-full rounded-none transition-all duration-75'
                             : 'h-full rounded-full transition-all'
                         }
                         style={{
                           width: `${item.pct}%`,
-                          background: isBespoke
-                            ? '#2563EB'
-                            : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                          ...(isLiquidGlass
+                            ? {}
+                            : {
+                                background: isBespoke
+                                  ? '#2563EB'
+                                  : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                              }),
                         }}
                       />
                     </div>
@@ -1339,7 +1577,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         footerContent={
           <>
             <span>Primary Focus Tag</span>
-            <span className={isBespoke ? 'font-mono tabular-nums font-medium text-neutral-200' : 'font-bold text-zinc-200'}>
+            <span
+              className={
+                isModernFont
+                  ? 'font-sans tabular-nums font-medium text-neutral-200'
+                  : 'font-bold text-zinc-200'
+              }
+            >
               {displayedTagBreakdown.length > 0
                 ? `#${displayedTagBreakdown[0].tag} (${displayedTagBreakdown[0].hours}h)`
                 : 'None yet'}
@@ -1352,8 +1596,12 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
   return (
     <div
-      className={`flex flex-col px-4 max-w-md mx-auto w-full select-none pb-24 ${
-        isBespoke ? 'gap-6 py-5 font-sans' : 'gap-5 py-4'
+      className={`flex flex-col px-4 max-w-md mx-auto w-full select-none ${
+        isLiquidGlass
+          ? 'gap-5 py-5 pb-32 font-sans'
+          : isBespoke
+          ? 'gap-6 py-5 pb-24 font-sans'
+          : 'gap-5 py-4 pb-24'
       }`}
     >
       {/* Header + Widget Options & Flex Stats Triggers */}
@@ -1361,7 +1609,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <div className="min-w-0">
           <h1
             className={`text-xl tracking-tight flex items-center gap-2 truncate ${
-              isBespoke
+              isLiquidGlass
+                ? 'font-sans font-bold text-white'
+                : isBespoke
                 ? 'font-sans font-semibold text-neutral-50'
                 : 'font-mono font-black text-white'
             }`}
@@ -1370,7 +1620,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           </h1>
           <p
             className={`text-xs ${
-              isBespoke ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
+              isModernFont ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'
             }`}
           >
             100% Real Focus Metrics • Zero Fake Data
@@ -1386,7 +1636,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               setShowWidgetCustomizer((prev) => !prev);
             }}
             className={
-              isBespoke
+              isLiquidGlass
+                ? `px-3 py-2 rounded-full font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 liquid-spring ${
+                    showWidgetCustomizer ? 'liquid-pill-active' : 'liquid-pill text-zinc-200'
+                  }`
+                : isBespoke
                 ? `px-3 py-2 rounded-md border font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 transition-colors duration-75 ${
                     showWidgetCustomizer
                       ? 'bg-blue-600 border-blue-500 text-white'
@@ -1400,7 +1654,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             }
             title="Configure Dashboard Widgets"
           >
-            <LayoutGrid size={13} />
+            <LayoutGrid size={13} strokeWidth={isLiquidGlass ? 1.75 : 2} />
             <span>Widgets</span>
           </button>
 
@@ -1408,12 +1662,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             type="button"
             onClick={() => setShowShareModal(true)}
             className={
-              isBespoke
+              isLiquidGlass
+                ? 'px-3.5 py-2 rounded-full liquid-pill-active font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5'
+                : isBespoke
                 ? 'px-3 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 transition-colors duration-75'
                 : 'px-3 py-2 rounded-xl obsidian-pill-active font-mono font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all'
             }
           >
-            <Share2 size={13} />
+            <Share2 size={13} strokeWidth={isLiquidGlass ? 1.75 : 2} />
             <span>Flex</span>
           </button>
         </div>
@@ -1423,10 +1679,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {showWidgetCustomizer && (
         <ObsidianCard
           ambientGlow
-          className={isBespoke ? 'font-sans' : 'font-mono'}
-          headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
+          className={isModernFont ? 'font-sans' : 'font-mono'}
+          headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 space-y-3.5'}
           footerClassName={
-            isBespoke
+            isModernFont
               ? 'px-5 py-3 flex items-center justify-between gap-2 text-[11px] text-neutral-400'
               : 'px-4 py-2.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400'
           }
@@ -1435,17 +1691,23 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div
                   className={`flex items-center gap-2 text-xs uppercase tracking-wider ${
-                    isBespoke ? 'text-neutral-50 font-semibold' : 'text-white font-black'
+                    isModernFont ? 'text-neutral-50 font-semibold' : 'text-white font-black'
                   }`}
                 >
                   <div
-                    className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                    }`}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
+                          }`
+                    }
                   >
                     <LayoutGrid
-                      size={13}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      size={isLiquidGlass ? 15 : 13}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
                   <span>Widget Options</span>
@@ -1454,7 +1716,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   type="button"
                   onClick={() => setShowWidgetCustomizer(false)}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'p-1.5 rounded-full liquid-pill text-zinc-300'
+                      : isBespoke
                       ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75'
                       : 'p-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white'
                   }
@@ -1468,7 +1732,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="space-y-2">
                 <div
                   className={`text-[10px] uppercase tracking-wider font-semibold ${
-                    isBespoke ? 'text-neutral-400' : 'text-zinc-400 font-bold'
+                    isModernFont ? 'text-neutral-400' : 'text-zinc-400 font-bold'
                   }`}
                 >
                   Reorder &amp; Toggle Analytics Widgets
@@ -1480,7 +1744,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <div
                       key={wId}
                       className={
-                        isBespoke
+                        isLiquidGlass
+                          ? `p-3 rounded-xl liquid-row flex items-center justify-between gap-2 ${
+                              isVisible ? '' : 'opacity-45'
+                            }`
+                          : isBespoke
                           ? `p-3 rounded-md border flex items-center justify-between gap-2 transition-colors duration-75 ${
                               isVisible
                                 ? 'bg-neutral-950 border-neutral-800'
@@ -1509,7 +1777,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isBespoke
+                            isLiquidGlass
+                              ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30'
+                              : isBespoke
                               ? 'p-1.5 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 transition-colors duration-75'
                               : 'p-1.5 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white disabled:opacity-30'
                           }
@@ -1528,7 +1798,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isBespoke
+                            isLiquidGlass
+                              ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30'
+                              : isBespoke
                               ? 'p-1.5 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 transition-colors duration-75'
                               : 'p-1.5 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white disabled:opacity-30'
                           }
@@ -1549,7 +1821,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isBespoke
+                            isLiquidGlass
+                              ? `p-1.5 rounded-lg liquid-spring ${
+                                  isVisible ? 'liquid-pill-active' : 'liquid-pill text-zinc-400'
+                                }`
+                              : isBespoke
                               ? `p-1.5 rounded-sm border transition-colors duration-75 ${
                                   isVisible
                                     ? 'bg-blue-600 border-blue-500 text-white'
@@ -1575,14 +1851,16 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="space-y-2">
                 <div
                   className={`text-[10px] uppercase tracking-wider font-semibold ${
-                    isBespoke ? 'text-neutral-400' : 'text-zinc-400 font-bold'
+                    isModernFont ? 'text-neutral-400' : 'text-zinc-400 font-bold'
                   }`}
                 >
                   Default Heatmap Timeframe
                 </div>
                 <div
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'bg-black/45 border border-white/10 rounded-full p-1 grid grid-cols-4 gap-1 text-[11px]'
+                      : isBespoke
                       ? 'bg-neutral-950 border border-neutral-800 rounded-md p-1 grid grid-cols-4 gap-1 text-[11px]'
                       : 'obsidian-shell-bar rounded-xl p-1 grid grid-cols-4 gap-1 text-[10px]'
                   }
@@ -1602,7 +1880,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           handleSelectTimeframe(opt.id);
                         }}
                         className={
-                          isBespoke
+                          isLiquidGlass
+                            ? `py-1.5 px-1 rounded-full truncate liquid-spring ${
+                                active
+                                  ? 'liquid-pill-active font-semibold'
+                                  : 'text-zinc-400 hover:text-white font-medium'
+                              }`
+                            : isBespoke
                             ? `py-1.5 px-1 rounded-sm truncate transition-colors duration-75 ${
                                 active
                                   ? 'bg-blue-600 text-white font-semibold'
@@ -1634,7 +1918,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     });
                   }}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'p-3 rounded-xl liquid-row liquid-spring text-left flex items-center justify-between gap-2'
+                      : isBespoke
                       ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-left flex items-center justify-between gap-2 transition-colors duration-75'
                       : `p-2.5 rounded-xl text-left flex items-center justify-between gap-2 transition-all ${
                           safeWidgets.syncOverviewWithTimeframe
@@ -1653,7 +1939,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <span
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? `px-2.5 py-0.5 rounded-full font-sans text-[10px] font-semibold uppercase shrink-0 ${
+                            safeWidgets.syncOverviewWithTimeframe
+                              ? 'liquid-pill-active'
+                              : 'liquid-pill text-zinc-400'
+                          }`
+                        : isBespoke
                         ? `px-2 py-0.5 rounded-sm font-mono text-[10px] font-semibold uppercase border shrink-0 ${
                             safeWidgets.syncOverviewWithTimeframe
                               ? 'bg-blue-600 border-blue-500 text-white'
@@ -1674,7 +1966,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           }
           footerContent={
             <>
-              <span className="font-mono tabular-nums">
+              <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                 {visibleWidgetCount}/{safeWidgets.order.length} widgets visible
               </span>
               <button
@@ -1698,10 +1990,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {profile ? (
         <ObsidianCard
           ambientGlow
-          className={isBespoke ? 'font-sans' : 'font-mono'}
-          headerClassName={isBespoke ? 'p-5 space-y-4' : 'p-4 space-y-3'}
+          className={isModernFont ? 'font-sans' : 'font-mono'}
+          headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 space-y-3'}
           footerClassName={
-            isBespoke
+            isModernFont
               ? 'px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-neutral-400'
               : 'px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400'
           }
@@ -1719,14 +2011,16 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span
                         className={`text-sm uppercase tracking-wide truncate ${
-                          isBespoke ? 'font-semibold text-neutral-50' : 'font-extrabold text-white'
+                          isModernFont ? 'font-semibold text-neutral-50' : 'font-extrabold text-white'
                         }`}
                       >
                         {profile.displayName}
                       </span>
                       <span
                         className={
-                          isBespoke
+                          isLiquidGlass
+                            ? 'px-2.5 py-0.5 rounded-full liquid-pill-active text-[9px] font-sans font-semibold uppercase tracking-wide'
+                            : isBespoke
                             ? 'px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 text-[10px] font-mono font-semibold uppercase tracking-wide'
                             : 'px-2 py-0.5 rounded-md obsidian-pill-active text-[9px] font-black uppercase tracking-widest shadow-sm'
                         }
@@ -1735,12 +2029,22 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </span>
                       {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
                     </div>
-                    <div className="text-[11px] text-neutral-400 truncate mt-0.5 font-mono">
+                    <div
+                      className={`text-[11px] text-neutral-400 truncate mt-0.5 ${
+                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                      }`}
+                    >
                       <span>{profile.handle}</span>
                       <span className="mx-1.5 text-neutral-600">•</span>
                       <span
-                        className={isBespoke ? 'text-blue-400' : undefined}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        className={
+                          isLiquidGlass
+                            ? 'text-cyan-300 font-medium'
+                            : isBespoke
+                            ? 'text-blue-400'
+                            : undefined
+                        }
+                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         #{profile.primaryMission}
                       </span>
@@ -1750,15 +2054,23 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
                 {/* Target Box */}
                 <div
-                  className={`flex-shrink-0 px-2.5 py-2 obsidian-inset text-center ${
-                    isBespoke ? 'rounded-md' : 'rounded-xl'
-                  }`}
+                  className={
+                    isLiquidGlass
+                      ? 'flex-shrink-0 px-3 py-2 liquid-inset rounded-xl text-center'
+                      : `flex-shrink-0 px-2.5 py-2 obsidian-inset text-center ${
+                          isBespoke ? 'rounded-md' : 'rounded-xl'
+                        }`
+                  }
                 >
                   <div
-                    className={`text-xs font-mono tabular-nums leading-none ${
-                      isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
+                    className={`text-xs tabular-nums leading-none ${
+                      isLiquidGlass
+                        ? 'font-sans font-bold text-cyan-200'
+                        : isBespoke
+                        ? 'font-mono font-semibold text-blue-500'
+                        : 'font-mono font-extrabold'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {profile.dailyGoalHours}h/day
                   </div>
@@ -1772,32 +2084,44 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-neutral-400">Today&rsquo;s Progress</span>
                   <span
-                    className={`font-mono tabular-nums ${
-                      isBespoke ? 'font-semibold text-blue-400' : 'font-bold'
+                    className={`tabular-nums ${
+                      isLiquidGlass
+                        ? 'font-sans font-semibold text-cyan-200'
+                        : isBespoke
+                        ? 'font-mono font-semibold text-blue-400'
+                        : 'font-mono font-bold'
                     }`}
-                    style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   >
                     {todayReclaimedHours} / {profile.dailyGoalHours}h ({dailyGoalPct}%)
                   </span>
                 </div>
                 <div
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'w-full h-2.5 rounded-full liquid-track overflow-hidden p-[1px]'
+                      : isBespoke
                       ? 'w-full h-2 rounded-none bg-neutral-950 border border-neutral-800 overflow-hidden'
                       : 'w-full h-2 rounded-full obsidian-inset-neutral overflow-hidden'
                   }
                 >
                   <div
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'h-full rounded-full liquid-mercury-fill'
+                        : isBespoke
                         ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
                         : 'h-full rounded-full transition-all duration-500'
                     }
                     style={{
                       width: `${dailyGoalPct}%`,
-                      background: isBespoke
-                        ? '#2563EB'
-                        : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                      ...(isLiquidGlass
+                        ? {}
+                        : {
+                            background: isBespoke
+                              ? '#2563EB'
+                              : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                          }),
                     }}
                   />
                 </div>
@@ -1823,7 +2147,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </span>
               <div className="flex items-center gap-2 shrink-0">
                 {profileRank.nextTitle && (
-                  <span className="text-neutral-400 font-mono tabular-nums">
+                  <span
+                    className={`text-neutral-400 tabular-nums ${
+                      isLiquidGlass ? 'font-sans' : 'font-mono'
+                    }`}
+                  >
                     {profileRank.hoursToNext}h to {profileRank.nextTitle}
                   </span>
                 )}
@@ -1831,7 +2159,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   type="button"
                   onClick={onOpenProfileModal}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'px-3 py-1 rounded-full liquid-pill text-[10px] font-sans font-semibold flex items-center gap-1'
+                      : isBespoke
                       ? 'px-2.5 py-1 rounded-sm bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-[10px] font-sans font-medium text-neutral-200 flex items-center gap-1 transition-colors duration-75'
                       : 'px-2 py-1 rounded-lg bg-zinc-900 border border-white/15 hover:border-white/30 text-[10px] font-bold text-zinc-200 flex items-center gap-1'
                   }
@@ -1846,23 +2176,29 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       ) : (
         <ObsidianCard
           ambientGlow={!isBespoke}
-          className={isBespoke ? 'font-sans' : 'font-mono'}
+          className={isModernFont ? 'font-sans' : 'font-mono'}
           headerClassName={
-            isBespoke ? 'p-5 flex items-center justify-between gap-3' : 'p-4 flex items-center justify-between gap-3'
+            isModernFont
+              ? 'p-5 flex items-center justify-between gap-3'
+              : 'p-4 flex items-center justify-between gap-3'
           }
           footerClassName={
-            isBespoke ? 'px-5 py-2.5 text-xs text-neutral-400' : 'px-4 py-2 text-[11px] text-zinc-400'
+            isModernFont ? 'px-5 py-2.5 text-xs text-neutral-400' : 'px-4 py-2 text-[11px] text-zinc-400'
           }
           headerContent={
             <>
               <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className={`w-11 h-11 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                    isBespoke ? 'rounded-md text-blue-500' : 'rounded-2xl'
-                  }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  className={
+                    isLiquidGlass
+                      ? 'liquid-squircle w-11 h-11 rounded-[14px]'
+                      : `w-11 h-11 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                          isBespoke ? 'rounded-md text-blue-500' : 'rounded-2xl'
+                        }`
+                  }
+                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
-                  <Gift size={18} />
+                  <Gift size={18} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-white">
@@ -1879,12 +2215,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 type="button"
                 onClick={onOpenProfileModal}
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'px-3.5 py-2 rounded-full liquid-pill-active font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 shrink-0'
+                    : isBespoke
                     ? 'px-3 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1 shrink-0 transition-colors duration-75'
                     : 'px-3 py-2 rounded-xl obsidian-pill-active font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 active:scale-95 transition-all'
                 }
               >
-                <Sparkles size={12} />
+                <Sparkles size={12} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                 <span>Create</span>
               </button>
             </>
@@ -1907,9 +2245,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             : undefined
         }
         ambientGlow
-        className={isBespoke ? '' : justEarnedParachute ? 'animate-parachute-card-pop' : ''}
+        className={isModernFont ? '' : justEarnedParachute ? 'animate-parachute-card-pop' : ''}
         overlays={
-          isBespoke ? undefined : (
+          isModernFont ? undefined : (
             <>
               {justEarnedParachute && (
                 <div
@@ -1930,9 +2268,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </>
           )
         }
-        headerClassName={isBespoke ? 'p-5 space-y-4 font-sans' : 'p-5 space-y-4'}
+        headerClassName={isModernFont ? 'p-5 space-y-4 font-sans' : 'p-5 space-y-4'}
         footerClassName={
-          isBespoke
+          isModernFont
             ? 'px-5 py-3 flex items-center justify-between text-xs font-sans text-neutral-400'
             : 'px-5 py-2.5 flex items-center justify-between text-[11px] font-mono text-zinc-300'
         }
@@ -1941,14 +2279,22 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div
-                  className={`obsidian-icon-box flex items-center justify-center shrink-0 ${
-                    isBespoke
-                      ? 'w-12 h-12 rounded-md text-blue-500'
-                      : 'w-14 h-14 rounded-2xl text-2xl'
-                  }`}
+                  className={
+                    isLiquidGlass
+                      ? 'liquid-squircle w-12 h-12 rounded-[14px]'
+                      : `obsidian-icon-box flex items-center justify-center shrink-0 ${
+                          isBespoke
+                            ? 'w-12 h-12 rounded-md text-blue-500'
+                            : 'w-14 h-14 rounded-2xl text-2xl'
+                        }`
+                  }
                 >
-                  {isBespoke ? (
-                    <Ticket size={22} />
+                  {isModernFont ? (
+                    <Ticket
+                      size={22}
+                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      className={isLiquidGlass ? 'text-cyan-200' : undefined}
+                    />
                   ) : (
                     <span
                       className={
@@ -1964,13 +2310,21 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div>
                   <div
                     className={`text-[10px] uppercase tracking-wider font-semibold ${
-                      isBespoke ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
+                      isModernFont ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
                     }`}
                   >
                     Emergency Escape Tickets
                   </div>
-                  <div className="text-3xl font-mono tabular-nums font-semibold text-white flex items-baseline gap-2">
-                    <span>{parachuteMetrics.currentBalance}</span>
+                  <div className="text-3xl flex items-baseline gap-2">
+                    <span
+                      className={`tabular-nums ${
+                        isLiquidGlass
+                          ? 'liquid-metric font-sans font-bold'
+                          : 'font-mono font-semibold text-white'
+                      }`}
+                    >
+                      {parachuteMetrics.currentBalance}
+                    </span>
                     <span className="text-xs font-sans font-normal text-neutral-400">
                       {parachuteMetrics.currentBalance === 1 ? 'Ticket Ready' : 'Tickets Ready'}
                     </span>
@@ -1978,19 +2332,31 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
               </div>
               <div
-                className={`px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
-                  isBespoke ? 'rounded-md' : 'rounded-xl'
-                }`}
+                className={
+                  isLiquidGlass
+                    ? 'px-3 py-1.5 liquid-inset rounded-xl text-center shrink-0'
+                    : `px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                      }`
+                }
               >
                 <div
-                  className={`text-xs font-mono tabular-nums leading-none ${
-                    isBespoke ? 'font-semibold text-blue-500' : 'font-extrabold'
+                  className={`text-xs tabular-nums leading-none ${
+                    isLiquidGlass
+                      ? 'font-sans font-bold text-cyan-200'
+                      : isBespoke
+                      ? 'font-mono font-semibold text-blue-500'
+                      : 'font-mono font-extrabold'
                   }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {parachuteMetrics.progressPercentage}%
                 </div>
-                <div className="mt-1 text-[8px] font-mono tracking-wider uppercase text-neutral-400">
+                <div
+                  className={`mt-1 text-[8px] tracking-wider uppercase text-neutral-400 ${
+                    isLiquidGlass ? 'font-sans' : 'font-mono'
+                  }`}
+                >
                   {parachuteMetrics.bonusParachutes > 0
                     ? `${milestoneEarnedCount}E + ${parachuteMetrics.bonusParachutes}G`
                     : 'EARNED'}
@@ -2005,14 +2371,24 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               }`}
             >
               <div className="flex items-center justify-between text-xs">
-                <span className={isBespoke ? 'font-sans text-neutral-300 font-medium' : 'font-mono text-zinc-300 font-semibold'}>
+                <span
+                  className={
+                    isModernFont
+                      ? 'font-sans text-neutral-300 font-medium'
+                      : 'font-mono text-zinc-300 font-semibold'
+                  }
+                >
                   Next Escape Ticket Progress
                 </span>
                 <span
-                  className={`font-mono tabular-nums font-semibold ${
-                    isBespoke ? 'text-blue-400' : 'font-bold'
+                  className={`tabular-nums font-semibold ${
+                    isLiquidGlass
+                      ? 'font-sans text-cyan-200'
+                      : isBespoke
+                      ? 'font-mono text-blue-400'
+                      : 'font-mono font-bold'
                   }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   {parachuteMetrics.currentProgressHours} / 20.0 hrs
                 </span>
@@ -2020,34 +2396,44 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
               <div
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'w-full liquid-track rounded-full h-2.5 p-[1px] overflow-hidden'
+                    : isBespoke
                     ? 'w-full bg-neutral-950 border border-neutral-800 rounded-none h-2.5 overflow-hidden'
                     : 'w-full obsidian-inset-neutral rounded-full h-3 p-0.5 overflow-hidden'
                 }
               >
                 <div
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'h-full rounded-full liquid-mercury-fill'
+                      : isBespoke
                       ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
                       : 'h-full rounded-full transition-all duration-500'
                   }
                   style={{
                     width: `${parachuteMetrics.progressPercentage}%`,
-                    background: isBespoke
-                      ? '#2563EB'
-                      : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
-                    boxShadow: isBespoke
-                      ? 'none'
-                      : '0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+                    ...(isLiquidGlass
+                      ? {}
+                      : {
+                          background: isBespoke
+                            ? '#2563EB'
+                            : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                          boxShadow: isBespoke
+                            ? 'none'
+                            : '0 0 12px rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+                        }),
                   }}
                 />
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-0.5">
-                <span className="font-mono tabular-nums">
+                <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                   {parachuteMetrics.hoursUntilNextParachute} hours remaining
                 </span>
-                <span className="font-mono">20h monotonic threshold</span>
+                <span className={isLiquidGlass ? 'font-sans' : 'font-mono'}>
+                  20h monotonic threshold
+                </span>
               </div>
             </div>
           </>
@@ -2057,8 +2443,15 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <div className="flex items-center gap-1.5">
               <Moon
                 size={13}
-                className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
-                style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                strokeWidth={isLiquidGlass ? 1.75 : 2}
+                className={
+                  isLiquidGlass
+                    ? 'shrink-0 text-cyan-300'
+                    : isBespoke
+                    ? 'shrink-0 text-blue-500'
+                    : 'shrink-0'
+                }
+                style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
               />
               <span>
                 {parachuteMetrics.sleepFarmingMode === 'quarter_credit'
@@ -2069,8 +2462,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </span>
             </div>
             <span
-              className={isBespoke ? 'font-semibold text-blue-400' : 'font-bold'}
-              style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+              className={
+                isLiquidGlass
+                  ? 'font-semibold text-cyan-200'
+                  : isBespoke
+                  ? 'font-semibold text-blue-400'
+                  : 'font-bold'
+              }
+              style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
             >
               {onOpenTicketModal ? 'View Ticket ->' : '20h Milestone'}
             </span>
@@ -2081,7 +2480,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {/* Navigation Tabs */}
       <div
         className={
-          isBespoke
+          isLiquidGlass
+            ? 'grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/15 rounded-full'
+            : isBespoke
             ? 'grid grid-cols-3 gap-1 p-1 bg-neutral-950 border border-neutral-800 rounded-md'
             : 'grid grid-cols-3 gap-1 p-1 obsidian-shell-bar rounded-2xl'
         }
@@ -2089,7 +2490,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('overview')}
           className={
-            isBespoke
+            isLiquidGlass
+              ? `py-2 text-xs font-sans rounded-full liquid-spring ${
+                  activeTab === 'overview'
+                    ? 'liquid-pill-active font-semibold'
+                    : 'text-zinc-400 hover:text-white font-medium'
+                }`
+              : isBespoke
               ? `py-2 text-xs font-sans rounded-sm transition-colors duration-75 ${
                   activeTab === 'overview'
                     ? 'bg-blue-600 text-white font-semibold'
@@ -2107,7 +2514,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('ledger')}
           className={
-            isBespoke
+            isLiquidGlass
+              ? `py-2 text-xs font-sans rounded-full liquid-spring ${
+                  activeTab === 'ledger'
+                    ? 'liquid-pill-active font-semibold'
+                    : 'text-zinc-400 hover:text-white font-medium'
+                }`
+              : isBespoke
               ? `py-2 text-xs font-sans rounded-sm transition-colors duration-75 ${
                   activeTab === 'ledger'
                     ? 'bg-blue-600 text-white font-semibold'
@@ -2125,7 +2538,13 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('sessions')}
           className={
-            isBespoke
+            isLiquidGlass
+              ? `py-2 text-xs font-sans rounded-full liquid-spring ${
+                  activeTab === 'sessions'
+                    ? 'liquid-pill-active font-semibold'
+                    : 'text-zinc-400 hover:text-white font-medium'
+                }`
+              : isBespoke
               ? `py-2 text-xs font-sans rounded-sm transition-colors duration-75 ${
                   activeTab === 'sessions'
                     ? 'bg-blue-600 text-white font-semibold'
@@ -2138,15 +2557,19 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 }`
           }
         >
-          History (<span className="font-mono tabular-nums">{sessions.length}</span>)
+          History (<span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>{sessions.length}</span>)
         </button>
       </div>
 
       {activeTab === 'overview' && (
-        <div className={isBespoke ? 'space-y-5' : 'space-y-4'}>
+        <div className={isModernFont ? 'space-y-5' : 'space-y-4'}>
           {visibleWidgetCount === 0 ? (
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-6 text-center space-y-3 font-sans' : 'p-6 text-center space-y-3 font-mono'}
+              headerClassName={
+                isModernFont
+                  ? 'p-6 text-center space-y-3 font-sans'
+                  : 'p-6 text-center space-y-3 font-mono'
+              }
               headerContent={
                 <>
                   <div className="text-xs text-neutral-300">
@@ -2156,7 +2579,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => commitWidgetsConfig(DEFAULT_WIDGETS_CONFIG)}
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'px-4 py-2 rounded-full liquid-pill-active font-semibold text-xs uppercase'
+                        : isBespoke
                         ? 'px-4 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase transition-colors duration-75'
                         : 'px-3.5 py-2 rounded-xl obsidian-pill-active font-black text-xs uppercase'
                     }
@@ -2173,15 +2598,27 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       )}
 
       {activeTab === 'ledger' && (
-        <div className={isBespoke ? 'space-y-4' : 'space-y-3'}>
-          <div className={`text-xs ${isBespoke ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'}`}>
+        <div className={isModernFont ? 'space-y-4' : 'space-y-3'}>
+          <div
+            className={`text-xs ${
+              isModernFont ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
+            }`}
+          >
             Immutable log of Escape Tickets earned via 20-hour milestones and emergency exits.
           </div>
 
           {ledger.length === 0 ? (
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-6 text-center text-neutral-300 font-sans text-xs' : 'p-6 text-center text-zinc-300 font-mono text-xs'}
-              footerClassName={isBespoke ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400' : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'}
+              headerClassName={
+                isModernFont
+                  ? 'p-6 text-center text-neutral-300 font-sans text-xs'
+                  : 'p-6 text-center text-zinc-300 font-mono text-xs'
+              }
+              footerClassName={
+                isModernFont
+                  ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400'
+                  : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'
+              }
               headerContent={
                 <span>
                   No escape ticket transactions yet. Complete 20 hours of blockage to earn your first ticket!
@@ -2190,9 +2627,108 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={<span>20h monotonic focus = +1 Emergency Escape Ticket</span>}
             />
           ) : (
-            <div className={isBespoke ? 'space-y-3' : 'space-y-2.5'}>
+            <div className={isModernFont ? 'space-y-3' : 'space-y-2.5'}>
               {ledger.map((entry) => {
                 const isEarned = entry.type === 'EARNED';
+                const rowHeader = (
+                  <>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div
+                        className={
+                          isLiquidGlass
+                            ? `w-7 h-7 rounded-lg flex items-center justify-center font-sans font-semibold text-xs shrink-0 ${
+                                isEarned
+                                  ? 'liquid-inset text-cyan-200'
+                                  : 'bg-red-950/60 border border-red-500/40 text-red-300'
+                              }`
+                            : isBespoke
+                            ? `w-7 h-7 rounded-sm border flex items-center justify-center font-mono font-semibold text-xs shrink-0 ${
+                                isEarned
+                                  ? 'bg-neutral-950 border-blue-500/60 text-blue-400'
+                                  : 'bg-neutral-950 border-red-800 text-red-400'
+                              }`
+                            : `w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                                isEarned
+                                  ? 'obsidian-inset'
+                                  : 'bg-red-950/60 border border-red-700/70 text-red-300'
+                              }`
+                        }
+                        style={
+                          isEarned && !isModernFont
+                            ? { color: 'var(--accent-hex, #FFFFFF)' }
+                            : undefined
+                        }
+                      >
+                        {isEarned ? '+1' : '-1'}
+                      </div>
+                      <div className="min-w-0">
+                        <div
+                          className={`break-words ${
+                            isModernFont ? 'font-medium text-neutral-100' : 'font-bold text-zinc-100'
+                          }`}
+                        >
+                          {entry.description}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={
+                        isLiquidGlass
+                          ? `text-[10px] font-sans font-semibold px-2.5 py-0.5 rounded-full uppercase shrink-0 ${
+                              isEarned
+                                ? 'liquid-pill-active'
+                                : 'bg-red-950/70 text-red-300 border border-red-500/40'
+                            }`
+                          : isBespoke
+                          ? `text-[10px] font-mono font-semibold px-2 py-0.5 rounded-sm uppercase shrink-0 border ${
+                              isEarned
+                                ? 'bg-neutral-950 text-blue-400 border-blue-500/50'
+                                : 'bg-neutral-950 text-red-400 border-red-800'
+                            }`
+                          : `text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                              isEarned
+                                ? 'obsidian-pill-active font-black'
+                                : 'bg-red-950/70 text-red-300 border border-red-700/70'
+                            }`
+                      }
+                    >
+                      {entry.type}
+                    </span>
+                  </>
+                );
+                const rowFooter = (
+                  <div className="w-full space-y-1">
+                    {entry.note && (
+                      <div className="text-[11px] text-neutral-300 italic break-words">
+                        {entry.note}
+                      </div>
+                    )}
+                    <div
+                      className={`flex items-center justify-between gap-2 tabular-nums ${
+                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                      }`}
+                    >
+                      <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                      {entry.tag && <span className="font-semibold text-neutral-300">#{entry.tag}</span>}
+                    </div>
+                  </div>
+                );
+
+                // Omit backdrop-filter on list rows for 120fps WebView scrolling
+                if (isLiquidGlass) {
+                  return (
+                    <div
+                      key={entry.id}
+                      className="liquid-row rounded-[16px] overflow-hidden font-sans text-xs"
+                    >
+                      <div className="p-4 flex items-start justify-between gap-3">{rowHeader}</div>
+                      <div className="px-4 py-2.5 border-t border-white/[0.08] bg-black/25 flex items-center justify-between gap-2 text-[11px] text-neutral-400">
+                        {rowFooter}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <ObsidianCard
                     key={entry.id}
@@ -2210,73 +2746,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         ? 'px-4 py-2.5 flex items-center justify-between gap-2 text-[11px] text-neutral-400'
                         : 'px-3.5 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400'
                     }
-                    headerContent={
-                      <>
-                        <div className="flex items-start gap-2.5 min-w-0">
-                          <div
-                            className={
-                              isBespoke
-                                ? `w-7 h-7 rounded-sm border flex items-center justify-center font-mono font-semibold text-xs shrink-0 ${
-                                    isEarned
-                                      ? 'bg-neutral-950 border-blue-500/60 text-blue-400'
-                                      : 'bg-neutral-950 border-red-800 text-red-400'
-                                  }`
-                                : `w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                                    isEarned
-                                      ? 'obsidian-inset'
-                                      : 'bg-red-950/60 border border-red-700/70 text-red-300'
-                                  }`
-                            }
-                            style={
-                              isEarned && !isBespoke
-                                ? { color: 'var(--accent-hex, #FFFFFF)' }
-                                : undefined
-                            }
-                          >
-                            {isEarned ? '+1' : '-1'}
-                          </div>
-                          <div className="min-w-0">
-                            <div
-                              className={`break-words ${
-                                isBespoke ? 'font-medium text-neutral-100' : 'font-bold text-zinc-100'
-                              }`}
-                            >
-                              {entry.description}
-                            </div>
-                          </div>
-                        </div>
-                        <span
-                          className={
-                            isBespoke
-                              ? `text-[10px] font-mono font-semibold px-2 py-0.5 rounded-sm uppercase shrink-0 border ${
-                                  isEarned
-                                    ? 'bg-neutral-950 text-blue-400 border-blue-500/50'
-                                    : 'bg-neutral-950 text-red-400 border-red-800'
-                                }`
-                              : `text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
-                                  isEarned
-                                    ? 'obsidian-pill-active font-black'
-                                    : 'bg-red-950/70 text-red-300 border border-red-700/70'
-                                }`
-                          }
-                        >
-                          {entry.type}
-                        </span>
-                      </>
-                    }
-                    footerContent={
-                      <div className="w-full space-y-1">
-                        {entry.note && (
-                          <div className="text-[11px] text-neutral-300 italic break-words">
-                            {entry.note}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between gap-2 font-mono tabular-nums">
-                          <span>{new Date(entry.timestamp).toLocaleString()}</span>
-                          {entry.tag && <span className="font-semibold text-neutral-300">#{entry.tag}</span>}
-                        </div>
-                      </div>
-                    }
+                    headerContent={rowHeader}
+                    footerContent={rowFooter}
                   />
                 );
               })}
@@ -2286,15 +2757,27 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       )}
 
       {activeTab === 'sessions' && (
-        <div className={isBespoke ? 'space-y-3' : 'space-y-2.5'}>
-          <div className={`text-xs ${isBespoke ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'}`}>
+        <div className={isModernFont ? 'space-y-3' : 'space-y-2.5'}>
+          <div
+            className={`text-xs ${
+              isModernFont ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
+            }`}
+          >
             Recent blocking sessions. Escaped sessions award 0 ticket seconds (Anti-Exploit).
           </div>
 
           {sessions.length === 0 ? (
             <ObsidianCard
-              headerClassName={isBespoke ? 'p-6 text-center text-neutral-300 font-sans text-xs' : 'p-6 text-center text-zinc-300 font-mono text-xs'}
-              footerClassName={isBespoke ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400' : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'}
+              headerClassName={
+                isModernFont
+                  ? 'p-6 text-center text-neutral-300 font-sans text-xs'
+                  : 'p-6 text-center text-zinc-300 font-mono text-xs'
+              }
+              footerClassName={
+                isModernFont
+                  ? 'px-5 py-2.5 text-center text-[11px] font-sans text-neutral-400'
+                  : 'px-4 py-2 text-center text-[10px] font-mono text-zinc-400'
+              }
               headerContent={
                 <span>
                   No completed sessions yet. Your real detox history will appear here once you lock in.
@@ -2303,10 +2786,126 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               footerContent={<span>Verified via native Android monotonic clock</span>}
             />
           ) : (
-            <div className={isBespoke ? 'space-y-3 max-h-[480px] overflow-y-auto no-scrollbar pr-0.5' : 'space-y-2.5 max-h-[480px] overflow-y-auto no-scrollbar pr-0.5'}>
+            <div
+              className={
+                isModernFont
+                  ? 'space-y-3 max-h-[480px] overflow-y-auto no-scrollbar pr-0.5'
+                  : 'space-y-2.5 max-h-[480px] overflow-y-auto no-scrollbar pr-0.5'
+              }
+            >
               {sessions.map((sess) => {
                 const isSleep = sess.tag === 'Sleep';
                 const isAborted = sess.status === 'parachuted';
+                const rowHeader = (
+                  <>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {sess.status === 'completed' ? (
+                        <CheckCircle2
+                          size={16}
+                          strokeWidth={isLiquidGlass ? 1.75 : 2}
+                          className={
+                            isLiquidGlass
+                              ? 'text-cyan-300 shrink-0'
+                              : isBespoke
+                              ? 'text-blue-500 shrink-0'
+                              : 'shrink-0'
+                          }
+                          style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        />
+                      ) : (
+                        <AlertOctagon size={16} className="text-red-400 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <div
+                          className={`flex items-center gap-1.5 flex-wrap ${
+                            isModernFont ? 'text-neutral-100 font-semibold' : 'text-zinc-100 font-bold'
+                          }`}
+                        >
+                          <span>
+                            #{sess.tag} —{' '}
+                            <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                              {Math.round(sess.durationSeconds / 60)} min
+                            </span>
+                          </span>
+                          {isSleep && sess.weightMultiplier < 1.0 && (
+                            <span
+                              className={
+                                isLiquidGlass
+                                  ? 'text-[10px] font-sans px-2 py-0.5 liquid-row text-zinc-300 rounded-full'
+                                  : isBespoke
+                                  ? 'text-[10px] font-mono px-1.5 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-sm'
+                                  : 'text-[9px] px-1.5 py-0.5 obsidian-inset-neutral text-zinc-300 rounded'
+                              }
+                            >
+                              {sess.weightMultiplier}x sleep
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div
+                        className={`${
+                          isLiquidGlass ? 'font-sans' : 'font-mono'
+                        } tabular-nums font-semibold ${
+                          isAborted
+                            ? 'text-red-400'
+                            : isLiquidGlass
+                            ? 'text-cyan-300'
+                            : isBespoke
+                            ? 'text-blue-400'
+                            : ''
+                        }`}
+                        style={
+                          !isAborted && !isModernFont
+                            ? { color: 'var(--accent-hex, #FFFFFF)' }
+                            : undefined
+                        }
+                      >
+                        {isAborted
+                          ? '0h (Voided)'
+                          : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
+                      </div>
+                    </div>
+                  </>
+                );
+                const rowFooter = (
+                  <>
+                    <span>
+                      <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                        {sess.dateStr}
+                      </span>{' '}
+                      • {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
+                    </span>
+                    <span
+                      className={
+                        isLiquidGlass
+                          ? 'text-[10px] font-sans uppercase px-2 py-0.5 rounded-full liquid-row text-zinc-300 font-medium'
+                          : isBespoke
+                          ? 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300 font-medium'
+                          : 'text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 border border-white/10 text-zinc-300 font-bold'
+                      }
+                    >
+                      {isAborted ? 'escaped' : sess.status}
+                    </span>
+                  </>
+                );
+
+                // Omit backdrop-filter on scrolling session cards for 120fps WebView scrolling
+                if (isLiquidGlass) {
+                  return (
+                    <div
+                      key={sess.id}
+                      className="liquid-row rounded-[16px] overflow-hidden font-sans text-xs"
+                    >
+                      <div className="p-4 flex items-center justify-between gap-2">{rowHeader}</div>
+                      <div className="px-4 py-2.5 border-t border-white/[0.08] bg-black/25 flex items-center justify-between gap-2 text-[11px] text-neutral-400">
+                        {rowFooter}
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <ObsidianCard
@@ -2325,84 +2924,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         ? 'px-4 py-2.5 flex items-center justify-between gap-2 text-[11px] text-neutral-400'
                         : 'px-3.5 py-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400'
                     }
-                    headerContent={
-                      <>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {sess.status === 'completed' ? (
-                            <CheckCircle2
-                              size={16}
-                              className={isBespoke ? 'text-blue-500 shrink-0' : 'shrink-0'}
-                              style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                            />
-                          ) : (
-                            <AlertOctagon size={16} className="text-red-400 shrink-0" />
-                          )}
-                          <div className="min-w-0">
-                            <div
-                              className={`flex items-center gap-1.5 flex-wrap ${
-                                isBespoke ? 'text-neutral-100 font-semibold' : 'text-zinc-100 font-bold'
-                              }`}
-                            >
-                              <span>
-                                #{sess.tag} —{' '}
-                                <span className="font-mono tabular-nums">
-                                  {Math.round(sess.durationSeconds / 60)} min
-                                </span>
-                              </span>
-                              {isSleep && sess.weightMultiplier < 1.0 && (
-                                <span
-                                  className={
-                                    isBespoke
-                                      ? 'text-[10px] font-mono px-1.5 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-sm'
-                                      : 'text-[9px] px-1.5 py-0.5 obsidian-inset-neutral text-zinc-300 rounded'
-                                  }
-                                >
-                                  {sess.weightMultiplier}x sleep
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0">
-                          <div
-                            className={`font-mono tabular-nums font-semibold ${
-                              isAborted
-                                ? 'text-red-400'
-                                : isBespoke
-                                ? 'text-blue-400'
-                                : ''
-                            }`}
-                            style={
-                              !isAborted && !isBespoke
-                                ? { color: 'var(--accent-hex, #FFFFFF)' }
-                                : undefined
-                            }
-                          >
-                            {isAborted
-                              ? '0h (Voided)'
-                              : `+${(sess.earnedParachuteSeconds / 3600).toFixed(1)}h`}
-                          </div>
-                        </div>
-                      </>
-                    }
-                    footerContent={
-                      <>
-                        <span>
-                          <span className="font-mono tabular-nums">{sess.dateStr}</span> •{' '}
-                          {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
-                        </span>
-                        <span
-                          className={
-                            isBespoke
-                              ? 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300 font-medium'
-                              : 'text-[9px] uppercase px-1.5 py-0.5 rounded bg-zinc-900 border border-white/10 text-zinc-300 font-bold'
-                          }
-                        >
-                          {isAborted ? 'escaped' : sess.status}
-                        </span>
-                      </>
-                    }
+                    headerContent={rowHeader}
+                    footerContent={rowFooter}
                   />
                 );
               })}

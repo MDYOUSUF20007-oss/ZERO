@@ -12,6 +12,8 @@ import { ParachuteRewardAnimation } from './components/ParachuteRewardAnimation'
 import { ShareStatsModal } from './components/ShareStatsModal';
 import { EscapeTicketModal } from './components/EscapeTicketModal';
 import { ObsidianCard } from './components/ObsidianCard';
+import { AmbientBackground } from './components/AmbientBackground';
+import { LiquidDock } from './components/LiquidDock';
 import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
 import { haptics } from './utils/haptics';
 import { Clock, Heart, BellRing, Settings, X } from 'lucide-react';
@@ -88,6 +90,7 @@ export function App() {
   };
 
   const isBespoke = store.interfaceStyle === 'bespoke';
+  const isLiquidGlass = store.interfaceStyle === 'liquid_glass';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -114,6 +117,8 @@ export function App() {
       setInterfaceStyle={store.setInterfaceStyle}
     >
       <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
+        {isLiquidGlass && <AmbientBackground />}
+
         {/* Top Status Bar Safe-Area Scrim */}
         <div
           aria-hidden="true"
@@ -128,13 +133,13 @@ export function App() {
         {store.preLockAlert && (
           <div
             className={`fixed left-4 right-4 z-50 max-w-md mx-auto ${
-              isBespoke ? '' : 'animate-bounce'
+              isBespoke || isLiquidGlass ? '' : 'animate-bounce'
             }`}
             style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
           >
             <ObsidianCard
               ambientGlow={!isBespoke}
-              className={isBespoke ? 'font-sans' : 'font-mono shadow-2xl'}
+              className={isBespoke || isLiquidGlass ? 'font-sans' : 'font-mono shadow-2xl'}
               headerClassName={
                 isBespoke
                   ? 'p-3.5 flex items-center justify-between gap-3'
@@ -144,19 +149,33 @@ export function App() {
                 <>
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
-                      }`}
-                      style={{ color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }}
+                      className={
+                        isLiquidGlass
+                          ? 'liquid-squircle text-cyan-200'
+                          : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                              isBespoke ? 'rounded-md' : 'rounded-xl'
+                            }`
+                      }
+                      style={
+                        isLiquidGlass
+                          ? undefined
+                          : { color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }
+                      }
                     >
-                      <BellRing size={17} />
+                      <BellRing size={17} strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0">
                       <div
                         className={`text-xs uppercase tracking-wider ${
-                          isBespoke ? 'font-semibold' : 'font-black'
+                          isBespoke || isLiquidGlass ? 'font-semibold' : 'font-black'
                         }`}
-                        style={{ color: isBespoke ? '#60A5FA' : 'var(--accent-hex, #FFFFFF)' }}
+                        style={{
+                          color: isLiquidGlass
+                            ? '#7DD3FC'
+                            : isBespoke
+                            ? '#60A5FA'
+                            : 'var(--accent-hex, #FFFFFF)',
+                        }}
                       >
                         Heads-up: Lock Starts in{' '}
                         <span className="font-mono tabular-nums">
@@ -171,13 +190,15 @@ export function App() {
                   <button
                     onClick={() => store.triggerTestWarning('')}
                     className={`p-1.5 border text-zinc-400 hover:text-white shrink-0 ${
-                      isBespoke
+                      isLiquidGlass
+                        ? 'rounded-xl liquid-pill border-transparent'
+                        : isBespoke
                         ? 'rounded-md bg-neutral-950 border-neutral-800 transition-colors duration-75'
                         : 'rounded-xl bg-zinc-900 border-white/10'
                     }`}
                     aria-label="Dismiss Heads-up Warning"
                   >
-                    <X size={15} />
+                    <X size={15} strokeWidth={1.75} />
                   </button>
                 </>
               }
@@ -195,10 +216,12 @@ export function App() {
               data-amoled-banner="true"
               accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
               ambientGlow={!isBespoke}
-              className={isBespoke ? 'font-sans text-xs' : 'font-mono text-xs shadow-2xl'}
+              className={
+                isBespoke || isLiquidGlass ? 'font-sans text-xs' : 'font-mono text-xs shadow-2xl'
+              }
               headerClassName="p-3 flex items-center justify-between gap-2"
               style={
-                isBespoke
+                isBespoke || isLiquidGlass
                   ? undefined
                   : {
                       backgroundColor: '#000000',
@@ -215,7 +238,7 @@ export function App() {
                     className="p-1 text-zinc-400 hover:text-white shrink-0"
                     aria-label="Dismiss Cloud Restore Notification"
                   >
-                    <X size={14} />
+                    <X size={14} strokeWidth={1.75} />
                   </button>
                 </>
               }
@@ -225,7 +248,7 @@ export function App() {
 
       {/* Main Content Area */}
       <main
-        className="flex-1 flex flex-col justify-start"
+        className="relative z-10 flex-1 flex flex-col justify-start"
         style={{
           paddingTop: 'var(--zero-safe-top)',
           paddingBottom: 'var(--zero-safe-bottom)',
@@ -438,177 +461,185 @@ export function App() {
       />
 
       {/* Bottom Navigation Dock */}
-      <nav
-        data-frosted-chrome="true"
-        className={`fixed bottom-0 left-0 right-0 z-40 border-t pt-2 px-2 sm:px-3 ${
-          isBespoke ? 'bg-black' : 'obsidian-shell-bar backdrop-blur-md'
-        }`}
-        style={{
-          paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
-          borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
-        }}
-      >
-        {!isBespoke && (
-          <div
-            aria-hidden="true"
-            className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
-              opacity: 0.75,
-            }}
-          />
-        )}
-        <div className={`max-w-md mx-auto grid grid-cols-4 ${isBespoke ? 'gap-1.5' : 'gap-1'}`}>
-          <button
-            onClick={() => {
-              haptics.tick(900);
-              setActiveTab('dial');
-            }}
-            className={`flex flex-col items-center justify-center py-2 px-1 ${
-              isBespoke
-                ? `rounded-md transition-colors duration-75 border ${
-                    activeTab === 'dial'
-                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                  }`
-                : `rounded-2xl transition-all ${
-                    activeTab === 'dial'
-                      ? 'obsidian-inset font-bold text-white shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                  }`
-            }`}
-          >
-            <Clock
-              size={17}
-              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+      {isLiquidGlass ? (
+        <LiquidDock
+          activeTab={activeTab}
+          ticketCount={store.parachuteMetrics.currentBalance}
+          onSelectTab={setActiveTab}
+        />
+      ) : (
+        <nav
+          data-frosted-chrome="true"
+          className={`fixed bottom-0 left-0 right-0 z-40 border-t pt-2 px-2 sm:px-3 ${
+            isBespoke ? 'bg-black' : 'obsidian-shell-bar backdrop-blur-md'
+          }`}
+          style={{
+            paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
+            borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+          }}
+        >
+          {!isBespoke && (
+            <div
+              aria-hidden="true"
+              className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
+                opacity: 0.75,
+              }}
             />
-            <span
-              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+          )}
+          <div className={`max-w-md mx-auto grid grid-cols-4 ${isBespoke ? 'gap-1.5' : 'gap-1'}`}>
+            <button
+              onClick={() => {
+                haptics.tick(900);
+                setActiveTab('dial');
+              }}
+              className={`flex flex-col items-center justify-center py-2 px-1 ${
+                isBespoke
+                  ? `rounded-md transition-colors duration-75 border ${
+                      activeTab === 'dial'
+                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                    }`
+                  : `rounded-2xl transition-all ${
+                      activeTab === 'dial'
+                        ? 'obsidian-inset font-bold text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                    }`
               }`}
-              style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             >
-              Dial
-            </span>
-          </button>
+              <Clock
+                size={17}
+                style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+              />
+              <span
+                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+                }`}
+                style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+              >
+                Dial
+              </span>
+            </button>
 
-          <button
-            onClick={() => {
-              haptics.tick(900);
-              setActiveTab('dashboard');
-            }}
-            className={`flex flex-col items-center justify-center py-2 px-1 relative ${
-              isBespoke
-                ? `rounded-md transition-colors duration-75 border ${
-                    activeTab === 'dashboard'
-                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                  }`
-                : `rounded-2xl transition-all ${
-                    activeTab === 'dashboard'
-                      ? 'obsidian-inset font-bold text-white shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                  }`
-            }`}
-          >
-            <div className="relative">
-              <span className="text-sm leading-none">🎫</span>
-              {store.parachuteMetrics.currentBalance > 0 && (
-                <span
-                  className={`absolute -top-1.5 -right-3 text-[9px] font-mono tabular-nums px-1 font-bold ${
-                    isBespoke
-                      ? 'rounded-sm bg-blue-600 text-white border border-blue-500'
-                      : 'rounded-full font-black obsidian-pill-active'
-                  }`}
-                >
-                  {store.parachuteMetrics.currentBalance}
-                </span>
-              )}
-            </div>
-            <span
-              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+            <button
+              onClick={() => {
+                haptics.tick(900);
+                setActiveTab('dashboard');
+              }}
+              className={`flex flex-col items-center justify-center py-2 px-1 relative ${
+                isBespoke
+                  ? `rounded-md transition-colors duration-75 border ${
+                      activeTab === 'dashboard'
+                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                    }`
+                  : `rounded-2xl transition-all ${
+                      activeTab === 'dashboard'
+                        ? 'obsidian-inset font-bold text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                    }`
               }`}
-              style={
-                activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-              }
             >
-              Insights
-            </span>
-          </button>
+              <div className="relative">
+                <span className="text-sm leading-none">🎫</span>
+                {store.parachuteMetrics.currentBalance > 0 && (
+                  <span
+                    className={`absolute -top-1.5 -right-3 text-[9px] font-mono tabular-nums px-1 font-bold ${
+                      isBespoke
+                        ? 'rounded-sm bg-blue-600 text-white border border-blue-500'
+                        : 'rounded-full font-black obsidian-pill-active'
+                    }`}
+                  >
+                    {store.parachuteMetrics.currentBalance}
+                  </span>
+                )}
+              </div>
+              <span
+                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+                }`}
+                style={
+                  activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
+              >
+                Insights
+              </span>
+            </button>
 
-          <button
-            onClick={() => {
-              haptics.tick(900);
-              setActiveTab('schedules');
-            }}
-            className={`flex flex-col items-center justify-center py-2 px-1 ${
-              isBespoke
-                ? `rounded-md transition-colors duration-75 border ${
-                    activeTab === 'schedules'
-                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                  }`
-                : `rounded-2xl transition-all ${
-                    activeTab === 'schedules'
-                      ? 'obsidian-inset font-bold text-white shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                  }`
-            }`}
-          >
-            <Settings
-              size={17}
-              style={
-                activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-              }
-            />
-            <span
-              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-normal'
+            <button
+              onClick={() => {
+                haptics.tick(900);
+                setActiveTab('schedules');
+              }}
+              className={`flex flex-col items-center justify-center py-2 px-1 ${
+                isBespoke
+                  ? `rounded-md transition-colors duration-75 border ${
+                      activeTab === 'schedules'
+                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                    }`
+                  : `rounded-2xl transition-all ${
+                      activeTab === 'schedules'
+                        ? 'obsidian-inset font-bold text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                    }`
               }`}
-              style={
-                activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-              }
             >
-              Settings &amp; OS
-            </span>
-          </button>
+              <Settings
+                size={17}
+                style={
+                  activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
+              />
+              <span
+                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-normal'
+                }`}
+                style={
+                  activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
+              >
+                Settings &amp; OS
+              </span>
+            </button>
 
-          <button
-            onClick={() => {
-              haptics.tick(900);
-              setActiveTab('support');
-            }}
-            className={`flex flex-col items-center justify-center py-2 px-1 ${
-              isBespoke
-                ? `rounded-md transition-colors duration-75 border ${
-                    activeTab === 'support'
-                      ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                      : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                  }`
-                : `rounded-2xl transition-all ${
-                    activeTab === 'support'
-                      ? 'obsidian-inset font-bold text-white shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                  }`
-            }`}
-          >
-            <Heart
-              size={17}
-              style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
-            />
-            <span
-              className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+            <button
+              onClick={() => {
+                haptics.tick(900);
+                setActiveTab('support');
+              }}
+              className={`flex flex-col items-center justify-center py-2 px-1 ${
+                isBespoke
+                  ? `rounded-md transition-colors duration-75 border ${
+                      activeTab === 'support'
+                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                    }`
+                  : `rounded-2xl transition-all ${
+                      activeTab === 'support'
+                        ? 'obsidian-inset font-bold text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                    }`
               }`}
-              style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
             >
-              Support
-            </span>
-          </button>
-        </div>
-      </nav>
+              <Heart
+                size={17}
+                style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+              />
+              <span
+                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
+                }`}
+                style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+              >
+                Support
+              </span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
     </InterfaceStyleProvider>
   );

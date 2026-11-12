@@ -98,7 +98,21 @@ export function renderBadgeIcon(id: AchievementBadgeId, size: number = 14) {
 export const ZeroSupporterGoldenBadge: React.FC<{
   compact?: boolean;
 }> = ({ compact = false }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+
+  if (isLiquidGlass) {
+    return (
+      <span
+        data-gold-badge="true"
+        className={`inline-flex items-center gap-1 rounded-full font-sans font-semibold uppercase tracking-wider bg-gradient-to-r from-white/15 via-cyan-300/15 to-sky-400/20 text-cyan-100 border border-cyan-300/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] shrink-0 ${
+          compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-0.5 text-[10px]'
+        }`}
+      >
+        <Crown size={compact ? 10 : 11} strokeWidth={1.75} className="shrink-0 text-cyan-300" />
+        <span>ZERO-SUPPORTER</span>
+      </span>
+    );
+  }
 
   if (isBespoke) {
     return (
@@ -130,8 +144,25 @@ export const ZeroSupporterGoldenBadge: React.FC<{
 export const AchievementBadgePill: React.FC<{
   badge: EvaluatedBadge;
 }> = ({ badge }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const style = TIER_STYLES[badge.tierColor];
+
+  if (isLiquidGlass) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-sans text-[10px] font-semibold uppercase tracking-wide border ${
+          badge.unlocked
+            ? badge.tierColor === 'gold'
+              ? 'bg-gradient-to-r from-white/15 via-cyan-300/15 to-sky-400/20 text-cyan-100 border-cyan-300/40'
+              : 'bg-cyan-400/15 text-cyan-100 border-cyan-300/35'
+            : 'bg-white/[0.04] text-zinc-400 border-white/[0.08]'
+        }`}
+      >
+        {badge.unlocked ? renderBadgeIcon(badge.id, 10) : <Lock size={9} strokeWidth={1.75} />}
+        <span>{badge.title}</span>
+      </span>
+    );
+  }
 
   if (isBespoke) {
     return (
@@ -178,9 +209,78 @@ export const AchievementBadgeCard: React.FC<{
   isSelected?: boolean;
   onSelect?: () => void;
 }> = ({ badge, isSelected = false, onSelect }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const style = TIER_STYLES[badge.tierColor];
   const isGoldUnlocked = badge.unlocked && badge.tierColor === 'gold';
+
+  if (isLiquidGlass) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`w-full text-left p-3.5 rounded-2xl liquid-spring font-sans space-y-2.5 ${
+          badge.unlocked
+            ? 'liquid-inset'
+            : 'liquid-row opacity-90 hover:brightness-110'
+        } ${isSelected ? 'ring-1 ring-cyan-300/50' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`!w-8 !h-8 !rounded-xl flex items-center justify-center shrink-0 ${
+                badge.unlocked
+                  ? 'liquid-pill-active'
+                  : 'liquid-squircle text-zinc-400'
+              }`}
+            >
+              {badge.unlocked ? (
+                renderBadgeIcon(badge.id, 14)
+              ) : (
+                <Lock size={12} strokeWidth={1.75} />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div
+                className={`text-xs font-semibold uppercase tracking-wide truncate ${
+                  badge.unlocked ? 'text-white' : 'text-zinc-300'
+                }`}
+              >
+                {badge.title}
+              </div>
+              <div className="text-[11px] text-zinc-400 truncate mt-0.5">
+                {badge.requirementLabel}
+              </div>
+            </div>
+          </div>
+          <span
+            className={`text-[10px] font-semibold tabular-nums uppercase px-2 py-0.5 rounded-full shrink-0 ${
+              badge.unlocked ? 'liquid-pill-active' : 'liquid-pill text-zinc-400'
+            }`}
+          >
+            {badge.unlocked ? 'Earned' : `${badge.progressPct}%`}
+          </span>
+        </div>
+
+        {!badge.unlocked && (
+          <div className="space-y-1.5">
+            <div className="w-full h-1.5 rounded-full liquid-track">
+              <div
+                className="h-full liquid-mercury-fill"
+                style={{ width: `${badge.progressPct}%` }}
+              />
+            </div>
+            <div className="text-[10px] tabular-nums text-zinc-400">{badge.progressText}</div>
+          </div>
+        )}
+
+        {isSelected && (
+          <div className="text-xs text-zinc-300 pt-2 border-t border-white/[0.08] leading-relaxed">
+            {badge.description}
+          </div>
+        )}
+      </button>
+    );
+  }
 
   if (isBespoke) {
     return (

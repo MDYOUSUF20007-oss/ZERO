@@ -26,28 +26,29 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
   themeConfig,
   onChange,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
 
   const selectFamily = (family: ThemeFamily) => {
     haptics.tick(780);
     onChange({ ...themeConfig, family });
   };
 
-  const activeThemeSummary =
-    themeConfig.family === 'amoled'
-      ? `AMOLED (${themeConfig.amoledGradient})`
-      : themeConfig.family === 'kindle'
-      ? `Paper Kindle • ${themeConfig.kindlePaperColor}`
-      : `Matte Studio • ${themeConfig.matteBaseColor}`;
+  const activeThemeSummary = isLiquidGlass
+    ? 'Liquid Glass • Pitch #000000'
+    : themeConfig.family === 'amoled'
+    ? `AMOLED (${themeConfig.amoledGradient})`
+    : themeConfig.family === 'kindle'
+    ? `Paper Kindle • ${themeConfig.kindlePaperColor}`
+    : `Matte Studio • ${themeConfig.matteBaseColor}`;
 
   return (
     <ObsidianCard
       ambientGlow={!isBespoke}
-      className={isBespoke ? 'font-sans' : 'font-mono'}
-      headerClassName={isBespoke ? 'p-5 space-y-5' : 'p-4 sm:p-5 space-y-4'}
+      className={isBespoke || isLiquidGlass ? 'font-sans' : 'font-mono'}
+      headerClassName={isBespoke || isLiquidGlass ? 'p-5 space-y-5' : 'p-4 sm:p-5 space-y-4'}
       footerClassName={
-        isBespoke
-          ? 'px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-neutral-400'
+        isBespoke || isLiquidGlass
+          ? 'px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-zinc-400'
           : 'px-4 sm:px-5 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400'
       }
       headerContent={
@@ -56,11 +57,21 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
               <div
-                className={`w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                  isBespoke ? 'rounded-md' : 'rounded-xl'
-                }`}
+                className={
+                  isLiquidGlass
+                    ? 'liquid-squircle text-cyan-200'
+                    : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                      }`
+                }
               >
-                <Palette size={15} style={{ color: 'var(--accent-hex, var(--zero-accent))' }} />
+                <Palette
+                  size={15}
+                  strokeWidth={1.75}
+                  style={
+                    isLiquidGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
+                  }
+                />
               </div>
               <span>Theme Studio</span>
             </div>
@@ -70,15 +81,28 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                 haptics.tick(700);
                 onChange(DEFAULT_THEME_CONFIG);
               }}
-              className={`px-2.5 py-1 obsidian-inset-neutral hover:border-white/25 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 ${
-                isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg transition-colors'
+              className={`px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 ${
+                isLiquidGlass
+                  ? 'liquid-pill rounded-xl'
+                  : `obsidian-inset-neutral hover:border-white/25 ${
+                      isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg transition-colors'
+                    }`
               }`}
               title="Reset Theme Studio to Pure AMOLED"
             >
-              <RotateCcw size={10} />
+              <RotateCcw size={10} strokeWidth={1.75} />
               <span>Reset</span>
             </button>
           </div>
+
+          {isLiquidGlass && (
+            <div className="p-3 rounded-xl liquid-row text-[11px] text-zinc-300 leading-relaxed">
+              <span className="font-semibold text-white">Microsoft Liquid Glass</span> anchors all
+              views to pure <span className="font-mono text-cyan-200">#000000</span> AMOLED with
+              refractive ambient light fields. Swatches below save your underlying Theme Studio preset
+              for <span className="text-white font-medium">Classic UI</span>.
+            </div>
+          )}
 
           {/* 3 Primary Theme Families */}
           <div className="grid grid-cols-3 gap-2.5">

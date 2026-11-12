@@ -34,6 +34,7 @@ object VoidThemeStore {
 
     const val STYLE_BESPOKE = "bespoke"
     const val STYLE_CLASSIC = "classic"
+    const val STYLE_LIQUID_GLASS = "liquid_glass"
     const val DEFAULT_INTERFACE_STYLE = STYLE_CLASSIC
 
     const val DEFAULT_ACCENT_HEX = "#FFFFFF"
@@ -172,7 +173,11 @@ object VoidThemeStore {
 
     @JvmStatic
     fun normalizeInterfaceStyle(raw: String?): String {
-        return if (raw?.trim()?.lowercase(Locale.US) == STYLE_BESPOKE) STYLE_BESPOKE else STYLE_CLASSIC
+        return when (raw?.trim()?.lowercase(Locale.US)) {
+            STYLE_BESPOKE -> STYLE_BESPOKE
+            STYLE_LIQUID_GLASS -> STYLE_LIQUID_GLASS
+            else -> STYLE_CLASSIC
+        }
     }
 
     @JvmStatic
@@ -193,6 +198,11 @@ object VoidThemeStore {
     @JvmStatic
     fun isBespokeStyle(context: Context): Boolean {
         return loadInterfaceStyle(context) == STYLE_BESPOKE
+    }
+
+    @JvmStatic
+    fun isLiquidGlassStyle(context: Context): Boolean {
+        return loadInterfaceStyle(context) == STYLE_LIQUID_GLASS
     }
 }
 

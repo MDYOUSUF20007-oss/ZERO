@@ -1,6 +1,7 @@
 import React, { type CSSProperties, type FormEventHandler, type ReactNode } from 'react';
 import { type AccentKey } from './ProfileAvatar';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
+import { GlassCard } from './GlassCard';
 
 export interface ObsidianCardProps {
   accent?: AccentKey;
@@ -25,27 +26,34 @@ export interface ObsidianCardProps {
   'data-restricted-guide'?: string;
 }
 
-export const ObsidianCard: React.FC<ObsidianCardProps> = ({
-  accentOverride,
-  headerContent,
-  footerContent,
-  overlays,
-  ambientGlow = false,
-  fullWidth = true,
-  className = '',
-  headerClassName,
-  footerClassName,
-  style,
-  onClick,
-  onSubmit,
-  asButton = false,
-  disabled = false,
-  title,
-  'aria-label': ariaLabel,
-  'data-amoled-banner': dataAmoledBanner,
-  'data-restricted-guide': dataRestrictedGuide,
-}) => {
-  const { isBespoke } = useInterfaceStyle();
+export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+
+  if (isLiquidGlass) {
+    return <GlassCard {...props} />;
+  }
+
+  const {
+    accentOverride,
+    headerContent,
+    footerContent,
+    overlays,
+    ambientGlow = false,
+    fullWidth = true,
+    className = '',
+    headerClassName,
+    footerClassName,
+    style,
+    onClick,
+    onSubmit,
+    asButton = false,
+    disabled = false,
+    title,
+    'aria-label': ariaLabel,
+    'data-amoled-banner': dataAmoledBanner,
+    'data-restricted-guide': dataRestrictedGuide,
+  } = props;
+
   const resolvedHeaderClass = headerClassName ?? (isBespoke ? 'p-5' : 'p-4');
   const resolvedFooterClass = footerClassName ?? (isBespoke ? 'px-5 py-3' : 'px-4 py-2.5');
 

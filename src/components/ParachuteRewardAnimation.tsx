@@ -17,7 +17,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
   reward,
   onDismiss,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const [tappedPulse, setTappedPulse] = useState(false);
 
   if (!reward) return null;
@@ -36,7 +36,9 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
         particleCount: 70,
         spread: 65,
         origin: { y: 0.55 },
-        colors: isBespoke
+        colors: isLiquidGlass
+          ? ['#FFFFFF', '#00F2FE', '#4FACFE']
+          : isBespoke
           ? ['#FFFFFF', '#2563EB', '#3B82F6']
           : ['#FFFFFF', confettiHex, mixHexColors(confettiHex, '#FFFFFF', 0.38)],
       });
@@ -62,6 +64,114 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
       }}
     />
   );
+
+  if (isLiquidGlass) {
+    return (
+      <div
+        className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+        onClick={onDismiss}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Escape Ticket Unlocked Celebration"
+      >
+        <ObsidianCard
+          ambientGlow
+          onClick={(e) => e?.stopPropagation()}
+          className={`w-full max-w-sm font-sans animate-parachute-card-pop transition-transform ${
+            tappedPulse ? 'scale-[1.02]' : ''
+          }`}
+          headerClassName="p-6 pb-5 text-center space-y-5 relative"
+          footerClassName="p-4 space-y-3"
+          headerContent={
+            <>
+              <button
+                type="button"
+                onClick={onDismiss}
+                className="absolute top-3.5 right-3.5 p-1.5 rounded-xl liquid-pill text-zinc-400 hover:text-white z-10"
+                aria-label="Close Escape Ticket Celebration"
+              >
+                <X size={15} strokeWidth={1.75} />
+              </button>
+
+              <div className="flex justify-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 text-[10px] font-semibold uppercase tracking-widest">
+                  <Sparkles size={12} strokeWidth={1.75} />
+                  <span>{sourceBadge}</span>
+                </span>
+              </div>
+
+              <div className="relative h-32 flex items-center justify-center">
+                <div
+                  aria-hidden="true"
+                  className="absolute w-28 h-28 rounded-full border border-cyan-300/30 animate-ring-burst"
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute w-24 h-24 rounded-full blur-xl bg-cyan-400/15"
+                />
+                <button
+                  type="button"
+                  onClick={handleCardBoost}
+                  title="Tap to celebrate!"
+                  className="relative z-10 w-24 h-24 rounded-3xl liquid-inset flex items-center justify-center animate-parachute-descend liquid-spring cursor-pointer"
+                >
+                  <Ticket size={40} strokeWidth={1.75} className="text-cyan-200 animate-parachute-float" />
+                  <span className="absolute -top-2.5 -right-2.5 px-2.5 py-0.5 rounded-full liquid-pill-active text-[11px] font-semibold tabular-nums">
+                    +{reward.delta}
+                  </span>
+                </button>
+              </div>
+
+              <div className="space-y-1.5 relative z-10">
+                <h2 className="text-lg font-semibold text-white tracking-tight">
+                  {reward.title}
+                </h2>
+                {reward.source === 'first_donation_50' && (
+                  <div className="flex justify-center pt-1">
+                    <ZeroSupporterGoldenBadge />
+                  </div>
+                )}
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  {reward.subtitle}
+                </p>
+              </div>
+            </>
+          }
+          footerContent={
+            <>
+              <div className="liquid-row rounded-2xl p-3.5 flex items-center justify-between gap-2">
+                <div className="text-left">
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">
+                    Escape Ticket Balance
+                  </div>
+                  <div className="text-xl font-semibold flex items-center gap-1.5 mt-0.5">
+                    <span className="liquid-metric">{reward.newBalance}</span>
+                    <span className="text-xs font-normal text-zinc-400">Ready</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-medium bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 px-2.5 py-1 rounded-xl shrink-0">
+                  <CheckCircle2 size={13} strokeWidth={1.75} />
+                  <span>Added to Vault</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onDismiss}
+                className="w-full py-3 rounded-2xl liquid-pill-active font-semibold text-xs uppercase tracking-wider"
+              >
+                Awesome • Back to Focus
+              </button>
+            </>
+          }
+        />
+      </div>
+    );
+  }
 
   if (isBespoke) {
     return (

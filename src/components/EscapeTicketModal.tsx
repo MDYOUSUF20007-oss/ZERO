@@ -43,7 +43,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   onOpenSupport,
   onOpenInsights,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   if (!isOpen) return null;
 
   const balance = parachuteMetrics.currentBalance;
@@ -64,6 +64,249 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       : balance === 1
       ? 'You have 1 Escape Ticket ready in your vault'
       : `You have ${balance} Escape Tickets ready in your vault`;
+
+  if (isLiquidGlass) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center px-4 overflow-y-auto"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="w-full max-w-md my-auto space-y-4 py-2">
+          {/* Giant Ticket Card */}
+          <div className="liquid-card rounded-3xl overflow-hidden">
+            {/* Ticket Header */}
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 font-semibold">
+                  <Ticket size={14} strokeWidth={1.75} className="text-[#7DD3FC]" />
+                  <span>ZERO PASS • VAULT</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="liquid-pill p-2 text-white/40 hover:text-white transition-colors"
+                  aria-label="Close Escape Ticket View"
+                >
+                  <X size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3.5 pt-1">
+                <div className="liquid-squircle w-16 h-16 flex items-center justify-center shrink-0" style={{ borderRadius: '18px' }}>
+                  <Ticket size={28} strokeWidth={1} className="text-[#7DD3FC]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7DD3FC]">
+                    EMERGENCY EXIT VOUCHER
+                  </div>
+                  <h2 className="liquid-metric text-2xl mt-0.5 uppercase">
+                    ESCAPE TICKET
+                  </h2>
+                  <p className="text-[11px] text-white/50 mt-1">{balanceSentence}</p>
+                </div>
+              </div>
+
+              {/* Issued To + Balance */}
+              <div className="liquid-inset p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {profile ? (
+                    <ProfileAvatar avatarId={profile.avatarId} size="sm" interactive />
+                  ) : (
+                    <div className="liquid-squircle w-9 h-9 flex items-center justify-center shrink-0 font-mono text-sm font-bold text-white">
+                      0
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/40 font-semibold">
+                      ISSUED TO
+                    </div>
+                    <div className="text-sm font-semibold text-white uppercase tracking-wide truncate">
+                      {holderName}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      {holderHandle && (
+                        <span className="font-mono text-[10px] text-white/40 truncate">
+                          {holderHandle}
+                        </span>
+                      )}
+                      <span className="liquid-pill-active px-1.5 py-0.5 rounded text-[8px] font-semibold uppercase tracking-widest">
+                        {rank.title}
+                      </span>
+                      {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                    </div>
+                  </div>
+                </div>
+                {/* Balance count */}
+                <div className="liquid-pill-active px-3.5 py-2.5 rounded-2xl text-center shrink-0">
+                  <div className="font-mono tabular-nums text-2xl font-bold leading-none">{balance}</div>
+                  <div className="font-mono text-[9px] font-semibold uppercase tracking-widest mt-1 opacity-70">
+                    {balance === 1 ? 'TICKET' : 'TICKETS'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Meter */}
+              <div className="space-y-1.5 pt-2 border-t border-white/[0.06]">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-white/60 font-medium">Progress to Next Escape Ticket</span>
+                  <span className="font-mono tabular-nums font-semibold text-[#7DD3FC]">
+                    {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-white/[0.06] border border-white/[0.08] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#4FACFE] to-[#7DD3FC] transition-all duration-500"
+                    style={{ width: `${parachuteMetrics.progressPercentage}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between font-mono tabular-nums text-[10px] text-white/40">
+                  <span>{parachuteMetrics.hoursUntilNextParachute}h left for next +1 Ticket</span>
+                  <span>Earned: {parachuteMetrics.lifetimeEarnedParachutes} • Used: {parachuteMetrics.deployedParachutes}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer strip */}
+            <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between gap-2 font-mono text-[10px] text-white/40">
+              <span className="uppercase tracking-widest font-semibold">
+                {balance > 0 ? 'STATUS: READY IN VAULT' : 'STATUS: 0 AVAILABLE'}
+              </span>
+              <span className="text-[#7DD3FC] font-semibold uppercase tracking-wider">
+                {profile ? profile.primaryMission : 'MONOTONIC PROOF'}
+              </span>
+            </div>
+          </div>
+
+          {/* How to Gain More Card */}
+          <div className="liquid-card rounded-3xl p-4 space-y-2.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-white">
+              How to Gain More Escape Tickets
+            </div>
+
+            <div className="liquid-row p-3 rounded-2xl flex items-start gap-2.5">
+              <div className="liquid-squircle w-7 h-7 flex items-center justify-center shrink-0 mt-0.5">
+                <Clock size={13} strokeWidth={1.75} className="text-[#7DD3FC]" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-white">Every 20 Focus Hours (+1 Ticket)</span>
+                  <span className="liquid-pill text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-lg text-white/60 shrink-0">
+                    Unlimited
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/40 leading-relaxed">
+                  Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
+                  <span className="text-white/70 font-semibold inline-flex items-center gap-1">
+                    <Moon size={10} strokeWidth={1.75} className="text-[#7DD3FC]" />
+                    {sleepRateLabel}
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <div className="liquid-row p-3 rounded-2xl flex items-center justify-between gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <div className="liquid-squircle w-7 h-7 flex items-center justify-center shrink-0 mt-0.5">
+                  <Gift size={13} strokeWidth={1.75} className="text-[#7DD3FC]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold text-white">Starter Profile Gift (+1 Ticket)</div>
+                  <div className="text-[10px] text-white/40 mt-0.5">One-time free welcome ticket when you create your profile.</div>
+                </div>
+              </div>
+              {hasClaimedFirstTimeParachute ? (
+                <span className="liquid-pill-active px-2 py-1 rounded-lg text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                  <CheckCircle2 size={10} strokeWidth={1.75} />
+                  <span>Claimed</span>
+                </span>
+              ) : (
+                onOpenProfile && (
+                  <button
+                    type="button"
+                    onClick={onOpenProfile}
+                    className="liquid-pill-active px-3 py-1.5 rounded-xl text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0"
+                  >
+                    <span>Claim</span>
+                    <ArrowRight size={11} strokeWidth={1.75} />
+                  </button>
+                )
+              )}
+            </div>
+
+            <div className="liquid-row p-3 rounded-2xl flex items-center justify-between gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <div className="liquid-squircle w-7 h-7 flex items-center justify-center shrink-0 mt-0.5">
+                  <Heart size={13} strokeWidth={1.75} className="text-red-400/70" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold text-white">
+                    1st Tip ₹{FIRST_DONATION_BONUS_INR}+ Gift (+1 Ticket &amp; Gold Crest)
+                  </div>
+                  <div className="text-[10px] text-white/40 mt-0.5">
+                    Voluntary thank-you gift strictly on your first ₹{FIRST_DONATION_BONUS_INR}+ support tip.
+                  </div>
+                </div>
+              </div>
+              {hasClaimedFirstDonationParachute ? (
+                <span className="liquid-pill-active px-2 py-1 rounded-lg text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0">
+                  <CheckCircle2 size={10} strokeWidth={1.75} />
+                  <span>Unlocked</span>
+                </span>
+              ) : (
+                onOpenSupport && (
+                  <button
+                    type="button"
+                    onClick={onOpenSupport}
+                    className="liquid-pill px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white text-[9px] font-semibold uppercase flex items-center gap-1 shrink-0"
+                  >
+                    <span>Support</span>
+                    <ArrowRight size={10} strokeWidth={1.75} />
+                  </button>
+                )
+              )}
+            </div>
+
+            {/* Warning footer */}
+            <div className="liquid-row p-3 rounded-2xl flex items-start gap-2 text-[10px] text-white/40 leading-relaxed">
+              <ShieldAlert size={13} strokeWidth={1.75} className="text-red-400/60 shrink-0 mt-0.5" />
+              <span>
+                Using a ticket ends the lock early, costs{' '}
+                <strong className="text-white/70">1 Ticket</strong>, and voids that broken
+                session&rsquo;s progress toward your next 20h ticket.
+              </span>
+            </div>
+          </div>
+
+          {/* Action bar */}
+          <div className="flex gap-2">
+            {onOpenInsights && (
+              <button
+                type="button"
+                onClick={onOpenInsights}
+                className="flex-1 py-2.5 liquid-pill rounded-2xl text-xs font-semibold text-white/60 hover:text-white"
+              >
+                Ticket Log in Insights
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 liquid-pill-active rounded-2xl text-xs font-semibold uppercase tracking-wider"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isBespoke) {
     return (

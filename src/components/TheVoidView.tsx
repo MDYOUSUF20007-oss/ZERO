@@ -62,7 +62,8 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   themeConfig,
   onDeployParachute,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isLiquidGlass;
   const [clockText, setClockText] = useState<string>(() => format12HourClock(new Date()));
   const [batteryPct, setBatteryPct] = useState<number>(() => {
     if (typeof window !== 'undefined' && window.ZeroNative) {
@@ -82,13 +83,16 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const timerGradId = `${gradId}-timer`;
 
   const activeTheme = useMemo(() => {
+    if (isLiquidGlass) {
+      return computeDynamicAccentTokens('#4FACFE');
+    }
     const resolved = resolveActiveAccentTokens(themeConfig ?? DEFAULT_THEME_CONFIG);
     // TheVoidView always sits on pure #000000 black; ensure dark E-Ink accents (e.g. Newsprint) remain crisp.
     if (getRelativeLuminance(resolved.hex) < 0.24) {
       return computeDynamicAccentTokens(mixHexColors(resolved.hex, '#FFFFFF', 0.48));
     }
     return resolved;
-  }, [themeConfig]);
+  }, [isLiquidGlass, themeConfig]);
 
   const workBagActive = isWorkBag(activeBag?.id, activeBag?.name);
   const visibleBagApps = useMemo(
@@ -99,7 +103,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     [activeBag]
   );
 
-  const badgeAccentStyle: React.CSSProperties = isBespoke
+  const badgeAccentStyle: React.CSSProperties = isLiquidGlass
+    ? {
+        backgroundColor: 'rgba(79, 172, 254, 0.14)',
+        color: '#7DD3FC',
+        borderColor: 'rgba(0, 242, 254, 0.34)',
+      }
+    : isBespoke
     ? {
         backgroundColor: 'rgba(59, 130, 246, 0.14)',
         color: '#60A5FA',
@@ -184,7 +194,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   };
 
   const escapeBalance = parachuteMetrics.currentBalance;
-  const phoneBrand = isBespoke
+  const phoneBrand = isLiquidGlass
+    ? {
+        bgColor: 'rgba(255, 255, 255, 0.06)',
+        textColor: '#F4F4F5',
+        borderColor: 'rgba(255, 255, 255, 0.18)',
+        initial: 'P',
+      }
+    : isBespoke
     ? {
         bgColor: 'rgba(59, 130, 246, 0.14)',
         textColor: '#60A5FA',
@@ -197,7 +214,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         borderColor: `rgba(${activeTheme.rgb}, 0.35)`,
         initial: 'P',
       };
-  const smsBrand = isBespoke
+  const smsBrand = isLiquidGlass
+    ? {
+        bgColor: 'rgba(255, 255, 255, 0.06)',
+        textColor: '#F4F4F5',
+        borderColor: 'rgba(255, 255, 255, 0.18)',
+        initial: 'M',
+      }
+    : isBespoke
     ? {
         bgColor: 'rgba(59, 130, 246, 0.14)',
         textColor: '#60A5FA',
@@ -214,12 +238,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const renderBagPanel = (compactBottom: boolean) => (
     <div
       className={
-        isBespoke
+        isLiquidGlass
+          ? `relative w-full rounded-[20px] liquid-card ${compactBottom ? 'p-3.5' : 'p-4'} overflow-hidden`
+          : isBespoke
           ? `relative w-full rounded-md ${compactBottom ? 'p-3.5' : 'p-5'} bg-black border border-neutral-800`
           : `relative w-full rounded-2xl ${compactBottom ? 'p-3' : 'p-4'} overflow-hidden transition-all duration-300`
       }
       style={
-        isBespoke
+        isModernFont
           ? undefined
           : {
               background:
@@ -229,40 +255,50 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             }
       }
     >
+      {isLiquidGlass && <div aria-hidden="true" className="liquid-noise-overlay z-0" />}
       {/* Header Strip */}
-      <div className={`flex items-center justify-between gap-2 px-0.5 ${compactBottom ? 'mb-2.5' : 'mb-3.5'}`}>
+      <div className={`relative z-10 flex items-center justify-between gap-2 px-0.5 ${compactBottom ? 'mb-2.5' : 'mb-3.5'}`}>
         <span
           className={`text-[11px] tracking-widest uppercase text-neutral-300 truncate ${
-            isBespoke ? 'font-sans font-semibold' : 'font-mono font-bold'
+            isModernFont ? 'font-sans font-semibold' : 'font-mono font-bold'
           }`}
         >
           BAG: {activeBag.name.toUpperCase()} (
-          <span className="font-mono tabular-nums">{visibleBagApps.length}</span> APPS)
+          <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+            {visibleBagApps.length}
+          </span>{' '}
+          APPS)
         </span>
         <span
           className={`text-[10px] shrink-0 ${
-            isBespoke ? 'font-sans font-medium' : 'font-mono font-bold'
+            isModernFont ? 'font-sans font-medium' : 'font-mono font-bold'
           }`}
           style={{
-            color: isBespoke ? '#3B82F6' : activeTheme.hex,
+            color: isLiquidGlass ? '#7DD3FC' : isBespoke ? '#3B82F6' : activeTheme.hex,
           }}
         >
           {visibleBagApps.length === 0 ? 'Monk Mode Active' : 'Bag Rules Active'}
         </span>
       </div>
 
-      <div className={compactBottom ? 'max-h-[22vh] sm:max-h-[26vh] overflow-y-auto pr-0.5' : ''}>
+      <div
+        className={`relative z-10 ${
+          compactBottom ? 'max-h-[22vh] sm:max-h-[26vh] overflow-y-auto pr-0.5' : ''
+        }`}
+      >
         {visibleBagApps.length === 0 ? (
           <div className="space-y-2.5">
             {/* Tactical Empty-State Card */}
             <div
               className={
-                isBespoke
+                isLiquidGlass
+                  ? 'px-4 py-3 rounded-xl liquid-row text-xs font-sans text-zinc-300 leading-relaxed'
+                  : isBespoke
                   ? 'px-4 py-3 rounded-md bg-neutral-950 border border-neutral-800 text-xs font-sans text-neutral-300 leading-relaxed'
                   : 'px-3.5 py-2.5 rounded-xl text-xs font-mono text-zinc-300 leading-relaxed'
               }
               style={
-                isBespoke
+                isModernFont
                   ? undefined
                   : {
                       background: 'rgba(9, 9, 12, 0.84)',
@@ -282,12 +318,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <a
                 href="tel:"
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring'
+                    : isBespoke
                     ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
                     : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
                 }
                 style={
-                  isBespoke
+                  isModernFont
                     ? undefined
                     : {
                         background: 'rgba(24, 24, 28, 0.78)',
@@ -297,16 +335,24 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`w-9 h-9 flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
-                    }`}
-                    style={{
-                      backgroundColor: phoneBrand.bgColor,
-                      color: phoneBrand.textColor,
-                      border: `1px solid ${phoneBrand.borderColor}`,
-                    }}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-9 h-9 flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                          }`
+                    }
+                    style={
+                      isLiquidGlass
+                        ? undefined
+                        : {
+                            backgroundColor: phoneBrand.bgColor,
+                            color: phoneBrand.textColor,
+                            border: `1px solid ${phoneBrand.borderColor}`,
+                          }
+                    }
                   >
-                    <Phone size={16} />
+                    <Phone size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-white tracking-wide truncate">
@@ -314,7 +360,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                     </div>
                     <div
                       className={`text-[10px] text-neutral-400 truncate ${
-                        isBespoke ? 'font-sans' : 'font-mono'
+                        isModernFont ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       Compulsory Dialer • Always accessible
@@ -323,8 +369,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 </div>
                 <span
                   style={badgeAccentStyle}
-                  className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 border shrink-0 ${
-                    isBespoke ? 'rounded-sm' : 'rounded font-black'
+                  className={`text-[9px] font-semibold uppercase px-2 py-0.5 border shrink-0 ${
+                    isLiquidGlass
+                      ? 'font-sans rounded-full'
+                      : isBespoke
+                      ? 'font-mono rounded-sm'
+                      : 'font-mono rounded font-black'
                   }`}
                 >
                   ALWAYS ON
@@ -335,12 +385,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 <a
                   href="sms:"
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring'
+                      : isBespoke
                       ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
                       : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
                   }
                   style={
-                    isBespoke
+                    isModernFont
                       ? undefined
                       : {
                           background: 'rgba(24, 24, 28, 0.78)',
@@ -350,16 +402,24 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
-                      }`}
-                      style={{
-                        backgroundColor: smsBrand.bgColor,
-                        color: smsBrand.textColor,
-                        border: `1px solid ${smsBrand.borderColor}`,
-                      }}
+                      className={
+                        isLiquidGlass
+                          ? 'liquid-squircle'
+                          : `w-9 h-9 flex items-center justify-center shrink-0 ${
+                              isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                            }`
+                      }
+                      style={
+                        isLiquidGlass
+                          ? undefined
+                          : {
+                              backgroundColor: smsBrand.bgColor,
+                              color: smsBrand.textColor,
+                              border: `1px solid ${smsBrand.borderColor}`,
+                            }
+                      }
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-semibold text-white tracking-wide truncate">
@@ -367,7 +427,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       </div>
                       <div
                         className={`text-[10px] text-neutral-400 truncate ${
-                          isBespoke ? 'font-sans' : 'font-mono'
+                          isModernFont ? 'font-sans' : 'font-mono'
                         }`}
                       >
                         Normal Texts (SMS)
@@ -376,8 +436,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   </div>
                   <span
                     style={badgeAccentStyle}
-                    className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 border shrink-0 ${
-                      isBespoke ? 'rounded-sm' : 'rounded font-black'
+                    className={`text-[9px] font-semibold uppercase px-2 py-0.5 border shrink-0 ${
+                      isLiquidGlass
+                        ? 'font-sans rounded-full'
+                        : isBespoke
+                        ? 'font-mono rounded-sm'
+                        : 'font-mono rounded font-black'
                     }`}
                   >
                     ALLOWED
@@ -399,18 +463,20 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   : 'ALLOWED';
               const brand = resolveAppBrandVisual(
                 app,
-                isBespoke ? '#3B82F6' : activeTheme.hex
+                isLiquidGlass ? '#4FACFE' : isBespoke ? '#3B82F6' : activeTheme.hex
               );
               return (
                 <div
                   key={app.packageName}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row'
+                      : isBespoke
                       ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800'
                       : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all'
                   }
                   style={
-                    isBespoke
+                    isModernFont
                       ? undefined
                       : {
                           background: 'rgba(24, 24, 28, 0.80)',
@@ -420,15 +486,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 flex items-center justify-center font-bold text-sm shrink-0 ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl font-black shadow-md'
-                      }`}
-                      style={{
-                        backgroundColor: brand.bgColor,
-                        color: brand.textColor,
-                        border: `1px solid ${brand.borderColor}`,
-                        boxShadow: isBespoke ? 'none' : `0 4px 12px -4px ${brand.bgColor}`,
-                      }}
+                      className={
+                        isLiquidGlass
+                          ? 'liquid-squircle font-sans font-bold text-sm text-zinc-100'
+                          : `w-9 h-9 flex items-center justify-center font-bold text-sm shrink-0 ${
+                              isBespoke ? 'rounded-md' : 'rounded-xl font-black shadow-md'
+                            }`
+                      }
+                      style={
+                        isLiquidGlass
+                          ? undefined
+                          : {
+                              backgroundColor: brand.bgColor,
+                              color: brand.textColor,
+                              border: `1px solid ${brand.borderColor}`,
+                              boxShadow: isBespoke ? 'none' : `0 4px 12px -4px ${brand.bgColor}`,
+                            }
+                      }
                     >
                       {brand.initial}
                     </div>
@@ -436,15 +510,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       <div className="text-xs font-semibold text-white tracking-wide truncate">
                         {app.appName}
                       </div>
-                      <div className="text-[10px] font-mono text-neutral-400 truncate">
+                      <div
+                        className={`text-[10px] text-neutral-400 truncate ${
+                          isLiquidGlass ? 'font-sans' : 'font-mono'
+                        }`}
+                      >
                         {app.packageName}
                       </div>
                     </div>
                   </div>
                   <span
                     style={badgeAccentStyle}
-                    className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 border shrink-0 ${
-                      isBespoke ? 'rounded-sm' : 'rounded font-black'
+                    className={`text-[9px] font-semibold uppercase px-2 py-0.5 border shrink-0 ${
+                      isLiquidGlass
+                        ? 'font-sans rounded-full'
+                        : isBespoke
+                        ? 'font-mono rounded-sm'
+                        : 'font-mono rounded font-black'
                     }`}
                   >
                     {statusLabel}
@@ -457,12 +539,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             <a
               href="tel:"
               className={
-                isBespoke
+                isLiquidGlass
+                  ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring'
+                  : isBespoke
                   ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
                   : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
               }
               style={
-                isBespoke
+                isModernFont
                   ? undefined
                   : {
                       background: 'rgba(24, 24, 28, 0.78)',
@@ -472,16 +556,24 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className={`w-9 h-9 flex items-center justify-center shrink-0 ${
-                    isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
-                  }`}
-                  style={{
-                    backgroundColor: phoneBrand.bgColor,
-                    color: phoneBrand.textColor,
-                    border: `1px solid ${phoneBrand.borderColor}`,
-                  }}
+                  className={
+                    isLiquidGlass
+                      ? 'liquid-squircle'
+                      : `w-9 h-9 flex items-center justify-center shrink-0 ${
+                          isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                        }`
+                  }
+                  style={
+                    isLiquidGlass
+                      ? undefined
+                      : {
+                          backgroundColor: phoneBrand.bgColor,
+                          color: phoneBrand.textColor,
+                          border: `1px solid ${phoneBrand.borderColor}`,
+                        }
+                  }
                 >
-                  <Phone size={16} />
+                  <Phone size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-white tracking-wide truncate">
@@ -489,7 +581,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   </div>
                   <div
                     className={`text-[10px] text-neutral-400 truncate ${
-                      isBespoke ? 'font-sans' : 'font-mono'
+                      isModernFont ? 'font-sans' : 'font-mono'
                     }`}
                   >
                     Compulsory Dialer • Always ON
@@ -498,8 +590,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               </div>
               <span
                 style={badgeAccentStyle}
-                className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 border shrink-0 ${
-                  isBespoke ? 'rounded-sm' : 'rounded font-black'
+                className={`text-[9px] font-semibold uppercase px-2 py-0.5 border shrink-0 ${
+                  isLiquidGlass
+                    ? 'font-sans rounded-full'
+                    : isBespoke
+                    ? 'font-mono rounded-sm'
+                    : 'font-mono rounded font-black'
                 }`}
               >
                 ALWAYS ON
@@ -510,12 +606,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <a
                 href="sms:"
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring'
+                    : isBespoke
                     ? 'flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-colors duration-75'
                     : 'flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99]'
                 }
                 style={
-                  isBespoke
+                  isModernFont
                     ? undefined
                     : {
                         background: 'rgba(24, 24, 28, 0.78)',
@@ -525,16 +623,24 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`w-9 h-9 flex items-center justify-center shrink-0 ${
-                      isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
-                    }`}
-                    style={{
-                      backgroundColor: smsBrand.bgColor,
-                      color: smsBrand.textColor,
-                      border: `1px solid ${smsBrand.borderColor}`,
-                    }}
+                    className={
+                      isLiquidGlass
+                        ? 'liquid-squircle'
+                        : `w-9 h-9 flex items-center justify-center shrink-0 ${
+                            isBespoke ? 'rounded-md' : 'rounded-xl shadow-md'
+                          }`
+                    }
+                    style={
+                      isLiquidGlass
+                        ? undefined
+                        : {
+                            backgroundColor: smsBrand.bgColor,
+                            color: smsBrand.textColor,
+                            border: `1px solid ${smsBrand.borderColor}`,
+                          }
+                    }
                   >
-                    <MessageSquare size={16} />
+                    <MessageSquare size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-white tracking-wide truncate">
@@ -542,7 +648,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                     </div>
                     <div
                       className={`text-[10px] text-neutral-400 truncate ${
-                        isBespoke ? 'font-sans' : 'font-mono'
+                        isModernFont ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       Normal Texts (SMS)
@@ -551,8 +657,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 </div>
                 <span
                   style={badgeAccentStyle}
-                  className={`text-[9px] font-mono font-semibold uppercase px-2 py-0.5 border shrink-0 ${
-                    isBespoke ? 'rounded-sm' : 'rounded font-black'
+                  className={`text-[9px] font-semibold uppercase px-2 py-0.5 border shrink-0 ${
+                    isLiquidGlass
+                      ? 'font-sans rounded-full'
+                      : isBespoke
+                      ? 'font-mono rounded-sm'
+                      : 'font-mono rounded font-black'
                   }`}
                 >
                   ALLOWED
@@ -571,12 +681,16 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       <div
         data-void-clock-card="true"
         className={
-          isBespoke
+          isLiquidGlass
+            ? 'relative w-full rounded-[20px] liquid-card py-4 px-5 text-center overflow-hidden'
+            : isBespoke
             ? 'relative w-full rounded-md py-4 px-5 text-center border'
             : 'relative w-full rounded-2xl py-3.5 px-4 text-center overflow-hidden transition-all duration-300'
         }
         style={
-          isBespoke
+          isLiquidGlass
+            ? undefined
+            : isBespoke
             ? {
                 backgroundColor: '#000000',
                 borderColor: '#262626',
@@ -589,7 +703,20 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               }
         }
       >
-        {!isBespoke && (
+        {isLiquidGlass && (
+          <>
+            <div aria-hidden="true" className="liquid-noise-overlay z-0" />
+            <div
+              aria-hidden="true"
+              className="absolute top-0 left-5 right-5 h-px pointer-events-none z-20"
+              style={{
+                background:
+                  'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0.06) 100%)',
+              }}
+            />
+          </>
+        )}
+        {!isModernFont && (
           <>
             {/* Specular Accent Rim */}
             <div
@@ -627,7 +754,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         <div className="relative z-10 flex flex-col items-center">
           <div
             className={`text-[10px] tracking-[0.2em] uppercase mb-2 ${
-              isBespoke ? 'font-sans font-medium' : 'text-[9px] font-mono tracking-[0.24em]'
+              isModernFont ? 'font-sans font-medium' : 'text-[9px] font-mono tracking-[0.24em]'
             }`}
             style={{ color: '#A1A1AA' }}
           >
@@ -654,7 +781,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#FFFFFF" />
                   <stop offset="28%" stopColor="#FFFFFF" />
-                  <stop offset="100%" stopColor={activeTheme.hex} />
+                  <stop offset="100%" stopColor={isLiquidGlass ? '#00F2FE' : activeTheme.hex} />
                 </linearGradient>
               </defs>
             )}
@@ -676,12 +803,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       <div
         data-void-inverted-timer="true"
         className={
-          isBespoke
+          isLiquidGlass
+            ? 'relative w-full rounded-[20px] py-4 px-5 text-center overflow-hidden'
+            : isBespoke
             ? 'relative w-full rounded-md py-4 px-5 text-center border'
             : 'relative w-full rounded-2xl py-4 px-4 text-center overflow-hidden transition-all duration-300'
         }
         style={
-          isBespoke
+          isLiquidGlass
+            ? {
+                background:
+                  'linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(224, 242, 254, 0.93) 100%)',
+                borderTop: '1px solid #FFFFFF',
+                borderLeft: '1px solid rgba(255, 255, 255, 0.85)',
+                borderRight: '1px solid rgba(79, 172, 254, 0.5)',
+                borderBottom: '1px solid rgba(79, 172, 254, 0.3)',
+                boxShadow:
+                  '0 20px 40px -15px rgba(0, 0, 0, 0.85), 0 0 28px -8px rgba(79, 172, 254, 0.4), inset 0 1px 1px #FFFFFF',
+              }
+            : isBespoke
             ? {
                 backgroundColor: '#FAFAFA',
                 borderColor: '#D4D4D8',
@@ -693,7 +833,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               }
         }
       >
-        {!isBespoke && (
+        {!isModernFont && (
           <>
             {/* Inverted Specular Rim */}
             <div
@@ -743,12 +883,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         <div className="relative z-10 flex flex-col items-center">
           <div
             className={
-              isBespoke
+              isModernFont
                 ? 'text-[10px] font-sans font-semibold tracking-[0.2em] uppercase mb-2'
                 : 'text-[9px] font-mono font-bold tracking-[0.22em] uppercase mb-2'
             }
             style={{
-              color: isBespoke ? '#1D4ED8' : darkenRgb(activeTheme.rgb, 0.65),
+              color: isLiquidGlass ? '#0369A1' : isBespoke ? '#1D4ED8' : darkenRgb(activeTheme.rgb, 0.65),
             }}
           >
             {workBagActive ? 'WORK BAG COUNTDOWN' : `LOCKED IN #${activeLock.tag}`}
@@ -791,7 +931,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     <div
       data-void-terminal="true"
       className={`fixed inset-0 z-50 text-white flex flex-col justify-between px-5 select-none overflow-y-auto font-sans ${
-        isBespoke ? 'bg-black' : 'bg-dot-matrix'
+        isModernFont ? 'bg-black' : 'bg-dot-matrix'
       }`}
       style={{
         backgroundColor: '#000000',
@@ -799,8 +939,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
       }}
     >
+      {isLiquidGlass && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 pointer-events-none z-0 opacity-[0.16]"
+          style={{
+            background:
+              'radial-gradient(circle at 22% 16%, #00f2fe 0%, transparent 45%), radial-gradient(circle at 82% 76%, #7f00ff 0%, transparent 48%)',
+          }}
+        />
+      )}
       {/* Top Bar: System Time & Battery */}
-      <div className="w-full max-w-md mx-auto flex items-center justify-between text-xs font-mono tabular-nums text-neutral-400 pt-1 pb-2 shrink-0">
+      <div className="relative z-10 w-full max-w-md mx-auto flex items-center justify-between text-xs font-sans tabular-nums text-neutral-400 pt-1 pb-2 shrink-0">
         <span className="font-semibold text-neutral-300 lowercase">{clockText}</span>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -810,11 +960,13 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   ? 'w-1.5 h-1.5 rounded-none'
                   : 'w-1.5 h-1.5 rounded-full animate-pulse'
               }
-              style={{ backgroundColor: isBespoke ? '#3B82F6' : activeTheme.hex }}
+              style={{
+                backgroundColor: isLiquidGlass ? '#00F2FE' : isBespoke ? '#3B82F6' : activeTheme.hex,
+              }}
             />
             <span
               className={`text-[10px] uppercase tracking-wider text-neutral-400 font-semibold ${
-                isBespoke ? 'font-sans' : ''
+                isModernFont ? 'font-sans' : ''
               }`}
             >
               VOID ACTIVE
@@ -834,7 +986,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       {tamperWarning && (
         <div
           className={`fixed top-14 left-5 right-5 max-w-md mx-auto z-60 bg-red-950/95 border border-red-500 text-red-200 text-xs px-4 py-2.5 flex items-center gap-2 ${
-            isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono animate-bounce'
+            isLiquidGlass
+              ? 'rounded-2xl font-sans backdrop-blur-md'
+              : isBespoke
+              ? 'rounded-md font-sans'
+              : 'rounded-xl font-mono animate-bounce'
           }`}
         >
           <AlertTriangle size={16} className="text-red-400 shrink-0" />
@@ -845,15 +1001,15 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       {workBagActive ? (
         <>
           {/* Work Bag Top Section: Clock + Countdown Timer */}
-          <div className="w-full max-w-md mx-auto pt-1 shrink-0">
+          <div className="relative z-10 w-full max-w-md mx-auto pt-1 shrink-0">
             {dualTimepieceSection}
           </div>
 
           {/* Work Bag Middle Spotlight: Hero #HASHTAG larger than both clock and timer */}
-          <div className="flex-1 min-h-[124px] w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-2 py-3">
+          <div className="relative z-10 flex-1 min-h-[124px] w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-2 py-3">
             <span
               className={`text-[10px] uppercase tracking-[0.26em] text-neutral-400 mb-1.5 ${
-                isBespoke ? 'font-sans font-semibold' : 'font-mono font-bold'
+                isModernFont ? 'font-sans font-semibold' : 'font-mono font-bold'
               }`}
             >
               WORK BAG MISSION
@@ -861,10 +1017,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             <div
               data-void-work-hashtag="true"
               className={`${workTagSizeClass} font-black tracking-tight break-words max-w-full ${
-                isBespoke ? 'font-sans' : 'font-mono'
+                isModernFont ? 'font-sans' : 'font-mono'
               }`}
               style={{
-                color: isBespoke ? '#3B82F6' : activeTheme.hex,
+                color: isLiquidGlass ? '#7DD3FC' : isBespoke ? '#3B82F6' : activeTheme.hex,
                 textShadow: isBespoke
                   ? 'none'
                   : `0 0 32px rgba(${activeTheme.rgb}, 0.36)`,
@@ -874,7 +1030,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </div>
             <p
               className={`mt-2 text-xs italic text-neutral-400 text-center max-w-xs ${
-                isBespoke ? 'font-sans' : 'font-mono'
+                isModernFont ? 'font-sans' : 'font-mono'
               }`}
             >
               &ldquo;{displayPledge}&rdquo;
@@ -883,11 +1039,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </>
       ) : (
         /* Standard Non-Work Bag Layout */
-        <div className="flex flex-col items-center justify-center my-auto w-full max-w-md mx-auto gap-5 py-3">
+        <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-md mx-auto gap-5 py-3">
           {dualTimepieceSection}
           <p
             className={`mt-0.5 text-xs italic text-neutral-400 text-center max-w-xs ${
-              isBespoke ? 'font-sans' : 'font-mono'
+              isModernFont ? 'font-sans' : 'font-mono'
             }`}
           >
             &ldquo;{displayPledge}&rdquo;
@@ -897,22 +1053,25 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       )}
 
       {/* Bottom Action Footer (Work Bag apps placed here when Work Bag active) */}
-      <div className="flex flex-col gap-2.5 w-full max-w-md mx-auto pb-2 shrink-0">
+      <div className="relative z-10 flex flex-col gap-2.5 w-full max-w-md mx-auto pb-2 shrink-0">
         {workBagActive && renderBagPanel(true)}
         <div
           className={`text-center text-xs text-neutral-400 ${
-            isBespoke ? 'font-sans' : 'font-mono'
+            isModernFont ? 'font-sans' : 'font-mono'
           }`}
         >
           {escapeBalance > 0 ? (
             <>
-              <span className="font-mono tabular-nums">{escapeBalance}</span> Escape Ticket(s)
-              Available
+              <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                {escapeBalance}
+              </span>{' '}
+              Escape Ticket(s) Available
             </>
           ) : (
             <>
-              <span className="font-mono tabular-nums">0</span> Escape Tickets Available •{' '}
-              <span className="font-mono tabular-nums">
+              <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>0</span>{' '}
+              Escape Tickets Available •{' '}
+              <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                 {parachuteMetrics.hoursUntilNextParachute}h
               </span>{' '}
               to next
@@ -925,7 +1084,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           disabled={escapeBalance <= 0}
           onClick={() => setShowParachuteConfirm(true)}
           className={
-            isBespoke
+            isLiquidGlass
+              ? `w-full py-3.5 rounded-2xl font-sans font-semibold text-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed ${
+                  escapeBalance > 0 ? 'liquid-pill-active' : 'liquid-pill text-zinc-400'
+                }`
+              : isBespoke
               ? `w-full py-3.5 rounded-md border font-sans font-semibold text-xs uppercase tracking-wider transition-colors duration-75 disabled:opacity-40 disabled:cursor-not-allowed ${
                   escapeBalance > 0
                     ? 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white'
@@ -934,7 +1097,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               : 'w-full py-3.5 rounded-2xl font-mono font-black text-xs uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed'
           }
           style={
-            isBespoke
+            isModernFont
               ? undefined
               : escapeBalance > 0
               ? {
@@ -956,12 +1119,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           type="button"
           onClick={() => setShowEmergencyModal(true)}
           className={
-            isBespoke
+            isLiquidGlass
+              ? 'w-full py-3.5 rounded-2xl liquid-pill font-sans font-semibold text-xs uppercase tracking-wider text-zinc-200 hover:text-white'
+              : isBespoke
               ? 'w-full py-3.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 font-sans font-semibold text-xs uppercase tracking-wider text-neutral-200 hover:text-white transition-colors duration-75'
               : 'w-full py-3.5 rounded-2xl font-mono font-bold text-xs uppercase tracking-wider text-zinc-200 hover:text-white transition-all active:scale-[0.98]'
           }
           style={
-            isBespoke
+            isModernFont
               ? undefined
               : {
                   background: 'rgba(24, 24, 28, 0.92)',
@@ -975,17 +1140,21 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Emergency SOS Modal */}
       {showEmergencyModal && (
-        <div className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4">
+        <div
+          className={`fixed inset-0 z-60 flex items-center justify-center p-4 ${
+            isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/90'
+          }`}
+        >
           <ObsidianCard
             accentOverride={{ hex: '#EF4444', rgb: '239, 68, 68' }}
             ambientGlow
-            className={`w-full max-w-sm text-left ${isBespoke ? 'font-sans' : 'font-mono'}`}
+            className={`w-full max-w-sm text-left ${isModernFont ? 'font-sans' : 'font-mono'}`}
             headerClassName="p-5 space-y-4"
             footerClassName="p-4"
             headerContent={
               <>
                 <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
-                  <Phone size={16} />
+                  <Phone size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                   <span>EMERGENCY CALL ENGINE</span>
                 </div>
                 <p className="text-xs text-neutral-400 leading-relaxed">
@@ -996,7 +1165,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   <a
                     href="tel:911"
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'p-3 liquid-row border-red-500/35 hover:border-red-400/50 rounded-xl flex flex-col items-center justify-center text-red-200 font-sans font-semibold text-sm liquid-spring'
+                        : isBespoke
                         ? 'p-3 bg-neutral-950 hover:border-red-700 border border-neutral-800 rounded-md flex flex-col items-center justify-center text-red-300 font-mono font-semibold text-sm transition-colors duration-75'
                         : 'p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all'
                     }
@@ -1009,7 +1180,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   <a
                     href="tel:112"
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'p-3 liquid-row border-red-500/35 hover:border-red-400/50 rounded-xl flex flex-col items-center justify-center text-red-200 font-sans font-semibold text-sm liquid-spring'
+                        : isBespoke
                         ? 'p-3 bg-neutral-950 hover:border-red-700 border border-neutral-800 rounded-md flex flex-col items-center justify-center text-red-300 font-mono font-semibold text-sm transition-colors duration-75'
                         : 'p-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 rounded-xl flex flex-col items-center justify-center text-red-200 font-bold text-sm active:scale-95 transition-all'
                     }
@@ -1031,14 +1204,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       value={emergencyNumber}
                       onChange={(e) => setEmergencyNumber(e.target.value)}
                       placeholder="e.g. +1 555-0199"
-                      className={`flex-1 obsidian-input px-3 py-2 text-xs font-mono text-white outline-none ${
-                        isBespoke ? 'rounded-md' : 'rounded-xl'
+                      className={`flex-1 obsidian-input px-3 py-2 text-xs text-white outline-none ${
+                        isLiquidGlass ? 'font-sans rounded-xl' : isBespoke ? 'font-mono rounded-md' : 'font-mono rounded-xl'
                       }`}
                     />
                     <a
                       href={`tel:${emergencyNumber}`}
                       className={`px-4 py-2 text-xs font-semibold flex items-center justify-center transition-colors duration-75 ${
-                        isBespoke ? 'rounded-md font-sans' : 'rounded-xl font-mono font-bold'
+                        isModernFont ? 'rounded-xl font-sans' : 'rounded-xl font-mono font-bold'
                       } ${
                         emergencyNumber
                           ? 'bg-red-600 text-white'
@@ -1055,7 +1228,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <button
                 onClick={() => setShowEmergencyModal(false)}
                 className={
-                  isBespoke
+                  isLiquidGlass
+                    ? 'w-full py-2.5 liquid-pill text-zinc-200 text-xs rounded-xl font-semibold'
+                    : isBespoke
                     ? 'w-full py-2.5 bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-200 text-xs rounded-md font-semibold transition-colors duration-75'
                     : 'w-full py-2.5 obsidian-inset-neutral hover:border-white/25 text-zinc-200 text-xs rounded-xl font-bold transition-colors'
                 }
@@ -1069,40 +1244,48 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Escape Ticket Confirm Modal */}
       {showParachuteConfirm && (
-        <div className="fixed inset-0 z-60 bg-black/95 flex items-center justify-center p-4">
+        <div
+          className={`fixed inset-0 z-60 flex items-center justify-center p-4 ${
+            isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+          }`}
+        >
           <ObsidianCard
             accentOverride={
-              isBespoke
+              isLiquidGlass
+                ? { hex: '#4FACFE', rgb: '79, 172, 254' }
+                : isBespoke
                 ? { hex: '#3B82F6', rgb: '59, 130, 246' }
                 : { hex: activeTheme.hex, rgb: activeTheme.rgb }
             }
             ambientGlow
-            className={`w-full max-w-sm text-left ${isBespoke ? 'font-sans' : 'font-mono'}`}
+            className={`w-full max-w-sm text-left ${isModernFont ? 'font-sans' : 'font-mono'}`}
             headerClassName="p-5 space-y-3"
             footerClassName="p-4 flex flex-col gap-2"
             headerContent={
               <>
                 <div
                   className={`flex items-center gap-2 font-semibold text-sm ${
-                    isBespoke ? 'text-blue-500' : 'font-bold'
+                    isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : 'font-bold'
                   }`}
-                  style={isBespoke ? undefined : { color: activeTheme.hex }}
+                  style={isModernFont ? undefined : { color: activeTheme.hex }}
                 >
-                  <AlertTriangle size={18} />
+                  <AlertTriangle size={18} strokeWidth={isLiquidGlass ? 1.75 : 2} />
                   <span>USE EMERGENCY ESCAPE TICKET?</span>
                 </div>
 
                 <div className="space-y-3 text-xs text-neutral-300 leading-relaxed">
                   <p>
                     You are about to use 1 of your{' '}
-                    <strong className="text-white font-mono tabular-nums">
+                    <strong
+                      className={`text-white tabular-nums ${isLiquidGlass ? 'font-sans' : 'font-mono'}`}
+                    >
                       {parachuteMetrics.currentBalance}
                     </strong>{' '}
                     Emergency Escape Tickets.
                   </p>
                   <div
                     style={
-                      isBespoke
+                      isModernFont
                         ? undefined
                         : {
                             backgroundColor: `rgba(${activeTheme.rgb}, 0.1)`,
@@ -1111,16 +1294,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                           }
                     }
                     className={
-                      isBespoke
+                      isLiquidGlass
+                        ? 'p-3.5 liquid-inset rounded-xl text-zinc-200 text-xs'
+                        : isBespoke
                         ? 'p-3.5 bg-neutral-950 border border-neutral-800 rounded-md text-neutral-300 text-xs'
                         : 'p-3 rounded-xl text-[11px]'
                     }
                   >
-                    <strong className={isBespoke ? 'text-neutral-100' : undefined}>
+                    <strong className={isModernFont ? 'text-white' : undefined}>
                       Strict Anti-Exploit Rule:
                     </strong>{' '}
                     All elapsed time in this session (
-                    <span className="font-mono tabular-nums">
+                    <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                       {Math.floor(activeLock.elapsedSeconds / 60)}m
                     </span>
                     ) will be <strong>permanently voided</strong> and will NOT count toward your next
@@ -1137,12 +1322,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 <button
                   onClick={handleConfirmDeploy}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'w-full py-3 liquid-pill-active font-sans font-semibold text-xs uppercase tracking-wider rounded-xl'
+                      : isBespoke
                       ? 'w-full py-3 bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wider rounded-md transition-colors duration-75'
                       : 'w-full py-3 font-black text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95'
                   }
                   style={
-                    isBespoke
+                    isModernFont
                       ? undefined
                       : {
                           background: activeTheme.badgeGradient,
@@ -1155,7 +1342,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 <button
                   onClick={() => setShowParachuteConfirm(false)}
                   className={
-                    isBespoke
+                    isLiquidGlass
+                      ? 'w-full py-2.5 liquid-pill text-zinc-300 font-medium text-xs rounded-xl'
+                      : isBespoke
                       ? 'w-full py-2.5 bg-neutral-950 hover:border-neutral-700 text-neutral-300 font-medium text-xs rounded-md border border-neutral-800 transition-colors duration-75'
                       : 'w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-xs rounded-xl border border-white/15'
                   }

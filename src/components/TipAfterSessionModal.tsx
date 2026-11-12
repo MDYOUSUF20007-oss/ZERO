@@ -55,7 +55,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
   onDismiss,
   onBlockFiveSessions,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const [showQr, setShowQr] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -91,6 +91,310 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
   };
+
+  if (isLiquidGlass) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"
+        style={{
+          paddingTop: 'calc(1rem + var(--zero-safe-top))',
+          paddingBottom: 'calc(1rem + var(--zero-safe-bottom))',
+        }}
+      >
+        <div className="liquid-card w-full max-w-md max-h-full flex flex-col rounded-3xl overflow-hidden">
+          {/* Header */}
+          <div className="p-5 flex items-start justify-between gap-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div className="liquid-squircle w-10 h-10 flex items-center justify-center text-[#7DD3FC]">
+                <CheckCircle2 size={20} strokeWidth={1.75} />
+              </div>
+              <div>
+                <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[#7DD3FC]">
+                  Session Complete • Focus Reclaimed
+                </div>
+                <h2 className="liquid-metric text-sm mt-0.5">
+                  <span className="tabular-nums">+{durationText}</span> Phone-Free{' '}
+                  <span className="text-white/50 font-mono">#{completedSession.tag}</span>
+                </h2>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="liquid-pill p-2 text-white/40 hover:text-white transition-colors shrink-0"
+              aria-label="Close Tip Popup"
+            >
+              <X size={16} strokeWidth={1.75} />
+            </button>
+          </div>
+
+          {/* Scrollable body */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+            {onShareResults && (
+              <button
+                type="button"
+                onClick={onShareResults}
+                className="liquid-row w-full p-3.5 rounded-2xl flex items-center justify-between gap-2.5 text-left"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <Share2 size={14} strokeWidth={1.75} className="text-[#7DD3FC] shrink-0" />
+                    <span>Flex Session Results &amp; Badges</span>
+                  </div>
+                  <div className="text-[11px] text-white/40 mt-0.5">
+                    {completedSession.durationSeconds >= 3600
+                      ? '1h+ lock completed — GETTING STARTED badge active!'
+                      : 'Generate a shareable PNG Focus Receipt with your badges'}
+                  </div>
+                </div>
+                <span className="liquid-pill-active px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase shrink-0">
+                  Flex
+                </span>
+              </button>
+            )}
+
+            <p className="text-xs text-white/60 leading-relaxed">
+              Zero is 100% free &amp; open-source with zero ads or paywalls. If staying
+              distraction-free helped you today, you can leave a small optional tip to support
+              development.
+            </p>
+
+            {/* UPI Card */}
+            <div className="liquid-inset rounded-2xl p-4 space-y-3.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="liquid-pill-active inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider">
+                  <Sparkles size={11} strokeWidth={1.75} />
+                  <span>Best Offer • Best Option</span>
+                </span>
+                <span className="text-[10px] font-semibold text-[#7DD3FC] border border-[#7DD3FC]/30 px-2 py-0.5 rounded-lg bg-[#7DD3FC]/[0.08]">
+                  NO MINIMUM LIMIT (GENERAL UPI)
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-sm text-white">UPI / Instant Pay</div>
+                  <div className="font-mono text-xs font-semibold text-[#7DD3FC]">{UPI_ID}</div>
+                </div>
+                <p className="text-xs text-white/60 leading-relaxed">
+                  Regular UPI tips have <strong className="text-white">no minimum limit</strong> — tip
+                  even ₹1 with zero platform fees.
+                </p>
+              </div>
+
+              {!hasClaimedFirstDonationParachute ? (
+                <div className="liquid-row p-3.5 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-[#7DD3FC] text-xs font-semibold uppercase tracking-wide">
+                      <Gift size={14} strokeWidth={1.75} className="shrink-0" />
+                      <span>1st Tip ₹{FIRST_DONATION_BONUS_INR}+ = +1 Ticket &amp; Gold</span>
+                    </div>
+                    <span className="liquid-pill-active text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-lg shrink-0">
+                      Min ₹{FIRST_DONATION_BONUS_INR} (1st Tip Only)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/60 leading-relaxed">
+                    <strong className="text-white">Strict Requirement:</strong> The{' '}
+                    <strong className="font-mono text-[#7DD3FC]">ZERO-SUPPORTER</strong> Badge &amp;{' '}
+                    <strong className="text-white">+1 Free Emergency Escape Ticket</strong>{' '}
+                    <strong className="text-white">
+                      ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}
+                    </strong>{' '}
+                    (tips under ₹{FIRST_DONATION_BONUS_INR} do not unlock this badge).
+                  </p>
+                  {!confirmingDonationClaim ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <a
+                        href={UPI_FIFTY_RS_PAY_URL}
+                        onClick={(e) => {
+                          handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL);
+                          setConfirmingDonationClaim(true);
+                        }}
+                        className="flex-1 py-2.5 px-3 liquid-pill-active rounded-xl font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        <span>Tip ₹{FIRST_DONATION_BONUS_INR}+ (+1 Ticket &amp; Gold)</span>
+                        <ExternalLink size={12} strokeWidth={1.75} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingDonationClaim(true)}
+                        className="liquid-pill px-3 py-2.5 rounded-xl text-white/70 hover:text-white text-xs font-medium"
+                      >
+                        Sent Min ₹{FIRST_DONATION_BONUS_INR}?
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="liquid-inset p-3 rounded-xl space-y-2.5">
+                      <div className="text-xs text-white/70 leading-relaxed">
+                        Confirm you completed your{' '}
+                        <strong className="text-white">
+                          1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}
+                        </strong>{' '}
+                        to unlock the{' '}
+                        <strong className="font-mono text-[#7DD3FC]">ZERO-SUPPORTER</strong>{' '}
+                        Badge &amp;{' '}
+                        <strong className="text-white">+1 Free Emergency Escape Ticket</strong>:
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClaimFirstDonationBonus();
+                            setConfirmingDonationClaim(false);
+                          }}
+                          className="flex-1 py-2 px-3 liquid-pill-active rounded-xl font-semibold text-xs uppercase tracking-wider"
+                        >
+                          Confirm ₹{FIRST_DONATION_BONUS_INR}+ &amp; Unlock
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDonationClaim(false)}
+                          className="liquid-pill px-3 py-2 rounded-xl text-white/60 hover:text-white text-xs font-medium"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="liquid-row px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2 flex-wrap text-xs text-[#7DD3FC]">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <CheckCircle2 size={13} strokeWidth={1.75} />
+                    <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
+                  </span>
+                  <ZeroSupporterGoldenBadge compact />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={UPI_PAY_URL}
+                  onClick={(e) => handleOpenExternalUrl(e, UPI_PAY_URL)}
+                  className="flex-1 py-2.5 px-3 liquid-pill-active rounded-xl font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                >
+                  <span>Any Amount via UPI</span>
+                  <ExternalLink size={13} strokeWidth={1.75} />
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopyUpi}
+                  className="liquid-pill px-3 py-2.5 rounded-xl text-white/60 hover:text-white text-xs font-medium flex items-center gap-1"
+                  title="Copy UPI ID"
+                  aria-label="Copy UPI ID"
+                >
+                  {copiedUpi ? (
+                    <>
+                      <Check size={14} strokeWidth={1.75} className="text-[#7DD3FC]" />
+                      <span className="text-[#7DD3FC]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} strokeWidth={1.75} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQr((prev) => !prev)}
+                  className={`p-2.5 rounded-xl transition-colors ${
+                    showQr ? 'liquid-pill-active' : 'liquid-pill text-white/50 hover:text-white'
+                  }`}
+                  title="Toggle UPI QR Code"
+                  aria-label="Toggle UPI QR Code"
+                >
+                  <QrCode size={16} strokeWidth={1.75} />
+                </button>
+              </div>
+
+              {showQr && (
+                <div className="liquid-inset p-4 rounded-xl flex flex-col items-center justify-center text-center space-y-2.5">
+                  {upiQrUrl ? (
+                    <div data-qr-surface="true" className="bg-white p-2 rounded-xl">
+                      <img
+                        src={upiQrUrl}
+                        alt={`UPI QR code for ${UPI_ID}`}
+                        className="w-36 h-36 block"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-36 h-36 bg-black/40 rounded-xl flex items-center justify-center font-mono text-[10px] text-white/40">
+                      Generating QR...
+                    </div>
+                  )}
+                  <div className="font-mono text-[10px] text-white/40">
+                    Scan via Google Pay, PhonePe, Paytm, or BHIM • {UPI_ID}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-[10px] text-white/40 pt-1 border-t border-white/[0.05]">
+                <span>Zero fees • 100% reaches the developer</span>
+                <span className="text-[#7DD3FC] font-semibold uppercase">Instant</span>
+              </div>
+            </div>
+
+            {/* Ko-fi row */}
+            <div className="liquid-row rounded-2xl p-0 overflow-hidden">
+              <a
+                href={KOFI_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
+                className="w-full p-4 flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="liquid-squircle w-8 h-8 flex items-center justify-center text-[#7DD3FC] shrink-0">
+                    <Coffee size={16} strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
+                    <div className="font-mono text-[10px] text-white/40 truncate mt-0.5">
+                      Card / International • ko-fi.com/mdyousuf2620
+                    </div>
+                  </div>
+                </div>
+                <ExternalLink size={14} strokeWidth={1.75} className="text-white/30 group-hover:text-white shrink-0 ml-2 transition-colors" />
+              </a>
+            </div>
+
+            <div className="liquid-row p-3.5 rounded-2xl text-xs text-white/50 leading-relaxed">
+              Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet? Send a
+              screenshot of your receipt and your account email to{' '}
+              <a
+                href={SUPPORT_MAILTO_URL}
+                onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
+                className="font-mono font-semibold text-[#7DD3FC] underline decoration-[#7DD3FC]/40"
+              >
+                {SUPPORT_EMAIL}
+              </a>{' '}
+              for manual activation.
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 flex gap-2.5 border-t border-white/[0.06]">
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="flex-1 py-2.5 px-3 liquid-pill rounded-2xl text-white/60 hover:text-white text-xs font-medium transition-colors"
+            >
+              Maybe Later
+            </button>
+            <button
+              type="button"
+              onClick={onBlockFiveSessions}
+              className="flex-1 py-2.5 px-3 liquid-pill rounded-2xl text-white/60 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <EyeOff size={13} strokeWidth={1.75} />
+              <span>Block for {TIP_SNOOZE_SESSIONS} Sessions</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isBespoke) {
     return (

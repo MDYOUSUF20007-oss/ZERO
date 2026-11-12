@@ -31,7 +31,7 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   rankTitle = 'INITIATE',
   isZeroSupporter = false,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const formattedHandle = handle.trim()
     ? handle.trim().startsWith('@')
       ? handle.trim()
@@ -40,6 +40,56 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   const formattedMission = mission.trim().startsWith('#')
     ? mission.trim()
     : `#${mission.trim() || 'Deep Work'}`;
+
+  if (isLiquidGlass) {
+    return (
+      <ObsidianCard
+        ambientGlow
+        className="my-3 font-sans"
+        headerClassName="p-5"
+        footerClassName="px-5 py-3"
+        headerContent={
+          <div className="flex items-center justify-between gap-3.5">
+            <div className="flex-shrink-0 w-14 h-14 rounded-2xl liquid-inset flex items-center justify-center">
+              <ZeroEmblemIcon emblem={emblem} color="#F4F4F5" size={26} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center flex-wrap gap-1.5">
+                <span className="font-sans text-white font-semibold text-base tracking-wide uppercase truncate">
+                  {callsign.trim() || 'ANONYMOUS'}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full liquid-pill-active font-sans text-[10px] font-semibold uppercase tracking-wide">
+                  {rankTitle}
+                </span>
+                {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+              </div>
+
+              <p className="mt-1 text-xs font-sans text-zinc-400 truncate">
+                <span>{formattedHandle}</span>
+                <span className="mx-1.5 text-zinc-600">•</span>
+                <span className="text-cyan-300 font-medium">{formattedMission}</span>
+              </p>
+            </div>
+
+            <div className="flex-shrink-0 px-3 py-2 rounded-xl liquid-inset text-center">
+              <div className="text-sm font-bold font-sans tabular-nums text-cyan-200 leading-none">
+                {dailyGoalHours}h/day
+              </div>
+              <div className="mt-1 text-[9px] font-sans tracking-widest uppercase text-zinc-400">
+                TARGET
+              </div>
+            </div>
+          </div>
+        }
+        footerContent={
+          <p className="text-xs font-sans italic text-zinc-300 leading-relaxed break-words">
+            &ldquo;{pledge.trim() || 'Put your phone facedown. Reclaim your hours.'}&rdquo;
+          </p>
+        }
+      />
+    );
+  }
 
   if (isBespoke) {
     return (

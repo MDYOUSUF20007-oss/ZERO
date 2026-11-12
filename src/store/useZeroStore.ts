@@ -46,6 +46,7 @@ import {
   computeThemeRuntime,
   getRelativeLuminance,
   mixHexColors,
+  normalizeInterfaceStyle,
   resolveActiveAccentTokens,
   sanitizeThemeConfig,
 } from '../utils/themes';
@@ -325,9 +326,7 @@ export function useZeroStore() {
         localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'classic');
         return 'classic';
       }
-      return localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE) === 'bespoke'
-        ? 'bespoke'
-        : 'classic';
+      return normalizeInterfaceStyle(localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE));
     } catch {
       return 'classic';
     }
@@ -338,7 +337,7 @@ export function useZeroStore() {
   }, [interfaceStyle]);
 
   const setInterfaceStyle = useCallback((nextStyle: InterfaceStyle) => {
-    setInterfaceStyleState(nextStyle === 'bespoke' ? 'bespoke' : 'classic');
+    setInterfaceStyleState(normalizeInterfaceStyle(nextStyle));
   }, []);
 
   const [themeConfig, setThemeConfigState] = useState<ThemeConfig>(() => {
@@ -1102,6 +1101,69 @@ export function useZeroStore() {
       return;
     }
 
+    if (interfaceStyle === 'liquid_glass') {
+      // Microsoft Liquid Glass over true #000000 AMOLED canvas with sub-surface Fluent lighting
+      rootEl.className = 'dark';
+      rootEl.setAttribute('data-zero-theme', 'amoled');
+      rootEl.setAttribute('data-zero-has-gradient', 'false');
+
+      rootEl.style.setProperty('--zero-bg-primary', '#000000');
+      rootEl.style.setProperty('--zero-bg-image', 'none');
+      rootEl.style.setProperty('--zero-bg-size', '100% 100%');
+      rootEl.style.setProperty('--zero-surface-1', 'rgba(14, 14, 20, 0.72)');
+      rootEl.style.setProperty('--zero-surface-2', 'rgba(20, 20, 28, 0.78)');
+      rootEl.style.setProperty('--zero-surface-3', 'rgba(30, 30, 42, 0.85)');
+      rootEl.style.setProperty('--zero-border', 'rgba(255, 255, 255, 0.14)');
+      rootEl.style.setProperty('--zero-border-subtle', 'rgba(255, 255, 255, 0.06)');
+      rootEl.style.setProperty('--zero-ink-primary', '#FFFFFF');
+      rootEl.style.setProperty('--zero-ink-secondary', '#E4E4E7');
+      rootEl.style.setProperty('--zero-ink-muted', '#A1A1AA');
+      rootEl.style.setProperty('--zero-inverted-bg', '#FFFFFF');
+      rootEl.style.setProperty('--zero-inverted-text', '#09090B');
+      rootEl.style.setProperty('--zero-nav-bg', 'rgba(10, 10, 16, 0.72)');
+      rootEl.style.setProperty('--zero-backdrop', 'rgba(0, 0, 0, 0.75)');
+      rootEl.style.setProperty('--zero-accent', '#4FACFE');
+      rootEl.style.setProperty('--zero-dial-stroke', '#00F2FE');
+      rootEl.style.setProperty('--accent-rgb', '79, 172, 254');
+      rootEl.style.setProperty('--accent-hex', '#4FACFE');
+      rootEl.style.setProperty(
+        '--accent-badge-gradient',
+        'linear-gradient(135deg, #FFFFFF 0%, #93C5FD 50%, #4FACFE 100%)'
+      );
+      rootEl.style.setProperty('--accent-badge-text', '#09090B');
+      rootEl.style.setProperty('--accent-surface-rgb', '79, 172, 254');
+      rootEl.style.setProperty('--accent-surface-hex', '#4FACFE');
+      rootEl.style.setProperty(
+        '--accent-surface-badge-gradient',
+        'linear-gradient(135deg, #FFFFFF 0%, #93C5FD 50%, #4FACFE 100%)'
+      );
+      rootEl.style.setProperty('--accent-surface-badge-text', '#09090B');
+
+      const nativeTokens = {
+        hex: '#4FACFE',
+        rgb: '79, 172, 254',
+        badgeText: '#09090B',
+      };
+      activeAccentTokensRef.current = nativeTokens;
+
+      try {
+        window.ZeroNative?.setInterfaceStyle?.('liquid_glass');
+        window.ZeroNative?.setActiveThemeAccent?.(
+          nativeTokens.hex,
+          nativeTokens.rgb,
+          nativeTokens.badgeText
+        );
+      } catch {
+        // Ignore on web preview
+      }
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', '#000000');
+      }
+      return;
+    }
+
     rootEl.className = runtime.mode === 'light' ? 'light' : 'dark';
     rootEl.setAttribute('data-zero-theme', runtime.family);
     rootEl.setAttribute(
@@ -1379,6 +1441,8 @@ export function useZeroStore() {
         window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
         if (interfaceStyleRef.current === 'bespoke') {
           window.ZeroNative.setActiveThemeAccent?.('#3B82F6', '59, 130, 246', '#FFFFFF');
+        } else if (interfaceStyleRef.current === 'liquid_glass') {
+          window.ZeroNative.setActiveThemeAccent?.('#4FACFE', '79, 172, 254', '#09090B');
         } else {
           window.ZeroNative.setActiveThemeAccent?.(
             activeTokensNow.hex,

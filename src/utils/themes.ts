@@ -1,11 +1,18 @@
 import type {
   AmoledGradientId,
+  InterfaceStyle,
   KindlePaperPresetId,
   MatteStudioPresetId,
   ThemeConfig,
   ThemeFamily,
   ThemeStyle,
 } from '../types';
+
+export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
+  if (value === 'bespoke') return 'bespoke';
+  if (value === 'liquid_glass') return 'liquid_glass';
+  return 'classic';
+}
 
 export interface AmoledGradientPreset {
   id: AmoledGradientId;

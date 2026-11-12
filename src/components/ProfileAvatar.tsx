@@ -276,7 +276,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   glowHighlighted = false,
   onPulse,
 }) => {
-  const { isBespoke } = useInterfaceStyle();
+  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
   const [pulsing, setPulsing] = useState(false);
   const emblem = AVATAR_ID_TO_EMBLEM[avatarId] || 'Monk';
 
@@ -293,32 +293,44 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     : 'w-11 h-11 rounded-2xl';
   const iconPx = size === 'lg' ? 28 : size === 'sm' ? 20 : 24;
 
-  const boxGlowStyle: React.CSSProperties =
-    glowHighlighted || pulsing
-      ? {
-          background:
-            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.24), rgba(10, 10, 12, 0.96))',
-          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.72)',
-          boxShadow: pulsing
-            ? '0 0 24px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.2)'
-            : '0 0 14px -1px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.18)',
-        }
-      : {
-          background:
-            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.14), rgba(10, 10, 12, 0.94))',
-          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
-          boxShadow:
-            '0 0 10px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.2), inset 0 0 6px rgba(var(--accent-rgb, 255, 255, 255), 0.08)',
-        };
-
   const handleClick = (e: React.MouseEvent) => {
     if (!interactive) return;
     e.stopPropagation();
     haptics.tick(960);
     setPulsing(true);
-    setTimeout(() => setPulsing(false), isBespoke ? 180 : 550);
+    setTimeout(() => setPulsing(false), isBespoke || isLiquidGlass ? 180 : 550);
     onPulse?.();
   };
+
+  if (isLiquidGlass) {
+    const highlighted = glowHighlighted || pulsing;
+    const glassClass = highlighted ? 'liquid-inset' : 'liquid-squircle';
+    const glassColor = highlighted ? '#7DD3FC' : '#F4F4F5';
+    const scaleCls = pulsing ? 'scale-105' : '';
+
+    if (interactive) {
+      return (
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label="Interactive profile emblem"
+          style={{ width: undefined, height: undefined }}
+          className={`${boxSize} ${glassClass} liquid-spring ${scaleCls} flex items-center justify-center shrink-0`}
+        >
+          <ZeroEmblemIcon emblem={emblem} color={glassColor} size={iconPx} />
+        </button>
+      );
+    }
+
+    return (
+      <div
+        style={{ width: undefined, height: undefined }}
+        className={`${boxSize} ${glassClass} ${scaleCls} flex items-center justify-center shrink-0`}
+      >
+        <ZeroEmblemIcon emblem={emblem} color={glassColor} size={iconPx} />
+      </div>
+    );
+  }
 
   if (isBespoke) {
     const bespokeBorderClass = pulsing
@@ -349,6 +361,24 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
       </div>
     );
   }
+
+  const boxGlowStyle: React.CSSProperties =
+    glowHighlighted || pulsing
+      ? {
+          background:
+            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.24), rgba(10, 10, 12, 0.96))',
+          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.72)',
+          boxShadow: pulsing
+            ? '0 0 24px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.2)'
+            : '0 0 14px -1px rgba(var(--accent-rgb, 255, 255, 255), 0.42), inset 0 0 8px rgba(var(--accent-rgb, 255, 255, 255), 0.18)',
+        }
+      : {
+          background:
+            'radial-gradient(circle at 50% 35%, rgba(var(--accent-rgb, 255, 255, 255), 0.14), rgba(10, 10, 12, 0.94))',
+          borderColor: 'rgba(var(--accent-rgb, 255, 255, 255), 0.45)',
+          boxShadow:
+            '0 0 10px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.2), inset 0 0 6px rgba(var(--accent-rgb, 255, 255, 255), 0.08)',
+        };
 
   if (interactive) {
     return (

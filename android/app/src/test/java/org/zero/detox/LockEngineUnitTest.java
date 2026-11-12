@@ -735,6 +735,17 @@ public class LockEngineUnitTest {
         VoidThemeStore.saveInterfaceStyle(fakeContext, "unexpected-value");
         assertEquals("classic", VoidThemeStore.loadInterfaceStyle(fakeContext));
 
+        // Liquid Glass 3rd preset normalisation
+        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("liquid_glass"));
+        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("LIQUID_GLASS"));
+        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("  liquid_glass  "));
+        VoidThemeStore.saveInterfaceStyle(fakeContext, "liquid_glass");
+        assertEquals("liquid_glass", VoidThemeStore.loadInterfaceStyle(fakeContext));
+        assertTrue(VoidThemeStore.isLiquidGlassStyle(fakeContext));
+        assertFalse(VoidThemeStore.isBespokeStyle(fakeContext));
+        // Reset to classic for subsequent tests
+        VoidThemeStore.saveInterfaceStyle(fakeContext, "classic");
+
         int liftedInk = VoidThemeStore.ensureReadableOnBlack(0xFF1F2937);
         assertTrue(
             "Dark Kindle ink should lift luminance for legibility on pure black Void screen",

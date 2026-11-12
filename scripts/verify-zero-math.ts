@@ -34,6 +34,7 @@ import {
   resolveActiveAccentTokens,
   getRelativeLuminance,
   sanitizeThemeConfig,
+  normalizeInterfaceStyle,
 } from '../src/utils/themes.ts';
 import {
   PIXEL_GLYPHS_5X7,
@@ -510,6 +511,12 @@ failIf(
   sanitizeThemeConfig({ family: 'kindle', kindlePreset: 'custom', kindlePaperColor: '#abc' }).kindlePaperColor === '#AABBCC',
   '3-digit custom hex should normalize cleanly to 6-digit uppercase'
 );
+// normalizeInterfaceStyle round-trip tests (Liquid Glass 3rd preset)
+failIf(normalizeInterfaceStyle('liquid_glass') === 'liquid_glass', "normalizeInterfaceStyle('liquid_glass') must return 'liquid_glass'");
+failIf(normalizeInterfaceStyle('bespoke') === 'bespoke', "normalizeInterfaceStyle('bespoke') must return 'bespoke'");
+failIf(normalizeInterfaceStyle('classic') === 'classic', "normalizeInterfaceStyle('classic') must return 'classic'");
+failIf(normalizeInterfaceStyle(null) === 'classic', "normalizeInterfaceStyle(null) must fall back to 'classic'");
+failIf(normalizeInterfaceStyle('unknown_value') === 'classic', "normalizeInterfaceStyle with unknown value must fall back to 'classic'");
 console.log('PASS: Theme Studio (AMOLED Gradients, Paper Kindle + Custom, Matte + Custom) Verified');
 
 console.log('\n=== TEST 12: Signed .zbak Cloud Archive, Anti-Cheat HMAC & Weekly Reminder Policy ===');
