@@ -1,4 +1,4 @@
-﻿package org.zero.detox;
+package org.zero.detox;
 
 import static org.junit.Assert.*;
 
