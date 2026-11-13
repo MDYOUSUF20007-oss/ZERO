@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Verification test suite for Zero Core Logic:
  * 1. 20-Hour Parachute Progression Math (72,000s milestone rollover)
  * 2. Anti-Sleep-Farming Rule (0.25x Parachute credit vs 0.0x daytime only)
@@ -512,7 +512,7 @@ failIf(
   '3-digit custom hex should normalize cleanly to 6-digit uppercase'
 );
 // normalizeInterfaceStyle round-trip tests (Liquid Glass 3rd preset)
-failIf(normalizeInterfaceStyle('liquid_glass') === 'liquid_glass', "normalizeInterfaceStyle('liquid_glass') must return 'liquid_glass'");
+failIf(normalizeInterfaceStyle('fluent_glass') === 'fluent_glass', "normalizeInterfaceStyle('fluent_glass') must return 'fluent_glass'");
 failIf(normalizeInterfaceStyle('bespoke') === 'bespoke', "normalizeInterfaceStyle('bespoke') must return 'bespoke'");
 failIf(normalizeInterfaceStyle('classic') === 'classic', "normalizeInterfaceStyle('classic') must return 'classic'");
 failIf(normalizeInterfaceStyle(null) === 'classic', "normalizeInterfaceStyle(null) must fall back to 'classic'");

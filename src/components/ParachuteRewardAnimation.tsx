@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import type { ParachuteRewardEvent } from '../types';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ObsidianCard } from './ObsidianCard';
@@ -17,7 +17,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
   reward,
   onDismiss,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const [tappedPulse, setTappedPulse] = useState(false);
 
   if (!reward) return null;
@@ -36,7 +36,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
         particleCount: 70,
         spread: 65,
         origin: { y: 0.55 },
-        colors: isLiquidGlass
+        colors: isFluentGlass
           ? ['#FFFFFF', '#00F2FE', '#4FACFE']
           : isBespoke
           ? ['#FFFFFF', '#2563EB', '#3B82F6']
@@ -65,7 +65,7 @@ export const ParachuteRewardAnimation: React.FC<ParachuteRewardAnimationProps> =
     />
   );
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <div
         className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"

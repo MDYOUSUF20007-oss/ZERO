@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import type { NativeEnvironmentSecurity } from '../types';
 import {
   FIRST_DONATION_BONUS_INR,
@@ -48,8 +48,8 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   onImportData,
   onRestoreSuccess,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const [tokenInput, setTokenInput] = useState('');
   const [tokenNotice, setTokenNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const [confirmingManualTip, setConfirmingManualTip] = useState(false);
@@ -137,7 +137,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'liquid-squircle text-cyan-200'
                     : `obsidian-icon-box flex items-center justify-center shrink-0 ${
                         isBespoke ? 'w-8 h-8 rounded-md text-blue-500' : 'w-7 h-7 rounded-xl'
@@ -147,7 +147,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 <Award
                   size={15}
                   strokeWidth={1.75}
-                  className={isLiquidGlass ? 'text-cyan-200' : isBespoke ? 'text-blue-500' : ''}
+                  className={isFluentGlass ? 'text-cyan-200' : isBespoke ? 'text-blue-500' : ''}
                   style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 />
               </div>
@@ -158,7 +158,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             ) : (
               <span
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'text-[10px] font-medium uppercase px-2.5 py-0.5 rounded-full liquid-pill text-zinc-300'
                     : isBespoke
                     ? 'text-[10px] font-mono uppercase px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300'
@@ -173,7 +173,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           {/* Donor Status Summary */}
           <div
             className={
-              isLiquidGlass
+              isFluentGlass
                 ? 'p-3.5 rounded-2xl liquid-row space-y-2 text-xs'
                 : isBespoke
                 ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 space-y-2 text-xs'
@@ -185,7 +185,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span
                 className={`font-semibold ${
                   badgeUnlocked
-                    ? isLiquidGlass
+                    ? isFluentGlass
                       ? 'text-cyan-300'
                       : isBespoke
                       ? 'text-blue-400'
@@ -204,7 +204,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             <div className="flex items-center justify-between gap-2">
               <span className="text-neutral-400 flex items-center gap-1">
                 <span>Ticket Gift</span>
-                {isLiquidGlass ? (
+                {isFluentGlass ? (
                   <Ticket size={12} strokeWidth={1.75} className="text-cyan-300 inline" />
                 ) : isBespoke ? (
                   <Ticket size={11} className="text-blue-500 inline" />
@@ -215,12 +215,12 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span
                 className={`font-semibold ${
                   hasClaimedFirstDonationParachute
-                    ? isLiquidGlass
+                    ? isFluentGlass
                       ? 'text-cyan-300'
                       : isBespoke
                       ? 'text-blue-400'
                       : ''
-                    : isLiquidGlass
+                    : isFluentGlass
                     ? 'text-zinc-200'
                     : isBespoke
                     ? 'text-neutral-200'
@@ -246,7 +246,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span
                 className={
                   cloudAutoBackupEnabled
-                    ? isLiquidGlass
+                    ? isFluentGlass
                       ? 'text-cyan-300 font-semibold'
                       : isBespoke
                       ? 'text-blue-400 font-semibold'
@@ -268,7 +268,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           {!badgeUnlocked ? (
             <div
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'p-4 rounded-2xl liquid-inset space-y-2.5'
                   : isBespoke
                   ? 'p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
@@ -277,7 +277,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             >
               <div
                 className={`flex items-center gap-1.5 text-xs font-semibold ${
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'text-cyan-200'
                     : isBespoke
                     ? 'text-neutral-100'
@@ -289,7 +289,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   size={13}
                   strokeWidth={1.75}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'shrink-0 text-cyan-300'
                       : isBespoke
                       ? 'shrink-0 text-blue-500'
@@ -302,7 +302,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 Strict Rule:{' '}
                 <strong
                   className={
-                    isLiquidGlass ? 'text-cyan-200' : isBespoke ? 'text-neutral-100' : ''
+                    isFluentGlass ? 'text-cyan-200' : isBespoke ? 'text-neutral-100' : ''
                   }
                   style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
@@ -320,7 +320,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     rel="noreferrer"
                     onClick={(e) => handleOpenExternalUrl(e, KOFI_URL)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'py-2.5 px-3 rounded-xl liquid-pill-active font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5'
                         : isBespoke
                         ? 'py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
@@ -335,7 +335,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                     type="button"
                     onClick={() => setConfirmingManualTip(true)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'py-2.5 px-3 rounded-xl liquid-pill font-medium text-xs uppercase tracking-wide'
                         : isBespoke
                         ? 'py-2.5 px-3 rounded-md bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-xs uppercase tracking-wide transition-colors duration-75'
@@ -348,7 +348,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               ) : (
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'p-3 rounded-xl liquid-row space-y-2.5'
                       : isBespoke
                       ? 'p-3 rounded-md bg-black border border-neutral-800 space-y-2.5'
@@ -361,7 +361,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                       href={UPI_FIFTY_RS_PAY_URL}
                       onClick={(e) => handleOpenExternalUrl(e, UPI_FIFTY_RS_PAY_URL)}
                       className={`underline ${
-                        isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-400' : ''
+                        isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-400' : ''
                       }`}
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
@@ -377,7 +377,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                         setConfirmingManualTip(false);
                       }}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'flex-1 py-2 px-3 rounded-xl liquid-pill-active font-semibold text-xs uppercase tracking-wide'
                           : isBespoke
                           ? 'flex-1 py-2 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide transition-colors duration-75'
@@ -390,7 +390,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                       type="button"
                       onClick={() => setConfirmingManualTip(false)}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'px-3 py-2 rounded-xl liquid-pill text-xs font-medium'
                           : isBespoke
                           ? 'px-3 py-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-neutral-200 text-xs font-medium transition-colors duration-75'
@@ -406,7 +406,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           ) : (
             <div
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'px-3.5 py-2.5 rounded-2xl liquid-inset flex items-center justify-between gap-2 text-xs text-cyan-200'
                   : isBespoke
                   ? 'px-3.5 py-2.5 rounded-md bg-neutral-950 border border-blue-500/40 flex items-center justify-between gap-2 text-xs text-blue-400'
@@ -434,7 +434,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 size={12}
                 strokeWidth={1.75}
                 style={{
-                  color: isLiquidGlass
+                  color: isFluentGlass
                     ? '#7DD3FC'
                     : isBespoke
                     ? '#3B82F6'
@@ -456,7 +456,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   restoreDisabled ? 'Paste ZDON1... unlock token' : 'Paste ZDON1... or ZBAK1... token'
                 }
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'flex-1 min-w-0 obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none'
                     : isBespoke
                     ? 'flex-1 min-w-0 obsidian-input focus:border-blue-500 rounded-md px-3 py-2 text-xs font-mono text-white outline-none'
@@ -466,7 +466,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <button
                 type="submit"
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'px-3.5 py-2 rounded-xl liquid-pill-active font-semibold text-xs uppercase tracking-wide shrink-0'
                     : isBespoke
                     ? 'px-3.5 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wide shrink-0 transition-colors duration-75'
@@ -480,7 +480,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             {restoreDisabled && (
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'p-2.5 rounded-xl bg-red-500/15 border border-red-400/40 text-red-200 text-[11px]'
                     : isBespoke
                     ? 'p-2.5 rounded-md bg-neutral-950 border border-red-800 text-red-300 text-[11px]'
@@ -494,7 +494,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             {tokenNotice && (
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? `p-3 rounded-xl text-xs border leading-relaxed ${
                         tokenNotice.ok
                           ? 'liquid-inset text-cyan-100'
@@ -524,7 +524,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           </form>
 
           {/* Ko-fi Manual Verification Note */}
-          {isLiquidGlass ? (
+          {isFluentGlass ? (
             <div className="p-4 rounded-2xl liquid-row space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-semibold uppercase tracking-wide text-white flex items-center gap-1.5">
@@ -727,7 +727,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
           <span
             className={
               badgeUnlocked
-                ? isLiquidGlass
+                ? isFluentGlass
                   ? 'text-cyan-300 font-semibold'
                   : isBespoke
                   ? 'text-blue-400 font-semibold'

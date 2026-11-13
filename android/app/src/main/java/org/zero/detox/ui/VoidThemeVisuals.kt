@@ -1,4 +1,4 @@
-package org.zero.detox.ui
+﻿package org.zero.detox.ui
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -34,7 +34,7 @@ object VoidThemeStore {
 
     const val STYLE_BESPOKE = "bespoke"
     const val STYLE_CLASSIC = "classic"
-    const val STYLE_LIQUID_GLASS = "liquid_glass"
+    const val STYLE_fluent_glass = "fluent_glass"
     const val DEFAULT_INTERFACE_STYLE = STYLE_CLASSIC
 
     const val DEFAULT_ACCENT_HEX = "#FFFFFF"
@@ -175,7 +175,7 @@ object VoidThemeStore {
     fun normalizeInterfaceStyle(raw: String?): String {
         return when (raw?.trim()?.lowercase(Locale.US)) {
             STYLE_BESPOKE -> STYLE_BESPOKE
-            STYLE_LIQUID_GLASS -> STYLE_LIQUID_GLASS
+            STYLE_fluent_glass -> STYLE_fluent_glass
             else -> STYLE_CLASSIC
         }
     }
@@ -201,8 +201,8 @@ object VoidThemeStore {
     }
 
     @JvmStatic
-    fun isLiquidGlassStyle(context: Context): Boolean {
-        return loadInterfaceStyle(context) == STYLE_LIQUID_GLASS
+    fun isFluentGlassStyle(context: Context): Boolean {
+        return loadInterfaceStyle(context) == STYLE_fluent_glass
     }
 }
 

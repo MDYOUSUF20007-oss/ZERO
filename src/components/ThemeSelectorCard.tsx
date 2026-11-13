@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { ThemeConfig, ThemeFamily } from '../types';
 import {
   AMOLED_GRADIENTS,
@@ -26,14 +26,14 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
   themeConfig,
   onChange,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
 
   const selectFamily = (family: ThemeFamily) => {
     haptics.tick(780);
     onChange({ ...themeConfig, family });
   };
 
-  const activeThemeSummary = isLiquidGlass
+  const activeThemeSummary = isFluentGlass
     ? 'Liquid Glass • Pitch #000000'
     : themeConfig.family === 'amoled'
     ? `AMOLED (${themeConfig.amoledGradient})`
@@ -44,10 +44,10 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
   return (
     <ObsidianCard
       ambientGlow={!isBespoke}
-      className={isBespoke || isLiquidGlass ? 'font-sans' : 'font-mono'}
-      headerClassName={isBespoke || isLiquidGlass ? 'p-5 space-y-5' : 'p-4 sm:p-5 space-y-4'}
+      className={isBespoke || isFluentGlass ? 'font-sans' : 'font-mono'}
+      headerClassName={isBespoke || isFluentGlass ? 'p-5 space-y-5' : 'p-4 sm:p-5 space-y-4'}
       footerClassName={
-        isBespoke || isLiquidGlass
+        isBespoke || isFluentGlass
           ? 'px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-zinc-400'
           : 'px-4 sm:px-5 py-2.5 flex items-center justify-between gap-2 flex-wrap text-[10px] text-zinc-400'
       }
@@ -58,7 +58,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
             <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'liquid-squircle text-cyan-200'
                     : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -69,7 +69,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                   size={15}
                   strokeWidth={1.75}
                   style={
-                    isLiquidGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
+                    isFluentGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
                   }
                 />
               </div>
@@ -82,7 +82,7 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                 onChange(DEFAULT_THEME_CONFIG);
               }}
               className={`px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 ${
-                isLiquidGlass
+                isFluentGlass
                   ? 'liquid-pill rounded-xl'
                   : `obsidian-inset-neutral hover:border-white/25 ${
                       isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg transition-colors'
@@ -95,9 +95,9 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
             </button>
           </div>
 
-          {isLiquidGlass && (
+          {isFluentGlass && (
             <div className="p-3 rounded-xl liquid-row text-[11px] text-zinc-300 leading-relaxed">
-              <span className="font-semibold text-white">Microsoft Liquid Glass</span> anchors all
+              <span className="font-semibold text-white">Fluent Glass</span> anchors all
               views to pure <span className="font-mono text-cyan-200">#000000</span> AMOLED with
               refractive ambient light fields. Swatches below save your underlying Theme Studio preset
               for <span className="text-white font-medium">Classic UI</span>.

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { NativePermissionStatus } from '../types';
 import { evaluatePermissionPriority } from '../utils/permissionPriority';
 import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
@@ -29,7 +29,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
   onRefresh,
   onProceedReady,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   if (!isOpen) return null;
 
   const priority = evaluatePermissionPriority(permissions);
@@ -50,7 +50,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
     window.ZeroNative?.openAppSettingsDetails();
   };
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <div
         className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"

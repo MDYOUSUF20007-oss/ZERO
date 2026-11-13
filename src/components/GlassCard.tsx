@@ -1,4 +1,4 @@
-import React, { type CSSProperties } from 'react';
+﻿import React, { type CSSProperties } from 'react';
 import type { ObsidianCardProps } from './ObsidianCard';
 
 export type GlassCardProps = ObsidianCardProps;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import type { AppLockRuleConfig, BagApp, NativeEnvironmentSecurity, OccasionBag } from '../types';
 import { formatRuleSummary, resolveEffectiveAppRuleConfig } from '../utils/bagAppConfig';
 import { BagAppConfigModal } from './BagAppConfigModal';
@@ -51,8 +51,8 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
   onDeleteCustomBag,
   onRefreshInstalledApps,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const [searchQuery, setSearchQuery] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [showNewBagForm, setShowNewBagForm] = useState(false);
@@ -103,7 +103,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
     <>
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${
-          isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+          isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
         }`}
         style={{
           paddingTop: 'calc(1rem + var(--zero-safe-top))',
@@ -122,7 +122,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 <div className="flex items-center gap-3">
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle text-cyan-200'
                         : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -151,7 +151,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                 <button
                   onClick={onClose}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'p-1.5 rounded-xl liquid-pill text-zinc-400 hover:text-white'
                       : isBespoke
                       ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75'
@@ -201,7 +201,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                             setEditingName(false);
                           }}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `p-3 rounded-2xl text-left liquid-spring ${
                                   isActive
                                     ? 'liquid-pill-active font-semibold'
@@ -590,7 +590,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                                 ) : effRule.mode === 'controlled' ? (
                             <span
                               className={
-                                isLiquidGlass
+                                isFluentGlass
                                   ? 'px-2 py-0.5 rounded-lg bg-cyan-400/20 border border-cyan-300/35 text-cyan-100 text-[9px] font-mono font-semibold uppercase shrink-0'
                                   : isBespoke
                                   ? 'px-1.5 py-0.5 rounded-sm bg-blue-600 border border-blue-500 text-white text-[9px] font-mono font-semibold uppercase shrink-0'
@@ -805,7 +805,7 @@ export const BagDrawerModal: React.FC<BagDrawerModalProps> = ({
                         ? 'bg-neutral-950 border-neutral-800 text-neutral-200'
                         : 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white'
                     }`
-                  : isLiquidGlass
+                  : isFluentGlass
                   ? `w-full py-3 rounded-2xl font-semibold text-xs uppercase tracking-wider transition-all ${
                       bagEditingDisabled
                         ? 'liquid-pill text-white/50'

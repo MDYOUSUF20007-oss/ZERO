@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Clock, Heart, Settings, Ticket } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 

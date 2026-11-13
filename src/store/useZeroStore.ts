@@ -1101,8 +1101,8 @@ export function useZeroStore() {
       return;
     }
 
-    if (interfaceStyle === 'liquid_glass') {
-      // Microsoft Liquid Glass over true #000000 AMOLED canvas with sub-surface Fluent lighting
+    if (interfaceStyle === 'fluent_glass') {
+      // Fluent Glass over true #000000 AMOLED canvas — accent tints inherit from Theme Studio
       rootEl.className = 'dark';
       rootEl.setAttribute('data-zero-theme', 'amoled');
       rootEl.setAttribute('data-zero-has-gradient', 'false');
@@ -1122,36 +1122,44 @@ export function useZeroStore() {
       rootEl.style.setProperty('--zero-inverted-text', '#09090B');
       rootEl.style.setProperty('--zero-nav-bg', 'rgba(10, 10, 16, 0.72)');
       rootEl.style.setProperty('--zero-backdrop', 'rgba(0, 0, 0, 0.75)');
-      rootEl.style.setProperty('--zero-accent', '#4FACFE');
-      rootEl.style.setProperty('--zero-dial-stroke', '#00F2FE');
-      rootEl.style.setProperty('--accent-rgb', '79, 172, 254');
-      rootEl.style.setProperty('--accent-hex', '#4FACFE');
+
+      // Dynamic accent: inherit from the user's active Theme Studio selection
+      const fluentTokens = resolveActiveAccentTokens(themeConfig);
+      rootEl.style.setProperty('--zero-accent', fluentTokens.hex);
+      rootEl.style.setProperty('--zero-dial-stroke', fluentTokens.hex);
+      rootEl.style.setProperty('--accent-rgb', fluentTokens.rgb);
+      rootEl.style.setProperty('--accent-hex', fluentTokens.hex);
       rootEl.style.setProperty(
         '--accent-badge-gradient',
-        'linear-gradient(135deg, #FFFFFF 0%, #93C5FD 50%, #4FACFE 100%)'
+        `linear-gradient(135deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 55%, #FFFFFF) 50%, ${fluentTokens.hex} 100%)`
       );
-      rootEl.style.setProperty('--accent-badge-text', '#09090B');
-      rootEl.style.setProperty('--accent-surface-rgb', '79, 172, 254');
-      rootEl.style.setProperty('--accent-surface-hex', '#4FACFE');
+      rootEl.style.setProperty('--accent-badge-text', fluentTokens.badgeText);
+      rootEl.style.setProperty('--accent-surface-rgb', fluentTokens.rgb);
+      rootEl.style.setProperty('--accent-surface-hex', fluentTokens.hex);
       rootEl.style.setProperty(
         '--accent-surface-badge-gradient',
-        'linear-gradient(135deg, #FFFFFF 0%, #93C5FD 50%, #4FACFE 100%)'
+        `linear-gradient(135deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 55%, #FFFFFF) 50%, ${fluentTokens.hex} 100%)`
       );
-      rootEl.style.setProperty('--accent-surface-badge-text', '#09090B');
+      rootEl.style.setProperty('--accent-surface-badge-text', fluentTokens.badgeText);
 
-      const nativeTokens = {
-        hex: '#4FACFE',
-        rgb: '79, 172, 254',
-        badgeText: '#09090B',
-      };
-      activeAccentTokensRef.current = nativeTokens;
+      // Fluent Glass glass-tint surfaces respond to accent: backgrounds use a subtle rgba blend
+      rootEl.style.setProperty('--fg-accent-tint-14', `rgba(${fluentTokens.rgb}, 0.14)`);
+      rootEl.style.setProperty('--fg-accent-tint-10', `rgba(${fluentTokens.rgb}, 0.10)`);
+      rootEl.style.setProperty('--fg-accent-tint-06', `rgba(${fluentTokens.rgb}, 0.06)`);
+      rootEl.style.setProperty('--fg-accent-border-36', `rgba(${fluentTokens.rgb}, 0.36)`);
+      rootEl.style.setProperty('--fg-accent-border-22', `rgba(${fluentTokens.rgb}, 0.22)`);
+      rootEl.style.setProperty('--fg-accent-border-10', `rgba(${fluentTokens.rgb}, 0.10)`);
+      rootEl.style.setProperty('--fg-accent-glow', `rgba(${fluentTokens.rgb}, 0.28)`);
+      rootEl.style.setProperty('--fg-accent-pill-shadow', `rgba(${fluentTokens.rgb}, 0.50)`);
+
+      activeAccentTokensRef.current = fluentTokens;
 
       try {
-        window.ZeroNative?.setInterfaceStyle?.('liquid_glass');
+        window.ZeroNative?.setInterfaceStyle?.('fluent_glass');
         window.ZeroNative?.setActiveThemeAccent?.(
-          nativeTokens.hex,
-          nativeTokens.rgb,
-          nativeTokens.badgeText
+          fluentTokens.hex,
+          fluentTokens.rgb,
+          fluentTokens.badgeText
         );
       } catch {
         // Ignore on web preview
@@ -1441,9 +1449,8 @@ export function useZeroStore() {
         window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
         if (interfaceStyleRef.current === 'bespoke') {
           window.ZeroNative.setActiveThemeAccent?.('#3B82F6', '59, 130, 246', '#FFFFFF');
-        } else if (interfaceStyleRef.current === 'liquid_glass') {
-          window.ZeroNative.setActiveThemeAccent?.('#4FACFE', '79, 172, 254', '#09090B');
         } else {
+          // fluent_glass and classic both pass the live Theme Studio accent to native
           window.ZeroNative.setActiveThemeAccent?.(
             activeTokensNow.hex,
             activeTokensNow.rgb,

@@ -10,7 +10,9 @@ import type {
 
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
   if (value === 'bespoke') return 'bespoke';
-  if (value === 'liquid_glass') return 'liquid_glass';
+  if (value === 'fluent_glass') return 'fluent_glass';
+  // Legacy alias: treat old persisted 'liquid_glass' as 'fluent_glass'
+  if (value === 'liquid_glass') return 'fluent_glass';
   return 'classic';
 }
 

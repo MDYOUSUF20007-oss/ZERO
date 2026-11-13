@@ -1,4 +1,4 @@
-import React, { type CSSProperties, type FormEventHandler, type ReactNode } from 'react';
+﻿import React, { type CSSProperties, type FormEventHandler, type ReactNode } from 'react';
 import { type AccentKey } from './ProfileAvatar';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { GlassCard } from './GlassCard';
@@ -27,9 +27,9 @@ export interface ObsidianCardProps {
 }
 
 export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return <GlassCard {...props} />;
   }
 

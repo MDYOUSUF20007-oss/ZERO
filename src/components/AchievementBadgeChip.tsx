@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { AchievementBadgeId, BadgeTierColor, EvaluatedBadge } from '../utils/achievements';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
@@ -98,9 +98,9 @@ export function renderBadgeIcon(id: AchievementBadgeId, size: number = 14) {
 export const ZeroSupporterGoldenBadge: React.FC<{
   compact?: boolean;
 }> = ({ compact = false }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <span
         data-gold-badge="true"
@@ -144,10 +144,10 @@ export const ZeroSupporterGoldenBadge: React.FC<{
 export const AchievementBadgePill: React.FC<{
   badge: EvaluatedBadge;
 }> = ({ badge }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const style = TIER_STYLES[badge.tierColor];
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <span
         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-sans text-[10px] font-semibold uppercase tracking-wide border ${
@@ -209,11 +209,11 @@ export const AchievementBadgeCard: React.FC<{
   isSelected?: boolean;
   onSelect?: () => void;
 }> = ({ badge, isSelected = false, onSelect }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const style = TIER_STYLES[badge.tierColor];
   const isGoldUnlocked = badge.unlocked && badge.tierColor === 'gold';
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <button
         type="button"

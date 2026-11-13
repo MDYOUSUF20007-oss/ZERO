@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { SessionRecord, ParachuteMetrics, ZeroProfile, ThemeConfig } from '../types';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
@@ -139,8 +139,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   isZeroSupporter = false,
   onClose,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const [period, setPeriod] = useState<FlexPeriod>('today');
   const [receiptExport, setReceiptExport] = useState<{ dataUrl: string; dateLabel: string }>({
     dataUrl: '',
@@ -194,7 +194,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     // Pitch AMOLED Canvas Background (+ Subtle Dot Matrix in Classic mode, ambient aura in Liquid Glass)
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       const topOrb = ctx.createRadialGradient(180, 140, 20, 180, 140, 560);
       topOrb.addColorStop(0, 'rgba(0, 242, 254, 0.22)');
       topOrb.addColorStop(0.55, 'rgba(79, 172, 254, 0.09)');
@@ -224,9 +224,9 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     const cardY = 56;
     const cardW = W - 112;
     const cardH = H - 112;
-    const cardR = isLiquidGlass ? 32 : isBespoke ? 14 : 36;
+    const cardR = isFluentGlass ? 32 : isBespoke ? 14 : 36;
 
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
       ctx.shadowBlur = 44;
@@ -260,7 +260,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.clip();
 
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       const glassSheen = ctx.createRadialGradient(
         cardX + 120,
         cardY + 60,
@@ -285,7 +285,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     // Tier 1B Grid Band Backdrop
     const gridBandY = 516;
     const gridBandH = 412;
-    ctx.fillStyle = isLiquidGlass
+    ctx.fillStyle = isFluentGlass
       ? 'rgba(0, 0, 0, 0.32)'
       : isBespoke
       ? '#000000'
@@ -294,22 +294,22 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     // Tier 2 Footer Band
     const tier2Y = gridBandY + gridBandH; // 928
-    ctx.fillStyle = isLiquidGlass ? '#070A10' : isBespoke ? '#0A0A0A' : '#09090C';
+    ctx.fillStyle = isFluentGlass ? '#070A10' : isBespoke ? '#0A0A0A' : '#09090C';
     ctx.fillRect(cardX, tier2Y, cardW, cardY + cardH - tier2Y);
 
     ctx.restore();
 
     // Card Border
-    ctx.strokeStyle = isLiquidGlass
+    ctx.strokeStyle = isFluentGlass
       ? 'rgba(255, 255, 255, 0.24)'
       : isBespoke
       ? '#262626'
       : `rgba(${activeAccentRgb}, 0.45)`;
-    ctx.lineWidth = isLiquidGlass ? 2 : isBespoke ? 2 : 3;
+    ctx.lineWidth = isFluentGlass ? 2 : isBespoke ? 2 : 3;
     drawRoundedRectPath(ctx, cardX, cardY, cardW, cardH, cardR);
     ctx.stroke();
 
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       const specGrad = ctx.createLinearGradient(cardX + 64, cardY, cardX + cardW - 64, cardY);
       specGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
       specGrad.addColorStop(0.5, 'rgba(255,255,255,0.72)');
@@ -325,7 +325,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ctx.fillRect(cardX + 64, cardY, cardW - 128, 3);
     }
 
-    const canvasAccentHex = isLiquidGlass ? '#4FACFE' : isBespoke ? '#3B82F6' : activeAccentHex;
+    const canvasAccentHex = isFluentGlass ? '#4FACFE' : isBespoke ? '#3B82F6' : activeAccentHex;
     const canvasSans = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     // Tier 1A Header Row
@@ -335,7 +335,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     ctx.save();
     ctx.fillStyle = canvasAccentHex;
-    ctx.font = isLiquidGlass ? `600 22px ${canvasSans}` : '700 22px monospace';
+    ctx.font = isFluentGlass ? `600 22px ${canvasSans}` : '700 22px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(currentDateLabel, W - 104, 134);
     ctx.restore();
@@ -343,20 +343,20 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     // Handle • Rank + Optional ZERO-SUPPORTER Crest
     const handleSub = `${formattedHandle.toUpperCase()}  •  ${rankTitle}`;
     ctx.fillStyle = '#A1A1AA';
-    ctx.font = isLiquidGlass ? `600 22px ${canvasSans}` : '600 22px monospace';
+    ctx.font = isFluentGlass ? `600 22px ${canvasSans}` : '600 22px monospace';
     ctx.fillText(handleSub, 104, 184, badgeSummary.isZeroSupporter ? 540 : W - 208);
 
     if (badgeSummary.isZeroSupporter) {
-      ctx.font = isLiquidGlass ? `700 18px ${canvasSans}` : '700 18px monospace';
+      ctx.font = isFluentGlass ? `700 18px ${canvasSans}` : '700 18px monospace';
       const label = 'ZERO-SUPPORTER';
       const textWidth = ctx.measureText(label).width;
       const pillW = Math.round(textWidth + 58);
       const pillH = 44;
       const pillX = W - 104 - pillW;
       const pillY = 152;
-      const crestR = isLiquidGlass ? 22 : isBespoke ? 6 : 22;
+      const crestR = isFluentGlass ? 22 : isBespoke ? 6 : 22;
 
-      if (isLiquidGlass) {
+      if (isFluentGlass) {
         const platGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
         platGrad.addColorStop(0, 'rgba(79, 172, 254, 0.24)');
         platGrad.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
@@ -412,7 +412,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     const badgeLabel = FOCUS_RECEIPT_PERIOD_LABELS[period].title;
     ctx.font = isModernFont ? `700 22px ${canvasSans}` : '900 22px monospace';
     const periodPillW = Math.max(180, Math.round(ctx.measureText(badgeLabel).width + 52));
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       const pillGrad = ctx.createLinearGradient(104, 226, 104 + periodPillW, 270);
       pillGrad.addColorStop(0, '#FFFFFF');
       pillGrad.addColorStop(0.55, '#BAE6FD');
@@ -421,15 +421,15 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     } else {
       ctx.fillStyle = isBespoke ? '#2563EB' : activeAccentHex;
     }
-    drawRoundedRectPath(ctx, 104, 226, periodPillW, 44, isLiquidGlass ? 22 : isBespoke ? 6 : 10);
+    drawRoundedRectPath(ctx, 104, 226, periodPillW, 44, isFluentGlass ? 22 : isBespoke ? 6 : 10);
     ctx.fill();
-    ctx.fillStyle = isLiquidGlass ? '#09090B' : isBespoke ? '#FFFFFF' : activeAccentBadgeText;
+    ctx.fillStyle = isFluentGlass ? '#09090B' : isBespoke ? '#FFFFFF' : activeAccentBadgeText;
     ctx.fillText(badgeLabel, 130, 255);
 
     // Giant Hero Metric (auto-scaled so long 1Y / All-Time totals fit cleanly)
     const timeText = periodStats.formattedTime;
     const heroFontPx = timeText.length >= 8 ? 104 : timeText.length >= 6 ? 124 : 148;
-    if (isLiquidGlass) {
+    if (isFluentGlass) {
       const heroGrad = ctx.createLinearGradient(104, 290, 104, 420);
       heroGrad.addColorStop(0, '#FFFFFF');
       heroGrad.addColorStop(0.55, '#F4F4F5');
@@ -447,7 +447,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.fillText('DISTRACTION-FREE & PHONE-OFF', 104, 468);
 
     // Hairline Divider above 2x2 Grid
-    ctx.strokeStyle = isLiquidGlass
+    ctx.strokeStyle = isFluentGlass
       ? 'rgba(255, 255, 255, 0.12)'
       : isBespoke
       ? '#262626'
@@ -460,10 +460,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     // 4-Cell Stats Receipt Box
     const drawStat = (label: string, value: string, x: number, y: number, accent = '#FFFFFF') => {
-      ctx.fillStyle = isLiquidGlass ? '#0E131F' : isBespoke ? '#0A0A0A' : '#121216';
-      drawRoundedRectPath(ctx, x, y, 422, 166, isLiquidGlass ? 22 : isBespoke ? 8 : 20);
+      ctx.fillStyle = isFluentGlass ? '#0E131F' : isBespoke ? '#0A0A0A' : '#121216';
+      drawRoundedRectPath(ctx, x, y, 422, 166, isFluentGlass ? 22 : isBespoke ? 8 : 20);
       ctx.fill();
-      ctx.strokeStyle = isLiquidGlass
+      ctx.strokeStyle = isFluentGlass
         ? 'rgba(255, 255, 255, 0.14)'
         : isBespoke
         ? '#262626'
@@ -476,7 +476,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       ctx.fillText(label, x + 28, y + 48);
 
       ctx.fillStyle = accent;
-      ctx.font = isLiquidGlass
+      ctx.font = isFluentGlass
         ? `700 46px ${canvasSans}`
         : `${isBespoke ? '700' : '900'} 46px monospace`;
       ctx.fillText(value, x + 28, y + 120, 366);
@@ -488,7 +488,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     drawStat('TOP FOCUS TAG', periodStats.topTag.slice(0, 12), 554, 738);
 
     // Divider above Tier 2 Footer
-    ctx.strokeStyle = isLiquidGlass
+    ctx.strokeStyle = isFluentGlass
       ? 'rgba(255, 255, 255, 0.12)'
       : isBespoke
       ? '#262626'
@@ -500,7 +500,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.stroke();
 
     // Tier 2: Badges & Achievements Showcase
-    ctx.fillStyle = isLiquidGlass ? '#94A3B8' : '#737373';
+    ctx.fillStyle = isFluentGlass ? '#94A3B8' : '#737373';
     ctx.font = isModernFont ? `600 20px ${canvasSans}` : '700 20px monospace';
     ctx.fillText(
       `BADGES & ACHIEVEMENTS (${badgeSummary.unlockedBadges.length}/${badgeSummary.badges.length})`,
@@ -510,10 +510,10 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     if (badgeSummary.unlockedBadges.length === 0) {
       ctx.fillStyle = '#D4D4D8';
-      ctx.font = isLiquidGlass ? `600 21px ${canvasSans}` : '700 21px monospace';
+      ctx.font = isFluentGlass ? `600 21px ${canvasSans}` : '700 21px monospace';
       ctx.fillText('NEXT UNLOCK: COMPLETE 1H LOCK -> GETTING STARTED', 104, tier2Y + 106, cardW - 96);
-      ctx.fillStyle = isLiquidGlass ? '#7DD3FC' : isBespoke ? '#93C5FD' : activeAccentHex;
-      ctx.font = isLiquidGlass ? `600 20px ${canvasSans}` : '600 20px monospace';
+      ctx.fillStyle = isFluentGlass ? '#7DD3FC' : isBespoke ? '#93C5FD' : activeAccentHex;
+      ctx.font = isFluentGlass ? `600 20px ${canvasSans}` : '600 20px monospace';
       ctx.fillText('SUPPORTER CREST: MIN RS.50 1ST TIP -> ZERO-SUPPORTER', 104, tier2Y + 150, cardW - 96);
     } else {
       let curX = 104;
@@ -524,7 +524,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       const gapY = 12;
 
       for (const badge of badgeSummary.unlockedBadges) {
-        ctx.font = isLiquidGlass ? `600 18px ${canvasSans}` : '700 18px monospace';
+        ctx.font = isFluentGlass ? `600 18px ${canvasSans}` : '700 18px monospace';
         const pillW = Math.min(maxX - 104, Math.round(ctx.measureText(badge.title).width + 52));
         if (curX + pillW > maxX) {
           curX = 104;
@@ -532,7 +532,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         }
         if (curY + pillH > tier2Y + 196) break;
 
-        if (isLiquidGlass) {
+        if (isFluentGlass) {
           const isSupporter = badge.tierColor === 'gold';
           ctx.fillStyle = isSupporter ? 'rgba(79, 172, 254, 0.20)' : 'rgba(255, 255, 255, 0.06)';
           drawRoundedRectPath(ctx, curX, curY, pillW, pillH, 22);
@@ -614,7 +614,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
     // Sub-divider inside Tier 2 above Escape Tickets + Motto
     const manifestoY = tier2Y + 216;
-    ctx.strokeStyle = isLiquidGlass
+    ctx.strokeStyle = isFluentGlass
       ? 'rgba(255, 255, 255, 0.12)'
       : isBespoke
       ? '#262626'
@@ -626,7 +626,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     ctx.stroke();
 
     ctx.fillStyle = '#E4E4E7';
-    ctx.font = isLiquidGlass ? `600 24px ${canvasSans}` : '700 24px monospace';
+    ctx.font = isFluentGlass ? `600 24px ${canvasSans}` : '700 24px monospace';
     ctx.fillText(
       `ESCAPE TICKETS: ${parachuteMetrics.currentBalance}  |  FOSS • ZERO PAYWALLS`,
       104,
@@ -646,7 +646,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   }, [
     isOpen,
     isBespoke,
-    isLiquidGlass,
+    isFluentGlass,
     isModernFont,
     themeConfig,
     period,
@@ -717,7 +717,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${
-        isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+        isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
       }`}
       style={{
         paddingTop: 'calc(0.75rem + var(--zero-safe-top))',
@@ -738,7 +738,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         >
           <span>ESCAPE TICKETS &amp; METRICS</span>
           <span
-            className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}
+            className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}
             style={{ color: '#737373' }}
           >
             {currentStreak > 0 ? `${currentStreak}D STREAK` : 'STREAKS'}
@@ -758,7 +758,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-10 h-10 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -767,8 +767,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   >
                     <Sparkles
                       size={18}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
-                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
+                      className={isFluentGlass ? 'text-zinc-100' : undefined}
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
@@ -789,7 +789,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   type="button"
                   onClick={onClose}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'p-1.5 rounded-full liquid-pill text-zinc-300 shrink-0'
                       : isBespoke
                       ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75 shrink-0'
@@ -804,7 +804,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               {/* Interactive Time Range Selector Tabs */}
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'grid grid-cols-5 gap-1 p-1 rounded-full bg-black/45 border border-white/10 text-[11px] font-sans'
                     : isBespoke
                     ? 'grid grid-cols-5 gap-1 p-1 rounded-md bg-neutral-950 border border-neutral-800 text-[11px] font-sans'
@@ -827,7 +827,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       type="button"
                       onClick={() => setPeriod(p)}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `py-2 rounded-full liquid-spring text-center ${
                               isActive
                                 ? 'liquid-pill-active font-semibold'
@@ -855,7 +855,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               {/* Badges On Card Progress Section */}
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'rounded-xl p-3.5 text-xs liquid-row space-y-2'
                     : isBespoke
                     ? 'rounded-md p-3.5 text-xs bg-neutral-950 border border-neutral-800 space-y-2'
@@ -874,9 +874,9 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-neutral-300">
                     <Trophy
                       size={12}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'text-cyan-300 shrink-0'
                           : isBespoke
                           ? 'text-blue-500 shrink-0'
@@ -888,7 +888,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   </span>
                   <span
                     className={`tabular-nums font-semibold uppercase tracking-wider ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'font-sans text-cyan-200'
                         : isBespoke
                         ? 'font-mono text-blue-400'
@@ -916,7 +916,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     ₹50 tip for the{' '}
                     <strong
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'text-cyan-300'
                           : isBespoke
                           ? 'text-blue-400'
@@ -935,7 +935,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               <div
                 data-obsidian-card="true"
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'relative rounded-[20px] overflow-hidden liquid-card'
                     : isBespoke
                     ? 'relative rounded-md overflow-hidden bg-black border border-neutral-800'
@@ -953,13 +953,13 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       }
                 }
               >
-                {isLiquidGlass && <div aria-hidden="true" className="liquid-noise-overlay z-0" />}
+                {isFluentGlass && <div aria-hidden="true" className="liquid-noise-overlay z-0" />}
                 {!isBespoke && (
                   <div
                     aria-hidden="true"
                     className="absolute top-0 left-5 right-5 h-[1.5px] pointer-events-none z-10"
                     style={{
-                      background: isLiquidGlass
+                      background: isFluentGlass
                         ? 'linear-gradient(90deg, rgba(255,255,255,0.08) 0%, #FFFFFF 50%, rgba(255,255,255,0.08) 100%)'
                         : 'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
                       opacity: 0.78,
@@ -983,7 +983,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     </span>
                     <span
                       className={`text-[10px] font-semibold tracking-wider uppercase shrink-0 ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'font-sans text-cyan-300'
                           : isBespoke
                           ? 'font-mono text-blue-500'
@@ -998,7 +998,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
                     <div
                       className={`text-[10px] uppercase tracking-wider text-neutral-400 ${
-                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                        isFluentGlass ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       {formattedHandle} <span className="text-neutral-600">•</span> {rankTitle}
@@ -1009,7 +1009,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   {/* Period Tag */}
                   <div
                     className={`mt-3 inline-block px-2.5 py-0.5 text-[10px] tracking-widest uppercase ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'rounded-full liquid-pill-active font-sans font-semibold'
                         : isBespoke
                         ? 'rounded-sm bg-blue-600 text-white font-sans font-semibold'
@@ -1022,7 +1022,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   {/* Huge Focus Time Display */}
                   <div
                     className={`mt-2.5 tabular-nums tracking-tight leading-none ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-metric font-sans font-bold'
                         : isBespoke
                         ? 'font-mono font-semibold text-white'
@@ -1052,7 +1052,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     isBespoke ? 'bg-black' : ''
                   }`}
                   style={
-                    isLiquidGlass
+                    isFluentGlass
                       ? { background: 'rgba(0, 0, 0, 0.28)' }
                       : isBespoke
                       ? undefined
@@ -1061,7 +1061,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 >
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-3 rounded-xl liquid-row'
                         : isBespoke
                         ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
@@ -1081,7 +1081,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     </div>
                     <div
                       className={`text-xl font-semibold tabular-nums text-white mt-0.5 ${
-                        isLiquidGlass ? 'font-sans liquid-metric' : 'font-mono'
+                        isFluentGlass ? 'font-sans liquid-metric' : 'font-mono'
                       }`}
                     >
                       {periodStats.completedCount}
@@ -1090,7 +1090,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-3 rounded-xl liquid-row'
                         : isBespoke
                         ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
@@ -1110,7 +1110,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     </div>
                     <div
                       className={`text-xl font-semibold tabular-nums mt-0.5 ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'font-sans text-cyan-300'
                           : isBespoke
                           ? 'font-mono text-blue-400'
@@ -1124,7 +1124,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-3 rounded-xl liquid-row'
                         : isBespoke
                         ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
@@ -1144,7 +1144,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     </div>
                     <div
                       className={`text-xl font-semibold tabular-nums mt-0.5 ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'font-sans text-cyan-300'
                           : isBespoke
                           ? 'font-mono text-blue-400'
@@ -1158,7 +1158,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-3 rounded-xl liquid-row'
                         : isBespoke
                         ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800'
@@ -1178,7 +1178,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     </div>
                     <div
                       className={`text-base font-semibold text-white mt-1 truncate ${
-                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                        isFluentGlass ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       {periodStats.topTag}
@@ -1189,7 +1189,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 {/* Tier 2: Receipt Footer (Badges, Escape Tickets & Signature Quote) */}
                 <div
                   className={`relative z-10 p-4 border-t text-xs flex flex-col gap-2.5 ${
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'bg-black/40 border-white/10 font-sans'
                       : isBespoke
                       ? 'bg-neutral-950 border-neutral-800'
@@ -1200,7 +1200,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   <div>
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
                       BADGES &amp; ACHIEVEMENTS (
-                      <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                      <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                         {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
                       </span>
                       )
@@ -1219,7 +1219,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                     ) : (
                       <div
                         className={`mt-1.5 text-[10px] leading-relaxed space-y-0.5 ${
-                          isLiquidGlass ? 'font-sans' : 'font-mono'
+                          isFluentGlass ? 'font-sans' : 'font-mono'
                         }`}
                       >
                         <div className="text-neutral-300">
@@ -1227,7 +1227,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                         </div>
                         <div
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'text-cyan-300'
                               : isBespoke
                               ? 'text-blue-400'
@@ -1248,7 +1248,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                   >
                     <div
                       className={`text-[11px] font-semibold text-neutral-200 ${
-                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                        isFluentGlass ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       ESCAPE TICKETS: {parachuteMetrics.currentBalance} | FOSS • ZERO PAYWALLS
@@ -1268,7 +1268,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 type="button"
                 onClick={handleNativeOrWebShare}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'flex-1 py-3.5 rounded-2xl liquid-pill-active font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2'
                     : isBespoke
                     ? 'flex-1 py-3.5 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75'
@@ -1283,14 +1283,14 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                       }
                 }
               >
-                <Share2 size={15} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                <Share2 size={15} strokeWidth={isFluentGlass ? 1.75 : 2} />
                 <span>Share with Friends</span>
               </button>
               <button
                 type="button"
                 onClick={handleDownloadPng}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'p-3.5 rounded-2xl liquid-pill text-white flex items-center justify-center shrink-0'
                     : isBespoke
                     ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-white flex items-center justify-center transition-colors duration-75 shrink-0'
@@ -1307,7 +1307,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
                 title="Save PNG"
                 aria-label="Download Focus Receipt PNG"
               >
-                <Download size={16} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                <Download size={16} strokeWidth={isFluentGlass ? 1.75 : 2} />
               </button>
             </>
           }

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   ZeroEmblemIcon,
   type AccentKey,
@@ -31,7 +31,7 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
   rankTitle = 'INITIATE',
   isZeroSupporter = false,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const formattedHandle = handle.trim()
     ? handle.trim().startsWith('@')
       ? handle.trim()
@@ -41,7 +41,7 @@ export const ZeroProfilePreviewCard: React.FC<ZeroProfilePreviewCardProps> = ({
     ? mission.trim()
     : `#${mission.trim() || 'Deep Work'}`;
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <ObsidianCard
         ambientGlow

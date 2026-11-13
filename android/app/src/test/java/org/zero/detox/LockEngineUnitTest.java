@@ -1,4 +1,4 @@
-package org.zero.detox;
+﻿package org.zero.detox;
 
 import static org.junit.Assert.*;
 
@@ -736,12 +736,12 @@ public class LockEngineUnitTest {
         assertEquals("classic", VoidThemeStore.loadInterfaceStyle(fakeContext));
 
         // Liquid Glass 3rd preset normalisation
-        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("liquid_glass"));
-        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("LIQUID_GLASS"));
-        assertEquals("liquid_glass", VoidThemeStore.normalizeInterfaceStyle("  liquid_glass  "));
-        VoidThemeStore.saveInterfaceStyle(fakeContext, "liquid_glass");
-        assertEquals("liquid_glass", VoidThemeStore.loadInterfaceStyle(fakeContext));
-        assertTrue(VoidThemeStore.isLiquidGlassStyle(fakeContext));
+        assertEquals("fluent_glass", VoidThemeStore.normalizeInterfaceStyle("fluent_glass"));
+        assertEquals("fluent_glass", VoidThemeStore.normalizeInterfaceStyle("fluent_glass"));
+        assertEquals("fluent_glass", VoidThemeStore.normalizeInterfaceStyle("  fluent_glass  "));
+        VoidThemeStore.saveInterfaceStyle(fakeContext, "fluent_glass");
+        assertEquals("fluent_glass", VoidThemeStore.loadInterfaceStyle(fakeContext));
+        assertTrue(VoidThemeStore.isFluentGlassStyle(fakeContext));
         assertFalse(VoidThemeStore.isBespokeStyle(fakeContext));
         // Reset to classic for subsequent tests
         VoidThemeStore.saveInterfaceStyle(fakeContext, "classic");

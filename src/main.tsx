@@ -6,10 +6,12 @@ import App from './App.tsx'
 try {
   const migrated = localStorage.getItem('zero_classic_default_migrated_v1') === '1';
   const savedStyle = localStorage.getItem('zero_interface_style_v1');
+  // Normalise legacy 'liquid_glass' → 'fluent_glass' on first read
+  const resolvedStyle = savedStyle === 'liquid_glass' ? 'fluent_glass' : savedStyle;
   document.documentElement.setAttribute(
     'data-zero-style',
-    migrated && (savedStyle === 'bespoke' || savedStyle === 'liquid_glass')
-      ? savedStyle
+    migrated && (resolvedStyle === 'bespoke' || resolvedStyle === 'fluent_glass')
+      ? resolvedStyle
       : 'classic'
   );
 } catch {

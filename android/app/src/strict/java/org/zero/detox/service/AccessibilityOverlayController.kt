@@ -1,4 +1,4 @@
-package org.zero.detox.service
+﻿package org.zero.detox.service
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -55,7 +55,7 @@ class AccessibilityOverlayController(
 
     private data class OverlayPalette(
         val isBespoke: Boolean,
-        val isLiquidGlass: Boolean = false,
+        val isFluentGlass: Boolean = false,
         val accentColor: Int,
         val primaryFillColor: Int,
         val primaryTextColor: Int,
@@ -142,7 +142,7 @@ class AccessibilityOverlayController(
             val fill = Color.parseColor("#2563EB")
             return OverlayPalette(
                 isBespoke = true,
-                isLiquidGlass = false,
+                isFluentGlass = false,
                 accentColor = accent,
                 primaryFillColor = fill,
                 primaryTextColor = Color.WHITE,
@@ -159,13 +159,13 @@ class AccessibilityOverlayController(
         }
 
         // Liquid Glass palette: Acrylic translucent overlay with #4FACFE accent
-        val liquidGlass = VoidThemeStore.isLiquidGlassStyle(serviceContext)
+        val liquidGlass = VoidThemeStore.isFluentGlassStyle(serviceContext)
         if (liquidGlass) {
             val accent = Color.parseColor("#4FACFE")
             val fill = Color.parseColor("#4FACFE")
             return OverlayPalette(
                 isBespoke = false,
-                isLiquidGlass = true,
+                isFluentGlass = true,
                 accentColor = accent,
                 primaryFillColor = fill,
                 primaryTextColor = Color.parseColor("#09090B"),
@@ -193,7 +193,7 @@ class AccessibilityOverlayController(
         }
         return OverlayPalette(
             isBespoke = false,
-            isLiquidGlass = false,
+            isFluentGlass = false,
             accentColor = readableAccent,
             primaryFillColor = readableAccent,
             primaryTextColor = badgeText,

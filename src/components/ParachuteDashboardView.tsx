@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, type CSSProperties } from 'react';
+﻿import React, { useState, useMemo, useRef, useEffect, type CSSProperties } from 'react';
 import type {
   DashboardWidgetsConfig,
   HeatmapTimeframe,
@@ -92,9 +92,9 @@ function getHeatmapCellStyle(
   isSelected: boolean,
   isToday: boolean = false,
   isBespoke: boolean = false,
-  isLiquidGlass: boolean = false
+  isFluentGlass: boolean = false
 ): CSSProperties {
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     const ringShadow = isSelected
       ? '0 0 0 2px #FFFFFF'
       : isToday
@@ -240,8 +240,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   onOpenProfileModal,
   onOpenTicketModal,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const [localWidgetsFallback, setLocalWidgetsFallback] = useState<DashboardWidgetsConfig>(
     () => sanitizeWidgetsConfig(widgetsConfig ?? DEFAULT_WIDGETS_CONFIG)
   );
@@ -435,7 +435,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <span className="uppercase tracking-wider">Metrics Synced to Heatmap</span>
               <span
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'px-2.5 py-0.5 rounded-full liquid-row font-sans font-semibold text-cyan-200 uppercase'
                     : isBespoke
                     ? 'px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 font-mono font-semibold text-neutral-100 uppercase'
@@ -460,9 +460,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <Clock
                         size={12}
-                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        strokeWidth={isFluentGlass ? 1.75 : 2}
                         className={
-                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                          isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
                         }
                         style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
@@ -470,7 +470,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`tabular-nums text-2xl ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-metric font-sans font-bold'
                           : isBespoke
                           ? 'font-mono font-semibold text-neutral-50'
@@ -482,7 +482,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -490,10 +490,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <Clock
-                      size={isLiquidGlass ? 16 : 14}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      size={isFluentGlass ? 16 : 14}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
                       className={
-                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                        isFluentGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
                       }
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
@@ -526,9 +526,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <Flame
                         size={12}
-                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        strokeWidth={isFluentGlass ? 1.75 : 2}
                         className={
-                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                          isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
                         }
                         style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
@@ -536,7 +536,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`tabular-nums text-2xl ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-metric font-sans font-bold'
                           : isBespoke
                           ? 'font-mono font-semibold text-neutral-50'
@@ -548,7 +548,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -556,10 +556,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <Flame
-                      size={isLiquidGlass ? 16 : 14}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      size={isFluentGlass ? 16 : 14}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
                       className={
-                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                        isFluentGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
                       }
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
@@ -590,9 +590,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <TrendingUp
                         size={12}
-                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        strokeWidth={isFluentGlass ? 1.75 : 2}
                         className={
-                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                          isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
                         }
                         style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
@@ -600,7 +600,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`tabular-nums text-2xl ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-metric font-sans font-bold'
                           : isBespoke
                           ? 'font-mono font-semibold text-neutral-50'
@@ -612,7 +612,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -620,10 +620,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <TrendingUp
-                      size={isLiquidGlass ? 16 : 14}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      size={isFluentGlass ? 16 : 14}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
                       className={
-                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                        isFluentGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
                       }
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
@@ -636,11 +636,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     isModernFont ? 'font-sans text-neutral-400' : 'text-[10px] font-mono text-zinc-400'
                   }`}
                 >
-                  <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                  <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                     {displayedCompletedCount}
                   </span>{' '}
                   done /{' '}
-                  <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                  <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                     {displayedAbortedCount}
                   </span>{' '}
                   aborted
@@ -661,9 +661,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <Award
                         size={12}
-                        strokeWidth={isLiquidGlass ? 1.75 : 2}
+                        strokeWidth={isFluentGlass ? 1.75 : 2}
                         className={
-                          isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
+                          isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined
                         }
                         style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
@@ -671,7 +671,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`tabular-nums text-2xl ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-metric font-sans font-bold'
                           : isBespoke
                           ? 'font-mono font-semibold text-neutral-50'
@@ -683,7 +683,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-8 h-8 obsidian-inset flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -691,10 +691,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <Award
-                      size={isLiquidGlass ? 16 : 14}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
+                      size={isFluentGlass ? 16 : 14}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
                       className={
-                        isLiquidGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
+                        isFluentGlass ? 'text-zinc-100' : isBespoke ? 'text-blue-500' : undefined
                       }
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
@@ -735,7 +735,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -744,8 +744,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   >
                     <Calendar
                       size={16}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
-                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
+                      className={isFluentGlass ? 'text-zinc-100' : undefined}
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
@@ -759,7 +759,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`truncate ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'text-[11px] font-sans text-zinc-400'
                           : isBespoke
                           ? 'text-[11px] font-mono text-neutral-400'
@@ -773,7 +773,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'px-3 py-1.5 liquid-inset rounded-xl text-center shrink-0'
                       : `px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
                           isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -782,7 +782,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 >
                   <div
                     className={`text-xs tabular-nums leading-none ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'font-sans font-bold text-cyan-200'
                         : isBespoke
                         ? 'font-mono font-semibold text-blue-500'
@@ -805,7 +805,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {/* Dynamic Timeframe Segmented Switcher */}
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'bg-black/45 border border-white/10 rounded-full p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
                     : isBespoke
                     ? 'bg-neutral-950 border border-neutral-800 rounded-md p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
@@ -820,7 +820,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       type="button"
                       onClick={() => handleSelectTimeframe(opt.id)}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `py-1.5 px-1 rounded-full liquid-spring truncate ${
                               active
                                 ? 'liquid-pill-active font-semibold'
@@ -849,7 +849,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {heatmapTimeframe !== 'merged_all' && (
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl liquid-row text-[11px]'
                       : isBespoke
                       ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md bg-neutral-950 border border-neutral-800 text-[11px]'
@@ -860,7 +860,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => handleShiftPeriod(-1)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-1.5 rounded-lg liquid-pill text-zinc-200'
                         : isBespoke
                         ? 'p-1 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white transition-colors duration-75'
@@ -874,7 +874,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className={`truncate ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'font-sans font-medium text-zinc-200'
                           : isBespoke
                           ? 'font-mono font-medium text-neutral-200'
@@ -892,7 +892,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           setSelectedCell(null);
                         }}
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'px-2 py-0.5 rounded-full liquid-pill text-[10px] font-sans font-medium uppercase'
                             : isBespoke
                             ? 'px-1.5 py-0.5 rounded-sm bg-black border border-neutral-800 text-[10px] font-sans font-medium uppercase text-neutral-100 hover:border-neutral-700 transition-colors duration-75'
@@ -909,7 +909,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     disabled={!heatmapView.canGoNext}
                     onClick={() => handleShiftPeriod(1)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed'
                         : isBespoke
                         ? 'p-1 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-75'
@@ -939,9 +939,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               isSel ? null : { key, detail: cell.detailLabel }
                             );
                           }}
-                          style={getHeatmapCellStyle(cell.level, isSel, false, isBespoke, isLiquidGlass)}
+                          style={getHeatmapCellStyle(cell.level, isSel, false, isBespoke, isFluentGlass)}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'h-11 rounded-xl flex flex-col items-center justify-center px-1 liquid-spring font-sans tabular-nums'
                               : isBespoke
                               ? 'h-11 rounded-sm flex flex-col items-center justify-center px-1 transition-colors duration-75 font-mono tabular-nums'
@@ -1000,9 +1000,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             isSel ? null : { key, detail: cell.detailLabel }
                           );
                         }}
-                        style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
+                        style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isFluentGlass)}
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'h-20 rounded-xl p-1.5 flex flex-col items-center justify-between liquid-spring font-sans tabular-nums'
                             : isBespoke
                             ? 'h-20 rounded-sm p-1.5 flex flex-col items-center justify-between transition-colors duration-75 font-mono tabular-nums'
@@ -1065,7 +1065,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                                     ? cell.level >= 3
                                       ? '#FFFFFF'
                                       : '#3B82F6'
-                                    : isLiquidGlass
+                                    : isFluentGlass
                                     ? '#00F2FE'
                                     : 'var(--accent-hex, #FFFFFF)',
                               }}
@@ -1103,9 +1103,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               isSel ? null : { key, detail: cell.detailLabel }
                             );
                           }}
-                          style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
+                          style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isFluentGlass)}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `h-9 rounded-lg flex flex-col items-center justify-center liquid-spring font-sans tabular-nums ${
                                   cell.isFuture ? 'opacity-40' : ''
                                 }`
@@ -1159,14 +1159,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'p-2 liquid-row rounded-xl'
                           : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
                       }
                     >
                       <div
                         className={`text-xs tabular-nums font-semibold ${
-                          isLiquidGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
+                          isFluentGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
                         }`}
                       >
                         {heatmapView.totalHours}h
@@ -1177,14 +1177,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'p-2 liquid-row rounded-xl'
                           : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
                       }
                     >
                       <div
                         className={`text-xs tabular-nums font-semibold ${
-                          isLiquidGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
+                          isFluentGlass ? 'liquid-metric font-sans' : 'font-mono text-white'
                         }`}
                       >
                         {heatmapView.activeCount}d
@@ -1195,14 +1195,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'p-2 liquid-row rounded-xl'
                           : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
                       }
                     >
                       <div
                         className={`text-xs tabular-nums font-semibold truncate ${
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'font-sans text-cyan-300'
                             : isBespoke
                             ? 'font-mono text-blue-400'
@@ -1220,14 +1220,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'p-2 liquid-row rounded-xl'
                           : `p-2 obsidian-inset-neutral ${isBespoke ? 'rounded-md' : 'rounded-xl'}`
                       }
                     >
                       <div
                         className={`text-xs tabular-nums font-semibold ${
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'font-sans text-cyan-300'
                             : isBespoke
                             ? 'font-mono text-blue-400'
@@ -1272,7 +1272,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                               );
                             }}
                             title={cell.detailLabel}
-                            style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isLiquidGlass)}
+                            style={getHeatmapCellStyle(cell.level, isSel, cell.isToday, isBespoke, isFluentGlass)}
                             className={
                               isBespoke
                                 ? `w-3 h-3 rounded-none transition-colors duration-75 ${
@@ -1291,7 +1291,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <div className="flex items-center justify-between text-[10px] font-sans text-neutral-400">
                     <span>
                       Merged across{' '}
-                      <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                      <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                         {heatmapView.mergedWeekCount}
                       </span>{' '}
                       weeks (earliest &rarr; today)
@@ -1301,7 +1301,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       {([0, 1, 2, 3, 4] as const).map((lvl) => (
                         <span
                           key={lvl}
-                          style={getHeatmapCellStyle(lvl, false, false, isBespoke, isLiquidGlass)}
+                          style={getHeatmapCellStyle(lvl, false, false, isBespoke, isFluentGlass)}
                           className={`w-2.5 h-2.5 inline-block ${
                             isBespoke ? 'rounded-none' : 'rounded-[2px]'
                           }`}
@@ -1324,7 +1324,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     {([0, 1, 2, 3, 4] as const).map((lvl) => (
                       <span
                         key={lvl}
-                        style={getHeatmapCellStyle(lvl, false, false, isBespoke, isLiquidGlass)}
+                        style={getHeatmapCellStyle(lvl, false, false, isBespoke, isFluentGlass)}
                         className={`w-2.5 h-2.5 inline-block ${
                           isBespoke ? 'rounded-none' : 'rounded-[2px]'
                         }`}
@@ -1393,7 +1393,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 >
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -1401,9 +1401,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <Trophy
-                      size={isLiquidGlass ? 15 : 13}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
-                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      size={isFluentGlass ? 15 : 13}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
+                      className={isFluentGlass ? 'text-zinc-100' : undefined}
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
@@ -1412,7 +1412,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div className="flex items-center gap-2">
                   <span
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'text-[10px] font-sans tabular-nums font-semibold px-2.5 py-0.5 rounded-full liquid-row text-zinc-200'
                         : isBespoke
                         ? 'text-[10px] font-mono tabular-nums font-semibold px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-200'
@@ -1425,7 +1425,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => setShowShareModal(true)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'text-[10px] font-sans font-semibold uppercase px-3 py-1 rounded-full liquid-pill-active'
                         : isBespoke
                         ? 'text-[10px] font-sans font-semibold uppercase px-2.5 py-1 rounded-md bg-blue-600 border border-blue-500 text-white hover:bg-blue-500 transition-colors duration-75'
@@ -1456,7 +1456,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               Tap any badge to inspect unlock criteria. All earned badges &amp; the{' '}
               <strong
                 className={
-                  isLiquidGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-400' : undefined
+                  isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-400' : undefined
                 }
                 style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
               >
@@ -1494,7 +1494,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               {kpiSyncActive && (
                 <span
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'text-[10px] font-sans px-2.5 py-0.5 rounded-full liquid-row text-cyan-200 font-semibold uppercase'
                       : isBespoke
                       ? 'text-[10px] font-mono px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-100 font-semibold uppercase'
@@ -1529,7 +1529,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </span>
                       <span
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'font-sans tabular-nums text-zinc-200 font-semibold'
                             : isBespoke
                             ? 'font-mono tabular-nums text-neutral-300 font-semibold'
@@ -1541,7 +1541,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'w-full liquid-track rounded-full h-2.5 overflow-hidden p-[1px]'
                           : isBespoke
                           ? 'w-full bg-neutral-950 border border-neutral-800 rounded-none h-2 overflow-hidden'
@@ -1550,7 +1550,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     >
                       <div
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'h-full liquid-mercury-fill rounded-full'
                             : isBespoke
                             ? 'h-full rounded-none transition-all duration-75'
@@ -1558,7 +1558,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         }
                         style={{
                           width: `${item.pct}%`,
-                          ...(isLiquidGlass
+                          ...(isFluentGlass
                             ? {}
                             : {
                                 background: isBespoke
@@ -1597,7 +1597,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
   return (
     <div
       className={`flex flex-col px-4 max-w-md mx-auto w-full select-none ${
-        isLiquidGlass
+        isFluentGlass
           ? 'gap-5 py-5 pb-32 font-sans'
           : isBespoke
           ? 'gap-6 py-5 pb-24 font-sans'
@@ -1609,7 +1609,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <div className="min-w-0">
           <h1
             className={`text-xl tracking-tight flex items-center gap-2 truncate ${
-              isLiquidGlass
+              isFluentGlass
                 ? 'font-sans font-bold text-white'
                 : isBespoke
                 ? 'font-sans font-semibold text-neutral-50'
@@ -1636,7 +1636,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               setShowWidgetCustomizer((prev) => !prev);
             }}
             className={
-              isLiquidGlass
+              isFluentGlass
                 ? `px-3 py-2 rounded-full font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 liquid-spring ${
                     showWidgetCustomizer ? 'liquid-pill-active' : 'liquid-pill text-zinc-200'
                   }`
@@ -1654,7 +1654,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             }
             title="Configure Dashboard Widgets"
           >
-            <LayoutGrid size={13} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+            <LayoutGrid size={13} strokeWidth={isFluentGlass ? 1.75 : 2} />
             <span>Widgets</span>
           </button>
 
@@ -1662,14 +1662,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             type="button"
             onClick={() => setShowShareModal(true)}
             className={
-              isLiquidGlass
+              isFluentGlass
                 ? 'px-3.5 py-2 rounded-full liquid-pill-active font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5'
                 : isBespoke
                 ? 'px-3 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 transition-colors duration-75'
                 : 'px-3 py-2 rounded-xl obsidian-pill-active font-mono font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all'
             }
           >
-            <Share2 size={13} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+            <Share2 size={13} strokeWidth={isFluentGlass ? 1.75 : 2} />
             <span>Flex</span>
           </button>
         </div>
@@ -1696,7 +1696,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 >
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle'
                         : `w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -1704,9 +1704,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                   >
                     <LayoutGrid
-                      size={isLiquidGlass ? 15 : 13}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
-                      className={isLiquidGlass ? 'text-zinc-100' : undefined}
+                      size={isFluentGlass ? 15 : 13}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
+                      className={isFluentGlass ? 'text-zinc-100' : undefined}
                       style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     />
                   </div>
@@ -1716,7 +1716,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   type="button"
                   onClick={() => setShowWidgetCustomizer(false)}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'p-1.5 rounded-full liquid-pill text-zinc-300'
                       : isBespoke
                       ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75'
@@ -1744,7 +1744,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <div
                       key={wId}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `p-3 rounded-xl liquid-row flex items-center justify-between gap-2 ${
                               isVisible ? '' : 'opacity-45'
                             }`
@@ -1777,7 +1777,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30'
                               : isBespoke
                               ? 'p-1.5 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 transition-colors duration-75'
@@ -1798,7 +1798,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'p-1.5 rounded-lg liquid-pill text-zinc-200 disabled:opacity-30'
                               : isBespoke
                               ? 'p-1.5 rounded-sm bg-black border border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white disabled:opacity-30 transition-colors duration-75'
@@ -1821,7 +1821,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             });
                           }}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `p-1.5 rounded-lg liquid-spring ${
                                   isVisible ? 'liquid-pill-active' : 'liquid-pill text-zinc-400'
                                 }`
@@ -1858,7 +1858,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'bg-black/45 border border-white/10 rounded-full p-1 grid grid-cols-4 gap-1 text-[11px]'
                       : isBespoke
                       ? 'bg-neutral-950 border border-neutral-800 rounded-md p-1 grid grid-cols-4 gap-1 text-[11px]'
@@ -1880,7 +1880,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                           handleSelectTimeframe(opt.id);
                         }}
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? `py-1.5 px-1 rounded-full truncate liquid-spring ${
                                 active
                                   ? 'liquid-pill-active font-semibold'
@@ -1918,7 +1918,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     });
                   }}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'p-3 rounded-xl liquid-row liquid-spring text-left flex items-center justify-between gap-2'
                       : isBespoke
                       ? 'p-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-left flex items-center justify-between gap-2 transition-colors duration-75'
@@ -1939,7 +1939,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   </div>
                   <span
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? `px-2.5 py-0.5 rounded-full font-sans text-[10px] font-semibold uppercase shrink-0 ${
                             safeWidgets.syncOverviewWithTimeframe
                               ? 'liquid-pill-active'
@@ -1966,7 +1966,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
           }
           footerContent={
             <>
-              <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+              <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                 {visibleWidgetCount}/{safeWidgets.order.length} widgets visible
               </span>
               <button
@@ -2018,7 +2018,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       </span>
                       <span
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'px-2.5 py-0.5 rounded-full liquid-pill-active text-[9px] font-sans font-semibold uppercase tracking-wide'
                             : isBespoke
                             ? 'px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 text-[10px] font-mono font-semibold uppercase tracking-wide'
@@ -2031,14 +2031,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <div
                       className={`text-[11px] text-neutral-400 truncate mt-0.5 ${
-                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                        isFluentGlass ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       <span>{profile.handle}</span>
                       <span className="mx-1.5 text-neutral-600">•</span>
                       <span
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'text-cyan-300 font-medium'
                             : isBespoke
                             ? 'text-blue-400'
@@ -2055,7 +2055,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 {/* Target Box */}
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'flex-shrink-0 px-3 py-2 liquid-inset rounded-xl text-center'
                       : `flex-shrink-0 px-2.5 py-2 obsidian-inset text-center ${
                           isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -2064,7 +2064,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 >
                   <div
                     className={`text-xs tabular-nums leading-none ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'font-sans font-bold text-cyan-200'
                         : isBespoke
                         ? 'font-mono font-semibold text-blue-500'
@@ -2085,7 +2085,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <span className="text-neutral-400">Today&rsquo;s Progress</span>
                   <span
                     className={`tabular-nums ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'font-sans font-semibold text-cyan-200'
                         : isBespoke
                         ? 'font-mono font-semibold text-blue-400'
@@ -2098,7 +2098,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'w-full h-2.5 rounded-full liquid-track overflow-hidden p-[1px]'
                       : isBespoke
                       ? 'w-full h-2 rounded-none bg-neutral-950 border border-neutral-800 overflow-hidden'
@@ -2107,7 +2107,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 >
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'h-full rounded-full liquid-mercury-fill'
                         : isBespoke
                         ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
@@ -2115,7 +2115,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     }
                     style={{
                       width: `${dailyGoalPct}%`,
-                      ...(isLiquidGlass
+                      ...(isFluentGlass
                         ? {}
                         : {
                             background: isBespoke
@@ -2149,7 +2149,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 {profileRank.nextTitle && (
                   <span
                     className={`text-neutral-400 tabular-nums ${
-                      isLiquidGlass ? 'font-sans' : 'font-mono'
+                      isFluentGlass ? 'font-sans' : 'font-mono'
                     }`}
                   >
                     {profileRank.hoursToNext}h to {profileRank.nextTitle}
@@ -2159,7 +2159,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   type="button"
                   onClick={onOpenProfileModal}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'px-3 py-1 rounded-full liquid-pill text-[10px] font-sans font-semibold flex items-center gap-1'
                       : isBespoke
                       ? 'px-2.5 py-1 rounded-sm bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-[10px] font-sans font-medium text-neutral-200 flex items-center gap-1 transition-colors duration-75'
@@ -2190,7 +2190,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'liquid-squircle w-11 h-11 rounded-[14px]'
                       : `w-11 h-11 obsidian-icon-box flex items-center justify-center shrink-0 ${
                           isBespoke ? 'rounded-md text-blue-500' : 'rounded-2xl'
@@ -2198,7 +2198,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   }
                   style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
-                  <Gift size={18} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                  <Gift size={18} strokeWidth={isFluentGlass ? 1.75 : 2} />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-white">
@@ -2215,14 +2215,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 type="button"
                 onClick={onOpenProfileModal}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'px-3.5 py-2 rounded-full liquid-pill-active font-sans font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1.5 shrink-0'
                     : isBespoke
                     ? 'px-3 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-[11px] uppercase tracking-wide flex items-center gap-1 shrink-0 transition-colors duration-75'
                     : 'px-3 py-2 rounded-xl obsidian-pill-active font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 active:scale-95 transition-all'
                 }
               >
-                <Sparkles size={12} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                <Sparkles size={12} strokeWidth={isFluentGlass ? 1.75 : 2} />
                 <span>Create</span>
               </button>
             </>
@@ -2280,7 +2280,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div className="flex items-center gap-3">
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'liquid-squircle w-12 h-12 rounded-[14px]'
                       : `obsidian-icon-box flex items-center justify-center shrink-0 ${
                           isBespoke
@@ -2292,8 +2292,8 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   {isModernFont ? (
                     <Ticket
                       size={22}
-                      strokeWidth={isLiquidGlass ? 1.75 : 2}
-                      className={isLiquidGlass ? 'text-cyan-200' : undefined}
+                      strokeWidth={isFluentGlass ? 1.75 : 2}
+                      className={isFluentGlass ? 'text-cyan-200' : undefined}
                     />
                   ) : (
                     <span
@@ -2318,7 +2318,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   <div className="text-3xl flex items-baseline gap-2">
                     <span
                       className={`tabular-nums ${
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-metric font-sans font-bold'
                           : 'font-mono font-semibold text-white'
                       }`}
@@ -2333,7 +2333,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </div>
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'px-3 py-1.5 liquid-inset rounded-xl text-center shrink-0'
                     : `px-2.5 py-1.5 obsidian-inset text-center shrink-0 ${
                         isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -2342,7 +2342,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               >
                 <div
                   className={`text-xs tabular-nums leading-none ${
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'font-sans font-bold text-cyan-200'
                       : isBespoke
                       ? 'font-mono font-semibold text-blue-500'
@@ -2354,7 +2354,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </div>
                 <div
                   className={`mt-1 text-[8px] tracking-wider uppercase text-neutral-400 ${
-                    isLiquidGlass ? 'font-sans' : 'font-mono'
+                    isFluentGlass ? 'font-sans' : 'font-mono'
                   }`}
                 >
                   {parachuteMetrics.bonusParachutes > 0
@@ -2382,7 +2382,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 </span>
                 <span
                   className={`tabular-nums font-semibold ${
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'font-sans text-cyan-200'
                       : isBespoke
                       ? 'font-mono text-blue-400'
@@ -2396,7 +2396,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
 
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'w-full liquid-track rounded-full h-2.5 p-[1px] overflow-hidden'
                     : isBespoke
                     ? 'w-full bg-neutral-950 border border-neutral-800 rounded-none h-2.5 overflow-hidden'
@@ -2405,7 +2405,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               >
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'h-full rounded-full liquid-mercury-fill'
                       : isBespoke
                       ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
@@ -2413,7 +2413,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   }
                   style={{
                     width: `${parachuteMetrics.progressPercentage}%`,
-                    ...(isLiquidGlass
+                    ...(isFluentGlass
                       ? {}
                       : {
                           background: isBespoke
@@ -2428,10 +2428,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-0.5">
-                <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                   {parachuteMetrics.hoursUntilNextParachute} hours remaining
                 </span>
-                <span className={isLiquidGlass ? 'font-sans' : 'font-mono'}>
+                <span className={isFluentGlass ? 'font-sans' : 'font-mono'}>
                   20h monotonic threshold
                 </span>
               </div>
@@ -2443,9 +2443,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             <div className="flex items-center gap-1.5">
               <Moon
                 size={13}
-                strokeWidth={isLiquidGlass ? 1.75 : 2}
+                strokeWidth={isFluentGlass ? 1.75 : 2}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'shrink-0 text-cyan-300'
                     : isBespoke
                     ? 'shrink-0 text-blue-500'
@@ -2463,7 +2463,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
             </div>
             <span
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'font-semibold text-cyan-200'
                   : isBespoke
                   ? 'font-semibold text-blue-400'
@@ -2480,7 +2480,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       {/* Navigation Tabs */}
       <div
         className={
-          isLiquidGlass
+          isFluentGlass
             ? 'grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/15 rounded-full'
             : isBespoke
             ? 'grid grid-cols-3 gap-1 p-1 bg-neutral-950 border border-neutral-800 rounded-md'
@@ -2490,7 +2490,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('overview')}
           className={
-            isLiquidGlass
+            isFluentGlass
               ? `py-2 text-xs font-sans rounded-full liquid-spring ${
                   activeTab === 'overview'
                     ? 'liquid-pill-active font-semibold'
@@ -2514,7 +2514,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('ledger')}
           className={
-            isLiquidGlass
+            isFluentGlass
               ? `py-2 text-xs font-sans rounded-full liquid-spring ${
                   activeTab === 'ledger'
                     ? 'liquid-pill-active font-semibold'
@@ -2538,7 +2538,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         <button
           onClick={() => setActiveTab('sessions')}
           className={
-            isLiquidGlass
+            isFluentGlass
               ? `py-2 text-xs font-sans rounded-full liquid-spring ${
                   activeTab === 'sessions'
                     ? 'liquid-pill-active font-semibold'
@@ -2557,7 +2557,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 }`
           }
         >
-          History (<span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>{sessions.length}</span>)
+          History (<span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>{sessions.length}</span>)
         </button>
       </div>
 
@@ -2579,7 +2579,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     type="button"
                     onClick={() => commitWidgetsConfig(DEFAULT_WIDGETS_CONFIG)}
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'px-4 py-2 rounded-full liquid-pill-active font-semibold text-xs uppercase'
                         : isBespoke
                         ? 'px-4 py-2 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-xs uppercase transition-colors duration-75'
@@ -2635,7 +2635,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <div className="flex items-start gap-2.5 min-w-0">
                       <div
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? `w-7 h-7 rounded-lg flex items-center justify-center font-sans font-semibold text-xs shrink-0 ${
                                 isEarned
                                   ? 'liquid-inset text-cyan-200'
@@ -2673,7 +2673,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     </div>
                     <span
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `text-[10px] font-sans font-semibold px-2.5 py-0.5 rounded-full uppercase shrink-0 ${
                               isEarned
                                 ? 'liquid-pill-active'
@@ -2705,7 +2705,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     )}
                     <div
                       className={`flex items-center justify-between gap-2 tabular-nums ${
-                        isLiquidGlass ? 'font-sans' : 'font-mono'
+                        isFluentGlass ? 'font-sans' : 'font-mono'
                       }`}
                     >
                       <span>{new Date(entry.timestamp).toLocaleString()}</span>
@@ -2715,7 +2715,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 );
 
                 // Omit backdrop-filter on list rows for 120fps WebView scrolling
-                if (isLiquidGlass) {
+                if (isFluentGlass) {
                   return (
                     <div
                       key={entry.id}
@@ -2802,9 +2802,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       {sess.status === 'completed' ? (
                         <CheckCircle2
                           size={16}
-                          strokeWidth={isLiquidGlass ? 1.75 : 2}
+                          strokeWidth={isFluentGlass ? 1.75 : 2}
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'text-cyan-300 shrink-0'
                               : isBespoke
                               ? 'text-blue-500 shrink-0'
@@ -2823,14 +2823,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                         >
                           <span>
                             #{sess.tag} —{' '}
-                            <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                            <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                               {Math.round(sess.durationSeconds / 60)} min
                             </span>
                           </span>
                           {isSleep && sess.weightMultiplier < 1.0 && (
                             <span
                               className={
-                                isLiquidGlass
+                                isFluentGlass
                                   ? 'text-[10px] font-sans px-2 py-0.5 liquid-row text-zinc-300 rounded-full'
                                   : isBespoke
                                   ? 'text-[10px] font-mono px-1.5 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-sm'
@@ -2847,11 +2847,11 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                     <div className="text-right shrink-0">
                       <div
                         className={`${
-                          isLiquidGlass ? 'font-sans' : 'font-mono'
+                          isFluentGlass ? 'font-sans' : 'font-mono'
                         } tabular-nums font-semibold ${
                           isAborted
                             ? 'text-red-400'
-                            : isLiquidGlass
+                            : isFluentGlass
                             ? 'text-cyan-300'
                             : isBespoke
                             ? 'text-blue-400'
@@ -2873,14 +2873,14 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 const rowFooter = (
                   <>
                     <span>
-                      <span className={`${isLiquidGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
+                      <span className={`${isFluentGlass ? 'font-sans' : 'font-mono'} tabular-nums`}>
                         {sess.dateStr}
                       </span>{' '}
                       • {sess.status === 'completed' ? 'Completed' : 'Used Escape Ticket'}
                     </span>
                     <span
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'text-[10px] font-sans uppercase px-2 py-0.5 rounded-full liquid-row text-zinc-300 font-medium'
                           : isBespoke
                           ? 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300 font-medium'
@@ -2893,7 +2893,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 );
 
                 // Omit backdrop-filter on scrolling session cards for 120fps WebView scrolling
-                if (isLiquidGlass) {
+                if (isFluentGlass) {
                   return (
                     <div
                       key={sess.id}

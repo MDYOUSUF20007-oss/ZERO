@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import type {
   NativeEnvironmentSecurity,
   ProfileAccent,
@@ -110,8 +110,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSaveProfile,
   onClose,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const [displayName, setDisplayName] = useState(initialProfile?.displayName || '');
   const [handleInput, setHandleInput] = useState(initialProfile?.handle || '');
   const [avatarId, setAvatarId] = useState<ProfileAvatarId>(initialProfile?.avatarId || 'monk');
@@ -212,7 +212,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${
-        isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+        isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
       }`}
       style={{
         paddingTop: 'calc(1rem + var(--zero-safe-top))',
@@ -245,7 +245,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           }
                     }
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full liquid-inset text-cyan-200 font-sans text-[10px] font-semibold uppercase tracking-wider mb-2'
                         : isBespoke
                         ? 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm bg-neutral-950 border border-blue-500 text-blue-400 font-mono text-[10px] font-semibold uppercase tracking-wider mb-2'
@@ -287,7 +287,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'p-2 rounded-full liquid-pill text-zinc-300 shrink-0'
                     : isBespoke
                     ? 'p-2 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors duration-75 shrink-0'
@@ -310,7 +310,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 className={isModernFont ? 'font-sans' : 'font-mono'}
                 headerClassName={isModernFont ? 'p-4 space-y-3' : 'p-3.5 space-y-2.5'}
                 footerClassName={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'px-4 py-2.5 text-[10px] font-sans flex items-center justify-between gap-2'
                     : isBespoke
                     ? 'px-4 py-2.5 text-[10px] font-mono flex items-center justify-between gap-2'
@@ -330,7 +330,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </span>
                       <span
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'font-sans text-[9px] font-semibold px-2.5 py-0.5 rounded-full liquid-inset text-cyan-200'
                             : isBespoke
                             ? 'font-mono text-[9px] font-semibold px-2 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400'
@@ -361,7 +361,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     {restoreDisabled && (
                       <div
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'p-2.5 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs'
                             : isBespoke
                             ? 'p-2.5 rounded-sm bg-neutral-950 border border-red-500/60 text-red-300 text-xs'
@@ -376,7 +376,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       onClick={handleCloudRestoreClick}
                       disabled={restoreDisabled || isCloudBusy || isRestoringLocal}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'w-full py-2.5 px-3 rounded-xl liquid-pill-active font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
                           : isBespoke
                           ? 'w-full py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -394,14 +394,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       {isCloudBusy || isRestoringLocal ? (
                         <Loader2 size={14} className="animate-spin" />
                       ) : (
-                        <CloudDownload size={14} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                        <CloudDownload size={14} strokeWidth={isFluentGlass ? 1.75 : 2} />
                       )}
                       <span>Restore Backup from Cloud (Drive / OneDrive / JioDrive)</span>
                     </button>
                     {restoreFeedback && (
                       <div
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'p-2.5 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs'
                             : isBespoke
                             ? 'p-2.5 rounded-sm bg-neutral-950 border border-red-500/60 text-red-300 text-xs'
@@ -423,7 +423,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     </span>
                     <span
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'text-cyan-300 font-semibold uppercase tracking-wider'
                           : isBespoke
                           ? 'text-blue-400 font-semibold uppercase tracking-wider'
@@ -454,7 +454,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5'
                       : isBespoke
                       ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5'
@@ -474,7 +474,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   maxLength={28}
                   autoFocus={mode === 'welcome'}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'w-full obsidian-input rounded-xl px-3 py-2 text-xs font-sans text-white outline-none'
                       : isBespoke
                       ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 text-xs text-white outline-none transition-colors duration-75'
@@ -485,7 +485,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div>
                 <label
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5'
                       : isBespoke
                       ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5'
@@ -501,7 +501,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   placeholder={normalizeProfileHandle(displayName)}
                   maxLength={20}
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'w-full obsidian-input rounded-xl px-3 py-2 text-xs font-sans text-zinc-200 outline-none'
                       : isBespoke
                       ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 font-mono text-xs text-neutral-200 outline-none transition-colors duration-75'
@@ -515,7 +515,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div>
               <label
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 block mb-2'
                     : isBespoke
                     ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block mb-2'
@@ -541,7 +541,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           : undefined
                       }
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `p-2.5 rounded-xl flex flex-col items-center gap-1.5 liquid-spring ${
                               active
                                 ? 'liquid-inset text-white'
@@ -578,7 +578,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <div className="flex items-center justify-between">
                   <label
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5'
                         : isBespoke
                         ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5'
@@ -588,7 +588,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <Palette
                       size={11}
                       style={{
-                        color: isLiquidGlass
+                        color: isFluentGlass
                           ? '#7DD3FC'
                           : isBespoke
                           ? '#3B82F6'
@@ -596,7 +596,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       }}
                     />
                     <span>
-                      {isLiquidGlass
+                      {isFluentGlass
                         ? 'Theme Studio (Classic Mode Swatches)'
                         : isBespoke
                         ? 'Theme (Classic Mode)'
@@ -605,7 +605,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </label>
                   <span
                     className={`text-[10px] text-zinc-400 uppercase ${
-                      isLiquidGlass ? 'font-sans' : 'font-mono'
+                      isFluentGlass ? 'font-sans' : 'font-mono'
                     }`}
                   >
                     {activeThemeConfig.family}
@@ -639,7 +639,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             : undefined
                         }
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? `py-2 px-2 rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 liquid-spring ${
                                 selected
                                   ? 'liquid-pill-active'
@@ -662,7 +662,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           <Check
                             size={10}
                             style={
-                              isLiquidGlass
+                              isFluentGlass
                                 ? undefined
                                 : { color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }
                             }
@@ -697,7 +697,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               : undefined
                           }
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `p-2 rounded-xl text-left flex items-center gap-2 liquid-spring ${
                                   active
                                     ? 'liquid-inset text-white'
@@ -759,7 +759,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               : undefined
                           }
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `p-1.5 rounded-xl flex flex-col items-center gap-1 liquid-spring ${
                                   active ? 'liquid-inset' : 'liquid-row hover:border-white/25'
                                 }`
@@ -826,7 +826,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               : undefined
                           }
                           className={
-                            isLiquidGlass
+                            isFluentGlass
                               ? `p-1.5 rounded-xl flex flex-col items-center gap-1 liquid-spring ${
                                   active ? 'liquid-inset' : 'liquid-row hover:border-white/25'
                                 }`
@@ -869,7 +869,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="space-y-2">
               <label
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 block'
                     : isBespoke
                     ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block'
@@ -890,7 +890,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         setPrimaryMission(mission);
                       }}
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `px-3 py-1 rounded-full font-sans text-[11px] font-semibold liquid-spring ${
                               isActiveMission
                                 ? 'liquid-pill-active'
@@ -928,7 +928,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   maxLength={24}
                   placeholder="Custom #hashtag (e.g. GatePrep)"
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'flex-1 obsidian-input rounded-xl px-3 py-1.5 font-sans text-xs text-white outline-none'
                       : isBespoke
                       ? 'flex-1 bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-1.5 font-mono text-xs text-white outline-none transition-colors duration-75'
@@ -948,7 +948,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         }
                   }
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'px-3.5 py-1.5 rounded-xl liquid-pill-active text-xs font-semibold flex items-center gap-1 disabled:opacity-40 shrink-0'
                       : isBespoke
                       ? 'px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 disabled:opacity-40 transition-colors duration-75 shrink-0'
@@ -964,7 +964,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {/* Interactive Daily Focus Goal Slider */}
             <div
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'p-4 rounded-2xl liquid-row space-y-2.5'
                   : isBespoke
                   ? 'p-4 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
@@ -981,9 +981,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 >
                   <Flame
                     size={13}
-                    strokeWidth={isLiquidGlass ? 1.75 : 2}
+                    strokeWidth={isFluentGlass ? 1.75 : 2}
                     style={{
-                      color: isLiquidGlass
+                      color: isFluentGlass
                         ? '#7DD3FC'
                         : isBespoke
                         ? '#3B82F6'
@@ -994,14 +994,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </span>
                 <span
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'font-sans tabular-nums font-bold text-cyan-200'
                       : isBespoke
                       ? 'font-mono tabular-nums font-semibold'
                       : 'font-black'
                   }
                   style={
-                    isLiquidGlass
+                    isFluentGlass
                       ? undefined
                       : { color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }
                   }
@@ -1020,7 +1020,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   setDailyGoalHours(Number(e.target.value));
                 }}
                 style={{
-                  accentColor: isLiquidGlass
+                  accentColor: isFluentGlass
                     ? '#4FACFE'
                     : isBespoke
                     ? '#2563EB'
@@ -1030,7 +1030,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               />
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'flex justify-between font-sans tabular-nums text-[10px] text-zinc-400'
                     : isBespoke
                     ? 'flex justify-between font-mono tabular-nums text-[10px] text-neutral-400'
@@ -1048,7 +1048,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="space-y-1.5">
               <label
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 block'
                     : isBespoke
                     ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block'
@@ -1064,7 +1064,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 maxLength={72}
                 placeholder="Your focus rule..."
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'w-full obsidian-input rounded-xl px-3 py-2 text-xs font-sans text-white outline-none'
                     : isBespoke
                     ? 'w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 rounded-md px-3 py-2 text-xs text-white outline-none transition-colors duration-75'
@@ -1091,7 +1091,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           : undefined
                       }
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? `text-[10px] px-2.5 py-1 rounded-full liquid-spring ${
                               selected ? 'liquid-inset text-cyan-200 font-semibold' : 'liquid-row text-zinc-400 hover:text-zinc-200'
                             }`
@@ -1118,7 +1118,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {errorMsg && (
               <div
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs'
                     : isBespoke
                     ? 'p-3 rounded-md bg-neutral-950 border border-red-500/60 text-red-300 text-xs'
@@ -1144,7 +1144,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     }
               }
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'w-full py-3 px-4 rounded-2xl liquid-pill-active font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2'
                   : isBespoke
                   ? 'w-full py-3 px-4 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-sans font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors duration-75'
@@ -1162,7 +1162,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </>
               ) : (
                 <>
-                  <UserCheck size={15} strokeWidth={isLiquidGlass ? 1.75 : 2} />
+                  <UserCheck size={15} strokeWidth={isFluentGlass ? 1.75 : 2} />
                   <span>Save Interactive Profile</span>
                 </>
               )}
@@ -1172,7 +1172,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               type="button"
               onClick={onClose}
               className={
-                isLiquidGlass
+                isFluentGlass
                   ? 'w-full py-2.5 rounded-2xl liquid-pill text-zinc-300 hover:text-white text-xs font-medium'
                   : isBespoke
                   ? 'w-full py-2.5 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-600 text-xs font-medium transition-colors duration-75'

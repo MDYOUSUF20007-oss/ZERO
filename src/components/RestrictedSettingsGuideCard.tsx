@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Settings, ExternalLink } from 'lucide-react';
 import type { RestrictedSettingsStatus } from '../types';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
@@ -23,11 +23,11 @@ export const RestrictedSettingsGuideCard: React.FC<RestrictedSettingsGuideCardPr
   onOpenAppInfo,
   compact = false,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const isBlockedNow = restrictedStatus === 'blocked';
   const actionName = isStrictBuild ? 'Enable Accessibility' : 'Grant Usage Access';
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <div
         data-restricted-guide="true"

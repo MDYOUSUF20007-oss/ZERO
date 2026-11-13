@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import type {
   AppAccessMode,
   AppLockRuleConfig,
@@ -84,8 +84,8 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
   onSaveRule,
   onRemoveFromBag,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const isModernFont = isBespoke || isFluentGlass;
   const isCompulsory = isCompulsoryDialerPackage(app);
   const isProtectedSystem = isProtectedSystemPackage(app.packageName);
 
@@ -162,7 +162,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                 ? 'bg-black border-blue-500/70'
                 : 'bg-black border-neutral-800 hover:border-neutral-700'
             }`
-          : isLiquidGlass
+          : isFluentGlass
           ? `w-full p-3 rounded-xl flex items-center justify-between gap-3 text-left transition-all disabled:opacity-45 ${
               checked ? 'liquid-inset' : 'liquid-row hover:brightness-110'
             }`
@@ -191,7 +191,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                   ? 'bg-blue-600 border-blue-500 text-white'
                   : 'bg-neutral-950 border-neutral-800 text-neutral-400'
               }`
-            : isLiquidGlass
+            : isFluentGlass
             ? `px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-widest shrink-0 ${
                 checked ? 'liquid-pill-active' : 'liquid-pill text-white/40'
               }`
@@ -217,13 +217,13 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
     onSaveRule(app, sanitized);
   };
 
-  const sectionCardClass = isLiquidGlass
+  const sectionCardClass = isFluentGlass
     ? 'p-3.5 rounded-2xl liquid-row space-y-3'
     : isBespoke
     ? 'p-3.5 rounded-md bg-neutral-950 border border-neutral-800 space-y-2.5'
     : 'p-3.5 rounded-2xl obsidian-inset-neutral space-y-3';
 
-  const subCardClass = isLiquidGlass
+  const subCardClass = isFluentGlass
     ? 'p-3 rounded-xl liquid-row space-y-2'
     : isBespoke
     ? 'p-3 rounded-md bg-black border border-neutral-800 space-y-2'
@@ -240,7 +240,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
   return (
     <div
       className={`fixed inset-0 z-[70] flex items-center justify-center px-3 sm:px-4 ${
-        isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
+        isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
       }`}
       style={{
         paddingTop: 'calc(1rem + var(--zero-safe-top))',
@@ -259,7 +259,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className={
-                    isLiquidGlass
+                    isFluentGlass
                       ? 'liquid-squircle text-cyan-200 mt-0.5'
                       : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 mt-0.5 ${
                           isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -276,7 +276,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                   <div
                     className="text-[10px] font-mono uppercase tracking-[0.2em] truncate"
                     style={{
-                      color: isLiquidGlass
+                      color: isFluentGlass
                         ? '#7DD3FC'
                         : isBespoke
                         ? '#60A5FA'
@@ -301,7 +301,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                 type="button"
                 onClick={onClose}
                 className={
-                  isLiquidGlass
+                  isFluentGlass
                     ? 'p-1.5 rounded-xl liquid-pill text-zinc-400 hover:text-white shrink-0'
                     : isBespoke
                     ? 'p-1.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white transition-colors duration-75 shrink-0'
@@ -985,7 +985,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                 className={
                   isBespoke
                     ? 'px-3 py-2.5 rounded-md bg-neutral-950 border border-red-500/60 text-red-400 hover:text-red-300 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors duration-75'
-                    : isLiquidGlass
+                    : isFluentGlass
                     ? 'px-3 py-2.5 rounded-2xl bg-red-950/30 border border-red-500/40 text-red-300 hover:text-red-200 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all'
                     : 'px-3 py-2.5 rounded-2xl bg-red-950/45 border border-red-500/55 text-red-300 hover:text-red-200 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all'
                 }
@@ -1001,7 +1001,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
               className={
                 isBespoke
                   ? 'px-3.5 py-2.5 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white text-xs font-medium uppercase tracking-wider transition-colors duration-75'
-                  : isLiquidGlass
+                  : isFluentGlass
                   ? 'liquid-pill px-3.5 py-2.5 rounded-2xl text-white/60 hover:text-white text-xs font-semibold uppercase tracking-wider transition-all'
                   : 'px-3.5 py-2.5 rounded-2xl obsidian-inset-neutral hover:border-white/25 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all'
               }
@@ -1015,7 +1015,7 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
               className={
                 isBespoke
                   ? 'flex-1 py-2.5 px-4 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-45 transition-colors duration-75'
-                  : isLiquidGlass
+                  : isFluentGlass
                   ? 'liquid-pill-active flex-1 py-2.5 px-4 rounded-2xl text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-45 transition-all'
                   : 'flex-1 py-2.5 px-4 rounded-2xl obsidian-pill-active text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-45 active:scale-[0.99] transition-all'
               }

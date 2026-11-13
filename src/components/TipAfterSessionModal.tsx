@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
 import type { SessionRecord } from '../types';
 import {
@@ -55,7 +55,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
   onDismiss,
   onBlockFiveSessions,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const [showQr, setShowQr] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -92,7 +92,7 @@ export const TipAfterSessionModal: React.FC<TipAfterSessionModalProps> = ({
     setTimeout(() => setCopiedUpi(false), 2000);
   };
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <div
         className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center px-4"

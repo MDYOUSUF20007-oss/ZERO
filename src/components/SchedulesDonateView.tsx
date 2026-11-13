@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { toDataURL as generateQrDataUrl } from 'qrcode';
 import {
   FIRST_DONATION_BONUS_INR,
@@ -192,9 +192,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     interfaceStyle: ctxInterfaceStyle,
     setInterfaceStyle: ctxSetInterfaceStyle,
     isBespoke,
-    isLiquidGlass,
+    isFluentGlass,
   } = useInterfaceStyle();
-  const isModernFont = isBespoke || isLiquidGlass;
+  const isModernFont = isBespoke || isFluentGlass;
   const activeInterfaceStyle = interfaceStyleProp ?? ctxInterfaceStyle;
   const applyInterfaceStyle = onInterfaceStyleChange ?? ctxSetInterfaceStyle;
 
@@ -295,7 +295,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   return (
     <div
       className={`flex flex-col px-4 py-5 max-w-md mx-auto w-full select-none ${
-        isLiquidGlass ? 'gap-5 font-sans pb-32' : isBespoke ? 'gap-6 font-sans pb-28' : 'gap-5 pb-28'
+        isFluentGlass ? 'gap-5 font-sans pb-32' : isBespoke ? 'gap-6 font-sans pb-28' : 'gap-5 pb-28'
       }`}
     >
       {/* View Header */}
@@ -303,7 +303,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         <div className="space-y-1">
           <h1
             className={`text-xl tracking-tight text-white flex items-center gap-2 ${
-              isLiquidGlass
+              isFluentGlass
                 ? 'font-sans font-semibold liquid-metric'
                 : isBespoke
                 ? 'font-sans font-bold'
@@ -320,7 +320,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         <div className="space-y-1">
           <h1
             className={`text-xl tracking-tight text-white flex items-center gap-2 ${
-              isLiquidGlass
+              isFluentGlass
                 ? 'font-sans font-semibold liquid-metric'
                 : isBespoke
                 ? 'font-sans font-bold'
@@ -341,7 +341,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           className={`grid ${
             viewMode === 'settings_os' ? 'grid-cols-4' : 'grid-cols-5'
           } gap-1 p-1 ${
-            isLiquidGlass
+            isFluentGlass
               ? 'liquid-card rounded-full text-[11px] font-sans'
               : isBespoke
               ? 'bg-black border border-neutral-800 rounded-md text-[11px] font-sans'
@@ -351,7 +351,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('schedules')}
             className={`py-2 truncate px-1 ${
-              isLiquidGlass
+              isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'schedules'
                       ? 'liquid-pill-active font-semibold'
@@ -375,7 +375,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('themes')}
             className={`py-2 truncate px-1 ${
-              isLiquidGlass
+              isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'themes'
                       ? 'liquid-pill-active font-semibold'
@@ -399,7 +399,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('settings')}
             className={`py-2 truncate px-1 ${
-              isLiquidGlass
+              isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'settings'
                       ? 'liquid-pill-active font-semibold'
@@ -423,7 +423,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('os_security')}
             className={`py-2 truncate px-1 ${
-              isLiquidGlass
+              isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'os_security'
                       ? 'liquid-pill-active font-semibold'
@@ -448,7 +448,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             <button
               onClick={() => setActiveSection('support')}
               className={`py-2 truncate px-1 ${
-                isLiquidGlass
+                isFluentGlass
                   ? `rounded-full font-medium liquid-spring ${
                       effectiveSection === 'support'
                         ? 'liquid-pill-active font-semibold'
@@ -475,7 +475,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
 
       {/* SECTION 0: THEME SETTINGS (THEME STUDIO + RUNTIME INTERFACE STYLE SWITCHER) */}
       {effectiveSection === 'themes' && (
-        <div className={isBespoke || isLiquidGlass ? 'space-y-5' : 'space-y-4'}>
+        <div className={isBespoke || isFluentGlass ? 'space-y-5' : 'space-y-4'}>
           <ThemeSelectorCard
             themeConfig={themeConfig}
             onChange={onThemeConfigChange}
@@ -517,7 +517,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-squircle text-cyan-200'
                           : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -528,7 +528,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         size={15}
                         strokeWidth={1.75}
                         style={
-                          isLiquidGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
+                          isFluentGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
                         }
                       />
                     </div>
@@ -543,15 +543,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                   <span
                     className={`text-[10px] font-semibold uppercase px-2.5 py-0.5 border shrink-0 ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'rounded-full liquid-pill-active font-bold border-transparent'
                         : isBespoke
                         ? 'rounded-sm border-blue-500/50 bg-blue-600/15 text-blue-300'
                         : 'rounded-full obsidian-pill-active font-black'
                     }`}
                   >
-                    {activeInterfaceStyle === 'liquid_glass'
-                      ? 'Liquid Glass'
+                    {activeInterfaceStyle === 'fluent_glass'
+                      ? 'Fluent Glass'
                       : activeInterfaceStyle === 'bespoke'
                       ? 'Bespoke'
                       : 'Classic'}
@@ -565,7 +565,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     aria-checked={activeInterfaceStyle === 'classic'}
                     onClick={() => applyInterfaceStyle('classic')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? `rounded-2xl liquid-spring ${
                             activeInterfaceStyle === 'classic'
                               ? 'liquid-inset text-white'
@@ -613,7 +613,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     aria-checked={activeInterfaceStyle === 'bespoke'}
                     onClick={() => applyInterfaceStyle('bespoke')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? `rounded-2xl liquid-spring ${
                             activeInterfaceStyle === 'bespoke'
                               ? 'liquid-inset text-white'
@@ -658,23 +658,23 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     role="radio"
-                    aria-checked={activeInterfaceStyle === 'liquid_glass'}
-                    onClick={() => applyInterfaceStyle('liquid_glass')}
+                    aria-checked={activeInterfaceStyle === 'fluent_glass'}
+                    onClick={() => applyInterfaceStyle('fluent_glass')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'liquid_glass'
+                            activeInterfaceStyle === 'fluent_glass'
                               ? 'liquid-inset text-white'
                               : 'liquid-row text-zinc-400 hover:text-zinc-200'
                           }`
                         : isBespoke
                         ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'liquid_glass'
+                            activeInterfaceStyle === 'fluent_glass'
                               ? 'bg-neutral-950 border-blue-500 text-white'
                               : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
                           }`
                         : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'liquid_glass'
+                            activeInterfaceStyle === 'fluent_glass'
                               ? 'obsidian-inset text-white'
                               : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
                           }`
@@ -682,10 +682,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   >
                     <div className="min-w-0">
                       <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Microsoft Liquid Glass</span>
+                        <span>Fluent Glass</span>
                         <span
                           className={`text-[9px] uppercase px-1.5 py-0.5 font-semibold tracking-wider ${
-                            isLiquidGlass
+                            isFluentGlass
                               ? 'rounded-full bg-cyan-400/20 text-cyan-200 border border-cyan-300/35'
                               : isBespoke
                               ? 'rounded-sm bg-blue-600/20 text-blue-300 border border-blue-500/40'
@@ -703,14 +703,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
-                        activeInterfaceStyle === 'liquid_glass'
+                        activeInterfaceStyle === 'fluent_glass'
                           ? isBespoke
                             ? 'bg-blue-600 border-blue-500 text-white'
                             : 'obsidian-pill-active'
                           : 'border-neutral-600 bg-transparent'
                       }`}
                     >
-                      {activeInterfaceStyle === 'liquid_glass' && (
+                      {activeInterfaceStyle === 'fluent_glass' && (
                         <Check size={11} strokeWidth={1.75} />
                       )}
                     </div>
@@ -922,7 +922,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-squircle text-cyan-200'
                           : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -1350,7 +1350,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-squircle text-cyan-200'
                           : `w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -1546,12 +1546,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     {!hasClaimedFirstTimeParachute && (
                       <span
                         className={`text-[9px] font-semibold uppercase px-2 py-0.5 inline-flex items-center gap-1 ${
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'liquid-pill-active rounded-full font-bold'
                             : `obsidian-pill-active ${isBespoke ? 'rounded-sm' : 'rounded-full font-black'}`
                         }`}
                       >
-                        {isLiquidGlass ? (
+                        {isFluentGlass ? (
                           <>
                             <span>+1 Free</span>
                             <Ticket size={11} strokeWidth={1.75} />
@@ -1617,7 +1617,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <span>
                         {hasClaimedFirstTimeParachute
                           ? 'Create Interactive Profile'
-                          : isLiquidGlass
+                          : isFluentGlass
                           ? 'Make Profile & Claim +1 Free Ticket'
                           : 'Make Profile & Claim +1 Free 🎫'}
                       </span>
@@ -1650,7 +1650,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div className="flex items-center gap-2.5 text-xs text-zinc-100 font-semibold uppercase tracking-wider">
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle text-cyan-200'
                         : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
@@ -1677,14 +1677,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerContent={
               <>
                 <span>
-                  {activeInterfaceStyle === 'liquid_glass'
-                    ? 'Microsoft Liquid Glass'
+                  {activeInterfaceStyle === 'fluent_glass'
+                    ? 'Fluent Glass'
                     : activeInterfaceStyle === 'classic'
                     ? 'Classic UI (Default)'
                     : 'Bespoke Minimalist'}
                 </span>
                 <strong className="text-white uppercase font-mono">
-                  {activeInterfaceStyle === 'liquid_glass'
+                  {activeInterfaceStyle === 'fluent_glass'
                     ? 'Pitch #000000 + Fluent Acrylic'
                     : themeConfig.family === 'amoled'
                     ? `AMOLED (${themeConfig.amoledGradient})`
@@ -1728,7 +1728,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-squircle text-cyan-200'
                           : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md text-blue-400' : 'rounded-xl'
@@ -2345,7 +2345,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
                   <div
                     className={
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'liquid-squircle text-rose-300'
                         : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                             isBespoke ? 'rounded-md' : 'rounded-xl'
@@ -2442,7 +2442,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={
-                          isLiquidGlass
+                          isFluentGlass
                             ? 'liquid-squircle font-bold text-xs text-cyan-200'
                             : `w-9 h-9 obsidian-icon-box flex items-center justify-center font-bold text-xs shrink-0 ${
                                 isBespoke ? 'rounded-md font-mono text-blue-400' : 'rounded-xl text-white'
@@ -2512,13 +2512,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <div className="flex items-center justify-between gap-1.5 flex-wrap">
                         <div
                           className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase ${
-                            isLiquidGlass ? 'text-cyan-200' : isBespoke ? 'text-blue-400' : ''
+                            isFluentGlass ? 'text-cyan-200' : isBespoke ? 'text-blue-400' : ''
                           }`}
                           style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         >
                           <Gift size={13} strokeWidth={1.75} className="shrink-0" />
                           <span>
-                            {isLiquidGlass
+                            {isFluentGlass
                               ? `1st Tip ₹${FIRST_DONATION_BONUS_INR}+ = +1 Ticket & Supporter Badge`
                               : `1st Tip ₹${FIRST_DONATION_BONUS_INR}+ = +1 🎫 & Gold Badge`}
                           </span>
@@ -2533,10 +2533,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       </div>
                       <p className="text-[11px] text-zinc-300 leading-relaxed">
                         <strong>Strict Rule:</strong> The{' '}
-                        {isLiquidGlass ? 'Platinum ' : 'Golden '}
+                        {isFluentGlass ? 'Platinum ' : 'Golden '}
                         <strong className="text-white">ZERO-SUPPORTER</strong> Profile Badge &amp;{' '}
                         <strong>
-                          +1 Free Emergency Escape Ticket{isLiquidGlass ? '' : ' (🎫)'}
+                          +1 Free Emergency Escape Ticket{isFluentGlass ? '' : ' (🎫)'}
                         </strong>{' '}
                         <strong>ONLY unlock after your 1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
                         (smaller tips have no minimum limit via UPI but do not unlock the badge).
@@ -2552,13 +2552,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             className={`flex-1 py-2 px-3 obsidian-pill-active text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 ${
                               isBespoke
                                 ? 'rounded-md font-semibold transition-colors duration-75'
-                                : isLiquidGlass
+                                : isFluentGlass
                                 ? 'rounded-xl font-bold liquid-spring'
                                 : 'rounded-xl font-black active:scale-95 transition-all'
                             }`}
                           >
                             <span>
-                              {isLiquidGlass
+                              {isFluentGlass
                                 ? `Tip ₹${FIRST_DONATION_BONUS_INR}+ (+1 Ticket & Badge)`
                                 : `Tip ₹${FIRST_DONATION_BONUS_INR}+ (+1 🎫 & Gold)`}
                             </span>
@@ -2571,7 +2571,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                               className={`px-3 py-2 obsidian-inset-neutral text-zinc-200 hover:text-white text-[10px] font-semibold ${
                                 isBespoke
                                   ? 'rounded-md transition-colors duration-75'
-                                  : isLiquidGlass
+                                  : isFluentGlass
                                   ? 'rounded-xl liquid-pill font-semibold'
                                   : 'rounded-xl font-bold'
                               }`}
@@ -2588,10 +2588,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         >
                           <div className="text-[11px] text-zinc-200">
                             Confirm you sent your <strong>1st tip of minimum ₹{FIRST_DONATION_BONUS_INR}</strong>{' '}
-                            to unlock the {isLiquidGlass ? 'Platinum ' : 'Golden '}
+                            to unlock the {isFluentGlass ? 'Platinum ' : 'Golden '}
                             <strong className="text-white">ZERO-SUPPORTER</strong> Badge &amp;{' '}
                             <strong>
-                              +1 Free Emergency Escape Ticket{isLiquidGlass ? '' : ' (🎫)'}
+                              +1 Free Emergency Escape Ticket{isFluentGlass ? '' : ' (🎫)'}
                             </strong>
                             :
                           </div>
@@ -2797,7 +2797,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {showAddModal && (
         <div
           className={`fixed inset-0 z-60 flex items-center justify-center px-4 ${
-            isLiquidGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/90'
+            isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/90'
           }`}
           style={{
             paddingTop: 'calc(1rem + var(--zero-safe-top))',

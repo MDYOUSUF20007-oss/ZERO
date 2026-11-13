@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { ParachuteMetrics, ZeroProfile } from '../types';
 import { FIRST_DONATION_BONUS_INR } from '../utils/supportLinks';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
@@ -43,7 +43,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   onOpenSupport,
   onOpenInsights,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   if (!isOpen) return null;
 
   const balance = parachuteMetrics.currentBalance;
@@ -65,7 +65,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       ? 'You have 1 Escape Ticket ready in your vault'
       : `You have ${balance} Escape Tickets ready in your vault`;
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     return (
       <div
         className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center px-4 overflow-y-auto"

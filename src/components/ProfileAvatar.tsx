@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import type { ProfileAccent, ProfileAvatarId } from '../types';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { haptics } from '../utils/haptics';
@@ -276,7 +276,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   glowHighlighted = false,
   onPulse,
 }) => {
-  const { isBespoke, isLiquidGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass } = useInterfaceStyle();
   const [pulsing, setPulsing] = useState(false);
   const emblem = AVATAR_ID_TO_EMBLEM[avatarId] || 'Monk';
 
@@ -298,11 +298,11 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     e.stopPropagation();
     haptics.tick(960);
     setPulsing(true);
-    setTimeout(() => setPulsing(false), isBespoke || isLiquidGlass ? 180 : 550);
+    setTimeout(() => setPulsing(false), isBespoke || isFluentGlass ? 180 : 550);
     onPulse?.();
   };
 
-  if (isLiquidGlass) {
+  if (isFluentGlass) {
     const highlighted = glowHighlighted || pulsing;
     const glassClass = highlighted ? 'liquid-inset' : 'liquid-squircle';
     const glassColor = highlighted ? '#7DD3FC' : '#F4F4F5';

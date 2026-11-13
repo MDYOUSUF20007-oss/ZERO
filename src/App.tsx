@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useZeroStore } from './store/useZeroStore';
 import { LockDialView } from './components/LockDialView';
 import { TheVoidView } from './components/TheVoidView';
@@ -90,7 +90,7 @@ export function App() {
   };
 
   const isBespoke = store.interfaceStyle === 'bespoke';
-  const isLiquidGlass = store.interfaceStyle === 'liquid_glass';
+  const isFluentGlass = store.interfaceStyle === 'fluent_glass';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -117,7 +117,7 @@ export function App() {
       setInterfaceStyle={store.setInterfaceStyle}
     >
       <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
-        {isLiquidGlass && <AmbientBackground />}
+        {isFluentGlass && <AmbientBackground />}
 
         {/* Top Status Bar Safe-Area Scrim */}
         <div
@@ -133,13 +133,13 @@ export function App() {
         {store.preLockAlert && (
           <div
             className={`fixed left-4 right-4 z-50 max-w-md mx-auto ${
-              isBespoke || isLiquidGlass ? '' : 'animate-bounce'
+              isBespoke || isFluentGlass ? '' : 'animate-bounce'
             }`}
             style={{ top: 'calc(0.75rem + var(--zero-safe-top))' }}
           >
             <ObsidianCard
               ambientGlow={!isBespoke}
-              className={isBespoke || isLiquidGlass ? 'font-sans' : 'font-mono shadow-2xl'}
+              className={isBespoke || isFluentGlass ? 'font-sans' : 'font-mono shadow-2xl'}
               headerClassName={
                 isBespoke
                   ? 'p-3.5 flex items-center justify-between gap-3'
@@ -150,14 +150,14 @@ export function App() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={
-                        isLiquidGlass
+                        isFluentGlass
                           ? 'liquid-squircle text-cyan-200'
                           : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md' : 'rounded-xl'
                             }`
                       }
                       style={
-                        isLiquidGlass
+                        isFluentGlass
                           ? undefined
                           : { color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }
                       }
@@ -167,10 +167,10 @@ export function App() {
                     <div className="min-w-0">
                       <div
                         className={`text-xs uppercase tracking-wider ${
-                          isBespoke || isLiquidGlass ? 'font-semibold' : 'font-black'
+                          isBespoke || isFluentGlass ? 'font-semibold' : 'font-black'
                         }`}
                         style={{
-                          color: isLiquidGlass
+                          color: isFluentGlass
                             ? '#7DD3FC'
                             : isBespoke
                             ? '#60A5FA'
@@ -190,7 +190,7 @@ export function App() {
                   <button
                     onClick={() => store.triggerTestWarning('')}
                     className={`p-1.5 border text-zinc-400 hover:text-white shrink-0 ${
-                      isLiquidGlass
+                      isFluentGlass
                         ? 'rounded-xl liquid-pill border-transparent'
                         : isBespoke
                         ? 'rounded-md bg-neutral-950 border-neutral-800 transition-colors duration-75'
@@ -217,11 +217,11 @@ export function App() {
               accentOverride={{ hex: '#8B5CF6', rgb: '139, 92, 246' }}
               ambientGlow={!isBespoke}
               className={
-                isBespoke || isLiquidGlass ? 'font-sans text-xs' : 'font-mono text-xs shadow-2xl'
+                isBespoke || isFluentGlass ? 'font-sans text-xs' : 'font-mono text-xs shadow-2xl'
               }
               headerClassName="p-3 flex items-center justify-between gap-2"
               style={
-                isBespoke || isLiquidGlass
+                isBespoke || isFluentGlass
                   ? undefined
                   : {
                       backgroundColor: '#000000',
@@ -461,7 +461,7 @@ export function App() {
       />
 
       {/* Bottom Navigation Dock */}
-      {isLiquidGlass ? (
+      {isFluentGlass ? (
         <LiquidDock
           activeTab={activeTab}
           ticketCount={store.parachuteMetrics.currentBalance}
