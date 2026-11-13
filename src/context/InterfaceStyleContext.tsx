@@ -4,7 +4,7 @@ import type { InterfaceStyle } from '../types';
 export interface InterfaceStyleContextValue {
   interfaceStyle: InterfaceStyle;
   isBespoke: boolean;
-  isFluent_Glass: boolean;
+  isFluentGlass: boolean;
   /** @deprecated use isFluentGlass */
   isLiquidGlass: boolean;
   setInterfaceStyle: (next: InterfaceStyle) => void;
@@ -30,7 +30,7 @@ export const InterfaceStyleProvider: React.FC<{
       value={{
         interfaceStyle,
         isBespoke: interfaceStyle === 'bespoke',
-        isFluent_Glass: interfaceStyle === 'fluent_glass' || interfaceStyle === 'fluent_glass',
+        isFluentGlass: interfaceStyle === 'fluent_glass',
         isLiquidGlass: interfaceStyle === 'fluent_glass',
         setInterfaceStyle,
       }}
@@ -43,3 +43,4 @@ export const InterfaceStyleProvider: React.FC<{
 export function useInterfaceStyle(): InterfaceStyleContextValue {
   return useContext(InterfaceStyleContext);
 }
+
