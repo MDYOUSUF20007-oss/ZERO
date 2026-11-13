@@ -30,7 +30,7 @@ export const InterfaceStyleProvider: React.FC<{
       value={{
         interfaceStyle,
         isBespoke: interfaceStyle === 'bespoke',
-        isFluentGlass: interfaceStyle === 'fluent_glass',
+        isFluentGlass: interfaceStyle === 'fluent_glass' || interfaceStyle === 'fluent-glass',
         isLiquidGlass: interfaceStyle === 'fluent_glass',
         setInterfaceStyle,
       }}

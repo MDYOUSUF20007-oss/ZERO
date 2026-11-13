@@ -1403,3 +1403,42 @@ body {
 [data-zero-style="fluent_glass"] .animate-bounce {
   animation: none !important;
 }
+
+/* ==== Fluent Glass Overrides ==== */
+
+/* Active elements (tabs, buttons, pills) */
+[data-zero-theme="fluent_glass"] .liquid-pill-active,
+[data-zero-theme="fluent-glass"] .liquid-pill-active {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(79, 70, 229, 0.14) 100%) !important;
+  border: 1px solid rgba(167, 139, 250, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Inactive day pills */
+[data-zero-theme="fluent_glass"] .liquid-pill-inactive,
+[data-zero-theme="fluent-glass"] .liquid-pill-inactive {
+  color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Toggle switch thumb */
+[data-zero-theme="fluent_glass"] .toggle-thumb,
+[data-zero-theme="fluent-glass"] .toggle-thumb {
+  background: #FFFFFF !important;
+}
+/* Toggle switch track */
+[data-zero-theme="fluent_glass"] .toggle-track,
+[data-zero-theme="fluent-glass"] .toggle-track {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1) !important;
+}
+
+/* Ensure decorative pseudo‑elements don’t block clicks */
+[data-zero-theme="fluent_glass"] ::before,
+[data-zero-theme="fluent_glass"] ::after,
+[data-zero-theme="fluent-glass"] ::before,
+[data-zero-theme="fluent-glass"] ::after {
+  pointer-events: none !important;
+}
