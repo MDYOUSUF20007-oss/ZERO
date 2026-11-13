@@ -1442,3 +1442,44 @@ body {
 [data-zero-theme="fluent-glass"] ::after {
   pointer-events: none !important;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- ZERO App Global UI Cleanup: Kill Muddy Gradients & Fix Contrast Everywhere --- */
+
+/* 1. Force all active tabs, pills, and interactive buttons to be clean, solid, and high-contrast */
+button.active,
+[data-active="true"],
+.tab-active,
+.active-pill {
+  background: #12141a !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* 2. Ensure all general buttons and tab labels have readable muted contrast when inactive */
+button:not(.active),
+.tab-inactive {
+  color: #8a99ad !important;
+}
+
+/* 3. Strip out the muddy, translucent background gradient overlays from all cards and containers */
+div[class*="bg-gradient"],
+div[class*="from-"],
+div[class*="via-"],
+.card,
+.glass-panel,
+.obsidian-card {
+  background-image: none !important;
+  background-color: #080a0f !important; /* Pure, deep, distraction-free dark tone */
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* 4. Force absolute pure white for primary headings and key metrics everywhere */
+h1, h2, h3, h4, .text-primary-metric {
+  color: #ffffff !important;
+}
