@@ -164,6 +164,14 @@ function hexToRgb(hex: string): string {
   return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }
 
+function shiftColorHex(hex: string, rDelta: number, gDelta: number, bDelta: number): string {
+  const rgb = hexToRgb(hex).split(',').map((x) => parseInt(x.trim(), 10));
+  const r = Math.max(0, Math.min(255, (rgb[0] || 0) + rDelta));
+  const g = Math.max(0, Math.min(255, (rgb[1] || 0) + gDelta));
+  const b = Math.max(0, Math.min(255, (rgb[2] || 0) + bDelta));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
 export function applyThemeModStyles(mod: ThemeModConfig): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
@@ -182,6 +190,10 @@ export function applyThemeModStyles(mod: ThemeModConfig): void {
     mod.cssVars?.['--zero-surface-card'] ||
     (mod.family === 'amoled' ? 'rgba(10, 14, 24, 0.85)' : 'rgba(28, 35, 52, 0.80)');
   const border = mod.cssVars?.['--zero-border'] || `rgba(${accentRgb}, 0.28)`;
+
+  const shift1 = mod.cssVars?.['--accent-shift-1'] || shiftColorHex(accent, -15, 20, 30);
+  const shift2 = mod.cssVars?.['--accent-shift-2'] || shiftColorHex(accent, 30, -10, 20);
+  const shift3 = mod.cssVars?.['--accent-shift-3'] || shiftColorHex(accent, -20, -15, 25);
 
   let customVarRules = '';
   if (mod.cssVars) {
@@ -210,6 +222,10 @@ export function applyThemeModStyles(mod: ThemeModConfig): void {
     --liquid-accent-soft-glow: rgba(${accentRgb}, 0.22) !important;
     --liquid-accent-vibrant: ${accent} !important;
     --liquid-accent-tint: ${accent} !important;
+    --accent-shift-1: ${shift1} !important;
+    --accent-shift-2: ${shift2} !important;
+    --accent-shift-3: ${shift3} !important;
+    --accent-shift-4: ${accent} !important;
     --bg-surface: ${surfaceCard} !important;
 ${customVarRules}  }
 
