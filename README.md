@@ -2,11 +2,32 @@
 
 > **"The obstacle is the way. Put your phone facedown."**
 
-**Zero-Distractions** (also referred to as **Zero App**) is a minimalist screen-time and app blocker — 100% free and open-source (FOSS) with dual **Classic (Default)** and **Bespoke Minimalist** UI engines, zero paywalls, zero telemetry, a live **34-preset Theme Studio** (**AMOLED + Gradients**, **Paper like Kindle**, **Matte Studio**), occasion-based **4-Bag** app whitelisting, offline HMAC-signed **`.zbak` backups + 1-tap Cloud Upload**, and an earned **Emergency Escape Ticket (`🎫`)** discipline economy.
+[![Version](https://img.shields.io/badge/version-1.0.61-blue.svg)](https://github.com/MDYOUSUF20007-oss/ZERO/releases)
+[![Build Status](https://github.com/MDYOUSUF20007-oss/ZERO/actions/workflows/build.yml/badge.svg)](https://github.com/MDYOUSUF20007-oss/ZERO/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Integrity](https://img.shields.io/badge/Integrity-SHA--256%20Verified-brightgreen.svg)](https://github.com/MDYOUSUF20007-oss/ZERO)
+
+**Zero-Distractions** (also referred to as **Zero App**) is a sovereign, minimalist screen-time and app blocker — 100% free and open-source (FOSS) with a 3-way interface engine (**Classic Obsidian**, **Bespoke Minimalist**, and **Fluent Glass**), zero paywalls, zero telemetry SDKs, a 34-preset Theme Studio with an open **Community Theme Engine & JSON Modder**, occasion-based **4-Bag** app whitelisting, offline HMAC-signed **`.zbak` backups + 1-tap Cloud Upload**, overnight cross-midnight routine schedules, and an earned **35-Hour Emergency Escape Ticket (`🎫`)** discipline economy.
 
 <a href="https://ko-fi.com/mdyousuf2620" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" width="210">
 </a>
+
+---
+
+## What's New in v1.0.61 — The Sovereign Horizon Update
+
+- **35-Hour Escape Ticket Economy:** Upgraded discipline milestone from 20h to **35 cumulative hours (126,000 seconds)** of clean, completed phone blockage per 1 Emergency Escape Ticket (`🎫`), backed by strict anti-sleep and anti-exploit rules.
+- **3-Way Interface Engine:** Instant toggle between **Classic Obsidian** (frosted layered glass cards), **Bespoke Minimalist** (pure pitch AMOLED, crisp structural lines, and tabular monospace telemetry), and **Fluent Glass** (liquid glassmorphism with dynamic specular diffusion).
+- **Custom Mods & Community Theme Engine:** Import, export, create, and share custom JSON theme mods (e.g., *Cyberpunk Neon*, *Tokyo Night*, *Forest Emerald*) alongside the 34 built-in finishes with live CSS variable reactivity.
+- **Theme-First FTUE & 5-Question Habit Calibration Survey:** First-launch onboarding wizard with live theme selection, instant `.zbak` cloud/local restore shortcut, and a comprehensive 5-step habit calibration survey (Goals, Distraction Apps, Friction, Vulnerability Windows, and Daily Reclaim Targets).
+- **3 Customizable Launch Modes:** Choose between **Recommended Setup** (balanced friction), **Full Productive Mode** (strict discipline), or **Explore by Myself** (manual setup).
+- **Automated Routine Execution Engine:** Fully automated routine schedules with seamless overnight cross-midnight calculation support (`22:00 – 02:00`) and a native Android `SharedPreferences` routine bridge that enforces app whitelisting in the background even when the WebView is suspended.
+- **Tamper-Proof Support Section Lock & Official Author Integrity:** Strict SHA-256 integrity verification of official author credentials (`@MDYOUSUF20007-oss`, Ko-fi, and support email) inside the native Android layer (`ZeroBridgePlugin.java`), permanently locking bypass actions if tampered.
+- **Credits & Contributors Modal:** Live GitHub contributors fetcher with offline caching and transparent community recognition.
+- **Zero-Cost In-App Auto-Updater:** Throttled GitHub Releases API checker for direct APK update downloads, paired with a recurring 7-day snooze fallback reminder.
+- **Android Back Gesture & Hierarchical Navigation Stack:** Capacitor back gesture listener with layered dialog popping and a 2-second "Swipe again to exit" toast on root dashboard.
+- **Unified Backups & 7-Day Backup Reminder:** Backup and restore habit calibration profiles, launch modes, and routine states with automatic 7-day backup prompts.
 
 ---
 
@@ -43,27 +64,31 @@
 
 ## 1. Vision & Core Philosophy
 
-- **Zero Paywalls:** Unlimited recurring schedules, interactive daily/weekly/monthly/all-time heatmaps, strict OS kiosk locks, all 34 themes + custom color pickers, custom `#Hashtags`, and encrypted `.zbak` backups are 100% free from day one.
-- **Earned & Gift Emergency Escape Tickets (`🎫`):** Escape Tickets cannot be bought outright. You earn **1 Emergency Escape Ticket for every 20 cumulative hours (72,000 seconds) of completed phone blockage**, plus a **one-time starter Escape Ticket (+1 🎫)** when creating an interactive profile on first launch, and a **one-time thank-you gift (+1 🎫 + Golden `ZERO-SUPPORTER` Profile Badge)** strictly on your **1st tip of minimum ₹50**.
+- **Zero Paywalls:** Unlimited recurring schedules, interactive daily/weekly/monthly/all-time heatmaps, strict OS kiosk locks, all 34 themes + custom color pickers, community theme mods, custom `#Hashtags`, and encrypted `.zbak` backups are 100% free from day one.
+- **Earned & Gift Emergency Escape Tickets (`🎫`):** Escape Tickets cannot be bought outright. You earn **1 Emergency Escape Ticket for every 35 cumulative hours (126,000 seconds) of completed phone blockage**, plus a **one-time starter Escape Ticket (+1 🎫)** when creating an interactive profile on first launch, and a **one-time thank-you gift (+1 🎫 + Golden `ZERO-SUPPORTER` Profile Badge)** strictly on your **1st tip of minimum ₹50**.
 - **7 Collectible Achievement Badges:** Unlock focus milestones (`GETTING STARTED` at 1h completed, `WOO NICE!` at 50h, `LONG WAY` at 100h, `GETTING DISCIPLINED` at 250h, `FULL CONTROL !` at 500h, `CAME SO FAR` at 1000h) plus the Golden **`ZERO-SUPPORTER`** crest — displayed on your Interactive Profile and rendered onto **1080×1350 Focus Receipt PNG** Flex Cards.
 - **Anti-Sleep-Farming Rule:** `#Sleep` sessions earn **0.25x progression** by default (or choose **0.0x Daytime Only** or **1.0x Full Credit** in Settings). An 8-hour sleep block adds 2.0 hours toward the next ticket at `0.25x`, keeping daytime discipline meaningful.
-- **Aborted Session Penalty (Anti-Exploit):** Spending an Emergency Escape Ticket mid-session consumes 1 ticket and **permanently voids all elapsed time from that aborted session** — `0` seconds count toward your next 20-hour milestone.
+- **Aborted Session Penalty (Anti-Exploit):** Spending an Emergency Escape Ticket mid-session consumes 1 ticket and **permanently voids all elapsed time from that aborted session** — `0` seconds count toward your next 35-hour milestone.
 - **Ethical Support Model:** Zero ads and non-intrusive voluntary support ([Ko-fi](https://ko-fi.com/mdyousuf2620) or UPI `md.y2007@ptaxis` with zero-fee transfers; 1st `₹50+` tip unlocks Golden **`ZERO-SUPPORTER`** + `+1 Free 🎫`). Post-session tip prompts can be snoozed for 5 sessions at a time.
-- **100% Serverless & Private Backups:** Zero accounts, zero telemetry SDKs, and zero remote servers. Back up stats, Escape Tickets, donor perks, schedules, Bags, widgets, and active themes offline using signed `.zbak` files.
+- **100% Serverless & Private Backups:** Zero accounts, zero telemetry SDKs, and zero remote servers. Back up stats, Escape Tickets, habit calibration profiles, routine schedules, Bags, widgets, and active themes offline using signed `.zbak` files.
 
 ---
 
-## 2. Dual UI Engines, Theme Studio & Performance
+## 2. Triple UI Engines, Theme Studio & Modding
 
-- **Dual Interface Styles (`Settings & OS → Themes → Interface Style`):**
+- **3-Way Interface Engine (`Settings & OS → Themes → Interface Style`):**
   - **Classic UI *(Default)*:** Frosted Obsidian layered glass cards, ambient theme-matched rim glows, pill geometry, and soft specular highlights.
   - **Bespoke Minimalist:** Pure `#000000` AMOLED flat canvas, crisp `1px` structural borders, functional `#3B82F6` blue utility accents, sans typography with tabular monospace telemetry, and instant mechanical controls.
-  - Switch instantaneously at runtime with zero restart required.
+  - **Fluent Glass:** Liquid glassmorphism featuring multi-layered translucent blur surfaces, adaptive refraction highlights, and specular light diffusion.
+  - Switch instantaneously at runtime with zero app reload required.
 - **Expanded Theme Studio (34 Presets + Custom Pickers):**
   - **14 AMOLED & Gradient Finishes:** *Pure Pitch (`#000000`)* plus *Abyssal Ember*, *Midnight Aurora*, *Cosmic Dusk*, *Crimson Void*, *Cobalt Cyber*, *Solar Gold*, *Jade Matrix*, *Indigo Abyss*, *Rose Quartz*, *Arctic Cyan*, *Bronze Dusk*, *Vermilion Heat*, and *Titanium Mist*.
   - **10 Paper like Kindle Themes (+ Custom Pickers):** *Paperwhite*, *Warm Sepia*, *Botanical Sage*, *Cool E-Ink*, *Soft Dusk*, *Parchment*, *Matcha Folio*, *Cobalt Ink*, *Plum Folio*, and *Newsprint*, plus live **Custom Paper Color** & **Custom Ink Accent** pickers.
   - **10 Matte Studio Themes (+ Custom Pickers):** *Graphite*, *Warm Taupe*, *Nordic Slate*, *Dark Olive*, *Espresso*, *Bullion*, *Steel Indigo*, *Terracotta*, *Amethyst*, and *Alpine Mint*, plus live **Custom Matte Base** & **Custom Studio Accent** pickers.
-- **Unified App-Wide Accent Cohesion:** Every active surface — Profile modals, Work Bag badges, Phone Calls (`ALWAYS ON`), SMS badges, and Restricted Settings guides — dynamically inherits your active Theme Studio accent (or Bespoke `#3B82F6`) with zero stray green/amber mismatches.
+- **Custom Mods & Community Theme Engine (`Settings → Themes → Mods`):**
+  - Create, import, export, and delete custom theme mods using structured JSON definitions.
+  - Built-in community mod presets included: *Cyberpunk Neon*, *Tokyo Night*, and *Forest Emerald*.
+  - Live CSS variable reactivity maps custom surfaces (`--bg-primary`, `--surface`, `--accent`, `--border-color`) dynamically across all cards, typography, and controls while preserving core integrity rules.
 - **CPU-Optimized Dial & Tactile Audio:** `Dial` wheel uses static memoized tick rings paired with `requestAnimationFrame` imperative DOM updates while dragging so spinning feels silky-smooth with minimal CPU load and battery heat, combined with crisp Web Audio frequency-ramping clicks and haptic vibration.
 
 ---
@@ -75,7 +100,7 @@
 - **Mission `#Hashtags` & Custom Tag Creator:** Pick built-in tags (`#Deep Work`, `#Study`, `#Family`, `#Sleep`, `#Detox`) or create unlimited **custom `#Hashtags`** right from the home screen or inside your Profile.
 - **4 Customizable Occasion Bags (`Work Bag`, `Commute Bag`, `Study Bag`, `Family & Night`):** Whitelist up to **3 essential apps** per Bag plus optional normal Texts (SMS), while compulsory **Phone Calls (`ALWAYS ON`)** remain accessible — or leave a Bag empty for pure **Monk Mode**.
 - **3-Second Hold-to-Ignite:** Escalating radial charge prevents accidental locks.
-- **Glance Strip & Due Cloud Banner:** Live Escape Ticket inventory, 20-hour rollover progress, and a 1-tap reminder strip when your scheduled Cloud Upload timer is due.
+- **Glance Strip & Due Cloud Banner:** Live Escape Ticket inventory, 35-hour rollover progress, and a 1-tap reminder strip when your scheduled Cloud Upload timer is due.
 
 ### 2. The Void (Active Lock Screen)
 - **System Clock & Inverted Countdown Card:** Crisp pixel-matrix **System Clock (`SYSTEM TIME // SYNCED`)** paired directly below with a matching **inverted high-contrast focus countdown** (`HH:MM:SS`) and live battery indicator.
@@ -89,16 +114,20 @@
 - **Interactive Zero Profile (`+1 Free Starter 🎫`):** Configure your Callsign, `@handle`, 6 custom emblem SVGs, **Daily Phone-Free Goal**, Primary Detox Mission + **Custom `#Hashtags`**, **10 Personal Lock Pledges** *(plus custom motto text)*, and a **Live Theme Switcher directly inside the Profile modal**.
 - **Interactive Contribution Heatmaps & Customizable Widgets:** Toggle between **Daily**, **Weekly**, **Monthly**, and **Merged All** timeframe heatmaps, inspect per-day sessions & tag breakdowns, and reorder or hide dashboard widgets.
 - **Achievement Showcase & Focus Receipt Export:** Track all 7 badges and export a shareable **1080×1350 Focus Receipt PNG** right from Insights or upon completing a lock session.
-- **Immutable Escape Ticket Ledger:** Audit every earned 20-hour milestone, welcome/supporter bonus, and aborted Escape use.
+- **Immutable Escape Ticket Ledger:** Audit every earned 35-hour milestone, welcome/supporter bonus, and aborted Escape use.
 
-### 4. Settings & OS — Auto-Pilot Schedules, Streamlined Backup & Permissions
-- **Auto-Pilot Recurring Schedules:** Unlimited day-of-week schedules with 5-minute pre-lock heads-up warnings dispatched via WorkManager (`PreLockScheduleWorker.kt`).
+### 4. Settings & OS — Routines, Backup, Security & Community
+- **Automated Routine Schedules & Overnight Support:** Create recurring daily or day-of-week routines. Supports midnight-crossing windows (e.g., `22:00 – 02:00`) with immediate trigger evaluation on resume and native Android `SharedPreferences` routine bridge (`syncRoutinesToNative`) to maintain strict background enforcement even when the WebView is sleeping.
 - **Streamlined Backup and Restore Everything (`.zbak` + Cloud Upload):**
   - **Create Auto-Sync File in Storage:** Links a persistent Android Storage Access Framework (`ACTION_CREATE_DOCUMENT`) `.zbak` file across local storage, Google Drive, OneDrive, JioDrive, or Dropbox and updates automatically on session completion and Bag/profile changes.
-  - **One-Tap Save:** Instant manual export of an HMAC-SHA256 sealed `.zbak` snapshot.
-  - **Restore Data Picker:** Pick any saved `.zbak` / `.json` backup to verify integrity, restore stats, Escape Tickets, donor perks, Bags, and active theme, and skip onboarding after reinstalling.
+  - **One-Tap Save:** Instant manual export of an HMAC-SHA256 sealed `.zbak` snapshot containing stats, bags, custom themes, habit calibrations, and routine schedules.
+  - **Restore Data Picker:** Pick any saved `.zbak` / `.json` backup to verify integrity, restore stats, Escape Tickets, donor perks, Bags, active theme, and habit profile in 1 tap.
+  - **7-Day Backup Reminder:** Local automated reminder prompt to safeguard your progress if no backup has been generated in the last 7 days.
   - **Upload Stats to Cloud & Configurable Reminder Timer:** Opens Android's share sheet with your stats `.zbak` snapshot so you upload straight to any cloud app of your choice — paired with a local **Weekly / Monthly / Off** Cloud Upload Reminder timer (`CloudUploadReminderWorker.kt`).
-- **Android 13–16 OS Security & Restricted Settings Guide:** Enforces clear step-by-step setup (`1. Usage Access / Accessibility -> 2. Display Over Other Apps -> 3. Notifications`), complete with a theme-coherent Android 13–16 **Restricted Settings (`Allow restricted settings`)** walkthrough and one-tap **App Info** shortcut.
+- **Android 13–16 OS Security & Restricted Settings Guide:** Enforces clear step-by-step setup (`1. Usage Access / Accessibility -> 2. Display Over Other Apps -> 3. Notifications`), complete with a theme-coherent Android 13–16 **Restricted Settings (`Allow restricted settings`)** walkthrough, plain-English security explanation card, and one-tap **App Info** shortcut.
+- **Zero-Cost GitHub Releases Auto-Updater:** Throttled check against GitHub Releases API with 7-day snooze reminder so users always have access to the latest release APK.
+- **Credits & Contributors Modal:** Built-in modal honoring creator Mohammed Yusuf (`@MDYOUSUF20007-oss`) and fetching active repository contributors via GitHub's public API with local fallback caching.
+- **Tamper-Proof Support Section Lock:** Core author identity verified via native SHA-256 checks in `ZeroBridgePlugin.java`, preventing malicious repackaging or URL redirection.
 
 ---
 
@@ -118,7 +147,7 @@ Donated on Ko-fi and need manual verification or a signed `ZDON1...` unlock toke
 
 ### State Store & Mathematical Formulation
 ```typescript
-const SECONDS_PER_TICKET = 72_000; // 20 Hours
+const SECONDS_PER_TICKET = 126_000; // 35 Hours (126,000s)
 
 lifetimeEarned = Math.floor(cumulativeCompletedSeconds / SECONDS_PER_TICKET) + bonusTickets;
 currentBalance = Math.max(0, lifetimeEarned - usedTickets);
@@ -131,10 +160,11 @@ usedTickets += 1;
 ```
 
 ### Core Integrity & Native Android Subsystem
-- **`src/core/integrity/IntegrityEngine.ts`**: Frozen, read-only integrity module isolating reclaimed-time math, monotonic native proof verification, Escape Ticket deductions, Golden `ZERO-SUPPORTER` / `.zbak` HMAC checks, and badge evaluators (`0` cheat mutators exposed to React components).
-- **`LockEngine.kt` & `TheVoidActivity.kt` (`VoidThemeVisuals.kt`)**: Tracks elapsed focus strictly via Android's monotonic clock (`SystemClock.elapsedRealtime()`), generates HMAC-SHA256 `VerifiedCompletionEvent` proofs on completion, mirrors classic/bespoke theme styling + **Work Bag** centered `#HASHTAG` spotlight natively on Android, and engages Device Owner Kiosk / `startLockTask()` when provisioned.
+- **`src/core/integrity/IntegrityEngine.ts`**: Frozen, read-only integrity module isolating reclaimed-time math, monotonic native proof verification, 35-hour Escape Ticket deductions, Golden `ZERO-SUPPORTER` / `.zbak` HMAC checks, and badge evaluators (`0` cheat mutators exposed to React components).
+- **`LockEngine.kt` & `TheVoidActivity.kt` (`VoidThemeVisuals.kt`)**: Tracks elapsed focus strictly via Android's monotonic clock (`SystemClock.elapsedRealtime()`), generates HMAC-SHA256 `VerifiedCompletionEvent` proofs on completion, mirrors classic/bespoke/fluent theme styling + **Work Bag** centered `#HASHTAG` spotlight natively on Android, and engages Device Owner Kiosk / `startLockTask()` when provisioned.
 - **`ZeroAccessibilityService.kt` & `LockForegroundService.kt`**: Blocks `com.android.settings`, system package installers, status bar / Quick Settings drawers, Recents, and unbagged apps during active locks using monotonic `SystemClock.elapsedRealtime()` checks.
-- **`BagStore.kt`**: Synchronizes up to 4 occasion Bags, strict 3-app limits, SMS preferences, and mandatory Settings blacklists between WebView and native Kotlin services.
+- **`ZeroBridgePlugin.java`**: High-security Capacitor bridge enforcing SHA-256 author lock verification, native routine synchronization, package inspection, and device policy controls.
+- **`BagStore.kt` & Native Routine Bridge**: Synchronizes up to 4 occasion Bags, strict 3-app limits, SMS preferences, routine schedules, and mandatory Settings blacklists between WebView and native Kotlin services.
 - **`BootReceiver.kt`, `PreLockScheduleWorker.kt` & `CloudUploadReminderWorker.kt`**: Re-arms locks across cold reboots (`BOOT_COMPLETED` / `MY_PACKAGE_REPLACED`), fires 5-minute pre-lock schedule warnings, and drives configurable Weekly/Monthly Cloud Upload reminders.
 - **`CloudAutoBackupPlugin.kt`**: Native Android SAF + `FileProvider` bridge powering persistent `.zbak` auto-sync, One-Tap Save, Restore Data Picker, and direct Cloud App upload without any backend servers or HTTP endpoints.
 - **Release Hardening (`R8/ProGuard`, `AppSecurityGuard.java`, `EndpointSecurityPolicy.kt`):** Release APKs ship with `minifyEnabled true` + `shrinkResources true`, `network_security_config.xml` (`cleartextTrafficPermitted="false"`), strict WebView CSP, and startup/resume APK signing certificate verification against `A1:4A:36:...CE:11` (disabling `.zbak` restore and Bag tampering on rooted/test-keys/emulator environments).
