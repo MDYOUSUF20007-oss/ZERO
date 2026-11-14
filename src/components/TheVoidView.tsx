@@ -78,7 +78,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [showParachuteConfirm, setShowParachuteConfirm] = useState<boolean>(false);
   const [emergencyNumber, setEmergencyNumber] = useState<string>('');
   const [tamperWarning, setTamperWarning] = useState<string | null>(null);
-  const [showRetroPixel, setShowRetroPixel] = useState<boolean>(false);
 
   // Quotes under Chronometer
   const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
@@ -110,6 +109,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const hasPlayedCompletionChimeRef = useRef(false);
 
   const gradId = useId().replace(/:/g, '');
+  const clockGradId = `${gradId}-clock`;
   const timerGradId = `${gradId}-timer`;
 
   const workBagActive = isWorkBag(activeBag?.id, activeBag?.name);
@@ -132,6 +132,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   };
 
   const timerText = formatCountdown(activeLock.remainingSeconds);
+  const clockPixelLayout = useMemo(() => buildPixelClockLayout(clockText, 1, 0.16), [clockText]);
   const timerPixelLayout = useMemo(() => buildPixelClockLayout(timerText, 1, 0.16), [timerText]);
 
   const normalizedWorkTag =
@@ -375,17 +376,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       <div className="relative z-10 w-full max-w-md mx-auto flex items-center justify-between text-xs font-sans tabular-nums text-zinc-400 pt-1 pb-2 shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-zinc-200 tracking-wide">{clockText}</span>
-          <button
-            type="button"
-            onClick={() => {
-              haptics.tick(800);
-              setShowRetroPixel(!showRetroPixel);
-            }}
-            title="Toggle Clock Typography"
-            className="text-[10px] px-2 py-0.5 rounded-md liquid-pill-inactive text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            {showRetroPixel ? 'Retro 5x7' : 'Modern Glass'}
-          </button>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full liquid-pill-active text-[10px] font-semibold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span>VOID ARMED</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -566,55 +560,77 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </button>
           </div>
 
-          {/* Time Display (Modern Glass vs Retro Pixel) */}
+          {/* UNIQUE 5x7 DOT-MATRIX PIXELATED TIME DISPLAY */}
           <div className="relative z-10 py-1 my-1">
-            {showRetroPixel ? (
-              <div className="flex flex-col items-center justify-center py-2">
-                <svg
-                  role="img"
-                  aria-label={`Remaining lock time ${timerPixelLayout.normalizedText}`}
-                  viewBox={`0 0 ${timerPixelLayout.totalCols} ${timerPixelLayout.totalRows}`}
-                  className="h-10 sm:h-12 w-auto max-w-full overflow-visible"
-                  shapeRendering="crispEdges"
-                >
-                  <defs>
-                    <linearGradient id={timerGradId} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FFFFFF" />
-                      <stop offset="50%" stopColor="var(--liquid-accent-tint, #38bdf8)" />
-                      <stop offset="100%" stopColor="var(--liquid-accent-vibrant, #00f0ff)" />
-                    </linearGradient>
-                  </defs>
-                  {timerPixelLayout.rects.map((rect, idx) => (
-                    <rect
-                      key={idx}
-                      x={rect.x}
-                      y={rect.y}
-                      width={rect.w}
-                      height={rect.h}
-                      fill={`url(#${timerGradId})`}
-                    />
-                  ))}
-                </svg>
+            {/* System Clock (5x7 Dot-Matrix Pixel Layout) */}
+            <div className="flex flex-col items-center justify-center pt-0.5 pb-2">
+              <span className="text-[9.5px] font-mono tracking-widest uppercase text-zinc-400 mb-1">
+                SYSTEM TIME // SYNCED
+              </span>
+              <svg
+                role="img"
+                aria-label={`System Time ${clockPixelLayout.normalizedText}`}
+                viewBox={`0 0 ${clockPixelLayout.totalCols} ${clockPixelLayout.totalRows}`}
+                className="h-6 sm:h-7 w-auto max-w-full overflow-visible"
+                shapeRendering="crispEdges"
+              >
+                <defs>
+                  <linearGradient id={clockGradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0.72)" />
+                  </linearGradient>
+                </defs>
+                {clockPixelLayout.rects.map((rect, idx) => (
+                  <rect
+                    key={idx}
+                    x={rect.x}
+                    y={rect.y}
+                    width={rect.w}
+                    height={rect.h}
+                    fill={`url(#${clockGradId})`}
+                  />
+                ))}
+              </svg>
+            </div>
+
+            {/* Glowing Accent Divider */}
+            <div className="w-24 h-[1px] mx-auto bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent my-1" />
+
+            {/* Countdown Timer (5x7 Dot-Matrix Pixel Layout with Radiant Theme Gradient) */}
+            <div className="flex flex-col items-center justify-center pt-2 pb-1">
+              <span className="text-[9.5px] font-mono tracking-widest uppercase text-cyan-300 mb-1.5 flex items-center gap-1.5">
+                <Lock size={10} className="theme-text-accent" />
+                <span>COUNTDOWN TIMER // SEALED</span>
+              </span>
+              <svg
+                role="img"
+                aria-label={`Remaining lock time ${timerPixelLayout.normalizedText}`}
+                viewBox={`0 0 ${timerPixelLayout.totalCols} ${timerPixelLayout.totalRows}`}
+                className="h-12 sm:h-14 w-auto max-w-full overflow-visible filter drop-shadow-[0_0_24px_var(--liquid-accent-soft-glow)]"
+                shapeRendering="crispEdges"
+              >
+                <defs>
+                  <linearGradient id={timerGradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="45%" stopColor="var(--liquid-accent-tint, #38bdf8)" />
+                    <stop offset="100%" stopColor="var(--liquid-accent-vibrant, #00f0ff)" />
+                  </linearGradient>
+                </defs>
+                {timerPixelLayout.rects.map((rect, idx) => (
+                  <rect
+                    key={idx}
+                    x={rect.x}
+                    y={rect.y}
+                    width={rect.w}
+                    height={rect.h}
+                    fill={`url(#${timerGradId})`}
+                  />
+                ))}
+              </svg>
+              <div className="flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-widest text-zinc-400 mt-2">
+                <span>Target Finish {targetEndTimeFormatted}</span>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center">
-                <div
-                  className="text-5xl sm:text-6xl font-black font-sans tracking-tight tabular-nums select-none"
-                  style={{
-                    background:
-                      'linear-gradient(180deg, #ffffff 0%, var(--liquid-accent-tint, #bae6fd) 60%, var(--liquid-accent-vibrant, #38bdf8) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    filter: 'drop-shadow(0 0 20px var(--liquid-accent-soft-glow))',
-                  }}
-                >
-                  {timerText}
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-widest text-zinc-400 mt-1">
-                  <span>Target Finish {targetEndTimeFormatted}</span>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Smooth Progress Track */}
