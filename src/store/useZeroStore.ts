@@ -27,6 +27,7 @@ import type {
   CloudReminderInterval,
   ThemeConfig,
   InterfaceStyle,
+  MaterialYouSeed,
   DashboardWidgetsConfig,
   HabitCalibrationProfile,
 } from '../types';
@@ -101,6 +102,8 @@ const UI_STORAGE_KEYS = {
   THEME: 'zero_active_theme_v3',
   THEME_CONFIG: 'zero_theme_config_v1',
   INTERFACE_STYLE: 'zero_interface_style_v1',
+  MATERIAL_YOU_SEED: 'zero_material_you_seed_v1',
+  MATERIAL_YOU_AMOLED: 'zero_material_you_amoled_v1',
   CLASSIC_DEFAULT_MIGRATED: 'zero_classic_default_migrated_v1',
   SLEEP_FARMING_MODE: 'zero_sleep_farming_mode_v3',
   TIP_SKIP_REMAINING: 'zero_tip_skip_remaining_v1',
@@ -339,6 +342,27 @@ export function useZeroStore() {
 
   const setInterfaceStyle = useCallback((nextStyle: InterfaceStyle) => {
     setInterfaceStyleState(normalizeInterfaceStyle(nextStyle));
+  }, []);
+
+  const [materialYouSeed, setMaterialYouSeedState] = useState<MaterialYouSeed>(() => {
+    const saved = localStorage.getItem(UI_STORAGE_KEYS.MATERIAL_YOU_SEED);
+    return saved === 'cyan' || saved === 'emerald' || saved === 'crimson' ? saved : 'purple';
+  });
+
+  const setMaterialYouSeed = useCallback((nextSeed: MaterialYouSeed) => {
+    const validSeed =
+      nextSeed === 'cyan' || nextSeed === 'emerald' || nextSeed === 'crimson' ? nextSeed : 'purple';
+    setMaterialYouSeedState(validSeed);
+    localStorage.setItem(UI_STORAGE_KEYS.MATERIAL_YOU_SEED, validSeed);
+  }, []);
+
+  const [materialYouAmoled, setMaterialYouAmoledState] = useState<boolean>(() => {
+    return localStorage.getItem(UI_STORAGE_KEYS.MATERIAL_YOU_AMOLED) === 'true';
+  });
+
+  const setMaterialYouAmoled = useCallback((nextAmoled: boolean) => {
+    setMaterialYouAmoledState(nextAmoled);
+    localStorage.setItem(UI_STORAGE_KEYS.MATERIAL_YOU_AMOLED, String(nextAmoled));
   }, []);
 
   const [themeConfig, setThemeConfigState] = useState<ThemeConfig>(() => {
@@ -1026,6 +1050,52 @@ export function useZeroStore() {
     const rootEl = document.documentElement;
     rootEl.setAttribute('data-zero-style', interfaceStyle);
 
+    if (interfaceStyle === 'material-you') {
+      rootEl.setAttribute('data-theme', 'material-you');
+      rootEl.setAttribute('data-seed', materialYouSeed);
+      rootEl.setAttribute('data-amoled', String(materialYouAmoled));
+    } else {
+      rootEl.removeAttribute('data-theme');
+      rootEl.removeAttribute('data-seed');
+      rootEl.removeAttribute('data-amoled');
+    }
+
+    if (interfaceStyle === 'material-you') {
+      rootEl.className = 'dark';
+      rootEl.setAttribute('data-zero-theme', materialYouAmoled ? 'amoled' : 'custom');
+      rootEl.setAttribute('data-zero-has-gradient', 'false');
+
+      const seedColors: Record<MaterialYouSeed, { primary: string; onPrimary: string; bg: string }> = {
+        purple: { primary: '#D0BCFF', onPrimary: '#381E72', bg: materialYouAmoled ? '#000000' : '#0E0E13' },
+        cyan: { primary: '#66E3FF', onPrimary: '#003642', bg: materialYouAmoled ? '#000000' : '#0E0E13' },
+        emerald: { primary: '#6DD58C', onPrimary: '#003919', bg: materialYouAmoled ? '#000000' : '#0E0E13' },
+        crimson: { primary: '#FFB2BE', onPrimary: '#5F1124', bg: materialYouAmoled ? '#000000' : '#0E0E13' },
+      };
+      const curSeed = seedColors[materialYouSeed] || seedColors.purple;
+
+      rootEl.style.setProperty('--zero-bg-primary', curSeed.bg);
+      rootEl.style.setProperty('--zero-accent', curSeed.primary);
+      rootEl.style.setProperty('--zero-dial-stroke', curSeed.primary);
+      rootEl.style.setProperty('--accent-hex', curSeed.primary);
+
+      try {
+        window.ZeroNative?.setInterfaceStyle?.('classic');
+        window.ZeroNative?.setActiveThemeAccent?.(
+          curSeed.primary,
+          '208, 188, 255',
+          curSeed.onPrimary
+        );
+      } catch {
+        // Ignore on web preview
+      }
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', curSeed.bg);
+      }
+      return;
+    }
+
     if (interfaceStyle === 'bespoke') {
       const isLightPaper = runtime.mode === 'light';
       rootEl.className = isLightPaper ? 'light' : 'dark';
@@ -1221,7 +1291,7 @@ export function useZeroStore() {
     if (metaTheme) {
       metaTheme.setAttribute('content', runtime.metaThemeColor);
     }
-  }, [themeConfig, interfaceStyle]);
+  }, [themeConfig, interfaceStyle, materialYouSeed, materialYouAmoled]);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SLEEP_FARMING_MODE, sleepFarmingMode);
@@ -2288,6 +2358,10 @@ export function useZeroStore() {
     setThemeConfig,
     interfaceStyle,
     setInterfaceStyle,
+    materialYouSeed,
+    setMaterialYouSeed,
+    materialYouAmoled,
+    setMaterialYouAmoled,
     widgetsConfig,
     setWidgetsConfig,
     sleepFarmingMode,

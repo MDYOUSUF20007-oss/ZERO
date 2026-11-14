@@ -11,6 +11,7 @@ import type {
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
   if (value === 'bespoke') return 'bespoke';
   if (value === 'fluent_glass' || value === 'fluent-glass') return 'fluent_glass';
+  if (value === 'material-you' || value === 'material_you') return 'material-you';
   // Legacy alias: treat old persisted 'liquid_glass' as 'fluent_glass'
   if (value === 'liquid_glass') return 'fluent_glass';
   return 'classic';

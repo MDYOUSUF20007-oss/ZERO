@@ -328,7 +328,9 @@ export interface CloudAutoBackupStatus {
 
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
 
-export type InterfaceStyle = 'bespoke' | 'classic' | 'fluent_glass';
+export type InterfaceStyle = 'bespoke' | 'classic' | 'fluent_glass' | 'material-you';
+
+export type MaterialYouSeed = 'purple' | 'cyan' | 'emerald' | 'crimson';
 
 export type AmoledGradientId =
   | 'pure'

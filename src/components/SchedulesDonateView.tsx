@@ -17,6 +17,7 @@ import type {
   SessionTag,
   ThemeConfig,
   InterfaceStyle,
+  MaterialYouSeed,
   SleepFarmingMode,
   NativePermissionStatus,
   NativeAppBuildInfo,
@@ -92,6 +93,10 @@ interface SchedulesDonateViewProps {
   onThemeConfigChange: (next: ThemeConfig) => void;
   interfaceStyle?: InterfaceStyle;
   onInterfaceStyleChange?: (next: InterfaceStyle) => void;
+  materialYouSeed?: MaterialYouSeed;
+  onMaterialYouSeedChange?: (next: MaterialYouSeed) => void;
+  materialYouAmoled?: boolean;
+  onMaterialYouAmoledChange?: (next: boolean) => void;
   sectionOverride?: {
     section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
     key: number;
@@ -173,6 +178,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onThemeConfigChange,
   interfaceStyle: interfaceStyleProp,
   onInterfaceStyleChange,
+  materialYouSeed: materialYouSeedProp,
+  onMaterialYouSeedChange,
+  materialYouAmoled: materialYouAmoledProp,
+  onMaterialYouAmoledChange,
   sectionOverride = null,
   viewMode = 'all',
   sleepFarmingMode,
@@ -208,10 +217,19 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setInterfaceStyle: ctxSetInterfaceStyle,
     isBespoke,
     isFluentGlass,
+    isMaterialYou,
+    materialYouSeed: ctxMaterialYouSeed,
+    setMaterialYouSeed: ctxSetMaterialYouSeed,
+    materialYouAmoled: ctxMaterialYouAmoled,
+    setMaterialYouAmoled: ctxSetMaterialYouAmoled,
   } = useInterfaceStyle();
-  const isModernFont = isBespoke || isFluentGlass;
+  const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
   const activeInterfaceStyle = interfaceStyleProp ?? ctxInterfaceStyle;
   const applyInterfaceStyle = onInterfaceStyleChange ?? ctxSetInterfaceStyle;
+  const activeMaterialYouSeed = materialYouSeedProp ?? ctxMaterialYouSeed ?? 'purple';
+  const applyMaterialYouSeed = onMaterialYouSeedChange ?? ctxSetMaterialYouSeed ?? (() => {});
+  const activeMaterialYouAmoled = materialYouAmoledProp ?? ctxMaterialYouAmoled ?? false;
+  const applyMaterialYouAmoled = onMaterialYouAmoledChange ?? ctxSetMaterialYouAmoled ?? (() => {});
 
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
@@ -656,14 +674,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                   <span
                     className={`text-[10px] font-semibold uppercase px-2.5 py-0.5 border shrink-0 ${
-                      isFluentGlass
+                      isMaterialYou
+                        ? 'rounded-full border-transparent font-bold bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)]'
+                        : isFluentGlass
                         ? 'rounded-full liquid-pill-active font-bold border-transparent'
                         : isBespoke
                         ? 'rounded-sm border-blue-500/50 bg-blue-600/15 text-blue-300'
                         : 'rounded-full obsidian-pill-active font-black'
                     }`}
                   >
-                    {activeInterfaceStyle === 'fluent_glass'
+                    {activeInterfaceStyle === 'material-you'
+                      ? 'Material You'
+                      : activeInterfaceStyle === 'fluent_glass'
                       ? 'Fluent Glass'
                       : activeInterfaceStyle === 'bespoke'
                       ? 'Bespoke'
@@ -828,7 +850,154 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       )}
                     </div>
                   </button>
+
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={activeInterfaceStyle === 'material-you'}
+                    onClick={() => applyInterfaceStyle('material-you')}
+                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
+                      isMaterialYou
+                        ? `rounded-2xl transition-all ${
+                            activeInterfaceStyle === 'material-you'
+                              ? 'bg-[var(--md-surface-container-high)] text-white'
+                              : 'bg-[var(--md-surface-container)] text-zinc-400'
+                          }`
+                        : isFluentGlass
+                        ? `rounded-2xl liquid-spring ${
+                            activeInterfaceStyle === 'material-you'
+                              ? 'liquid-inset text-white'
+                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
+                          }`
+                        : isBespoke
+                        ? `rounded-md border transition-colors duration-75 ${
+                            activeInterfaceStyle === 'material-you'
+                              ? 'bg-neutral-950 border-blue-500 text-white'
+                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          }`
+                        : `rounded-2xl transition-all ${
+                            activeInterfaceStyle === 'material-you'
+                              ? 'obsidian-inset text-white'
+                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                          }`
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
+                        <span>Material You</span>
+                        <span
+                          className={`text-[9px] uppercase px-1.5 py-0.5 font-semibold tracking-wider ${
+                            isMaterialYou
+                              ? 'rounded-full bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)]'
+                              : isFluentGlass
+                              ? 'rounded-full bg-cyan-400/20 text-cyan-200 border border-cyan-300/35'
+                              : isBespoke
+                              ? 'rounded-sm bg-blue-600/20 text-blue-300 border border-blue-500/40'
+                              : 'rounded-full obsidian-pill-active font-black'
+                          }`}
+                        >
+                          M3
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                        Stepped tonal surface elevation, pill shapes, dynamic seed palettes, spring motion, and true AMOLED mode.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded-full'
+                      } ${
+                        activeInterfaceStyle === 'material-you'
+                          ? isMaterialYou
+                            ? 'bg-[var(--md-primary)] text-[var(--md-on-primary)] border-[var(--md-primary)]'
+                            : isBespoke
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'obsidian-pill-active'
+                          : 'border-neutral-600 bg-transparent'
+                      }`}
+                    >
+                      {activeInterfaceStyle === 'material-you' && (
+                        <Check size={11} strokeWidth={1.75} />
+                      )}
+                    </div>
+                  </button>
                 </div>
+
+                {activeInterfaceStyle === 'material-you' && (
+                  <div className="pt-3 border-t border-zinc-800/80 space-y-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-zinc-300 block mb-2">
+                        Tonal Seed Palette
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(
+                          [
+                            { id: 'purple', name: 'Deep Purple', color: '#D0BCFF', bg: '#4F378B' },
+                            { id: 'cyan', name: 'Cyber Cyan', color: '#66E3FF', bg: '#004E5F' },
+                            { id: 'emerald', name: 'Neon Emerald', color: '#6DD58C', bg: '#005227' },
+                            { id: 'crimson', name: 'Crimson Pulse', color: '#FFB2BE', bg: '#7D293A' },
+                          ] as const
+                        ).map((seed) => {
+                          const isSelected = activeMaterialYouSeed === seed.id;
+                          return (
+                            <button
+                              key={seed.id}
+                              type="button"
+                              onClick={() => applyMaterialYouSeed(seed.id)}
+                              className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                                isSelected
+                                  ? 'border-[var(--md-primary)] bg-[var(--md-surface-container-high)] text-white shadow-sm'
+                                  : 'border-zinc-800 bg-[var(--md-surface-container-low)] text-zinc-400 hover:border-zinc-700'
+                              }`}
+                            >
+                              <div
+                                className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border border-white/20"
+                                style={{ backgroundColor: seed.color }}
+                              >
+                                {isSelected && (
+                                  <div
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: seed.bg }}
+                                  />
+                                )}
+                              </div>
+                              <span className="text-xs font-medium truncate">{seed.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <span className="text-xs font-semibold text-white block">
+                          AMOLED Pitch-Black
+                        </span>
+                        <span className="text-[10px] text-zinc-400 block">
+                          Forces true #000000 background canvas
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => applyMaterialYouAmoled(!activeMaterialYouAmoled)}
+                        className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+                          activeMaterialYouAmoled
+                            ? 'bg-[var(--md-primary)]'
+                            : 'bg-zinc-800 border border-zinc-700'
+                        }`}
+                        aria-pressed={activeMaterialYouAmoled}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full transition-transform ${
+                            activeMaterialYouAmoled
+                              ? 'translate-x-5 bg-[var(--md-on-primary)]'
+                              : 'translate-x-0 bg-zinc-400'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             }
             footerContent={

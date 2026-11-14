@@ -250,6 +250,10 @@ export function App() {
       <InterfaceStyleProvider
         interfaceStyle={store.interfaceStyle}
         setInterfaceStyle={store.setInterfaceStyle}
+        materialYouSeed={store.materialYouSeed}
+        setMaterialYouSeed={store.setMaterialYouSeed}
+        materialYouAmoled={store.materialYouAmoled}
+        setMaterialYouAmoled={store.setMaterialYouAmoled}
       >
         <TheVoidView
           activeLock={store.activeLock}
@@ -267,6 +271,10 @@ export function App() {
     <InterfaceStyleProvider
       interfaceStyle={store.interfaceStyle}
       setInterfaceStyle={store.setInterfaceStyle}
+      materialYouSeed={store.materialYouSeed}
+      setMaterialYouSeed={store.setMaterialYouSeed}
+      materialYouAmoled={store.materialYouAmoled}
+      setMaterialYouAmoled={store.setMaterialYouAmoled}
     >
       <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
         {isFluentGlass && <AmbientBackground />}
@@ -480,6 +488,10 @@ export function App() {
             onThemeConfigChange={store.setThemeConfig}
             interfaceStyle={store.interfaceStyle}
             onInterfaceStyleChange={store.setInterfaceStyle}
+            materialYouSeed={store.materialYouSeed}
+            onMaterialYouSeedChange={store.setMaterialYouSeed}
+            materialYouAmoled={store.materialYouAmoled}
+            onMaterialYouAmoledChange={store.setMaterialYouAmoled}
             sectionOverride={rulesSectionOverride}
             viewMode={activeTab === 'support' ? 'support' : 'settings_os'}
             sleepFarmingMode={store.sleepFarmingMode}

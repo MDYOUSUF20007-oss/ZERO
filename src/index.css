@@ -1615,3 +1615,230 @@ div[class*="via-"]:not([class*="liquid-"]),
 h1, h2, h3, h4, .text-primary-metric {
   color: #ffffff !important;
 }
+
+/* ==========================================================================
+   MATERIAL YOU (M3) — CORE SURFACE & TEXT TOKENS (DARK DEFAULT)
+   ========================================================================== */
+[data-theme="material-you"] {
+  /* Stepped Tonal Surfaces (Replaces borders and glass blur) */
+  --md-bg: #0E0E13;
+  --md-surface: #0E0E13;
+  --md-surface-container-low: #17161F;
+  --md-surface-container: #1D1B26;
+  --md-surface-container-high: #272532;
+  --md-surface-container-highest: #322F3E;
+
+  /* High-Contrast Typography Guardrails (Prevents unreadable dark text) */
+  --md-on-surface: #E6E1E5;
+  --md-on-surface-variant: #CAC4D0;
+  --md-outline: #938F99;
+  --md-outline-variant: #49454F;
+
+  /* Status Tokens */
+  --md-danger: #F2B8B5;
+  --md-on-danger: #601410;
+  --md-danger-container: #8C1D18;
+  --md-on-danger-container: #F9DEDC;
+
+  /* Shape & Motion Tokens */
+  --md-radius-card: 24px;
+  --md-radius-card-active: 14px;
+  --md-radius-inner: 16px;
+  --md-radius-pill: 9999px;
+  --md-spring: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Default Seed: Deep Purple */
+  --md-primary: #D0BCFF;
+  --md-on-primary: #381E72;
+  --md-primary-container: #4F378B;
+  --md-on-primary-container: #EADDFF;
+  --md-secondary: #66E3FF;
+  --md-on-secondary: #003642;
+  --md-secondary-container: #004E5F;
+  --md-on-secondary-container: #B8EAFF;
+}
+
+/* ==========================================================================
+   DYNAMIC SEED PALETTES
+   ========================================================================== */
+[data-theme="material-you"][data-seed="purple"] {
+  --md-primary: #D0BCFF;
+  --md-on-primary: #381E72;
+  --md-primary-container: #4F378B;
+  --md-on-primary-container: #EADDFF;
+  --md-secondary: #66E3FF;
+  --md-on-secondary: #003642;
+  --md-secondary-container: #004E5F;
+  --md-on-secondary-container: #B8EAFF;
+}
+
+[data-theme="material-you"][data-seed="cyan"] {
+  --md-primary: #66E3FF;
+  --md-on-primary: #003642;
+  --md-primary-container: #004E5F;
+  --md-on-primary-container: #B8EAFF;
+  --md-secondary: #D0BCFF;
+  --md-on-secondary: #381E72;
+  --md-secondary-container: #4F378B;
+  --md-on-secondary-container: #EADDFF;
+}
+
+[data-theme="material-you"][data-seed="emerald"] {
+  --md-primary: #6DD58C;
+  --md-on-primary: #003919;
+  --md-primary-container: #005227;
+  --md-on-primary-container: #89F8A6;
+  --md-secondary: #7ADCFF;
+  --md-on-secondary: #003544;
+  --md-secondary-container: #004D61;
+  --md-on-secondary-container: #BFE9FF;
+}
+
+[data-theme="material-you"][data-seed="crimson"] {
+  --md-primary: #FFB2BE;
+  --md-on-primary: #5F1124;
+  --md-primary-container: #7D293A;
+  --md-on-primary-container: #FFD9DE;
+  --md-secondary: #FFB784;
+  --md-on-secondary: #4F2500;
+  --md-secondary-container: #6E3909;
+  --md-on-secondary-container: #FFDCC2;
+}
+
+/* ==========================================================================
+   TRUE AMOLED OVERRIDE
+   ========================================================================== */
+[data-theme="material-you"][data-amoled="true"] {
+  --md-bg: #000000;
+  --md-surface: #000000;
+  --md-surface-container-low: #08080A;
+  --md-surface-container: #101014;
+  --md-surface-container-high: #191820;
+  --md-surface-container-highest: #23212C;
+}
+
+/* ==========================================================================
+   MATERIAL YOU APPLIED TO EXISTING APP SELECTORS & UTILITIES
+   ========================================================================== */
+[data-theme="material-you"],
+[data-theme="material-you"] body,
+[data-theme="material-you"] .zero-app-shell {
+  background-color: var(--md-bg) !important;
+  color: var(--md-on-surface) !important;
+}
+
+/* Override existing cards and containers */
+[data-theme="material-you"] .obsidian-card,
+[data-theme="material-you"] .liquid-card,
+[data-theme="material-you"] .liquid-glass,
+[data-theme="material-you"] [data-frosted-card="true"] {
+  background-color: var(--md-surface-container) !important;
+  background-image: none !important;
+  border-radius: var(--md-radius-card) !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: var(--md-on-surface) !important;
+  transition: border-radius 250ms var(--md-spring), background-color 200ms ease;
+}
+
+/* Inset tracks and recessed containers */
+[data-theme="material-you"] .liquid-track,
+[data-theme="material-you"] .obsidian-inset-neutral,
+[data-theme="material-you"] .liquid-inset {
+  background-color: var(--md-surface-container-low) !important;
+  background-image: none !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Pill components */
+[data-theme="material-you"] .liquid-pill-active,
+[data-theme="material-you"] .obsidian-pill-active,
+[data-theme="material-you"] .liquid-dock-item-active {
+  background: var(--md-primary) !important;
+  background-image: none !important;
+  color: var(--md-on-primary) !important;
+  font-weight: 700 !important;
+  border-radius: var(--md-radius-pill) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="material-you"] .liquid-pill-inactive,
+[data-theme="material-you"] .obsidian-pill-inactive,
+[data-theme="material-you"] .liquid-pill {
+  background: var(--md-surface-container-high) !important;
+  background-image: none !important;
+  color: var(--md-on-surface-variant) !important;
+  border: 1px solid transparent !important;
+}
+
+/* Bottom navigation dock */
+[data-theme="material-you"] .liquid-dock {
+  background: var(--md-surface-container-highest) !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-radius-pill) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="material-you"] .liquid-dock button {
+  color: var(--md-on-surface-variant) !important;
+}
+
+[data-theme="material-you"] .liquid-dock button.liquid-dock-item-active,
+[data-theme="material-you"] .liquid-dock button[data-active="true"] {
+  background: var(--md-primary-container) !important;
+  color: var(--md-on-primary-container) !important;
+  border-radius: var(--md-radius-pill) !important;
+}
+
+/* Primary actions, CTA buttons, Hold-to-Lock */
+[data-theme="material-you"] .btn-primary,
+[data-theme="material-you"] .liquid-cta-primary {
+  background: var(--md-primary) !important;
+  color: var(--md-on-primary) !important;
+  border-radius: var(--md-radius-pill) !important;
+}
+
+[data-theme="material-you"] .btn-secondary,
+[data-theme="material-you"] .liquid-cta-secondary {
+  background: var(--md-secondary-container) !important;
+  color: var(--md-on-secondary-container) !important;
+  border-radius: var(--md-radius-pill) !important;
+}
+
+/* Text guardrails */
+[data-theme="material-you"] h1,
+[data-theme="material-you"] h2,
+[data-theme="material-you"] h3,
+[data-theme="material-you"] h4,
+[data-theme="material-you"] .text-white {
+  color: var(--md-on-surface) !important;
+}
+
+[data-theme="material-you"] .text-zinc-400,
+[data-theme="material-you"] .text-neutral-400,
+[data-theme="material-you"] .text-zinc-500 {
+  color: var(--md-on-surface-variant) !important;
+}
+
+/* Modals & Dialogs */
+[data-theme="material-you"] [role="dialog"],
+[data-theme="material-you"] .modal-surface {
+  background-color: var(--md-surface-container-high) !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-radius-card) !important;
+  color: var(--md-on-surface) !important;
+}
+
+/* Progress bars & gauges */
+[data-theme="material-you"] .liquid-shimmer-bar,
+[data-theme="material-you"] progress {
+  background-color: var(--md-primary) !important;
+}
