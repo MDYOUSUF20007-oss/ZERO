@@ -589,6 +589,56 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
+    fun saveImageToGallery(base64Png: String, fileName: String) {
+        try {
+            val cleanB64 = base64Png.substringAfter(",", base64Png)
+            val bytes = Base64.decode(cleanB64, Base64.DEFAULT)
+            val safeFileName = EndpointSecurityPolicy.sanitizeBackupFileName(
+                fileName,
+                "zero-focus-card.png"
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, safeFileName)
+                    put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/Zero")
+                    put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+                }
+                val resolver = activity.contentResolver
+                val collection = android.provider.MediaStore.Images.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                val itemUri = resolver.insert(collection, values)
+                if (itemUri != null) {
+                    resolver.openOutputStream(itemUri)?.use { out ->
+                        out.write(bytes)
+                    }
+                    values.clear()
+                    values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                    resolver.update(itemUri, values, null, null)
+                }
+            } else {
+                val picturesDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES)
+                val zeroDir = File(picturesDir, "Zero")
+                if (!zeroDir.exists()) zeroDir.mkdirs()
+                val outFile = File(zeroDir, safeFileName)
+                outFile.writeBytes(bytes)
+                val scanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                    data = Uri.fromFile(outFile)
+                }
+                activity.sendBroadcast(scanIntent)
+            }
+
+            activity.runOnUiThread {
+                Toast.makeText(activity, "Focus Card saved to Pictures/Zero!", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            activity.runOnUiThread {
+                Toast.makeText(activity, "Save failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    @JavascriptInterface
     fun exportBackupJson(jsonContent: String, fileName: String) {
         try {
             val backupDir = File(activity.cacheDir, "backups")
@@ -653,6 +703,13 @@ class ZeroNativeBridge(
                         if (!validated.mailtoSubject.isNullOrBlank()) {
                             putExtra(Intent.EXTRA_SUBJECT, validated.mailtoSubject)
                         }
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                } else if (scheme == "upi") {
+                    val rawUpi = Intent(Intent.ACTION_VIEW, parsed).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    Intent.createChooser(rawUpi, "Pay via UPI").apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                 } else {

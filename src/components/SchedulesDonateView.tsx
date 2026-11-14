@@ -26,7 +26,7 @@ import type {
   CloudAutoBackupStatus,
   CloudReminderInterval,
 } from '../types';
-import { useInterfaceStyle } from '../context/InterfaceStyleContext';
+import { useInterfaceStyle, type AccentColorId } from '../context/InterfaceStyleContext';
 import { evaluatePermissionPriority } from '../utils/permissionPriority';
 import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -215,14 +215,15 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     isBespoke,
     isFluentGlass,
     isMaterialYou,
-    materialYouSeed: ctxMaterialYouSeed,
-    setMaterialYouSeed: ctxSetMaterialYouSeed,
+    materialYouSeed: _ctxMaterialYouSeed,
+    setMaterialYouSeed: _ctxSetMaterialYouSeed,
     fluentOrbIntensity,
     setFluentOrbIntensity,
+    accent,
+    setAccent,
   } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
-  const activeMaterialYouSeed = materialYouSeedProp ?? ctxMaterialYouSeed ?? 'purple';
-  const applyMaterialYouSeed = onMaterialYouSeedChange ?? ctxSetMaterialYouSeed ?? (() => {});
+  const activeAccent = accent || (materialYouSeedProp === 'cyan' ? 'cyan' : 'purple');
 
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
@@ -552,12 +553,19 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   { id: 'purple', name: 'Deep Purple', color: '#D0BCFF', bg: '#4F378B' },
                   { id: 'cyan', name: 'Cyber Cyan', color: '#67D4FF', bg: '#004E5F' },
                 ].map((seed) => {
-                  const isSelected = activeMaterialYouSeed === seed.id || (seed.id === 'purple' && activeMaterialYouSeed !== 'cyan');
+                  const isSelected = !activeModId && (activeAccent === seed.id || (seed.id === 'purple' && activeAccent !== 'cyan'));
                   return (
                     <button
                       key={seed.id}
                       type="button"
-                      onClick={() => applyMaterialYouSeed(seed.id as any)}
+                      onClick={() => {
+                        haptics.tick(900);
+                        const next = seed.id as AccentColorId;
+                        setAccent(next);
+                        onMaterialYouSeedChange?.(next as any);
+                        removeActiveModStyles();
+                        setActiveModId(null);
+                      }}
                       className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                         isSelected
                           ? 'theme-pill-active'

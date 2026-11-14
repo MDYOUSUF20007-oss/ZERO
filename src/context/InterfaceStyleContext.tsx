@@ -17,6 +17,7 @@ import {
   normalizeThemeId,
 } from '../themes';
 import type { ThemeConfig, ClassicPreset, M3Palette } from '../types';
+import { initActiveThemeMod, removeActiveModStyles } from '../utils/themeMods';
 
 export type { CanonicalThemeId, AccentColorId, InterfaceStyle, ThemeEngineDefinition };
 export { AVAILABLE_THEMES, normalizeThemeId };
@@ -182,9 +183,16 @@ export interface InterfaceStyleProviderProps {
   setThemeConfig?: (next: ThemeConfig) => void;
 }
 
-export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps) {
+export function InterfaceStyleProvider({
+  children,
+  materialYouSeed: materialYouSeedProp,
+  setMaterialYouSeed: setMaterialYouSeedProp,
+}: InterfaceStyleProviderProps) {
   const [accent, setAccentState] = useState<AccentColorId>(() => {
     if (typeof window === 'undefined') return 'purple';
+    if (materialYouSeedProp === 'cyan' || materialYouSeedProp === 'purple') {
+      return materialYouSeedProp;
+    }
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY_ACCENT);
       return saved === 'cyan' ? 'cyan' : 'purple';
@@ -213,13 +221,19 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
       for (const oldKey of LEGACY_STORAGE_KEYS) {
         window.localStorage.removeItem(oldKey);
       }
-      mountIsolatedThemeEngine('fluent', 'purple', 0.35);
       return 'fluent';
     } catch {
-      mountIsolatedThemeEngine('fluent', 'purple', 0.35);
       return 'fluent';
     }
   });
+
+  useEffect(() => {
+    if (materialYouSeedProp === 'cyan' || materialYouSeedProp === 'purple') {
+      if (materialYouSeedProp !== accent) {
+        setAccentState(materialYouSeedProp);
+      }
+    }
+  }, [materialYouSeedProp, accent]);
 
   const setFluentOrbIntensity = useCallback((intensity: number) => {
     const clamped = Math.max(0, Math.min(1, Math.round(intensity * 100) / 100));
@@ -237,6 +251,7 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
 
   useEffect(() => {
     mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity);
+    initActiveThemeMod();
     try {
       window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
       window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
@@ -266,14 +281,16 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
 
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
+    removeActiveModStyles();
     mountIsolatedThemeEngine('fluent', safeAccent, fluentOrbIntensity);
     setAccentState(safeAccent);
+    setMaterialYouSeedProp?.(safeAccent);
     try {
       window.localStorage.setItem(STORAGE_KEY_ACCENT, safeAccent);
     } catch {
       // Ignore storage errors
     }
-  }, [fluentOrbIntensity]);
+  }, [fluentOrbIntensity, setMaterialYouSeedProp]);
 
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({

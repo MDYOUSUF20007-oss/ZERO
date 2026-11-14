@@ -144,6 +144,28 @@ public class MainActivity extends BridgeActivity {
                         return true;
                     }
 
+                    if ("upi".equals(validated.getScheme())) {
+                        try {
+                            Intent upiIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(validated.getNormalizedUrl()));
+                            upiIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(Intent.createChooser(upiIntent, "Pay via UPI"));
+                        } catch (Throwable t) {
+                            Log.e("ZeroMainActivity", "Failed to launch UPI intent", t);
+                        }
+                        return true;
+                    }
+
+                    if ("https".equals(validated.getScheme())) {
+                        try {
+                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(validated.getNormalizedUrl()));
+                            browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(browserIntent);
+                        } catch (Throwable t) {
+                            Log.e("ZeroMainActivity", "Failed to launch browser intent", t);
+                        }
+                        return true;
+                    }
+
                     return super.shouldOverrideUrlLoading(view, request);
                 }
             });

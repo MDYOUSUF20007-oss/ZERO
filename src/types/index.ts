@@ -449,6 +449,7 @@ export interface ZeroNativeBridgeInterface {
   setBagStateWithIdJson?(bagId: string, bagName: string, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
   getBagStateJson(): string;
   shareImageBase64(base64Png: string, fileName: string, caption: string): void;
+  saveImageToGallery?(base64Png: string, fileName: string): void;
   exportBackupJson(jsonContent: string, fileName: string): void;
   openExternalUrl?(url: string): void;
   startLockTaskMode(): void;

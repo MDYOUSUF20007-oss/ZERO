@@ -26,6 +26,13 @@ export function handleOpenExternalUrl(e: React.MouseEvent, url: string): void {
   if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {
     e.preventDefault();
     window.ZeroNative.openExternalUrl(url);
+    return;
+  }
+  if (typeof window !== 'undefined') {
+    if (url.startsWith('upi:')) {
+      e.preventDefault();
+      window.location.href = url;
+    }
   }
 }
 

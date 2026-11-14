@@ -152,14 +152,124 @@ export function deleteUserCustomMod(modId: string): boolean {
   }
 }
 
+const STYLE_TAG_MOD_ID = 'zero-theme-mod-styles';
+
+function hexToRgb(hex: string): string {
+  let c = hex.replace('#', '').trim();
+  if (c.length === 3) {
+    c = c.split('').map((x) => x + x).join('');
+  }
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return '0, 240, 255';
+  return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+}
+
 export function applyThemeModStyles(mod: ThemeModConfig): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.setAttribute('data-zero-mod', mod.id);
+  setActiveThemeModId(mod.id);
+
+  const accent = mod.accentColor || mod.cssVars?.['--zero-accent'] || '#00F0FF';
+  const accentRgb =
+    mod.cssVars?.['--zero-accent-rgb'] ||
+    (accent.startsWith('#') ? hexToRgb(accent) : '0, 240, 255');
+  const baseBg =
+    mod.baseColor ||
+    mod.cssVars?.['--zero-bg-primary'] ||
+    (mod.family === 'amoled' ? '#000000' : '#121620');
+  const surfaceCard =
+    mod.cssVars?.['--zero-surface-card'] ||
+    (mod.family === 'amoled' ? 'rgba(10, 14, 24, 0.85)' : 'rgba(28, 35, 52, 0.80)');
+  const border = mod.cssVars?.['--zero-border'] || `rgba(${accentRgb}, 0.28)`;
+
+  let customVarRules = '';
+  if (mod.cssVars) {
+    for (const [key, val] of Object.entries(mod.cssVars)) {
+      if (typeof val === 'string' && val.trim()) {
+        customVarRules += `    ${key}: ${val} !important;\n`;
+      }
+    }
+  }
+
+  const css = `
+  /* Zero Community Theme Mod: ${mod.name} (${mod.id}) */
+  :root,
+  [data-accent],
+  html[data-accent],
+  [data-zero-mod="${mod.id}"] {
+    --accent-primary: ${accent} !important;
+    --accent-secondary: ${accent} !important;
+    --accent-soft: rgba(${accentRgb}, 0.22) !important;
+    --accent-border: rgba(${accentRgb}, 0.55) !important;
+    --zero-accent: ${accent} !important;
+    --zero-dial-stroke: ${accent} !important;
+    --accent-hex: ${accent} !important;
+    --accent-rgb: ${accentRgb} !important;
+    --liquid-accent-glow: rgba(${accentRgb}, 0.45) !important;
+    --liquid-accent-soft-glow: rgba(${accentRgb}, 0.22) !important;
+    --liquid-accent-vibrant: ${accent} !important;
+    --liquid-accent-tint: ${accent} !important;
+    --bg-surface: ${surfaceCard} !important;
+${customVarRules}  }
+
+  html, body, #root {
+    background-color: ${baseBg} !important;
+  }
+
+  .glass-card,
+  .obsidian-card,
+  .liquid-glass,
+  .liquid-card,
+  .theme-card,
+  .settings-card,
+  [data-frosted-card="true"],
+  [data-obsidian-card="true"] {
+    background-color: ${surfaceCard} !important;
+    border-color: ${border} !important;
+  }
+
+  .theme-pill-active,
+  .liquid-pill-active,
+  .obsidian-pill-active,
+  .action-pill {
+    background-color: rgba(${accentRgb}, 0.22) !important;
+    color: ${accent} !important;
+    border-color: rgba(${accentRgb}, 0.55) !important;
+    box-shadow: 0 0 14px rgba(${accentRgb}, 0.35) !important;
+  }
+  `;
+
+  let styleTag = document.getElementById(STYLE_TAG_MOD_ID) as HTMLStyleElement | null;
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = STYLE_TAG_MOD_ID;
+    styleTag.setAttribute('type', 'text/css');
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = css;
 }
 
 export function removeActiveModStyles(): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.removeAttribute('data-zero-mod');
+  setActiveThemeModId(null);
+  const styleTag = document.getElementById(STYLE_TAG_MOD_ID);
+  if (styleTag && styleTag.parentNode) {
+    styleTag.parentNode.removeChild(styleTag);
+  }
+}
+
+export function initActiveThemeMod(): void {
+  if (typeof window === 'undefined') return;
+  const activeId = getActiveThemeModId();
+  if (!activeId) return;
+  const all = getAllThemeMods();
+  const found = all.find((m) => m.id === activeId);
+  if (found) {
+    applyThemeModStyles(found);
+  } else {
+    setActiveThemeModId(null);
+  }
 }

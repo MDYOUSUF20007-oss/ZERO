@@ -49,14 +49,14 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
           {/* Smooth 60FPS spring sliding glass pill indicator */}
           <div
             aria-hidden="true"
-            className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none will-change-transform"
+            className="absolute top-0 bottom-0 left-0 w-1/4 p-1 pointer-events-none will-change-transform"
             style={{
               transform: `translateX(${activeIdx * 100}%)`,
               transition: 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
             <div
-              className="w-full h-full rounded-2xl liquid-dock-item-active"
+              className="w-full h-full rounded-full liquid-dock-item-active"
               style={{
                 background: 'var(--accent-soft, rgba(168, 85, 247, 0.20))',
                 border: '1px solid var(--accent-border, rgba(168, 85, 247, 0.55))',
@@ -77,7 +77,7 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
                   onSelectTab(tab.id);
                 }}
                 aria-current={active ? 'page' : undefined}
-                className={`relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-2xl liquid-spring ${
+                className={`relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-full liquid-spring ${
                   active ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >

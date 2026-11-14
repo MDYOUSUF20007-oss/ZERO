@@ -172,15 +172,15 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   const mottoQuoted = useMemo(() => formatReceiptMotto(profile), [profile]);
 
   // Draw crisp 1080x1350 Frosted Two-Tier Obsidian PNG receipt on offscreen canvas for native share/export
-  useEffect(() => {
-    if (!isOpen || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const W = 1080;
-    const H = 1350;
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const drawReceiptToCanvas = React.useCallback(
+    (canvas: HTMLCanvasElement): string => {
+      try {
+        const W = 1080;
+        const H = 1350;
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return '';
 
     const currentDateLabel = new Date()
       .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -639,27 +639,42 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       : 'italic 600 21px monospace';
     ctx.fillText(mottoQuoted, 104, manifestoY + 96, cardW - 96);
 
-    setReceiptExport({
-      dataUrl: canvas.toDataURL('image/png'),
-      dateLabel: currentDateLabel,
-    });
-  }, [
-    isOpen,
-    isBespoke,
-    isFluentGlass,
-    isModernFont,
-    themeConfig,
-    period,
-    periodStats,
-    currentStreak,
-    parachuteMetrics.currentBalance,
-    parachuteMetrics.totalReclaimedHours,
-    profile,
-    badgeSummary,
-    formattedHandle,
-    rankTitle,
-    mottoQuoted,
-  ]);
+        return canvas.toDataURL('image/png');
+      } catch (err) {
+        console.error('Failed to draw canvas receipt', err);
+        return '';
+      }
+    },
+    [
+      isBespoke,
+      isFluentGlass,
+      isModernFont,
+      themeConfig,
+      period,
+      periodStats,
+      currentStreak,
+      parachuteMetrics.currentBalance,
+      parachuteMetrics.totalReclaimedHours,
+      profile,
+      badgeSummary,
+      formattedHandle,
+      rankTitle,
+      mottoQuoted,
+    ]
+  );
+
+  useEffect(() => {
+    if (!isOpen || !canvasRef.current) return;
+    const url = drawReceiptToCanvas(canvasRef.current);
+    if (url) {
+      setReceiptExport({
+        dataUrl: url,
+        dateLabel: new Date()
+          .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          .toUpperCase(),
+      });
+    }
+  }, [isOpen, drawReceiptToCanvas]);
 
   if (!isOpen) return null;
 
@@ -670,11 +685,22 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${FOCUS_RECEIPT_PERIOD_LABELS[period].title}) using Zero-Distractions (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
 
   const handleNativeOrWebShare = async () => {
-    const dataUrl = receiptExport.dataUrl;
+    let dataUrl = receiptExport.dataUrl;
+    if (!dataUrl && canvasRef.current) {
+      dataUrl = drawReceiptToCanvas(canvasRef.current);
+      if (dataUrl) {
+        setReceiptExport({
+          dataUrl,
+          dateLabel: new Date()
+            .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            .toUpperCase(),
+        });
+      }
+    }
     if (!dataUrl) return;
     const fileName = `zero-flex-${period}-${new Date().toISOString().split('T')[0]}.png`;
 
-    if (window.ZeroNative) {
+    if (window.ZeroNative?.shareImageBase64) {
       window.ZeroNative.shareImageBase64(dataUrl, fileName, caption);
       return;
     }
@@ -701,13 +727,31 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
   };
 
   const handleDownloadPng = () => {
-    const dataUrl = receiptExport.dataUrl;
+    let dataUrl = receiptExport.dataUrl;
+    if (!dataUrl && canvasRef.current) {
+      dataUrl = drawReceiptToCanvas(canvasRef.current);
+      if (dataUrl) {
+        setReceiptExport({
+          dataUrl,
+          dateLabel: new Date()
+            .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            .toUpperCase(),
+        });
+      }
+    }
     if (!dataUrl) return;
     const fileName = `zero-flex-${period}-${new Date().toISOString().split('T')[0]}.png`;
-    if (window.ZeroNative) {
+
+    if (window.ZeroNative?.saveImageToGallery) {
+      window.ZeroNative.saveImageToGallery(dataUrl, fileName);
+      return;
+    }
+
+    if (window.ZeroNative?.shareImageBase64) {
       window.ZeroNative.shareImageBase64(dataUrl, fileName, caption);
       return;
     }
+
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = fileName;
@@ -716,7 +760,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 ${
         isFluentGlass ? 'bg-black/75 backdrop-blur-sm' : 'bg-black/95'
       }`}
       style={{
@@ -725,8 +769,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       }}
     >
       <div
-        className={`w-full max-w-md max-h-full flex flex-col gap-3 min-h-0 ${
-          isModernFont ? 'font-sans' : 'font-mono gap-2.5'
+        className={`w-full max-w-md h-[90vh] max-h-[780px] flex flex-col gap-2.5 min-h-0 ${
+          isModernFont ? 'font-sans' : 'font-mono'
         }`}
       >
         {/* Top Context Header Strip */}
@@ -749,8 +793,8 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
         <ObsidianCard
           ambientGlow
           className={`w-full flex-1 min-h-0 ${isModernFont ? 'font-sans' : 'font-mono'}`}
-          headerClassName="p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
-          footerClassName="p-4 flex items-center gap-2.5"
+          headerClassName="p-4 sm:p-5 flex-1 min-h-0 overflow-y-auto space-y-4"
+          footerClassName="p-3.5 sm:p-4 flex items-center gap-2.5 shrink-0 z-30"
           headerContent={
             <>
               {/* Card Title Header */}
@@ -1259,7 +1303,20 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
               </div>
 
               {/* Offscreen Hi-Res PNG Canvas for Native Share & Export */}
-              <canvas ref={canvasRef} className="hidden" />
+              <canvas
+                ref={canvasRef}
+                aria-hidden="true"
+                style={{
+                  position: 'fixed',
+                  left: -9999,
+                  top: -9999,
+                  width: 1080,
+                  height: 1350,
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  zIndex: -1,
+                }}
+              />
             </>
           }
           footerContent={
