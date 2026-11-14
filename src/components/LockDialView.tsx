@@ -16,7 +16,6 @@ import {
 } from '../utils/bagLayout';
 import { ProfileAvatar } from './ProfileAvatar';
 import { ObsidianCard } from './ObsidianCard';
-import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
@@ -103,33 +102,17 @@ function secsToDialAngle(secs: number): number {
   return Math.min(360, Math.max(0, pct * 360));
 }
 
-const DialTickRing = React.memo(function DialTickRing({
-  isBespoke,
-  isFluentGlass,
-  isMaterialYou,
-}: {
-  isBespoke: boolean;
-  isFluentGlass: boolean;
-  isMaterialYou: boolean;
-}) {
+const DialTickRing = React.memo(function DialTickRing() {
   return (
     <circle
       cx="144"
       cy="144"
       r="132"
       fill="none"
-      stroke={
-        isBespoke
-          ? '#262626'
-          : isMaterialYou
-          ? 'rgba(255, 255, 255, 0.08)'
-          : isFluentGlass
-          ? 'rgba(255, 255, 255, 0.2)'
-          : 'rgba(255, 255, 255, 0.14)'
-      }
-      strokeOpacity={isBespoke ? '1' : isMaterialYou ? '0.5' : isFluentGlass ? '0.75' : '0.6'}
-      strokeWidth={isBespoke ? '8' : isMaterialYou ? '6' : '12'}
-      strokeDasharray={isBespoke ? '1.5 8.5' : isMaterialYou ? '2 8' : '2 10'}
+      stroke="rgba(255, 255, 255, 0.2)"
+      strokeOpacity="0.75"
+      strokeWidth="12"
+      strokeDasharray="2 10"
     />
   );
 });
@@ -137,15 +120,9 @@ const DialTickRing = React.memo(function DialTickRing({
 const DialWheelSection = React.memo(function DialWheelSection({
   durationSeconds,
   onSelectDuration,
-  isBespoke,
-  isFluentGlass,
-  isMaterialYou,
 }: {
   durationSeconds: number;
   onSelectDuration: (secs: number) => void;
-  isBespoke: boolean;
-  isFluentGlass: boolean;
-  isMaterialYou: boolean;
 }) {
   const dialRef = useRef<HTMLDivElement>(null);
   const arcRef = useRef<SVGCircleElement>(null);
@@ -319,56 +296,31 @@ const DialWheelSection = React.memo(function DialWheelSection({
         ref={dialRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className={
-          isBespoke
-            ? 'zero-dial-surface relative w-64 h-64 sm:w-72 sm:h-72 rounded-md bg-black border border-neutral-800 flex items-center justify-center cursor-grab active:cursor-grabbing'
-            : isFluentGlass
-            ? 'zero-dial-surface zero-dial-ring liquid-dial-outer relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
-            : isMaterialYou
-            ? 'zero-dial-surface zero-dial-ring relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
-            : 'zero-dial-surface zero-dial-ring obsidian-dial-bezel relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
-        }
-        style={{
-          touchAction: 'none',
-          backgroundColor: isMaterialYou ? '#211f26' : undefined,
-          border: isMaterialYou ? 'none' : undefined,
-          boxShadow: isMaterialYou ? 'none' : undefined,
-        }}
+        className="zero-dial-surface zero-dial-ring liquid-dial-outer relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow"
+        style={{ touchAction: 'none' }}
       >
         <svg
-          className={`absolute pointer-events-none ${
-            isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'inset-0 w-full h-full'
-          }`}
+          className="absolute pointer-events-none inset-0 w-full h-full"
           viewBox="0 0 288 288"
         >
-          {isFluentGlass && (
-            <defs>
-              <linearGradient id="zeroLiquidDialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: '#ffffff' }} />
-                <stop offset="50%" style={{ stopColor: 'var(--liquid-accent-tint)' }} />
-                <stop offset="100%" style={{ stopColor: 'var(--liquid-accent-vibrant)' }} />
-              </linearGradient>
-            </defs>
-          )}
-          <DialTickRing isBespoke={isBespoke} isFluentGlass={isFluentGlass} isMaterialYou={isMaterialYou} />
+          <defs>
+            <linearGradient id="zeroLiquidDialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#ffffff' }} />
+              <stop offset="50%" style={{ stopColor: 'var(--liquid-accent-tint)' }} />
+              <stop offset="100%" style={{ stopColor: 'var(--liquid-accent-vibrant)' }} />
+            </linearGradient>
+          </defs>
+          <DialTickRing />
           <circle
             ref={arcRef}
             cx="144"
             cy="144"
             r="132"
             fill="none"
-            stroke={
-              isBespoke
-                ? '#2563EB'
-                : isFluentGlass
-                ? 'url(#zeroLiquidDialGrad)'
-                : isMaterialYou
-                ? 'var(--accent-primary)'
-                : 'var(--accent-hex, #FFFFFF)'
-            }
-            strokeWidth={isBespoke ? '4' : isMaterialYou ? '7' : '5'}
+            stroke="url(#zeroLiquidDialGrad)"
+            strokeWidth="5"
             strokeDasharray={`${(initialAngle / 360) * DIAL_ARC_CIRCUMFERENCE} ${DIAL_ARC_CIRCUMFERENCE}`}
-            strokeLinecap={isBespoke ? 'butt' : 'round'}
+            strokeLinecap="round"
             transform="rotate(-90 144 144)"
             className="zero-dial-arc transition-[stroke-dasharray] duration-75"
           />
@@ -376,79 +328,30 @@ const DialWheelSection = React.memo(function DialWheelSection({
 
         <div
           ref={knobLayerRef}
-          className={`zero-dial-knob-layer absolute pointer-events-none transition-transform duration-75 ${
-            isBespoke ? 'inset-3 w-[calc(100%-1.5rem)] h-[calc(100%-1.5rem)]' : 'w-full h-full'
-          }`}
+          className="zero-dial-knob-layer absolute pointer-events-none transition-transform duration-75 w-full h-full"
           style={{ transform: `rotate(${initialAngle}deg)` }}
         >
-          {isBespoke ? (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-4 rounded-none bg-blue-500 border border-black" />
-          ) : isMaterialYou ? (
-            <div
-              className="absolute top-0.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full"
-              style={{
-                backgroundColor: 'var(--accent-primary)',
-                border: 'none',
-                boxShadow: 'none',
-              }}
-            />
-          ) : (
-            <div
-              className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border"
-              style={{
-                backgroundColor: isFluentGlass ? '#ffffff' : 'var(--accent-hex, #FFFFFF)',
-                borderColor: '#09090B',
-                boxShadow: isFluentGlass
-                  ? '0 0 18px #ffffff, 0 0 28px var(--liquid-accent-vibrant)'
-                  : '0 0 14px var(--accent-hex, rgba(255, 255, 255, 0.75))',
-              }}
-            />
-          )}
+          <div
+            className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border border-black/40"
+            style={{
+              backgroundColor: '#ffffff',
+              boxShadow: '0 0 18px #ffffff, 0 0 28px var(--liquid-accent-vibrant)',
+            }}
+          />
         </div>
 
         <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
-          <span
-            className={
-              isFluentGlass
-                ? 'text-[11px] font-sans tracking-[0.14em] text-zinc-400 uppercase mb-1 font-medium'
-                : isMaterialYou
-                ? 'text-[11px] font-sans tracking-normal text-zinc-400 mb-1 font-medium'
-                : isBespoke
-                ? 'text-[11px] font-sans tracking-[0.14em] text-neutral-400 uppercase mb-1.5 font-medium'
-                : 'text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1 font-semibold'
-            }
-          >
+          <span className="text-[11px] font-sans tracking-[0.14em] text-zinc-400 uppercase mb-1 font-medium">
             Lock Duration
           </span>
           <div
             ref={durationTextRef}
-            className={
-              isFluentGlass
-                ? 'font-sans tabular-nums text-4xl font-semibold tracking-tight liquid-metric'
-                : isMaterialYou
-                ? 'font-sans tabular-nums text-4xl font-bold tracking-tight text-white'
-                : isBespoke
-                ? 'font-mono tabular-nums text-4xl font-semibold tracking-tight text-neutral-50'
-                : 'font-mono text-4xl font-black tracking-tight text-white drop-shadow'
-            }
+            className="font-sans tabular-nums text-4xl font-semibold tracking-tight liquid-metric"
           >
             {formatDialTime(durationSeconds)}
           </div>
-          <div
-            className={
-              isFluentGlass || isBespoke || isMaterialYou
-                ? 'flex items-center gap-1.5 mt-2 text-xs font-sans text-zinc-400'
-                : 'flex items-center gap-1.5 mt-1.5 text-xs font-mono text-zinc-400'
-            }
-          >
-            <Clock
-              size={12}
-              strokeWidth={1.75}
-              style={
-                isBespoke || isFluentGlass || isMaterialYou ? undefined : { color: 'var(--accent-hex, #A1A1AA)' }
-              }
-              className={isFluentGlass ? 'text-cyan-300' : isBespoke ? 'text-blue-500' : undefined}
-            />
+          <div className="flex items-center gap-1.5 mt-2 text-xs font-sans text-zinc-400">
+            <Clock size={12} strokeWidth={1.75} className="text-cyan-300" />
             <span>
               Until{' '}
               <span ref={untilTextRef} className="font-mono tabular-nums text-zinc-200">
@@ -460,11 +363,7 @@ const DialWheelSection = React.memo(function DialWheelSection({
       </div>
 
       {/* Quick-Preset Chips */}
-      <div
-        className={`flex items-center justify-center flex-wrap max-w-sm ${
-          isBespoke || isFluentGlass ? 'gap-2 mt-5' : 'gap-1.5 mt-4'
-        }`}
-      >
+      <div className="flex items-center justify-center flex-wrap max-w-sm gap-2 mt-5">
         {PRESET_DURATIONS.map((preset) => (
           <button
             key={preset.label}
@@ -472,31 +371,11 @@ const DialWheelSection = React.memo(function DialWheelSection({
               haptics.thud();
               onSelectDuration(preset.seconds);
             }}
-            className={
-              isMaterialYou
-                ? `px-3 py-1.5 text-xs font-sans rounded-lg transition-all ${
-                    durationSeconds === preset.seconds
-                      ? 'theme-pill-active font-semibold'
-                      : 'border border-[#49454f] bg-[#2b2930] text-[#cac4d0] hover:text-white'
-                  }`
-                : isFluentGlass
-                ? `px-3 py-1.5 text-xs font-sans tabular-nums rounded-xl ${
-                    durationSeconds === preset.seconds
-                      ? 'liquid-pill-active'
-                      : 'liquid-pill-inactive'
-                  }`
-                : isBespoke
-                ? `px-3 py-1.5 text-xs font-mono tabular-nums rounded-md border transition-colors duration-75 ${
-                    durationSeconds === preset.seconds
-                      ? 'bg-blue-600 border-blue-500 text-white font-semibold'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
-                  }`
-                : `px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
-                    durationSeconds === preset.seconds
-                      ? 'obsidian-pill-active font-black'
-                      : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
-                  }`
-            }
+            className={`px-3 py-1.5 text-xs font-sans tabular-nums rounded-xl liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
+              durationSeconds === preset.seconds
+                ? 'liquid-pill-active font-semibold'
+                : 'liquid-pill-inactive font-normal'
+            }`}
           >
             {preset.label}
           </button>
@@ -532,8 +411,6 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   onOpenThemes,
   onOpenManualBackup,
 }) => {
-  const { isBespoke, isFluentGlass, isMaterialYou } = useInterfaceStyle();
-  const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
   const [cloudBannerMsg, setCloudBannerMsg] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
@@ -635,71 +512,37 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     : 0;
 
   return (
-    <div
-      className={`flex-1 flex flex-col items-center justify-between max-w-md mx-auto w-full select-none ${
-        isFluentGlass
-          ? 'px-4 py-4 pb-32 gap-5 font-sans'
-          : isBespoke
-          ? 'px-4 py-4 pb-24 gap-5 font-sans'
-          : 'px-4 py-3 pb-24 gap-3'
-      }`}
-    >
+    <div className="flex-1 flex flex-col items-center justify-between max-w-md mx-auto w-full select-none px-4 py-4 pb-32 gap-5 font-sans">
       {/* Interactive Profile Strip + Compact Escape Ticket + 1-Tap Theme Studio Shortcut */}
-      <div className={`w-full flex items-stretch ${isModernFont ? 'gap-2' : 'gap-1.5'}`}>
+      <div className="w-full flex items-stretch gap-2">
         {profile ? (
           <ObsidianCard
             fullWidth={false}
             className="flex-1 min-w-0"
-            headerClassName={
-              isModernFont
-                ? 'p-3 flex items-center justify-between gap-2.5'
-                : 'p-2.5 flex items-center justify-between gap-2'
-            }
+            headerClassName="p-3 flex items-center justify-between gap-2.5"
             headerContent={
               <>
                 <ProfileAvatar
                   avatarId={profile.avatarId}
                   size="sm"
-                  interactive={!isBespoke}
+                  interactive
                 />
                 <button
                   type="button"
                   onClick={onOpenProfileModal}
-                  className={`flex-1 min-w-0 text-left group flex items-center justify-between gap-1.5 ${
-                    isModernFont ? 'font-sans' : 'font-mono'
-                  }`}
+                  className="flex-1 min-w-0 text-left group flex items-center justify-between gap-1.5 font-sans"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        className={`truncate ${
-                          isBespoke
-                            ? 'font-semibold text-xs text-neutral-50'
-                            : isFluentGlass
-                            ? 'font-semibold text-xs text-white'
-                            : 'font-bold text-xs text-white'
-                        }`}
-                      >
+                      <span className="truncate font-semibold text-xs text-white">
                         {profile.displayName}
                       </span>
-                      <span
-                        className={
-                          isFluentGlass
-                            ? 'text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0'
-                            : isBespoke
-                            ? 'text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-blue-400 shrink-0'
-                            : 'text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 obsidian-pill-active'
-                        }
-                      >
+                      <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
                         {profileRank.title}
                       </span>
                       {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
                     </div>
-                    <div
-                      className={`truncate mt-0.5 flex items-center gap-1.5 ${
-                        isModernFont ? 'text-[11px] text-zinc-400' : 'text-[10px] text-zinc-400'
-                      }`}
-                    >
+                    <div className="truncate mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-400">
                       <span>
                         <span className="font-mono tabular-nums">
                           {todayReclaimedHours}h / {profile.dailyGoalHours}h
@@ -707,16 +550,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                         • #{profile.primaryMission}
                       </span>
                       {badgeSummary.unlockedBadges.length > 0 && (
-                        <span
-                          className={`inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums ${
-                            isFluentGlass
-                              ? 'text-cyan-200 font-semibold'
-                              : isBespoke
-                              ? 'text-blue-400 font-semibold'
-                              : 'font-bold'
-                          }`}
-                          style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                        >
+                        <span className="inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums text-cyan-200 font-semibold">
                           <Trophy size={9} strokeWidth={1.75} />
                           {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
                         </span>
@@ -724,42 +558,13 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <div
-                      className={
-                        isFluentGlass
-                          ? 'w-8 liquid-track rounded-full h-1.5 hidden sm:block'
-                          : isBespoke
-                          ? 'w-7 bg-neutral-950 border border-neutral-800 rounded-none h-1.5 overflow-hidden hidden sm:block'
-                          : 'w-7 bg-zinc-900 border border-white/10 rounded-full h-1.5 overflow-hidden hidden sm:block'
-                      }
-                    >
+                    <div className="w-8 liquid-track rounded-full h-1.5 hidden sm:block overflow-hidden">
                       <div
-                        className={
-                          isFluentGlass
-                            ? 'h-full liquid-mercury-fill'
-                            : isBespoke
-                            ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
-                            : 'h-full rounded-full transition-all'
-                        }
-                        style={{
-                          width: `${dailyGoalPct}%`,
-                          ...(isFluentGlass
-                            ? {}
-                            : {
-                                background: isBespoke
-                                  ? '#2563EB'
-                                  : 'var(--accent-badge-gradient, #FFFFFF)',
-                              }),
-                        }}
+                        className="h-full liquid-mercury-fill"
+                        style={{ width: `${dailyGoalPct}%` }}
                       />
                     </div>
-                    <span
-                      className={
-                        isModernFont
-                          ? 'text-[11px] text-zinc-400 group-hover:text-white font-medium transition-colors duration-75'
-                          : 'text-[10px] text-zinc-400 group-hover:text-white font-bold'
-                      }
-                    >
+                    <span className="text-[11px] text-zinc-400 group-hover:text-white font-medium transition-colors duration-75">
                       Edit
                     </span>
                   </div>
@@ -773,24 +578,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             fullWidth={false}
             onClick={onOpenProfileModal}
             className="flex-1 min-w-0"
-            headerClassName={
-              isModernFont
-                ? 'p-3 flex items-center justify-between gap-2.5 font-sans'
-                : 'p-2.5 flex items-center justify-between gap-2 font-mono'
-            }
+            headerClassName="p-3 flex items-center justify-between gap-2.5 font-sans"
             headerContent={
               <>
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={
-                      isFluentGlass
-                        ? 'liquid-squircle text-cyan-200'
-                        : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                            isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                          }`
-                    }
-                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                  >
+                  <div className="liquid-squircle text-cyan-200">
                     {hasClaimedFirstTimeParachute ? (
                       <UserPlus size={15} strokeWidth={1.75} />
                     ) : (
@@ -798,40 +590,15 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     )}
                   </div>
                   <div className="text-left min-w-0">
-                    <div
-                      className={`text-xs truncate ${
-                        isModernFont ? 'font-semibold text-white' : 'font-bold text-white'
-                      }`}
-                    >
+                    <div className="text-xs truncate font-semibold text-white">
                       {hasClaimedFirstTimeParachute ? 'Create Profile' : 'Profile • +1 Ticket'}
                     </div>
-                    <div
-                      className={`text-[10px] truncate ${
-                        isFluentGlass
-                          ? 'text-cyan-200/80'
-                          : isBespoke
-                          ? 'text-neutral-400'
-                          : ''
-                      }`}
-                      style={
-                        isModernFont
-                          ? undefined
-                          : { color: 'var(--accent-hex, #FFFFFF)', opacity: 0.8 }
-                      }
-                    >
+                    <div className="text-[10px] truncate text-cyan-200/80">
                       {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
                     </div>
                   </div>
                 </div>
-                <span
-                  className={
-                    isFluentGlass
-                      ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded-xl liquid-pill-active text-[10px] font-semibold uppercase tracking-wide shrink-0'
-                      : isBespoke
-                      ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-600 border border-blue-500 text-white text-[10px] font-semibold uppercase tracking-wide shrink-0'
-                      : 'inline-flex items-center gap-1 px-2 py-1 rounded-lg obsidian-pill-active text-[10px] font-black uppercase shrink-0'
-                  }
-                >
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl liquid-pill-active text-[10px] font-semibold uppercase tracking-wide shrink-0">
                   <Sparkles size={10} strokeWidth={1.75} />
                   <span>{hasClaimedFirstTimeParachute ? 'Set' : 'Claim'}</span>
                 </span>
@@ -848,63 +615,23 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             haptics.tick(860);
             onOpenTicketModal();
           }}
-          style={
-            justEarnedParachute && !isBespoke && !isFluentGlass
-              ? { boxShadow: '0 0 0 2px var(--accent-hex, #FFFFFF)' }
-              : undefined
-          }
-          className={`shrink-0 ${
-            justEarnedParachute
-              ? isBespoke || isFluentGlass
-                ? 'border-cyan-400/60'
-                : 'animate-parachute-card-pop'
-              : ''
-          }`}
-          headerClassName={
-            isModernFont
-              ? 'flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75'
-              : 'flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white'
-          }
+          className={`shrink-0 ${justEarnedParachute ? 'border-cyan-400/60' : ''}`}
+          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
           title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
           aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
           headerContent={
             <>
-              <div
-                className={`h-6 px-2 obsidian-icon-box flex items-center justify-center gap-1 ${
-                  isBespoke ? 'rounded-sm' : isFluentGlass ? 'rounded-xl' : 'rounded-lg'
-                }`}
-              >
-                {isBespoke || isFluentGlass ? (
-                  <Ticket
-                    size={12}
-                    strokeWidth={1.75}
-                    className={isFluentGlass ? 'text-cyan-200 shrink-0' : 'text-blue-500 shrink-0'}
-                  />
-                ) : (
-                  <span
-                    className={`text-xs leading-none ${
-                      justEarnedParachute ? 'animate-parachute-float inline-block' : ''
-                    }`}
-                  >
-                    🎫
-                  </span>
-                )}
-                <span
-                  className={
-                    isModernFont
-                      ? 'text-[11px] font-sans tabular-nums font-semibold leading-none text-white'
-                      : 'text-[11px] font-black leading-none'
-                  }
-                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                >
+              <div className="h-6 px-2 obsidian-icon-box flex items-center justify-center gap-1 rounded-xl">
+                <Ticket
+                  size={12}
+                  strokeWidth={1.75}
+                  className="text-cyan-200 shrink-0"
+                />
+                <span className="text-[11px] font-sans tabular-nums font-semibold leading-none text-white">
                   {parachuteMetrics.currentBalance}
                 </span>
               </div>
-              <span
-                className={`text-[9px] uppercase tracking-wider leading-none ${
-                  isModernFont ? 'font-medium text-zinc-400' : 'font-bold'
-                }`}
-              >
+              <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
                 {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
               </span>
             </>
@@ -919,51 +646,29 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onOpenThemes();
           }}
           className="shrink-0"
-          headerClassName={
-            isModernFont
-              ? 'flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75'
-              : 'flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-mono text-zinc-300 hover:text-white'
-          }
+          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
           title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
           aria-label="Open Theme Studio"
           headerContent={
             <>
               <div
-                className={`w-6 h-6 obsidian-icon-box flex items-center justify-center ${
-                  isBespoke ? 'rounded-sm' : isFluentGlass ? 'rounded-xl' : 'rounded-lg'
-                }`}
-                style={
-                  isFluentGlass
-                    ? {
-                        background:
-                          'linear-gradient(135deg, #ffffff 0%, var(--liquid-accent-tint) 50%, var(--liquid-accent-vibrant) 100%)',
-                        border: '1px solid rgba(255, 255, 255, 0.95)',
-                        boxShadow: '0 2px 10px var(--liquid-accent-glow)',
-                        color: '#07040d',
-                      }
-                    : undefined
-                }
+                className="w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
+                style={{
+                  background:
+                    'linear-gradient(135deg, #ffffff 0%, var(--liquid-accent-tint) 50%, var(--liquid-accent-vibrant) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.95)',
+                  boxShadow: '0 2px 10px var(--liquid-accent-glow)',
+                  color: '#07040d',
+                }}
               >
                 <Palette
                   size={12}
                   strokeWidth={2}
-                  style={
-                    isFluentGlass
-                      ? { color: '#07040d' }
-                      : isModernFont
-                      ? undefined
-                      : { color: 'var(--accent-hex, #FFFFFF)' }
-                  }
-                  className={
-                    isFluentGlass ? 'text-[#07040d]' : isBespoke ? 'text-blue-500' : undefined
-                  }
+                  className="text-[#07040d]"
+                  style={{ color: '#07040d' }}
                 />
               </div>
-              <span
-                className={`text-[9px] uppercase tracking-wider leading-none ${
-                  isModernFont ? 'font-medium text-zinc-400' : 'font-bold'
-                }`}
-              >
+              <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
                 Theme
               </span>
             </>
@@ -976,48 +681,21 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         <ObsidianCard
           asButton
           onClick={onOpenPermissionGate}
-          headerClassName={
-            isModernFont
-              ? 'px-4 py-3 font-sans text-xs flex items-center justify-between gap-2'
-              : 'px-3.5 py-2.5 font-mono text-[11px] flex items-center justify-between gap-2'
-          }
-          footerClassName={
-            isModernFont
-              ? 'px-4 py-2 font-sans text-[10px] text-zinc-400'
-              : 'px-3.5 py-1.5 font-mono text-[10px] text-zinc-400'
-          }
+          headerClassName="px-4 py-3 font-sans text-xs flex items-center justify-between gap-2"
+          footerClassName="px-4 py-2 font-sans text-[10px] text-zinc-400"
           headerContent={
             <>
               <div className="flex items-center gap-2 min-w-0">
                 <ShieldAlert
                   size={14}
                   strokeWidth={1.75}
-                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                  className={
-                    isFluentGlass
-                      ? 'shrink-0 text-cyan-200'
-                      : isBespoke
-                      ? 'shrink-0 text-blue-500'
-                      : 'shrink-0'
-                  }
+                  className="shrink-0 text-cyan-200"
                 />
-                <span
-                  className={`truncate ${
-                    isModernFont ? 'font-semibold text-white' : 'font-bold text-zinc-100'
-                  }`}
-                >
+                <span className="truncate font-semibold text-white">
                   Permissions Required Before Locking
                 </span>
               </div>
-              <span
-                className={
-                  isFluentGlass
-                    ? 'text-[10px] px-2.5 py-1 rounded-xl liquid-pill-active font-semibold uppercase tracking-wide shrink-0 ml-2'
-                    : isBespoke
-                    ? 'text-[10px] px-2.5 py-1 rounded-md bg-blue-600 border border-blue-500 text-white font-semibold uppercase tracking-wide shrink-0 ml-2'
-                    : 'text-[10px] px-2 py-0.5 rounded-lg obsidian-pill-active font-black uppercase tracking-wider shrink-0 ml-2'
-                }
-              >
+              <span className="text-[10px] px-2.5 py-1 rounded-xl liquid-pill-active font-semibold uppercase tracking-wide shrink-0 ml-2">
                 Grant Now
               </span>
             </>
@@ -1034,60 +712,19 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       {(showWeeklyBackupBanner || cloudBannerMsg) && (
         <ObsidianCard
           data-amoled-banner="true"
-          accentOverride={
-            isBespoke || isFluentGlass
-              ? { hex: '#4FACFE', rgb: '79, 172, 254' }
-              : undefined
-          }
-          headerClassName={
-            isModernFont ? 'p-5 font-sans space-y-3' : 'p-3.5 font-mono space-y-2.5'
-          }
-          footerClassName={isModernFont ? 'px-5 py-2.5 font-sans' : 'px-3.5 py-2 font-mono'}
-          style={
-            isBespoke || isFluentGlass || isMaterialYou
-              ? undefined
-              : {
-                  backgroundColor: '#000000',
-                  borderColor: 'var(--accent-border)',
-                  boxShadow: '0 0 24px -10px var(--accent-soft)',
-                  color: '#FFFFFF',
-                }
-          }
+          accentOverride={{ hex: '#4FACFE', rgb: '79, 172, 254' }}
+          headerClassName="p-5 font-sans space-y-3"
+          footerClassName="px-5 py-2.5 font-sans"
           headerContent={
             <>
               {showWeeklyBackupBanner && (
                 <>
                   <div className="flex items-start gap-3">
-                    <div
-                      className={
-                        isFluentGlass
-                          ? 'liquid-squircle text-cyan-200'
-                          : `flex items-center justify-center shrink-0 border ${
-                              isBespoke
-                                ? 'w-8 h-8 rounded-md bg-neutral-950 border-neutral-800 text-blue-500'
-                                : 'w-7 h-7 rounded-xl'
-                            }`
-                      }
-                      style={
-                        isBespoke || isFluentGlass || isMaterialYou
-                          ? undefined
-                          : {
-                              backgroundColor: 'var(--accent-soft)',
-                              borderColor: 'var(--accent-border)',
-                              color: 'var(--accent-primary)',
-                            }
-                      }
-                    >
+                    <div className="liquid-squircle text-cyan-200">
                       <CloudUpload size={15} strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div
-                        className={
-                          isModernFont
-                            ? 'text-xs font-semibold text-white leading-snug'
-                            : 'amoled-banner-title text-[11px] font-black text-white leading-snug'
-                        }
-                      >
+                      <div className="text-xs font-semibold text-white leading-snug">
                         {cloudReminderInterval === 'monthly'
                           ? 'Monthly Cloud Upload Due — Keep your donor perks & stats safe'
                           : 'Weekly Cloud Upload Due — Keep your donor perks & stats safe'}
@@ -1107,23 +744,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                           setTimeout(() => setCloudBannerMsg(''), 4500);
                         }
                       }}
-                      className={
-                        isFluentGlass
-                          ? 'w-full py-2.5 px-3 rounded-xl liquid-pill-active font-semibold text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 disabled:opacity-60'
-                          : isBespoke
-                          ? 'w-full py-2.5 px-3 rounded-md bg-blue-600 border border-blue-500 hover:bg-blue-500 text-white font-semibold text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
-                          : isMaterialYou
-                          ? 'w-full py-2.5 px-3 rounded-full font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 disabled:opacity-60'
-                          : 'w-full py-2.5 px-3 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
-                      }
-                      style={
-                        isBespoke || isFluentGlass
-                          ? undefined
-                          : {
-                              backgroundColor: 'var(--accent-primary)',
-                              color: 'var(--text-on-accent)',
-                            }
-                      }
+                      className="w-full py-2.5 px-3 rounded-xl liquid-pill-active font-semibold text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 disabled:opacity-60 liquid-spring active:scale-[0.98]"
                     >
                       {isCloudBusy ? (
                         <Loader2 size={12} strokeWidth={1.75} className="animate-spin" />
@@ -1151,22 +772,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                             }
                             setTimeout(() => setCloudBannerMsg(''), 4500);
                           }}
-                          className={
-                            isFluentGlass
-                              ? 'py-2 px-3 rounded-xl liquid-pill font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 disabled:opacity-60'
-                              : isBespoke
-                              ? 'py-2 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75 disabled:opacity-60'
-                              : 'amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60'
-                          }
-                          style={
-                            isBespoke || isFluentGlass || isMaterialYou
-                              ? undefined
-                              : {
-                                  backgroundColor: '#09090B',
-                                  borderColor: 'var(--accent-border)',
-                                  color: 'var(--accent-primary)',
-                                }
-                          }
+                          className="py-2 px-3 rounded-xl liquid-pill font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 disabled:opacity-60 liquid-spring active:scale-[0.98]"
                         >
                           <Download size={11} strokeWidth={1.75} />
                           <span>One-Tap Save</span>
@@ -1179,22 +785,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                             haptics.tick(820);
                             onOpenManualBackup();
                           }}
-                          className={
-                            isFluentGlass
-                              ? 'py-2 px-3 rounded-xl liquid-pill font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5'
-                              : isBespoke
-                              ? 'py-2 px-3 rounded-md bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors duration-75'
-                              : 'amoled-banner-secondary py-1.5 px-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all'
-                          }
-                          style={
-                            isBespoke || isFluentGlass || isMaterialYou
-                              ? undefined
-                              : {
-                                  backgroundColor: '#09090B',
-                                  borderColor: 'var(--accent-border)',
-                                  color: 'var(--accent-primary)',
-                                }
-                          }
+                          className="py-2 px-3 rounded-xl liquid-pill font-medium text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 liquid-spring active:scale-[0.98]"
                         >
                           <Clock size={11} strokeWidth={1.75} />
                           <span>Timer / Settings &rarr;</span>
@@ -1206,36 +797,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               )}
 
               {cloudBannerMsg && (
-                <div
-                  className={
-                    isModernFont
-                      ? 'text-[11px] px-3 py-2 rounded-xl liquid-row text-zinc-200'
-                      : 'text-[10px] px-2.5 py-1.5 rounded-lg border'
-                  }
-                  style={
-                    isModernFont
-                      ? undefined
-                      : {
-                          backgroundColor: 'var(--accent-soft)',
-                          borderColor: 'var(--accent-border)',
-                          color: 'var(--accent-primary)',
-                        }
-                  }
-                >
+                <div className="text-[11px] px-3 py-2 rounded-xl liquid-row text-zinc-200">
                   {cloudBannerMsg}
                 </div>
               )}
             </>
           }
           footerContent={
-            <div
-              className={
-                isModernFont
-                  ? 'text-[11px] text-zinc-400 leading-snug'
-                  : 'amoled-banner-sub text-[10px] leading-snug'
-              }
-              style={isModernFont ? undefined : { color: '#C4B5FD' }}
-            >
+            <div className="text-[11px] text-zinc-400 leading-snug">
               Saves only your stats, Escape Tickets &amp; donor perks (<code className="font-mono">zero-backup.zbak</code>).
             </div>
           }
@@ -1246,32 +815,19 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       <DialWheelSection
         durationSeconds={durationSeconds}
         onSelectDuration={setDurationSeconds}
-        isBespoke={isBespoke}
-        isFluentGlass={isFluentGlass}
-        isMaterialYou={isMaterialYou}
       />
 
       {/* Bottom Area: The 4-Bag Selector, Tags & Hold to Lock */}
-      <div className={`w-full flex flex-col items-center mt-auto ${isModernFont ? 'gap-4' : 'gap-3'}`}>
+      <div className="w-full flex flex-col items-center mt-auto gap-4">
         {/* Session Tags */}
         <div className="w-full">
           <div className="flex items-center justify-between mb-2">
-            <span
-              className={
-                isModernFont
-                  ? 'text-[11px] font-sans uppercase tracking-wider text-zinc-400 font-medium'
-                  : 'text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-semibold'
-              }
-            >
+            <span className="text-[11px] font-sans uppercase tracking-wider text-zinc-400 font-medium">
               Session Focus Tag
             </span>
             <button
               onClick={() => setIsAddingTag(!isAddingTag)}
-              className={
-                isModernFont
-                  ? 'text-[11px] font-sans text-zinc-400 hover:text-white transition-colors duration-75'
-                  : 'text-[11px] font-mono text-zinc-400 hover:text-zinc-200'
-              }
+              className="text-[11px] font-sans text-zinc-400 hover:text-white transition-colors duration-75"
             >
               {isAddingTag ? 'Cancel' : '+ Custom'}
             </button>
@@ -1286,23 +842,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 placeholder="e.g. Thesis, Meditation..."
                 maxLength={20}
                 autoFocus
-                className={
-                  isFluentGlass
-                    ? 'flex-1 obsidian-input text-xs text-white rounded-xl px-3 py-2 font-sans outline-none'
-                    : isBespoke
-                    ? 'flex-1 obsidian-input text-xs text-neutral-100 rounded-md px-3 py-2 font-sans outline-none'
-                    : 'flex-1 obsidian-input text-xs text-white rounded-xl px-3 py-2 font-mono outline-none'
-                }
+                className="flex-1 obsidian-input text-xs text-white rounded-xl px-3 py-2 font-sans outline-none"
               />
               <button
                 type="submit"
-                className={
-                  isFluentGlass
-                    ? 'liquid-pill-active text-xs font-sans font-semibold px-4 py-2 rounded-xl uppercase tracking-wide'
-                    : isBespoke
-                    ? 'bg-blue-600 border border-blue-500 text-white text-xs font-sans font-semibold px-4 py-2 rounded-md uppercase tracking-wide transition-colors duration-75'
-                    : 'obsidian-pill-active text-xs font-mono font-black px-3.5 py-2 rounded-xl uppercase'
-                }
+                className="liquid-pill-active text-xs font-sans font-semibold px-4 py-2 rounded-xl uppercase tracking-wide liquid-spring active:scale-[0.97]"
               >
                 Add
               </button>
@@ -1316,31 +860,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     haptics.tick(900);
                     setSelectedTag(tag);
                   }}
-                  className={
-                    isMaterialYou
-                      ? `px-3 py-1.5 rounded-lg text-xs font-sans whitespace-nowrap transition-all ${
-                          selectedTag === tag
-                            ? 'theme-pill-active font-semibold'
-                            : 'border border-[#49454f] bg-[#2b2930] text-[#cac4d0] hover:text-white'
-                        }`
-                      : isFluentGlass
-                      ? `px-3 py-1.5 rounded-xl text-xs font-sans whitespace-nowrap ${
-                          selectedTag === tag
-                            ? 'liquid-pill-active'
-                            : 'liquid-pill-inactive'
-                        }`
-                      : isBespoke
-                      ? `px-3 py-1.5 rounded-md text-xs font-sans font-medium whitespace-nowrap border transition-colors duration-75 ${
-                          selectedTag === tag
-                            ? 'bg-blue-600 border-blue-500 text-white font-semibold'
-                            : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
-                        }`
-                      : `px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all ${
-                          selectedTag === tag
-                            ? 'obsidian-pill-active font-black'
-                            : 'obsidian-inset-neutral text-zinc-400 hover:text-zinc-200'
-                        }`
-                  }
+                  className={`px-3 py-1.5 rounded-xl text-xs font-sans whitespace-nowrap liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
+                    selectedTag === tag
+                      ? 'liquid-pill-active font-semibold'
+                      : 'liquid-pill-inactive font-normal'
+                  }`}
                 >
                   #{tag}
                 </button>
@@ -1353,71 +877,29 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         <ObsidianCard
           asButton
           onClick={onOpenBagDrawer}
-          headerClassName={
-            isModernFont
-              ? 'p-4 flex items-center justify-between gap-3 text-left font-sans group'
-              : 'p-3.5 flex items-center justify-between gap-2 text-left font-mono group'
-          }
-          footerClassName={
-            isModernFont
-              ? 'px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap font-sans text-[11px] text-zinc-400'
-              : 'px-3.5 py-2 flex items-center justify-between gap-2 flex-wrap font-mono text-[10px] text-zinc-400'
-          }
+          headerClassName="p-4 flex items-center justify-between gap-3 text-left font-sans group"
+          footerClassName="px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap font-sans text-[11px] text-zinc-400"
           headerContent={
             <>
               <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={
-                    isFluentGlass
-                      ? 'liquid-squircle text-cyan-200'
-                      : `w-9 h-9 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                          isBespoke ? 'rounded-md text-blue-500' : 'rounded-xl'
-                        }`
-                  }
-                >
-                  <Briefcase
-                    size={16}
-                    strokeWidth={1.75}
-                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                  />
+                <div className="liquid-squircle text-cyan-200">
+                  <Briefcase size={16} strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-xs truncate ${
-                        isModernFont ? 'font-semibold text-white' : 'font-bold text-white'
-                      }`}
-                    >
+                    <span className="text-xs truncate font-semibold text-white">
                       Bag: {activeBag.name}
                     </span>
-                    <span
-                      className={
-                        isFluentGlass
-                          ? 'text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full liquid-row text-zinc-200 shrink-0'
-                          : isBespoke
-                          ? 'text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-sm bg-neutral-950 border border-neutral-800 text-neutral-300 shrink-0'
-                          : 'text-[10px] px-1.5 py-0.5 rounded obsidian-inset-neutral text-zinc-300 shrink-0'
-                      }
-                    >
+                    <span className="text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full liquid-row text-zinc-200 shrink-0">
                       {activeBag.apps.length} app{activeBag.apps.length === 1 ? '' : 's'}
                     </span>
                   </div>
-                  <div
-                    className={`truncate mt-0.5 ${
-                      isModernFont ? 'text-[11px] text-zinc-400' : 'text-[10px] text-zinc-400'
-                    }`}
-                  >
+                  <div className="truncate mt-0.5 text-[11px] text-zinc-400">
                     {activeBag.occasionLabel}
                   </div>
                 </div>
               </div>
-              <span
-                className={
-                  isModernFont
-                    ? 'text-xs font-medium text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75'
-                    : 'text-[11px] font-bold text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5'
-                }
-              >
+              <span className="text-xs font-medium text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
                 Pack <ChevronRight size={14} strokeWidth={1.75} />
               </span>
             </>
@@ -1425,32 +907,14 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           footerContent={
             <>
               <div className="flex items-center gap-3">
-                <span
-                  className={
-                    isFluentGlass
-                      ? 'text-cyan-200 flex items-center gap-1 font-medium'
-                      : isBespoke
-                      ? 'text-blue-400 flex items-center gap-1 font-medium'
-                      : 'flex items-center gap-1 font-medium'
-                  }
-                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
-                >
+                <span className="text-cyan-200 flex items-center gap-1 font-medium">
                   <Phone size={10} strokeWidth={1.75} /> Calls Always ON
                 </span>
                 <span
                   className={
                     activeBag.allowSms
-                      ? isFluentGlass
-                        ? 'text-cyan-200 flex items-center gap-1 font-medium'
-                        : isBespoke
-                        ? 'text-blue-400 flex items-center gap-1 font-medium'
-                        : 'flex items-center gap-1 font-medium'
+                      ? 'text-cyan-200 flex items-center gap-1 font-medium'
                       : 'flex items-center gap-1'
-                  }
-                  style={
-                    !isModernFont && activeBag.allowSms
-                      ? { color: 'var(--accent-hex, #FFFFFF)' }
-                      : undefined
                   }
                 >
                   <MessageSquare size={10} strokeWidth={1.75} />{' '}
@@ -1475,118 +939,45 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchStart={startHold}
             onTouchEnd={cancelHold}
             onTouchCancel={cancelHold}
-            className={
-              isMaterialYou
-                ? `relative w-full h-14 py-4 rounded-full font-sans font-bold text-sm tracking-wide uppercase select-none flex items-center justify-center transition-all ${
-                    isHolding ? 'scale-[0.98]' : 'active:scale-[0.99]'
-                  }`
-                : isFluentGlass
-                ? `relative w-full h-14 py-4 rounded-2xl liquid-glass border border-white/30 font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
-                    isHolding ? 'scale-[0.98]' : ''
-                  }`
-                : isBespoke
-                ? `relative w-full h-14 py-4 rounded-md bg-black border font-sans font-semibold text-sm tracking-wide uppercase overflow-hidden transition-colors duration-75 select-none flex items-center justify-center ${
-                    isHolding ? 'border-blue-500' : 'border-neutral-800 hover:border-neutral-700'
-                  }`
-                : `relative w-full h-15 py-4 rounded-2xl obsidian-shell-bar border font-mono font-black text-sm tracking-wider uppercase overflow-hidden transition-all select-none flex items-center justify-center ${
-                    isHolding ? 'scale-[0.99]' : 'active:scale-[0.99]'
-                  }`
-            }
-            style={
-              isMaterialYou
-                ? {
-                    touchAction: 'none',
-                    backgroundColor: 'var(--accent-primary)',
-                    color: 'var(--text-on-accent)',
-                    border: 'none',
-                    boxShadow: 'none',
-                  }
-                : isBespoke
-                ? {
-                    touchAction: 'none',
-                    border: '1px solid var(--accent-primary)',
-                    backgroundColor: '#000000',
-                    color: '#ffffff',
-                  }
-                : isFluentGlass
-                ? {
-                    touchAction: 'none',
-                    backgroundColor: 'var(--accent-soft)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.28)',
-                  }
-                : {
-                    touchAction: 'none',
-                    borderColor: isHolding
-                      ? 'var(--accent-hex, #FFFFFF)'
-                      : 'rgba(var(--accent-rgb, 255, 255, 255), 0.5)',
-                    boxShadow: isHolding
-                      ? '0 0 28px -2px rgba(var(--accent-rgb, 255, 255, 255), 0.52), inset 0 1px 0 rgba(255,255,255,0.16)'
-                      : '0 0 22px -6px rgba(var(--accent-rgb, 255, 255, 255), 0.28), inset 0 1px 0 rgba(255,255,255,0.14)',
-                  }
-            }
+            className={`relative w-full h-14 py-4 rounded-2xl liquid-glass border border-white/30 font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
+              isHolding ? 'scale-[0.98]' : 'active:scale-[0.98]'
+            }`}
+            style={{
+              touchAction: 'none',
+              backgroundColor: 'var(--accent-soft)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.28)',
+            }}
           >
-            {!isBespoke && !isMaterialYou && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px] opacity-80"
-                style={{
-                  background: isFluentGlass
-                    ? 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.48) 50%, transparent 100%)'
-                    : 'linear-gradient(90deg, transparent 0%, var(--accent-hex, #FFFFFF) 50%, transparent 100%)',
-                }}
-              />
-            )}
             <div
-              className={`absolute left-0 top-0 bottom-0 pointer-events-none ${
-                isBespoke ? 'transition-none' : 'transition-all'
-              }`}
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px] opacity-80"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.48) 50%, transparent 100%)',
+              }}
+            />
+            <div
+              className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all"
               style={{
                 width: `${holdProgress * 100}%`,
-                opacity: isHolding ? (isBespoke || isMaterialYou ? 1 : 0.98) : 0,
-                background: isMaterialYou
-                  ? 'var(--accent-secondary)'
-                  : isFluentGlass
-                  ? 'linear-gradient(90deg, #ffffff 0%, var(--liquid-accent-tint) 45%, var(--liquid-accent-vibrant) 100%)'
-                  : isBespoke
-                  ? '#2563EB'
-                  : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
+                opacity: isHolding ? 0.98 : 0,
+                background:
+                  'linear-gradient(90deg, #ffffff 0%, var(--liquid-accent-tint) 45%, var(--liquid-accent-vibrant) 100%)',
               }}
             />
 
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors duration-75 ${
-                isMaterialYou
-                  ? 'font-bold'
-                  : holdProgress > 0.4
-                  ? isFluentGlass
-                    ? 'font-extrabold text-[#07040d]'
-                    : isBespoke
-                    ? 'font-semibold text-white'
-                    : 'font-black'
+                holdProgress > 0.4
+                  ? 'font-extrabold text-[#07040d]'
                   : 'text-zinc-100'
               }`}
-              style={
-                isMaterialYou
-                  ? { color: 'var(--text-on-accent)' }
-                  : isBespoke || isFluentGlass
-                  ? undefined
-                  : {
-                      color:
-                        holdProgress > 0.4
-                          ? 'var(--accent-badge-text, #09090B)'
-                          : undefined,
-                    }
-              }
             >
               {isHolding ? (
                 <>
-                  <Flame
-                    size={18}
-                    strokeWidth={1.75}
-                    className={isBespoke || isFluentGlass ? '' : 'animate-bounce'}
-                  />
+                  <Flame size={18} strokeWidth={1.75} />
                   <span>
                     Arming...{' '}
                     <span className="font-mono tabular-nums">
@@ -1599,14 +990,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <ShieldAlert
                     size={18}
                     strokeWidth={1.75}
-                    className={
-                      isFluentGlass
-                        ? 'text-cyan-200'
-                        : isBespoke
-                        ? 'text-blue-500'
-                        : undefined
-                    }
-                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    className="text-cyan-200"
                   />
                   <span>Grant Permissions to Lock</span>
                 </>
@@ -1615,14 +999,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <ShieldAlert
                     size={18}
                     strokeWidth={1.75}
-                    className={
-                      isFluentGlass
-                        ? 'text-cyan-200'
-                        : isBespoke
-                        ? 'text-blue-500'
-                        : undefined
-                    }
-                    style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    className="text-cyan-200"
                   />
                   <span>Hold 3s to Lock</span>
                 </>

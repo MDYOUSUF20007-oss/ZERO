@@ -34,7 +34,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const interactiveClasses =
     onClick && !disabled ? 'cursor-pointer liquid-spring hover:brightness-105 active:scale-[0.98]' : '';
 
-  const sharedClassName = `relative flex flex-col justify-between ${widthClass} rounded-3xl overflow-hidden liquid-glass font-sans ${interactiveClasses} ${className}`;
+  const sharedClassName = `relative flex flex-col justify-between ${widthClass} rounded-[20px] overflow-hidden liquid-glass font-sans ${interactiveClasses} ${className}`;
 
   // Strip opaque classic/bespoke style overrides so glass translucency is preserved across every card
   const passthroughStyle: CSSProperties | undefined = style

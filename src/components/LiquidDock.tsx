@@ -13,7 +13,7 @@ interface LiquidDockProps {
 const TABS: Array<{ id: ZeroNavTab; label: string }> = [
   { id: 'dial', label: 'Focus' },
   { id: 'dashboard', label: 'Insights' },
-  { id: 'schedules', label: 'Settings' },
+  { id: 'schedules', label: 'Settings & OS' },
   { id: 'support', label: 'Support' },
 ];
 
@@ -52,7 +52,14 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
             className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none transition-transform duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform"
             style={{ transform: `translateX(${activeIdx * 100}%)` }}
           >
-            <div className="w-full h-full rounded-2xl liquid-dock-item-active" />
+            <div
+              className="w-full h-full rounded-2xl liquid-dock-item-active"
+              style={{
+                background: 'var(--accent-soft, rgba(168, 85, 247, 0.20))',
+                border: '1px solid var(--accent-border, rgba(168, 85, 247, 0.55))',
+                boxShadow: '0 4px 16px -2px var(--accent-soft, rgba(168, 85, 247, 0.30))',
+              }}
+            />
           </div>
 
           {TABS.map((tab) => {

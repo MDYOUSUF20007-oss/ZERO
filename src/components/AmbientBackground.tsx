@@ -1,55 +1,45 @@
 ﻿import React from 'react';
-import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 
 /**
- * Living Ambient Background Orbs (Dynamically Tinted by Theme Accent!)
- * - Fluent Glass: Rich and diffused multi-orb ambient refraction
- * - Classic UI: Subtle top ambient glow
- * - Material You & Bespoke Minimalist: Hidden completely for true flat tonal / pure AMOLED canvas
+ * Living Ambient Background Orbs (Fluent Glass Core)
+ * Hardware-accelerated sub-surface living refraction layer.
+ * Drifts smoothly on GPU compositor threads to refract color through glass cards.
  */
 export const AmbientBackground: React.FC = () => {
-  const { isMaterialYou, isBespoke, isFluentGlass, isClassic } = useInterfaceStyle();
-
-  // In Material You and Minimalist engines, ambient glow is completely removed
-  if (isMaterialYou || isBespoke) {
-    return null;
-  }
-
   return (
     <div
       aria-hidden="true"
       className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-black zero-ambient-canvas"
     >
-      {/* Top-left Soft Ambient Glow Orb */}
+      {/* Top-left Living Sub-Surface Glow Orb */}
       <div
-        className="liquid-ambient-orb-primary absolute -top-24 -left-20 w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] rounded-full blur-3xl pointer-events-none"
+        className="liquid-ambient-orb-primary absolute -top-28 -left-24 w-[360px] h-[360px] sm:w-[500px] sm:h-[500px] rounded-full blur-[80px] pointer-events-none will-change-transform"
         style={{
-          background: 'var(--accent-soft, rgba(168, 85, 247, 0.16))',
-          opacity: isFluentGlass ? 0.85 : isClassic ? 0.35 : 0.45,
+          background: 'var(--accent-soft, rgba(168, 85, 247, 0.22))',
+          opacity: 0.85,
+          transform: 'translate3d(0, 0, 0)',
         }}
       />
 
-      {/* Mid-right Secondary Refractive Tint Orb (Fluent Glass) */}
-      {isFluentGlass && (
-        <div
-          className="liquid-ambient-orb-secondary absolute top-[30%] -right-24 w-[360px] h-[360px] sm:w-[480px] sm:h-[480px] rounded-full blur-3xl pointer-events-none"
-          style={{
-            background: 'var(--accent-soft, rgba(56, 189, 248, 0.16))',
-            opacity: 0.65,
-          }}
-        />
-      )}
+      {/* Mid-right Secondary Refractive Tint Orb */}
+      <div
+        className="liquid-ambient-orb-secondary absolute top-[28%] -right-28 w-[380px] h-[380px] sm:w-[520px] sm:h-[520px] rounded-full blur-[90px] pointer-events-none will-change-transform"
+        style={{
+          background: 'var(--accent-soft, rgba(56, 189, 248, 0.18))',
+          opacity: 0.70,
+          transform: 'translate3d(0, 0, 0)',
+        }}
+      />
 
-      {/* Bottom Floating Specular Orb (Fluent Glass) */}
-      {isFluentGlass && (
-        <div
-          className="liquid-ambient-orb-primary absolute -bottom-28 left-[15%] w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] rounded-full blur-3xl pointer-events-none"
-          style={{
-            background: 'var(--accent-soft, rgba(56, 189, 248, 0.14))',
-            opacity: 0.5,
-          }}
-        />
-      )}
+      {/* Bottom-left Floating Specular Orb */}
+      <div
+        className="liquid-ambient-orb-primary absolute -bottom-32 left-[10%] w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] rounded-full blur-[85px] pointer-events-none will-change-transform"
+        style={{
+          background: 'var(--accent-soft, rgba(168, 85, 247, 0.16))',
+          opacity: 0.60,
+          transform: 'translate3d(0, 0, 0)',
+        }}
+      />
     </div>
   );
 };

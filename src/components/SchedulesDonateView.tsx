@@ -173,10 +173,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onAddSchedule,
   onDeleteSchedule,
   onTriggerTestWarning,
-  themeConfig,
+  themeConfig: _themeConfig,
   onThemeConfigChange: _onThemeConfigChange,
-  interfaceStyle: interfaceStyleProp,
-  onInterfaceStyleChange,
+  interfaceStyle: _interfaceStyleProp,
+  onInterfaceStyleChange: _onInterfaceStyleChange,
   materialYouSeed: materialYouSeedProp,
   onMaterialYouSeedChange,
   materialYouAmoled: _materialYouAmoledProp,
@@ -212,8 +212,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onRecalibrateHabitProfile,
 }) => {
   const {
-    interfaceStyle: ctxInterfaceStyle,
-    setInterfaceStyle: ctxSetInterfaceStyle,
     isBespoke,
     isFluentGlass,
     isMaterialYou,
@@ -221,8 +219,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setMaterialYouSeed: ctxSetMaterialYouSeed,
   } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
-  const activeInterfaceStyle = interfaceStyleProp ?? ctxInterfaceStyle;
-  const applyInterfaceStyle = onInterfaceStyleChange ?? ctxSetInterfaceStyle;
   const activeMaterialYouSeed = materialYouSeedProp ?? ctxMaterialYouSeed ?? 'purple';
   const applyMaterialYouSeed = onMaterialYouSeedChange ?? ctxSetMaterialYouSeed ?? (() => {});
 
@@ -522,166 +518,26 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     Interface Style
                   </h2>
                   <p className="text-[11px] theme-text-muted truncate">
-                    Instant runtime visual engine switcher
+                    Fluent Glass Design System
                   </p>
                 </div>
               </div>
               <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full theme-pill-active border shrink-0">
-                {activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
-                  ? 'Material You'
-                  : activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
-                  ? 'Fluent Glass'
-                  : activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
-                  ? 'Bespoke'
-                  : 'Classic UI'}
+                Active &amp; Optimized
               </span>
             </div>
 
-            {/* 4 Engine Radio Options */}
-            <div role="radiogroup" aria-label="Interface Style" className="space-y-2.5">
-              {/* 1. Material You (Default) */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'}
-                onClick={() => applyInterfaceStyle('material')}
-                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
-                  activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
-                    ? 'theme-pill-active'
-                    : 'theme-pill hover:opacity-90'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
-                    <span>Material You</span>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
-                      M3
-                    </span>
-                  </div>
-                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
-                    Stepped tonal surface elevation, pill shapes, dynamic seed palettes, spring motion, and true AMOLED mode.
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
-                    activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
-                      ? 'theme-pill-active'
-                      : 'border-neutral-600 bg-transparent'
-                  }`}
-                >
-                  {(activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you') && (
-                    <Check size={11} strokeWidth={2} />
-                  )}
-                </div>
-              </button>
-
-              {/* 2. Fluent Glass */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'}
-                onClick={() => applyInterfaceStyle('fluent')}
-                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
-                  activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
-                    ? 'theme-pill-active'
-                    : 'theme-pill hover:opacity-90'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
-                    <span>Fluent Glass</span>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
-                      Acrylic
-                    </span>
-                  </div>
-                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
-                    Pitch-black #000000 AMOLED canvas with drifting sub-surface ambient orbs, specular Acrylic refraction cards, mercury gauges, and a floating pill dock.
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
-                    activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
-                      ? 'theme-pill-active'
-                      : 'border-neutral-600 bg-transparent'
-                  }`}
-                >
-                  {(activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass') && (
-                    <Check size={11} strokeWidth={2} />
-                  )}
-                </div>
-              </button>
-
-              {/* 3. Bespoke Minimalist */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'}
-                onClick={() => applyInterfaceStyle('minimal')}
-                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
-                  activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
-                    ? 'theme-pill-active'
-                    : 'theme-pill hover:opacity-90'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
-                    <span>Bespoke Minimalist</span>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
-                      E-Ink
-                    </span>
-                  </div>
-                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
-                    Pure AMOLED #000000 canvas, 1px neutral structural borders, sans typography with tabular telemetry, and instant mechanical controls.
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
-                    activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
-                      ? 'theme-pill-active'
-                      : 'border-neutral-600 bg-transparent'
-                  }`}
-                >
-                  {(activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke') && (
-                    <Check size={11} strokeWidth={2} />
-                  )}
-                </div>
-              </button>
-
-              {/* 4. Classic UI */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeInterfaceStyle === 'classic'}
-                onClick={() => applyInterfaceStyle('classic')}
-                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
-                  activeInterfaceStyle === 'classic'
-                    ? 'theme-pill-active'
-                    : 'theme-pill hover:opacity-90'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
-                    <span>Classic UI</span>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
-                      Obsidian
-                    </span>
-                  </div>
-                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
-                    Frosted Obsidian layout style with specular highlights, pill geometry, gradient badges, and ambient glows.
-                  </p>
-                </div>
-                <div
-                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
-                    activeInterfaceStyle === 'classic'
-                      ? 'theme-pill-active'
-                      : 'border-neutral-600 bg-transparent'
-                  }`}
-                >
-                  {activeInterfaceStyle === 'classic' && (
-                    <Check size={11} strokeWidth={2} />
-                  )}
-                </div>
-              </button>
+            {/* Fluent Glass Overview Card */}
+            <div className="w-full p-3.5 text-left rounded-2xl border theme-border theme-bg-secondary/40 space-y-1.5">
+              <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
+                <span>Fluent Glass</span>
+                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
+                  Acrylic
+                </span>
+              </div>
+              <p className="text-[11px] theme-text-muted leading-relaxed">
+                Pitch-black #000000 AMOLED canvas with drifting sub-surface ambient orbs, specular Acrylic refraction cards, mercury gauges, and a floating pill dock.
+              </p>
             </div>
 
             {/* 2 Choosable Accent Colors Directly Underneath Interface Style */}
@@ -1835,27 +1691,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             }
             footerContent={
               <>
-                <span>
-                  {activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                    ? 'Fluent Glass'
-                    : activeInterfaceStyle === 'material-you'
-                    ? 'Material You (M3)'
-                    : activeInterfaceStyle === 'trantor'
-                    ? 'Trantor Sage-Obsidian'
-                    : activeInterfaceStyle === 'classic-v2'
-                    ? 'Classic UI Version 2 (Beta Test)'
-                    : activeInterfaceStyle === 'classic'
-                    ? 'Classic UI (Default)'
-                    : 'Bespoke Minimalist'}
-                </span>
-                <strong className="text-white uppercase font-mono">
-                  {activeInterfaceStyle === 'fluent_glass'
-                    ? 'Pitch #000000 + Fluent Acrylic'
-                    : themeConfig.family === 'amoled'
-                    ? `AMOLED (${themeConfig.amoledGradient})`
-                    : themeConfig.family === 'kindle'
-                    ? 'Paper like Kindle'
-                    : 'Matte Studio'}
+                <span>Fluent Glass</span>
+                <strong className="text-white uppercase font-sans">
+                  Pitch #000000 + Fluent Acrylic
                 </strong>
               </>
             }

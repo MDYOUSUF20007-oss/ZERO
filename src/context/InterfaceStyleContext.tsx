@@ -93,7 +93,7 @@ function mountIsolatedThemeEngine(themeId: CanonicalThemeId, accent: AccentColor
     document.head.appendChild(styleTag);
   }
 
-  const engine = THEME_ENGINES[themeId] ?? THEME_ENGINES.material;
+  const engine = THEME_ENGINES[themeId] ?? THEME_ENGINES.fluent;
   styleTag.textContent = engine.css;
 }
 
@@ -184,79 +184,71 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
   });
 
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
-    if (typeof window === 'undefined') return 'material';
+    if (typeof window === 'undefined') return 'fluent';
     try {
       for (const oldKey of LEGACY_STORAGE_KEYS) {
         window.localStorage.removeItem(oldKey);
       }
-      const saved = window.localStorage.getItem(STORAGE_KEY_THEME);
-      const initial = normalizeThemeId(saved);
-      mountIsolatedThemeEngine(initial, 'purple');
-      return initial;
+      mountIsolatedThemeEngine('fluent', 'purple');
+      return 'fluent';
     } catch {
-      mountIsolatedThemeEngine('material', 'purple');
-      return 'material';
+      mountIsolatedThemeEngine('fluent', 'purple');
+      return 'fluent';
     }
   });
 
   useEffect(() => {
-    mountIsolatedThemeEngine(theme, accent);
+    mountIsolatedThemeEngine('fluent', accent);
     try {
-      window.localStorage.setItem(STORAGE_KEY_THEME, theme);
+      window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
       window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
-    } catch {
-      // Ignore storage errors
-    }
-  }, [theme, accent]);
-
-  const setTheme = useCallback((next: InterfaceStyle) => {
-    const normalized = normalizeThemeId(String(next));
-    mountIsolatedThemeEngine(normalized, accent);
-    setThemeState(normalized);
-    try {
-      window.localStorage.setItem(STORAGE_KEY_THEME, normalized);
     } catch {
       // Ignore storage errors
     }
   }, [accent]);
 
+  const setTheme = useCallback((_next: InterfaceStyle) => {
+    mountIsolatedThemeEngine('fluent', accent);
+    setThemeState('fluent');
+  }, [accent]);
+
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
-    mountIsolatedThemeEngine(theme, safeAccent);
+    mountIsolatedThemeEngine('fluent', safeAccent);
     setAccentState(safeAccent);
     try {
       window.localStorage.setItem(STORAGE_KEY_ACCENT, safeAccent);
     } catch {
       // Ignore storage errors
     }
-  }, [theme]);
+  }, []);
 
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({
-      theme,
+      theme: 'fluent',
       setTheme,
       accent,
       setAccent,
-      interfaceStyle: theme,
+      interfaceStyle: 'fluent',
       setInterfaceStyle: setTheme,
-      style: theme,
+      style: 'fluent',
       setStyle: setTheme,
-      activeEngine: THEME_ENGINES[theme] ?? THEME_ENGINES.material,
+      activeEngine: THEME_ENGINES.fluent,
       availableThemes: AVAILABLE_THEMES,
 
-      engine: theme,
+      engine: 'fluent',
       setEngine: setTheme,
       isOnyx: false,
       isFintech: false,
-      isClassic: theme === 'classic',
+      isClassic: false,
       isClassicV2: false,
       isTrantor: false,
-      isMaterialYou: theme === 'material',
-      isFluent: theme === 'fluent',
-      isFluentGlass: theme === 'fluent',
-      isLiquidGlass: theme === 'fluent',
-      isMinimalist: theme === 'minimal',
-      isBespoke: theme === 'minimal',
+      isMaterialYou: false,
+      isFluent: true,
+      isFluentGlass: true,
+      isLiquidGlass: true,
+      isMinimalist: false,
+      isBespoke: false,
 
       classicPreset: 'amoled',
       setClassicPreset: () => {},
