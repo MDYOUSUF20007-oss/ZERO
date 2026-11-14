@@ -781,7 +781,20 @@ failIf(
   verifyDonorUnlockToken('').ok === false,
   'Empty donor token input must be rejected'
 );
-console.log('PASS: Signed Donor Unlock Token & Ko-fi Verification Support Details Verified');
+
+const devToken = encodeDonorUnlockToken({
+  email: 'mdyousuf982007@proton.me',
+  tier: 'developer',
+  minInr: 500,
+  devTickets: 50,
+});
+failIf(devToken.startsWith('ZDON1.'), 'Developer token must use ZDON1 prefix');
+const devVerifyOk = verifyDonorUnlockToken(devToken);
+failIf(
+  devVerifyOk.ok === true && devVerifyOk.payload.tier === 'developer' && devVerifyOk.payload.devTickets === 50,
+  'Developer token must verify with developer tier and 50 devTickets'
+);
+console.log('PASS: Signed Donor Unlock Token & Developer Sandbox Tokens Verified');
 
 console.log('\n=== TEST 15: Isolated Read-Only IntegrityEngine & Monotonic Native Event Proofs ===');
 failIf(Object.isFrozen(IntegrityEngine) === true, 'IntegrityEngine must be Object.freeze() read-only');

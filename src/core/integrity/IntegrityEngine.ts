@@ -512,19 +512,23 @@ export function getNextCloudReminderInfo(
 export interface ZeroDonorTokenPayload {
   schema: 'zero.donor.v1';
   email: string;
-  tier: 'zero_supporter';
+  tier: 'zero_supporter' | 'developer';
   minInr: number;
   issuedAt: string;
   receiptRef?: string;
+  devTickets?: number;
 }
 
 export function encodeDonorUnlockToken(input: {
   email: string;
+  tier?: 'zero_supporter' | 'developer';
   minInr?: number;
   receiptRef?: string;
   issuedAt?: string;
+  devTickets?: number;
 }): string {
   const cleanedEmail = input.email.trim().toLowerCase();
+  const safeTier = input.tier === 'developer' ? 'developer' : 'zero_supporter';
   const safeMinInr = Math.max(
     FIRST_DONATION_BONUS_INR,
     Math.round(Number(input.minInr ?? FIRST_DONATION_BONUS_INR))
@@ -532,10 +536,11 @@ export function encodeDonorUnlockToken(input: {
   const payload: ZeroDonorTokenPayload = {
     schema: 'zero.donor.v1',
     email: cleanedEmail,
-    tier: 'zero_supporter',
+    tier: safeTier,
     minInr: safeMinInr,
     issuedAt: input.issuedAt || new Date().toISOString(),
     ...(input.receiptRef?.trim() ? { receiptRef: input.receiptRef.trim() } : {}),
+    ...(safeTier === 'developer' && input.devTickets ? { devTickets: input.devTickets } : {}),
   };
 
   const payloadB64 = toBase64Url(textEncoder.encode(JSON.stringify(payload)));
@@ -587,7 +592,7 @@ export function verifyDonorUnlockToken(
       typeof parsed !== 'object' ||
       parsed === null ||
       parsed.schema !== 'zero.donor.v1' ||
-      parsed.tier !== 'zero_supporter' ||
+      (parsed.tier !== 'zero_supporter' && parsed.tier !== 'developer') ||
       typeof parsed.email !== 'string' ||
       !parsed.email.includes('@') ||
       typeof parsed.minInr !== 'number' ||
@@ -1504,6 +1509,36 @@ function activateDonorUnlockToken(
       grantedNewPerks: false,
       state: currentState,
       reward: null,
+    };
+  }
+
+  // Developer Token: Awards test Escape Tickets & Founder Status (replenishable for UI testing)
+  if (verified.payload.tier === 'developer') {
+    const devTicketsToAdd = Math.max(10, Math.min(100, verified.payload.devTickets ?? 50));
+    const nextBonus = currentState.bonusParachutes + devTicketsToAdd;
+    const nextState: ProtectedIntegrityState = {
+      ...currentState,
+      bonusParachutes: nextBonus,
+      isZeroSupporter: true,
+      hasClaimedFirstDonationParachute: true,
+    };
+    if (persist) {
+      persistProtectedState(nextState);
+    }
+    const newBalance = computeParachuteBalance(nextState).currentBalance;
+    return {
+      ok: true,
+      email: verified.payload.email,
+      grantedNewPerks: true,
+      state: nextState,
+      reward: {
+        source: 'first_donation_50',
+        delta: devTicketsToAdd,
+        newBalance,
+        title: 'Developer Testing Sandbox Armed!',
+        subtitle: `Developer ${verified.payload.email} verified! +${devTicketsToAdd} Testing Escape Tickets armed.`,
+      },
+      message: `Verified Developer Token! Granted +${devTicketsToAdd} Testing Escape Tickets (Balance: ${newBalance}) & Founder Badge.`,
     };
   }
 
