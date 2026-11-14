@@ -15,6 +15,7 @@ import { haptics } from '../utils/haptics';
 import { voidAudio, FOCUS_SOUND_TRACKS, type FocusSoundTrack } from '../utils/voidAudio';
 import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
 import { AppFrictionModal } from './AppFrictionModal';
+import { ZeroTubeModal } from './ZeroTubeModal';
 import {
   Phone,
   AlertTriangle,
@@ -32,6 +33,7 @@ import {
   X,
   Quote,
   Flame,
+  Play,
 } from 'lucide-react';
 
 interface TheVoidViewProps {
@@ -105,6 +107,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     packageName: string;
     visual: AppBrandVisual;
   } | null>(null);
+
+  // ZeroTube Productive Study Player state
+  const [showZeroTube, setShowZeroTube] = useState<boolean>(false);
 
   const hasPlayedCompletionChimeRef = useRef(false);
 
@@ -315,6 +320,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     if (!frictionTarget) return;
     const { packageName, appName } = frictionTarget;
     setFrictionTarget(null);
+
+    if (packageName === 'org.zero.tube') {
+      setShowZeroTube(true);
+      return;
+    }
 
     if (packageName.startsWith('tel:') || packageName.startsWith('sms:')) {
       window.location.href = packageName;
@@ -700,13 +710,27 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             <Lock size={10} className="theme-text-accent" />
             <span>Bag: {activeBag.name}</span>
           </span>
-          <span className="text-cyan-300">
-            {pomodoroIsBreak
-              ? '☕ Mindful Break'
-              : visibleBagApps.length === 0
-              ? 'Monk Mode'
-              : `${visibleBagApps.length} Apps Allowed`}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.tick(600);
+                setShowZeroTube(true);
+              }}
+              title="Open ZeroTube Distraction-Free Study Player"
+              className="px-2 py-0.5 rounded-lg liquid-pill-inactive text-[9px] font-mono text-cyan-300 hover:text-white flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <Play size={9} fill="currentColor" />
+              <span>ZeroTube</span>
+            </button>
+            <span className="text-cyan-300">
+              {pomodoroIsBreak
+                ? '☕ Mindful Break'
+                : visibleBagApps.length === 0
+                ? 'Monk Mode'
+                : `${visibleBagApps.length} Apps Allowed`}
+            </span>
+          </div>
         </div>
 
         <div className="w-full rounded-[22px] liquid-glass p-2 border border-white/10 shadow-2xl flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
@@ -992,6 +1016,22 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ZEROTUBE DISTRACTION-FREE PRODUCTIVE STUDY PLAYER */}
+      <ZeroTubeModal
+        isOpen={showZeroTube}
+        onClose={() => setShowZeroTube(false)}
+        onLaunchMorphApp={() => {
+          setShowZeroTube(false);
+          const pkg = 'app.morphe.android.youtube';
+          if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {
+            window.ZeroNative.openExternalUrl(`intent:#Intent;package=${pkg};end`);
+          } else {
+            window.location.href = `intent:#Intent;package=${pkg};end`;
+          }
+          haptics.thud();
+        }}
+      />
     </div>
   );
 };

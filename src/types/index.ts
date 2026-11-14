@@ -129,6 +129,13 @@ export type AppAccessMode = 'hard_block' | 'controlled' | 'unrestricted';
 
 export type ShortVideoAction = 'overlay' | 'back_action';
 
+export interface ProductiveTubeConfig {
+  enabled: boolean;
+  productiveOnly: boolean;
+  whitelistedChannels: string[];
+  requiredFrictionPhrase: string;
+}
+
 export interface AppLockRuleConfig {
   mode: AppAccessMode;
   quotaSeconds: number;
@@ -144,6 +151,7 @@ export interface AppLockRuleConfig {
   shortVideoAction: ShortVideoAction;
   scrollVelocityLimit: number;
   nudgeIntervalSeconds: number;
+  productiveTubeConfig?: ProductiveTubeConfig;
 }
 
 export interface EngageSessionPayload {

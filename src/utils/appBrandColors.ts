@@ -18,6 +18,9 @@ const BRAND_HEX_BY_PACKAGE: Record<string, string> = {
   'com.google.android.apps.maps': '#2563EB',
   'com.google.android.gm': '#DC2626',
   'com.google.android.youtube': '#E11D48',
+  'app.morphe.android.youtube': '#E11D48',
+  'app.revanced.android.youtube': '#E11D48',
+  'org.zero.tube': '#06B6D4',
   'com.google.android.apps.youtube.music': '#E11D48',
   'org.telegram.messenger': '#0284C7',
   'org.telegram.plus': '#0284C7',
@@ -83,7 +86,8 @@ function getBrandHexByKeywords(lowerPkg: string, lowerName: string): string | nu
     return '#0284C7';
   }
   if (lowerPkg.includes('maps') || lowerName.includes('maps')) return '#2563EB';
-  if (lowerPkg.includes('youtube') || lowerName.includes('youtube')) return '#E11D48';
+  if (lowerPkg.includes('youtube') || lowerName.includes('youtube') || lowerPkg.includes('morphe') || lowerName.includes('morphe')) return '#E11D48';
+  if (lowerPkg.includes('zerotube') || lowerPkg === 'org.zero.tube' || lowerName.includes('zerotube')) return '#06B6D4';
   if (lowerPkg.includes('mail') || lowerName.includes('gmail')) return '#DC2626';
   if (lowerPkg.includes('calc') || lowerName.includes('calculator')) return '#0D9488';
   if (lowerPkg.includes('clock') || lowerName.includes('clock')) return '#0284C7';

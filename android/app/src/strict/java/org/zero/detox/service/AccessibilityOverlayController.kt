@@ -311,7 +311,8 @@ class AccessibilityOverlayController(
         hideBlockingOverlay()
 
         val palette = resolveOverlayPalette()
-        val allowKeyboard = rule.requireIntentText
+        val isVideoApp = pkg.contains("youtube") || pkg.contains("morphe")
+        val allowKeyboard = rule.requireIntentText || isVideoApp
         val (root, card) = buildThemedRoot(
             palette = palette,
             allowKeyboardFocus = allowKeyboard,
@@ -322,7 +323,11 @@ class AccessibilityOverlayController(
         card.addView(buildTitleText("PAUSE BEFORE $appLabel", palette))
 
         val subtitle = buildString {
-            append("Confirm your intention before opening $appLabel.")
+            if (isVideoApp) {
+                append("To open $appLabel during focus, confirm your study intention by typing: \"I am productive.\"")
+            } else {
+                append("Confirm your intention before opening $appLabel.")
+            }
             if (rule.reEntryGraceSeconds > 0) {
                 append(" (${formatDuration(rule.reEntryGraceSeconds.toLong())} re-entry grace after proceeding)")
             }
@@ -375,8 +380,19 @@ class AccessibilityOverlayController(
         }
 
         var remainingWaitSec = maxOf(0, rule.frictionDelaySeconds)
+        var currentIntentText = ""
         var currentIntentLength = 0
-        val minCharsRequired = if (rule.requireIntentText) maxOf(0, rule.minIntentChars) else 0
+        val minCharsRequired = if (isVideoApp) 16 else if (rule.requireIntentText) maxOf(0, rule.minIntentChars) else 0
+
+        fun isIntentSatisfied(): Boolean {
+            if (!allowKeyboard) return true
+            if (isVideoApp) {
+                val clean = currentIntentText.trim()
+                return clean.equals("I am productive.", ignoreCase = true) ||
+                       clean.equals("I am productive", ignoreCase = true)
+            }
+            return currentIntentLength >= minCharsRequired
+        }
 
         val statusView = TextView(serviceContext).apply {
             text = if (remainingWaitSec > 0) {
@@ -403,9 +419,9 @@ class AccessibilityOverlayController(
 
         var charCountView: TextView? = null
         var intentEditText: EditText? = null
-        if (rule.requireIntentText) {
+        if (allowKeyboard) {
             val edit = EditText(serviceContext).apply {
-                hint = "State why you are opening $appLabel..."
+                hint = if (isVideoApp) "Type: I am productive." else "State why you are opening $appLabel..."
                 setTextColor(Color.WHITE)
                 setHintTextColor(Color.parseColor("#6B7280"))
                 textSize = 13f
@@ -429,7 +445,7 @@ class AccessibilityOverlayController(
                 ).apply { bottomMargin = dp(6) }
             }
             val counter = TextView(serviceContext).apply {
-                text = "INTENT LENGTH: 0 / $minCharsRequired CHARS"
+                text = if (isVideoApp) "REQUIRED PHRASE: \"I am productive.\"" else "INTENT LENGTH: 0 / $minCharsRequired CHARS"
                 setTextColor(Color.parseColor("#9CA3AF"))
                 textSize = 10f
                 typeface = Typeface.MONOSPACE
@@ -457,12 +473,12 @@ class AccessibilityOverlayController(
 
         fun updateProceedButtonState() {
             val waitDone = remainingWaitSec <= 0
-            val textOk = !rule.requireIntentText || currentIntentLength >= minCharsRequired
+            val textOk = isIntentSatisfied()
             val unlocked = waitDone && textOk
             proceedBtn.isEnabled = unlocked
             proceedBtn.text = when {
                 !waitDone -> "WAIT (${remainingWaitSec}S)..."
-                !textOk -> "ENTER INTENT (${currentIntentLength}/$minCharsRequired)"
+                !textOk -> if (isVideoApp) "TYPE: \"I am productive.\"" else "ENTER INTENT (${currentIntentLength}/$minCharsRequired)"
                 else -> "PROCEED TO $appLabel"
             }
             if (unlocked) {
@@ -485,10 +501,16 @@ class AccessibilityOverlayController(
         intentEditText?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                currentIntentLength = s?.toString()?.trim()?.length ?: 0
-                charCountView?.text = "INTENT LENGTH: $currentIntentLength / $minCharsRequired CHARS"
+                currentIntentText = s?.toString().orEmpty()
+                currentIntentLength = currentIntentText.trim().length
+                val passed = isIntentSatisfied()
+                if (isVideoApp) {
+                    charCountView?.text = if (passed) "CONFIRMED: I AM PRODUCTIVE" else "TYPE EXACTLY: \"I am productive.\""
+                } else {
+                    charCountView?.text = "INTENT LENGTH: $currentIntentLength / $minCharsRequired CHARS"
+                }
                 charCountView?.setTextColor(
-                    if (currentIntentLength >= minCharsRequired) {
+                    if (passed) {
                         palette.accentColor
                     } else {
                         Color.parseColor("#9CA3AF")

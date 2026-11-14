@@ -13,12 +13,24 @@ interface AppFrictionModalProps {
 
 export const AppFrictionModal: React.FC<AppFrictionModalProps> = ({
   appName,
-  packageName: _packageName,
+  packageName,
   visual,
   onConfirm,
   onCancel,
 }) => {
   const [secondsLeft, setSecondsLeft] = useState<number>(3);
+  const isVideoApp =
+    appName.toLowerCase().includes('youtube') ||
+    appName.toLowerCase().includes('morph') ||
+    packageName.toLowerCase().includes('morphe') ||
+    packageName.toLowerCase().includes('youtube') ||
+    packageName === 'org.zero.tube';
+
+  const [intentInput, setIntentInput] = useState('');
+  const intentPassed =
+    !isVideoApp ||
+    intentInput.trim().toLowerCase() === 'i am productive.' ||
+    intentInput.trim().toLowerCase() === 'i am productive';
 
   useEffect(() => {
     haptics.tick(600);
@@ -75,22 +87,51 @@ export const AppFrictionModal: React.FC<AppFrictionModalProps> = ({
         </div>
 
         {/* Mindful Friction Prompt */}
-        <div className="p-3.5 liquid-inset rounded-xl text-xs text-zinc-200 leading-relaxed">
-          <p className="font-medium text-white mb-1">Take a breath.</p>
-          <p className="text-zinc-400 text-[11px]">
-            Is opening {appName} intentional, or an unconscious reflex habit?
+        <div className="p-3.5 liquid-inset rounded-xl text-xs text-zinc-200 leading-relaxed text-left">
+          <p className="font-medium text-white mb-1">
+            {isVideoApp ? 'Productive Intent Verification' : 'Take a breath.'}
           </p>
+          <p className="text-zinc-400 text-[11px] leading-relaxed">
+            {isVideoApp ? (
+              <>
+                To prevent accidental distraction on video platforms, confirm your study intention by typing{' '}
+                <strong className="text-cyan-300 font-mono select-all">&quot;I am productive.&quot;</strong> below:
+              </>
+            ) : (
+              `Is opening ${appName} intentional, or an unconscious reflex habit?`
+            )}
+          </p>
+          {isVideoApp && (
+            <input
+              type="text"
+              autoFocus
+              value={intentInput}
+              onChange={(e) => setIntentInput(e.target.value)}
+              placeholder='Type: "I am productive."'
+              className={`w-full mt-2.5 px-3 py-2 rounded-xl bg-black/50 text-xs text-white placeholder-zinc-500 border focus:outline-none ${
+                intentPassed && intentInput.trim().length > 0
+                  ? 'border-cyan-400/60 ring-1 ring-cyan-400/30'
+                  : 'border-white/10'
+              }`}
+            />
+          )}
         </div>
 
         {/* Action Controls */}
         <div className="space-y-2 pt-1">
           <button
             type="button"
+            disabled={!intentPassed || secondsLeft > 0}
             onClick={() => {
+              if (!intentPassed || secondsLeft > 0) return;
               haptics.tick(900);
               onConfirm();
             }}
-            className="w-full py-3 rounded-xl liquid-pill-active font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-md"
+            className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md ${
+              intentPassed && secondsLeft === 0
+                ? 'liquid-pill-active cursor-pointer active:scale-95'
+                : 'bg-zinc-800 text-zinc-500 border border-white/5 cursor-not-allowed opacity-60'
+            }`}
           >
             <span>Proceed to {appName}</span>
             {secondsLeft > 0 ? (

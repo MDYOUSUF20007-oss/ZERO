@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -938,10 +939,56 @@ class TheVoidActivity : AppCompatActivity() {
             Toast.makeText(this, "App not permitted in your active Bag.", Toast.LENGTH_SHORT).show()
             return
         }
+
+        val isVideoApp = targetPackage.contains("youtube") || targetPackage.contains("morphe")
+        if (isVideoApp) {
+            val input = EditText(this).apply {
+                hint = "Type: I am productive."
+                setSingleLine(true)
+                setTextColor(Color.WHITE)
+                setHintTextColor(Color.parseColor("#71717A"))
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(8).toFloat()
+                    setColor(Color.parseColor("#18181B"))
+                    setStroke(dp(1), Color.parseColor("#3F3F46"))
+                }
+            }
+            val container = FrameLayout(this).apply {
+                setPadding(dp(20), dp(10), dp(20), dp(4))
+                addView(input)
+            }
+            AlertDialog.Builder(this)
+                .setTitle("Productive Focus Check")
+                .setMessage("To open YouTube Morph during a focus session, confirm your productive study intention by typing:\n\n\"I am productive.\"")
+                .setView(container)
+                .setPositiveButton("Proceed") { _, _ ->
+                    val text = input.text.toString().trim()
+                    if (text.equals("I am productive.", ignoreCase = true) ||
+                        text.equals("I am productive", ignoreCase = true)) {
+                        proceedWithAppLaunch(targetPackage, fallbackIntent)
+                    } else {
+                        Toast.makeText(this, "Incorrect phrase. Focus protected.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel & Focus", null)
+                .show()
+            return
+        }
+
+        proceedWithAppLaunch(targetPackage, fallbackIntent)
+    }
+
+    private fun proceedWithAppLaunch(targetPackage: String, fallbackIntent: Intent?) {
         activeBagPackage = targetPackage
         bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3_500L
         try {
-            val launch = packageManager.getLaunchIntentForPackage(targetPackage) ?: fallbackIntent
+            val launch = packageManager.getLaunchIntentForPackage(targetPackage)
+                ?: if (targetPackage.contains("morphe")) {
+                    packageManager.getLaunchIntentForPackage("com.google.android.youtube")
+                } else null
+                ?: fallbackIntent
+
             if (launch != null) {
                 launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(launch)
