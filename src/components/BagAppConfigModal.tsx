@@ -337,13 +337,13 @@ const BagAppConfigModalContent: React.FC<BagAppConfigModalContentProps> = ({
                     style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                   />
                   <span>
-                    COMPULSORY DIALER: Phone calls are forced{' '}
+                    COMPULSORY WHITELIST: Essential communication &amp; AI tools (Phone, Messages, Google Gemini, Assistant, ChatGPT, Claude, Perplexity, Copilot, DeepSeek) are forced{' '}
                     <strong
                       style={{ color: isBespoke ? '#60A5FA' : 'var(--accent-hex, #FFFFFF)' }}
                     >
                       UNRESTRICTED
                     </strong>{' '}
-                    so emergency and voice calls always connect cleanly during lock sessions.
+                    so voice, emergency, and essential AI assistance connect cleanly during lock sessions.
                   </span>
                 </div>
               )}

@@ -85,6 +85,16 @@ object EngageConfig {
         "com.asus.dialer"
     )
 
+    private val CORE_AI_ASSISTANT_PACKAGES = setOf(
+        "com.google.android.apps.bard",
+        "com.google.android.googlequicksearchbox",
+        "com.openai.chatgpt",
+        "com.anthropic.claude",
+        "ai.perplexity.app.android",
+        "com.microsoft.copilot",
+        "com.deepseek.chat"
+    )
+
     private fun clampNonNegLong(raw: Long, max: Long = 86_400L * 30L): Long {
         if (raw <= 0L) return 0L
         return if (raw > max) max else raw
@@ -113,6 +123,7 @@ object EngageConfig {
             val allowSms = root.optBoolean("allowSms", false)
 
             val compulsory = HashSet<String>(CORE_DIALER_PACKAGES)
+            compulsory.addAll(CORE_AI_ASSISTANT_PACKAGES)
             compulsory.addAll(extraCompulsoryPackages)
             val compArr: JSONArray? = root.optJSONArray("compulsoryPackages")
             if (compArr != null) {

@@ -28,6 +28,16 @@ export const DEFAULT_SMS_PACKAGES: readonly string[] = [
   'com.samsung.android.messaging',
 ];
 
+export const COMPULSORY_AI_ASSISTANT_PACKAGES: readonly string[] = [
+  'com.google.android.apps.bard',
+  'com.google.android.googlequicksearchbox',
+  'com.openai.chatgpt',
+  'com.anthropic.claude',
+  'ai.perplexity.app.android',
+  'com.microsoft.copilot',
+  'com.deepseek.chat',
+];
+
 export const PROTECTED_SYSTEM_PACKAGES: readonly string[] = [
   'com.android.settings',
   'com.android.packageinstaller',
@@ -37,6 +47,7 @@ export const PROTECTED_SYSTEM_PACKAGES: readonly string[] = [
 
 const PROTECTED_SYSTEM_SET = new Set(PROTECTED_SYSTEM_PACKAGES);
 const COMPULSORY_DIALER_SET = new Set(COMPULSORY_DIALER_PACKAGES);
+const COMPULSORY_AI_ASSISTANT_SET = new Set(COMPULSORY_AI_ASSISTANT_PACKAGES);
 
 function clampNonNegativeInt(raw: unknown, maxVal = 86_400 * 7): number {
   const num = Number(raw);
@@ -52,11 +63,26 @@ export function isProtectedSystemPackage(packageName?: string | null): boolean {
 export function isCompulsoryDialerPackage(appOrPkg: BagApp | string | null | undefined): boolean {
   if (!appOrPkg) return false;
   if (typeof appOrPkg === 'string') {
-    return COMPULSORY_DIALER_SET.has(appOrPkg.trim());
+    const trimmed = appOrPkg.trim();
+    return COMPULSORY_DIALER_SET.has(trimmed) || COMPULSORY_AI_ASSISTANT_SET.has(trimmed);
   }
+  const pkg = appOrPkg.packageName.trim();
   return (
     appOrPkg.category === 'calls' ||
-    COMPULSORY_DIALER_SET.has(appOrPkg.packageName.trim())
+    appOrPkg.category === 'assistant' ||
+    COMPULSORY_DIALER_SET.has(pkg) ||
+    COMPULSORY_AI_ASSISTANT_SET.has(pkg)
+  );
+}
+
+export function isCompulsoryAiAssistantPackage(appOrPkg: BagApp | string | null | undefined): boolean {
+  if (!appOrPkg) return false;
+  if (typeof appOrPkg === 'string') {
+    return COMPULSORY_AI_ASSISTANT_SET.has(appOrPkg.trim());
+  }
+  return (
+    appOrPkg.category === 'assistant' ||
+    COMPULSORY_AI_ASSISTANT_SET.has(appOrPkg.packageName.trim())
   );
 }
 
@@ -199,7 +225,10 @@ export function buildEngageSessionPayload(input: {
   installedApps?: BagApp[];
   extraCompulsoryPackages?: string[];
 }): EngageSessionPayload {
-  const compulsorySet = new Set<string>(COMPULSORY_DIALER_PACKAGES);
+  const compulsorySet = new Set<string>([
+    ...COMPULSORY_DIALER_PACKAGES,
+    ...COMPULSORY_AI_ASSISTANT_PACKAGES,
+  ]);
   if (input.bag.allowSms) {
     for (const smsPkg of DEFAULT_SMS_PACKAGES) {
       compulsorySet.add(smsPkg);

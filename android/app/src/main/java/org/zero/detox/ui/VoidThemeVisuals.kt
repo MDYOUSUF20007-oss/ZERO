@@ -541,7 +541,14 @@ object VoidBrandPalette {
         "com.android.dialer" to "#16A34A",
         "com.google.android.apps.messaging" to "#0284C7",
         "com.samsung.android.messaging" to "#0284C7",
-        "com.android.mms" to "#0284C7"
+        "com.android.mms" to "#0284C7",
+        "com.google.android.apps.bard" to "#4F46E5",
+        "com.google.android.googlequicksearchbox" to "#4285F4",
+        "com.openai.chatgpt" to "#10A37F",
+        "com.anthropic.claude" to "#D97706",
+        "ai.perplexity.app.android" to "#0D9488",
+        "com.microsoft.copilot" to "#2563EB",
+        "com.deepseek.chat" to "#1E40AF"
     )
 
     private val FALLBACK_PALETTE = listOf(

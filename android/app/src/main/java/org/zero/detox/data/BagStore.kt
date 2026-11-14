@@ -66,6 +66,16 @@ class BagStore(private val context: Context) {
             "com.asus.dialer"
         )
 
+        val COMPULSORY_AI_ASSISTANT_PACKAGES = setOf(
+            "com.google.android.apps.bard",
+            "com.google.android.googlequicksearchbox",
+            "com.openai.chatgpt",
+            "com.anthropic.claude",
+            "ai.perplexity.app.android",
+            "com.microsoft.copilot",
+            "com.deepseek.chat"
+        )
+
         val PROTECTED_SYSTEM_PACKAGES = setOf(
             "com.android.settings",
             "com.android.packageinstaller",
@@ -257,6 +267,9 @@ class BagStore(private val context: Context) {
 
         // Phone Calls are compulsory and always permitted during locks
         if (getAllowedDialerPackages().contains(pkg)) return true
+
+        // AI & System Assistants are compulsory and always permitted during locks
+        if (COMPULSORY_AI_ASSISTANT_PACKAGES.contains(pkg)) return true
 
         // Phase 2 Engage rule check: explicit hard_block overrides BagStore allow list
         if (EngageConfigStore(context).isPackageExplicitlyHardBlocked(pkg)) {

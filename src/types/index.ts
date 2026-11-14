@@ -155,7 +155,7 @@ export interface EngageSessionPayload {
 export interface BagApp {
   packageName: string;
   appName: string;
-  category?: 'calls' | 'messages' | 'custom';
+  category?: 'calls' | 'messages' | 'assistant' | 'custom';
   iconBgColor?: string;
   ruleConfig?: AppLockRuleConfig;
 }
