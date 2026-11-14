@@ -1,7 +1,11 @@
 import type {
   AmoledGradientId,
+  ClassicPreset,
+  EngineType,
   InterfaceStyle,
   KindlePaperPresetId,
+  M3Palette,
+  MaterialYouSeed,
   MatteStudioPresetId,
   ThemeConfig,
   ThemeFamily,
@@ -9,12 +13,89 @@ import type {
 } from '../types';
 
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
+  if (value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
+  if (value === 'classic-v2' || value === 'classic_v2' || value === 'onyx' || value === 'v2') return 'classic-v2';
+  if (value === 'minimalist') return 'minimalist';
   if (value === 'bespoke') return 'bespoke';
+  if (value === 'fluent') return 'fluent';
   if (value === 'fluent_glass' || value === 'fluent-glass') return 'fluent_glass';
   if (value === 'material-you' || value === 'material_you') return 'material-you';
   // Legacy alias: treat old persisted 'liquid_glass' as 'fluent_glass'
   if (value === 'liquid_glass') return 'fluent_glass';
   return 'classic';
+}
+
+export function normalizeEngineType(value: unknown): EngineType {
+  if (value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
+  if (value === 'classic-v2' || value === 'classic_v2' || value === 'onyx' || value === 'v2') return 'classic-v2';
+  if (value === 'minimalist' || value === 'bespoke') return 'minimalist';
+  if (value === 'fluent' || value === 'fluent_glass' || value === 'fluent-glass' || value === 'liquid_glass') return 'fluent';
+  if (value === 'material-you' || value === 'material_you') return 'material-you';
+  return 'classic';
+}
+
+export function seedToM3Palette(seed?: string | null): M3Palette {
+  switch (seed) {
+    case 'cyan':
+    case 'cyber-cyan':
+      return 'cyber-cyan';
+    case 'emerald':
+    case 'neon-emerald':
+      return 'neon-emerald';
+    case 'crimson':
+    case 'crimson-pulse':
+      return 'crimson-pulse';
+    case 'purple':
+    case 'deep-purple':
+    default:
+      return 'deep-purple';
+  }
+}
+
+export function m3PaletteToSeed(palette?: string | null): MaterialYouSeed {
+  switch (palette) {
+    case 'cyber-cyan':
+    case 'cyan':
+      return 'cyan';
+    case 'neon-emerald':
+    case 'emerald':
+      return 'emerald';
+    case 'crimson-pulse':
+    case 'crimson':
+      return 'crimson';
+    case 'deep-purple':
+    case 'purple':
+    default:
+      return 'purple';
+  }
+}
+
+export function familyToClassicPreset(family?: ThemeFamily | string | null): ClassicPreset {
+  switch (family) {
+    case 'kindle':
+    case 'paper-kindle':
+      return 'paper-kindle';
+    case 'matte':
+    case 'matte-studio':
+      return 'matte-studio';
+    case 'amoled':
+    default:
+      return 'amoled';
+  }
+}
+
+export function classicPresetToFamily(preset?: ClassicPreset | string | null): ThemeFamily {
+  switch (preset) {
+    case 'paper-kindle':
+    case 'kindle':
+      return 'kindle';
+    case 'matte-studio':
+    case 'matte':
+      return 'matte';
+    case 'amoled':
+    default:
+      return 'amoled';
+  }
 }
 
 export interface AmoledGradientPreset {

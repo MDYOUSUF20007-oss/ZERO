@@ -31,7 +31,7 @@ import { evaluatePermissionPriority } from '../utils/permissionPriority';
 import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
 import { ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
-import { ThemeSelectorCard } from './ThemeSelectorCard';
+import { ThemeStudio } from './ThemeStudio';
 import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import { ObsidianCard } from './ObsidianCard';
 import { CreditsModal } from './CreditsModal';
@@ -515,7 +515,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {/* SECTION 0: THEME SETTINGS (THEME STUDIO + RUNTIME INTERFACE STYLE SWITCHER) */}
       {effectiveSection === 'themes' && (
         <div className={isBespoke || isFluentGlass ? 'space-y-5' : 'space-y-4'}>
-          <ThemeSelectorCard
+          <ThemeStudio
             themeConfig={themeConfig}
             onChange={onThemeConfigChange}
           />
@@ -685,9 +685,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   >
                     {activeInterfaceStyle === 'material-you'
                       ? 'Material You'
-                      : activeInterfaceStyle === 'fluent_glass'
+                      : activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                       ? 'Fluent Glass'
-                      : activeInterfaceStyle === 'bespoke'
+                      : activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
                       ? 'Bespoke'
                       : 'Classic'}
                   </span>
@@ -745,23 +745,123 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     role="radio"
-                    aria-checked={activeInterfaceStyle === 'bespoke'}
-                    onClick={() => applyInterfaceStyle('bespoke')}
+                    aria-checked={activeInterfaceStyle === 'classic-v2'}
+                    onClick={() => applyInterfaceStyle('classic-v2')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
                       isFluentGlass
                         ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'bespoke'
+                            activeInterfaceStyle === 'classic-v2'
                               ? 'liquid-inset text-white'
                               : 'liquid-row text-zinc-400 hover:text-zinc-200'
                           }`
                         : isBespoke
                         ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'bespoke'
+                            activeInterfaceStyle === 'classic-v2'
+                              ? 'bg-neutral-950 border-amber-500 text-white'
+                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          }`
+                        : `rounded-2xl transition-all ${
+                            activeInterfaceStyle === 'classic-v2'
+                              ? 'obsidian-inset text-white border-amber-500/50'
+                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                          }`
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
+                        <span>Classic UI Version 2 (Beta Test)</span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          Onyx
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                        Hardware Accessibility Shield aesthetic: Pure #08080A obsidian canvas, warm amber #FFAA00 accents, rounded-3xl tactile cards, and floating pill dock.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded-full'
+                      } ${
+                        activeInterfaceStyle === 'classic-v2'
+                          ? isBespoke
+                            ? 'bg-amber-600 border-amber-500 text-white'
+                            : 'bg-gradient-to-r from-amber-400 to-amber-600 text-black font-bold'
+                          : 'border-neutral-600 bg-transparent'
+                      }`}
+                    >
+                      {activeInterfaceStyle === 'classic-v2' && <Check size={11} strokeWidth={2} />}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={activeInterfaceStyle === 'trantor'}
+                    onClick={() => applyInterfaceStyle('trantor')}
+                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
+                      isFluentGlass
+                        ? `rounded-2xl liquid-spring ${
+                            activeInterfaceStyle === 'trantor'
+                              ? 'liquid-inset text-white'
+                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
+                          }`
+                        : isBespoke
+                        ? `rounded-md border transition-colors duration-75 ${
+                            activeInterfaceStyle === 'trantor'
+                              ? 'bg-[#121418] border-teal-400 text-white'
+                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          }`
+                        : `rounded-2xl transition-all ${
+                            activeInterfaceStyle === 'trantor'
+                              ? 'bg-[#121418] border border-teal-400/60 text-white shadow-sm'
+                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
+                          }`
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
+                        <span>Trantor Sage-Obsidian</span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                          Fintech
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                        High-end dark mobile wallet aesthetic: #121418 matte surfaces, crisp Sage Mint (#A3E4D7) inversions, and flat layered depth.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-sm' : 'rounded-full'
+                      } ${
+                        activeInterfaceStyle === 'trantor'
+                          ? 'bg-[#A3E4D7] border-[#A3E4D7] text-[#0B0C10] font-bold'
+                          : 'border-neutral-600 bg-transparent'
+                      }`}
+                    >
+                      {activeInterfaceStyle === 'trantor' && <Check size={11} strokeWidth={2} />}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'}
+                    onClick={() => applyInterfaceStyle('minimalist')}
+                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
+                      isFluentGlass
+                        ? `rounded-2xl liquid-spring ${
+                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
+                              ? 'liquid-inset text-white'
+                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
+                          }`
+                        : isBespoke
+                        ? `rounded-md border transition-colors duration-75 ${
+                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
                               ? 'bg-neutral-950 border-blue-500 text-white'
                               : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
                           }`
                         : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'bespoke'
+                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
                               ? 'obsidian-inset text-white'
                               : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
                           }`
@@ -779,37 +879,37 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
-                        activeInterfaceStyle === 'bespoke'
+                        activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
                           ? isBespoke
                             ? 'bg-blue-600 border-blue-500 text-white'
                             : 'obsidian-pill-active'
                           : 'border-neutral-600 bg-transparent'
                       }`}
                     >
-                      {activeInterfaceStyle === 'bespoke' && <Check size={11} strokeWidth={1.75} />}
+                      {(activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist') && <Check size={11} strokeWidth={1.75} />}
                     </div>
                   </button>
 
                   <button
                     type="button"
                     role="radio"
-                    aria-checked={activeInterfaceStyle === 'fluent_glass'}
-                    onClick={() => applyInterfaceStyle('fluent_glass')}
+                    aria-checked={activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'}
+                    onClick={() => applyInterfaceStyle('fluent')}
                     className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
                       isFluentGlass
                         ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'fluent_glass'
+                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                               ? 'liquid-inset text-white'
                               : 'liquid-row text-zinc-400 hover:text-zinc-200'
                           }`
                         : isBespoke
                         ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'fluent_glass'
+                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                               ? 'bg-neutral-950 border-blue-500 text-white'
                               : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
                           }`
                         : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'fluent_glass'
+                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                               ? 'obsidian-inset text-white'
                               : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
                           }`
@@ -838,14 +938,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
                         isBespoke ? 'rounded-sm' : 'rounded-full'
                       } ${
-                        activeInterfaceStyle === 'fluent_glass'
+                        activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                           ? isBespoke
                             ? 'bg-blue-600 border-blue-500 text-white'
                             : 'obsidian-pill-active'
                           : 'border-neutral-600 bg-transparent'
                       }`}
                     >
-                      {activeInterfaceStyle === 'fluent_glass' && (
+                      {(activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent') && (
                         <Check size={11} strokeWidth={1.75} />
                       )}
                     </div>
@@ -2022,8 +2122,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerContent={
               <>
                 <span>
-                  {activeInterfaceStyle === 'fluent_glass'
+                  {activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
                     ? 'Fluent Glass'
+                    : activeInterfaceStyle === 'material-you'
+                    ? 'Material You (M3)'
+                    : activeInterfaceStyle === 'trantor'
+                    ? 'Trantor Sage-Obsidian'
+                    : activeInterfaceStyle === 'classic-v2'
+                    ? 'Classic UI Version 2 (Beta Test)'
                     : activeInterfaceStyle === 'classic'
                     ? 'Classic UI (Default)'
                     : 'Bespoke Minimalist'}

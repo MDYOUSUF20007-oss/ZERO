@@ -241,8 +241,8 @@ export function App() {
     setShowProfileModal(true);
   };
 
-  const isBespoke = store.interfaceStyle === 'bespoke';
-  const isFluentGlass = store.interfaceStyle === 'fluent_glass';
+  const isBespoke = store.interfaceStyle === 'bespoke' || store.interfaceStyle === 'minimalist';
+  const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -254,6 +254,8 @@ export function App() {
         setMaterialYouSeed={store.setMaterialYouSeed}
         materialYouAmoled={store.materialYouAmoled}
         setMaterialYouAmoled={store.setMaterialYouAmoled}
+        themeConfig={store.themeConfig}
+        setThemeConfig={store.setThemeConfig}
       >
         <TheVoidView
           activeLock={store.activeLock}
@@ -275,6 +277,8 @@ export function App() {
       setMaterialYouSeed={store.setMaterialYouSeed}
       materialYouAmoled={store.materialYouAmoled}
       setMaterialYouAmoled={store.setMaterialYouAmoled}
+      themeConfig={store.themeConfig}
+      setThemeConfig={store.setThemeConfig}
     >
       <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
         {isFluentGlass && <AmbientBackground />}

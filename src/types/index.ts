@@ -328,7 +328,23 @@ export interface CloudAutoBackupStatus {
 
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
 
-export type InterfaceStyle = 'bespoke' | 'classic' | 'fluent_glass' | 'material-you';
+export type EngineType = 'classic' | 'classic-v2' | 'material-you' | 'fluent' | 'minimalist' | 'trantor';
+export type ClassicPreset = 'amoled' | 'paper-kindle' | 'matte-studio';
+export type ClassicV2Surface = 'obsidian' | 'pitch-black' | 'carbon';
+export type ClassicV2Accent = '#FFAA00' | '#FF7700' | '#FFD000' | '#FF9500' | '#10B981';
+export type TrantorSurface = 'matte' | 'pitch-black' | 'graphite';
+export type TrantorAccent = '#A3E4D7' | '#6EE7B7' | '#5EEAD4' | '#93C5FD' | '#FDE047';
+export type M3Palette = 'deep-purple' | 'cyber-cyan' | 'neon-emerald' | 'crimson-pulse';
+
+export type InterfaceStyle =
+  | 'classic'
+  | 'classic-v2'
+  | 'material-you'
+  | 'fluent'
+  | 'minimalist'
+  | 'bespoke'
+  | 'fluent_glass'
+  | 'trantor';
 
 export type MaterialYouSeed = 'purple' | 'cyan' | 'emerald' | 'crimson';
 

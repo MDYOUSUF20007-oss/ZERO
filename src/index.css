@@ -1577,268 +1577,780 @@ body.theme-liquid-glass,
   pointer-events: none !important;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ==========================================================================
+   UNIVERSAL THEME ENGINE: STRICT CSS ISOLATION & COMPONENT ENCAPSULATION
+   ========================================================================== */
 
-/* --- ZERO App Global UI Cleanup: Kill Muddy Gradients & Fix Contrast Everywhere --- */
-
-/* 1. Force all active tabs, pills, and interactive buttons to be clean, solid, and high-contrast */
-button.active:not(.liquid-pill-active):not([class*="liquid-"]),
-[data-active="true"]:not(.liquid-pill-active):not([class*="liquid-"]),
-.tab-active:not(.liquid-pill-active):not([class*="liquid-"]),
-.active-pill:not(.liquid-pill-active):not([class*="liquid-"]) {
-  background: #12141a !important;
-  background-image: none !important;
-  border: 1px solid rgba(0, 240, 255, 0.4) !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
-}
-
-/* 2. Ensure all general buttons and tab labels have readable muted contrast when inactive */
-button:not(.active),
-.tab-inactive {
-  color: #8a99ad !important;
-}
-
-/* 3. Strip out the muddy, translucent background gradient overlays from all cards and containers */
-div[class*="bg-gradient"]:not([class*="liquid-"]),
-div[class*="from-"]:not([class*="liquid-"]),
-div[class*="via-"]:not([class*="liquid-"]),
-.obsidian-card {
-  background-image: none !important;
-  background-color: #080a0f !important; /* Pure, deep, distraction-free dark tone */
-  border-color: rgba(255, 255, 255, 0.07) !important;
-}
-
-/* 4. Force absolute pure white for primary headings and key metrics everywhere */
-h1, h2, h3, h4, .text-primary-metric {
-  color: #ffffff !important;
+/* 1. Component Baseline: Strip global shared styles so no engine bleeds into another */
+.glass-card,
+.settings-card,
+.pill-tile,
+.action-pill {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* ==========================================================================
-   MATERIAL YOU (M3) — CORE SURFACE & TEXT TOKENS (DARK DEFAULT)
+   ENGINE 1: CLASSIC UI (Frosted Obsidian & Presets)
    ========================================================================== */
+[data-engine="classic"],
+:root:not([data-engine]) {
+  /* Frosted Obsidian Cards */
+  .glass-card,
+  .settings-card,
+  .obsidian-card {
+    background: linear-gradient(180deg, rgba(20, 20, 26, 0.94) 0%, rgba(10, 10, 14, 0.96) 100%) !important;
+    border: 1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.22) !important;
+    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    color: var(--zero-ink-primary, #ffffff) !important;
+  }
+
+  /* Frosted Obsidian Pills */
+  .pill-tile,
+  .action-pill,
+  .obsidian-pill-active {
+    background: var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%)) !important;
+    color: var(--accent-badge-text, #09090B) !important;
+    border: 1px solid rgba(var(--accent-rgb, 255, 255, 255), 0.65) !important;
+    box-shadow: 0 0 14px rgba(var(--accent-rgb, 255, 255, 255), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .obsidian-pill-active * {
+    color: var(--accent-badge-text, #09090B) !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active),
+  .action-pill-inactive,
+  .obsidian-pill-inactive {
+    background: rgba(14, 14, 18, 0.82) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #d4d4d8 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Classic Presets Scoping */
+[data-engine="classic"][data-preset="amoled"],
+[data-preset="amoled"] {
+  --zero-bg-primary: #000000;
+  background-color: #000000 !important;
+}
+
+[data-engine="classic"][data-preset="paper-kindle"],
+[data-preset="paper-kindle"] {
+  color-scheme: light;
+  .glass-card,
+  .settings-card,
+  .obsidian-card {
+    background: rgba(255, 255, 255, 0.90) !important;
+    border: 1px solid rgba(28, 25, 23, 0.16) !important;
+    color: #1C1917 !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06) !important;
+  }
+  .pill-tile:not([data-active="true"]):not(.active),
+  .action-pill-inactive,
+  .obsidian-pill-inactive {
+    background: rgba(240, 237, 230, 0.88) !important;
+    border: 1px solid rgba(28, 25, 23, 0.14) !important;
+    color: #44403C !important;
+  }
+}
+
+[data-engine="classic"][data-preset="matte-studio"],
+[data-preset="matte-studio"] {
+  .glass-card,
+  .settings-card,
+  .obsidian-card {
+    background: var(--zero-surface-1, #18191D) !important;
+    border: 1px solid var(--zero-border, #27282D) !important;
+    color: #F4F4F5 !important;
+  }
+}
+
+/* ==========================================================================
+   ENGINE 2: MATERIAL YOU (M3 Stepped Tonal Surfaces & Seed Palettes)
+   ========================================================================== */
+[data-engine="material-you"],
 [data-theme="material-you"] {
-  /* Stepped Tonal Surfaces (Replaces borders and glass blur) */
-  --md-bg: #0E0E13;
-  --md-surface: #0E0E13;
-  --md-surface-container-low: #17161F;
-  --md-surface-container: #1D1B26;
-  --md-surface-container-high: #272532;
-  --md-surface-container-highest: #322F3E;
+  /* Stepped Tonal Surfaces */
+  --m3-bg: #0E0E13;
+  --m3-surface: #0E0E13;
+  --m3-surface-container-low: #17161F;
+  --m3-surface-container: #1D1B26;
+  --m3-surface-container-high: #272532;
+  --m3-surface-container-highest: #322F3E;
 
-  /* High-Contrast Typography Guardrails (Prevents unreadable dark text) */
-  --md-on-surface: #E6E1E5;
-  --md-on-surface-variant: #CAC4D0;
-  --md-outline: #938F99;
-  --md-outline-variant: #49454F;
+  /* Typography & Outlines */
+  --m3-on-surface: #E6E1E5;
+  --m3-on-surface-variant: #CAC4D0;
+  --m3-outline: #938F99;
+  --m3-outline-variant: #49454F;
 
-  /* Status Tokens */
-  --md-danger: #F2B8B5;
-  --md-on-danger: #601410;
-  --md-danger-container: #8C1D18;
-  --md-on-danger-container: #F9DEDC;
-
-  /* Shape & Motion Tokens */
-  --md-radius-card: 24px;
-  --md-radius-card-active: 14px;
-  --md-radius-inner: 16px;
-  --md-radius-pill: 9999px;
-  --md-spring: cubic-bezier(0.2, 0, 0, 1);
+  /* Shapes */
+  --m3-radius-card: 24px;
+  --m3-radius-pill: 9999px;
+  --m3-spring: cubic-bezier(0.2, 0, 0, 1);
 
   /* Default Seed: Deep Purple */
-  --md-primary: #D0BCFF;
-  --md-on-primary: #381E72;
-  --md-primary-container: #4F378B;
-  --md-on-primary-container: #EADDFF;
-  --md-secondary: #66E3FF;
-  --md-on-secondary: #003642;
-  --md-secondary-container: #004E5F;
-  --md-on-secondary-container: #B8EAFF;
+  --m3-primary: #D0BCFF;
+  --m3-on-primary: #381E72;
+  --m3-primary-container: #4F378B;
+  --m3-on-primary-container: #EADDFF;
+  --m3-secondary: #66E3FF;
+  --m3-on-secondary: #003642;
+  --m3-secondary-container: #004E5F;
+  --m3-on-secondary-container: #B8EAFF;
+
+  /* Aliases for legacy md- tokens */
+  --md-bg: var(--m3-bg);
+  --md-surface: var(--m3-surface);
+  --md-surface-container-low: var(--m3-surface-container-low);
+  --md-surface-container: var(--m3-surface-container);
+  --md-surface-container-high: var(--m3-surface-container-high);
+  --md-surface-container-highest: var(--m3-surface-container-highest);
+  --md-on-surface: var(--m3-on-surface);
+  --md-on-surface-variant: var(--m3-on-surface-variant);
+  --md-outline: var(--m3-outline);
+  --md-outline-variant: var(--m3-outline-variant);
+  --md-radius-card: var(--m3-radius-card);
+  --md-radius-pill: var(--m3-radius-pill);
+  --md-primary: var(--m3-primary);
+  --md-on-primary: var(--m3-on-primary);
+  --md-primary-container: var(--m3-primary-container);
+  --md-on-primary-container: var(--m3-on-primary-container);
+  --md-secondary: var(--m3-secondary);
+  --md-on-secondary: var(--m3-on-secondary);
+  --md-secondary-container: var(--m3-secondary-container);
+  --md-on-secondary-container: var(--m3-on-secondary-container);
+
+  background-color: var(--m3-bg) !important;
+  color: var(--m3-on-surface) !important;
+
+  /* Cards & Containers: Stepped Tonal Surfaces (No Glass Blur) */
+  .glass-card,
+  .settings-card,
+  .obsidian-card,
+  .liquid-card,
+  .liquid-glass,
+  [data-frosted-card="true"] {
+    background-color: var(--m3-surface-container) !important;
+    background-image: none !important;
+    border: 1px solid var(--m3-outline-variant) !important;
+    border-radius: var(--m3-radius-card) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: var(--m3-on-surface) !important;
+    transition: border-radius 250ms var(--m3-spring), background-color 200ms ease;
+  }
+
+  /* M3 Surface Elevation Depth Toggles */
+  &[data-m3-elevation="flat"] .glass-card,
+  &[data-m3-elevation="flat"] .settings-card,
+  &[data-m3-elevation="flat"] .obsidian-card {
+    background-color: var(--m3-surface-container-low) !important;
+    border-color: transparent !important;
+  }
+
+  &[data-m3-elevation="elevated"] .glass-card,
+  &[data-m3-elevation="elevated"] .settings-card,
+  &[data-m3-elevation="elevated"] .obsidian-card {
+    background-color: var(--m3-surface-container-high) !important;
+    border-color: var(--m3-outline) !important;
+  }
+
+  &[data-m3-elevation="high"] .glass-card,
+  &[data-m3-elevation="high"] .settings-card,
+  &[data-m3-elevation="high"] .obsidian-card {
+    background-color: var(--m3-surface-container-highest) !important;
+    border-color: var(--m3-primary) !important;
+  }
+
+  /* Recessed / Track Containers */
+  .liquid-track,
+  .obsidian-inset,
+  .obsidian-inset-neutral,
+  .liquid-inset {
+    background-color: var(--m3-surface-container-low) !important;
+    background-image: none !important;
+    border: 1px solid var(--m3-outline-variant) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* M3 Pill Geometry */
+  .pill-tile,
+  .action-pill,
+  .liquid-pill-active,
+  .obsidian-pill-active,
+  .liquid-dock-item-active {
+    background: var(--m3-primary) !important;
+    background-image: none !important;
+    color: var(--m3-on-primary) !important;
+    font-weight: 700 !important;
+    border-radius: var(--m3-radius-pill) !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .liquid-pill-active *,
+  .obsidian-pill-active * {
+    color: var(--m3-on-primary) !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile:not([data-active="true"]):not(.active):not(.liquid-pill-active):not(.obsidian-pill-active),
+  .action-pill-inactive,
+  .liquid-pill-inactive,
+  .obsidian-pill-inactive,
+  .liquid-pill {
+    background: var(--m3-surface-container-high) !important;
+    background-image: none !important;
+    color: var(--m3-on-surface-variant) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--m3-radius-pill) !important;
+    box-shadow: none !important;
+  }
+
+  .liquid-dock {
+    background: var(--m3-surface-container-highest) !important;
+    border: 1px solid var(--m3-outline-variant) !important;
+    border-radius: var(--m3-radius-pill) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .liquid-dock button.liquid-dock-item-active,
+  .liquid-dock button[data-active="true"] {
+    background: var(--m3-primary-container) !important;
+    color: var(--m3-on-primary-container) !important;
+    border-radius: var(--m3-radius-pill) !important;
+  }
+
+  .btn-primary,
+  .liquid-cta-primary {
+    background: var(--m3-primary) !important;
+    color: var(--m3-on-primary) !important;
+    border-radius: var(--m3-radius-pill) !important;
+    border: none !important;
+  }
+
+  .btn-secondary,
+  .liquid-cta-secondary {
+    background: var(--m3-secondary-container) !important;
+    color: var(--m3-on-secondary-container) !important;
+    border-radius: var(--m3-radius-pill) !important;
+    border: none !important;
+  }
+
+  /* Modals */
+  [role="dialog"],
+  .modal-surface {
+    background-color: var(--m3-surface-container-high) !important;
+    border: 1px solid var(--m3-outline-variant) !important;
+    border-radius: var(--m3-radius-card) !important;
+    color: var(--m3-on-surface) !important;
+  }
 }
 
-/* ==========================================================================
-   DYNAMIC SEED PALETTES
-   ========================================================================== */
+/* Material You M3 Palettes */
+[data-engine="material-you"][data-m3-palette="deep-purple"],
+[data-m3-palette="deep-purple"],
 [data-theme="material-you"][data-seed="purple"] {
-  --md-primary: #D0BCFF;
-  --md-on-primary: #381E72;
-  --md-primary-container: #4F378B;
-  --md-on-primary-container: #EADDFF;
-  --md-secondary: #66E3FF;
-  --md-on-secondary: #003642;
-  --md-secondary-container: #004E5F;
-  --md-on-secondary-container: #B8EAFF;
+  --m3-primary: #D0BCFF;
+  --m3-on-primary: #381E72;
+  --m3-primary-container: #4F378B;
+  --m3-on-primary-container: #EADDFF;
+  --m3-secondary: #66E3FF;
+  --m3-on-secondary: #003642;
+  --m3-secondary-container: #004E5F;
+  --m3-on-secondary-container: #B8EAFF;
 }
 
+[data-engine="material-you"][data-m3-palette="cyber-cyan"],
+[data-m3-palette="cyber-cyan"],
 [data-theme="material-you"][data-seed="cyan"] {
-  --md-primary: #66E3FF;
-  --md-on-primary: #003642;
-  --md-primary-container: #004E5F;
-  --md-on-primary-container: #B8EAFF;
-  --md-secondary: #D0BCFF;
-  --md-on-secondary: #381E72;
-  --md-secondary-container: #4F378B;
-  --md-on-secondary-container: #EADDFF;
+  --m3-primary: #66E3FF;
+  --m3-on-primary: #003642;
+  --m3-primary-container: #004E5F;
+  --m3-on-primary-container: #B8EAFF;
+  --m3-secondary: #D0BCFF;
+  --m3-on-secondary: #381E72;
+  --m3-secondary-container: #4F378B;
+  --m3-on-secondary-container: #EADDFF;
 }
 
+[data-engine="material-you"][data-m3-palette="neon-emerald"],
+[data-m3-palette="neon-emerald"],
 [data-theme="material-you"][data-seed="emerald"] {
-  --md-primary: #6DD58C;
-  --md-on-primary: #003919;
-  --md-primary-container: #005227;
-  --md-on-primary-container: #89F8A6;
-  --md-secondary: #7ADCFF;
-  --md-on-secondary: #003544;
-  --md-secondary-container: #004D61;
-  --md-on-secondary-container: #BFE9FF;
+  --m3-primary: #6DD58C;
+  --m3-on-primary: #003919;
+  --m3-primary-container: #005227;
+  --m3-on-primary-container: #89F8A6;
+  --m3-secondary: #7ADCFF;
+  --m3-on-secondary: #003544;
+  --m3-secondary-container: #004D61;
+  --m3-on-secondary-container: #BFE9FF;
 }
 
+[data-engine="material-you"][data-m3-palette="crimson-pulse"],
+[data-m3-palette="crimson-pulse"],
 [data-theme="material-you"][data-seed="crimson"] {
-  --md-primary: #FFB2BE;
-  --md-on-primary: #5F1124;
-  --md-primary-container: #7D293A;
-  --md-on-primary-container: #FFD9DE;
-  --md-secondary: #FFB784;
-  --md-on-secondary: #4F2500;
-  --md-secondary-container: #6E3909;
-  --md-on-secondary-container: #FFDCC2;
+  --m3-primary: #FFB2BE;
+  --m3-on-primary: #5F1124;
+  --m3-primary-container: #7D293A;
+  --m3-on-primary-container: #FFD9DE;
+  --m3-secondary: #FFB784;
+  --m3-on-secondary: #4F2500;
+  --m3-secondary-container: #6E3909;
+  --m3-on-secondary-container: #FFDCC2;
 }
 
-/* ==========================================================================
-   TRUE AMOLED OVERRIDE
-   ========================================================================== */
+/* Material You True AMOLED Pitch-Black */
+[data-engine="material-you"][data-amoled="true"],
 [data-theme="material-you"][data-amoled="true"] {
-  --md-bg: #000000;
-  --md-surface: #000000;
-  --md-surface-container-low: #08080A;
-  --md-surface-container: #101014;
-  --md-surface-container-high: #191820;
-  --md-surface-container-highest: #23212C;
+  --m3-bg: #000000;
+  --m3-surface: #000000;
+  --m3-surface-container-low: #08080A;
+  --m3-surface-container: #101014;
+  --m3-surface-container-high: #191820;
+  --m3-surface-container-highest: #23212C;
+  background-color: #000000 !important;
 }
 
 /* ==========================================================================
-   MATERIAL YOU APPLIED TO EXISTING APP SELECTORS & UTILITIES
+   ENGINE 3: FLUENT GLASS (OLED Acrylic Refraction, Specular Rims, High Contrast)
    ========================================================================== */
-[data-theme="material-you"],
-[data-theme="material-you"] body,
-[data-theme="material-you"] .zero-app-shell {
-  background-color: var(--md-bg) !important;
-  color: var(--md-on-surface) !important;
+[data-engine="fluent"],
+[data-engine="fluent_glass"],
+[data-zero-style="fluent_glass"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+
+  /* Ambient Orbs Dynamic Intensity Hook */
+  .liquid-ambient-orb-primary,
+  .liquid-ambient-orb-secondary {
+    opacity: var(--fg-orb-intensity, 0.75) !important;
+  }
+
+  /* Specular Acrylic Refraction Cards */
+  .glass-card,
+  .settings-card,
+  .liquid-glass,
+  .glass-card-liquid,
+  .liquid-card,
+  .obsidian-card {
+    position: relative;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+    backdrop-filter: blur(var(--fg-acrylic-blur, 28px)) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(var(--fg-acrylic-blur, 28px)) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-top: 1px solid rgba(255, 255, 255, var(--fg-specular-highlight, 0.38)) !important;
+    box-shadow:
+      0 24px 48px -12px rgba(0, 0, 0, 0.78),
+      inset 0 1px 1px rgba(255, 255, 255, 0.28),
+      inset 0 -1px 6px var(--liquid-accent-soft-glow, rgba(102, 227, 255, 0.15)) !important;
+    border-radius: 24px !important;
+    color: #ffffff !important;
+  }
+
+  /* High-Contrast Non-Splitting Dual Gradient Pills */
+  .pill-tile,
+  .action-pill,
+  .liquid-pill-active {
+    background: linear-gradient(
+      95deg,
+      #ffffff 0%,
+      color-mix(in srgb, var(--accent-hex, #66e3ff) 28%, #ffffff) 42%,
+      var(--accent-hex, #66e3ff) 100%
+    ) !important;
+    color: #07040d !important;
+    font-weight: 800 !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow:
+      0 6px 24px rgba(var(--accent-rgb, 102, 227, 255), 0.4),
+      inset 0 1.5px 2px #ffffff !important;
+    border-radius: 9999px !important;
+    text-shadow: none !important;
+    transform: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .liquid-pill-active * {
+    color: #07040d !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile:not([data-active="true"]):not(.active):not(.liquid-pill-active),
+  .action-pill-inactive,
+  .liquid-pill-inactive {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+    color: #f4f4f5 !important;
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  .liquid-track {
+    background: rgba(5, 4, 12, 0.72) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 9999px !important;
+  }
 }
 
-/* Override existing cards and containers */
-[data-theme="material-you"] .obsidian-card,
-[data-theme="material-you"] .liquid-card,
-[data-theme="material-you"] .liquid-glass,
-[data-theme="material-you"] [data-frosted-card="true"] {
-  background-color: var(--md-surface-container) !important;
+/* ==========================================================================
+   ENGINE 4: BESPOKE MINIMALIST (Pure #000000, 1px Structural Borders, Mechanical)
+   ========================================================================== */
+[data-engine="minimalist"],
+[data-engine="bespoke"],
+[data-zero-style="bespoke"] {
+  background-color: #000000 !important;
   background-image: none !important;
-  border-radius: var(--md-radius-card) !important;
-  border: 1px solid var(--md-outline-variant) !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  color: var(--md-on-surface) !important;
-  transition: border-radius 250ms var(--md-spring), background-color 200ms ease;
+  color: #ffffff !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+
+  /* Kill all ambient orbs and transitions */
+  .liquid-ambient-orb,
+  .liquid-ambient-orb-secondary {
+    display: none !important;
+  }
+
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 75ms !important;
+  }
+
+  /* 1px Neutral Structural Borders */
+  .glass-card,
+  .settings-card,
+  .obsidian-card,
+  .liquid-card,
+  .liquid-glass {
+    background-color: #000000 !important;
+    background-image: none !important;
+    border: var(--bm-border-width, 1px) solid #27272a !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #ffffff !important;
+  }
+
+  .pill-tile,
+  .action-pill,
+  .obsidian-pill-active,
+  .liquid-pill-active {
+    background: #2563eb !important;
+    background-image: none !important;
+    border: var(--bm-border-width, 1px) solid #3b82f6 !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .obsidian-pill-active *,
+  .liquid-pill-active * {
+    color: #ffffff !important;
+    text-shadow: none !important;
+  }
+
+  .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+  .action-pill-inactive,
+  .liquid-pill-inactive,
+  .obsidian-pill-inactive {
+    background: #09090b !important;
+    background-image: none !important;
+    border: var(--bm-border-width, 1px) solid #27272a !important;
+    color: #a1a1aa !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
 }
 
-/* Inset tracks and recessed containers */
-[data-theme="material-you"] .liquid-track,
-[data-theme="material-you"] .obsidian-inset-neutral,
-[data-theme="material-you"] .liquid-inset {
-  background-color: var(--md-surface-container-low) !important;
-  background-image: none !important;
-  border: 1px solid var(--md-outline-variant) !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* Typography styles for Minimalist */
+[data-engine="minimalist"][data-bm-font="mono"] *,
+[data-engine="bespoke"][data-bm-font="mono"] * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }
 
-/* Pill components */
-[data-theme="material-you"] .liquid-pill-active,
-[data-theme="material-you"] .obsidian-pill-active,
-[data-theme="material-you"] .liquid-dock-item-active {
-  background: var(--md-primary) !important;
-  background-image: none !important;
-  color: var(--md-on-primary) !important;
-  font-weight: 700 !important;
-  border-radius: var(--md-radius-pill) !important;
-  border: none !important;
-  box-shadow: none !important;
+[data-engine="minimalist"][data-bm-font="technical"] *,
+[data-engine="bespoke"][data-bm-font="technical"] * {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  letter-spacing: -0.025em !important;
 }
 
-[data-theme="material-you"] .liquid-pill-inactive,
-[data-theme="material-you"] .obsidian-pill-inactive,
-[data-theme="material-you"] .liquid-pill {
-  background: var(--md-surface-container-high) !important;
-  background-image: none !important;
-  color: var(--md-on-surface-variant) !important;
-  border: 1px solid transparent !important;
+/* Telemetry density padding for Minimalist */
+[data-engine="minimalist"][data-bm-density="compact"] .glass-card,
+[data-engine="minimalist"][data-bm-density="compact"] .settings-card,
+[data-engine="minimalist"][data-bm-density="compact"] .obsidian-card,
+[data-engine="minimalist"][data-bm-density="compact"] .liquid-card,
+[data-engine="bespoke"][data-bm-density="compact"] .glass-card,
+[data-engine="bespoke"][data-bm-density="compact"] .settings-card,
+[data-engine="bespoke"][data-bm-density="compact"] .obsidian-card,
+[data-engine="bespoke"][data-bm-density="compact"] .liquid-card {
+  padding: 0.75rem !important;
 }
 
-/* Bottom navigation dock */
-[data-theme="material-you"] .liquid-dock {
-  background: var(--md-surface-container-highest) !important;
-  border: 1px solid var(--md-outline-variant) !important;
-  border-radius: var(--md-radius-pill) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+[data-engine="minimalist"][data-bm-density="dense"] .glass-card,
+[data-engine="minimalist"][data-bm-density="dense"] .settings-card,
+[data-engine="minimalist"][data-bm-density="dense"] .obsidian-card,
+[data-engine="minimalist"][data-bm-density="dense"] .liquid-card,
+[data-engine="bespoke"][data-bm-density="dense"] .glass-card,
+[data-engine="bespoke"][data-bm-density="dense"] .settings-card,
+[data-engine="bespoke"][data-bm-density="dense"] .obsidian-card,
+[data-engine="bespoke"][data-bm-density="dense"] .liquid-card {
+  padding: 1.5rem !important;
 }
 
-[data-theme="material-you"] .liquid-dock button {
-  color: var(--md-on-surface-variant) !important;
+/* ==========================================================================
+   ENGINE 5: CLASSIC UI VERSION 2 (BETA TEST) - ONYX HARDWARE SHIELD
+   ========================================================================== */
+[data-engine="classic-v2"],
+[data-zero-style="classic-v2"] {
+  background-color: var(--zero-bg-primary, #08080A) !important;
+  color: #FFFFFF !important;
+
+  /* Ambient radial glow container */
+  .liquid-ambient-orb,
+  .liquid-ambient-orb-secondary {
+    display: none !important;
+  }
+
+  /* Cards & Surfaces: Onyx Obsidian with subtle border */
+  .glass-card,
+  .settings-card,
+  .obsidian-card,
+  .liquid-card,
+  .liquid-glass,
+  [data-frosted-card="true"] {
+    background: rgba(17, 17, 22, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 170, 0, 0.02) !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Active Pills: Warm Amber Gradient */
+  .pill-tile,
+  .action-pill,
+  .obsidian-pill-active,
+  .liquid-pill-active {
+    background: linear-gradient(135deg, var(--accent-hex, #FFAA00) 0%, #FF8800 100%) !important;
+    color: #08080A !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(255, 170, 0, 0.5) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 4px 16px rgba(255, 170, 0, 0.28) !important;
+    text-shadow: none !important;
+    transform: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .obsidian-pill-active *,
+  .liquid-pill-active * {
+    color: #08080A !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+  }
+
+  /* Inactive Pills */
+  .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+  .action-pill-inactive,
+  .liquid-pill-inactive,
+  .obsidian-pill-inactive {
+    background: #181820 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #8E8E93 !important;
+    border-radius: 9999px !important;
+    box-shadow: none !important;
+  }
+
+  .obsidian-inset,
+  .liquid-inset {
+    background: rgba(20, 20, 25, 0.95) !important;
+    border: 1px solid rgba(255, 170, 0, 0.25) !important;
+    border-radius: 16px !important;
+  }
+
+  .obsidian-inset-neutral,
+  .liquid-row {
+    background: rgba(17, 17, 22, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 16px !important;
+  }
 }
 
-[data-theme="material-you"] .liquid-dock button.liquid-dock-item-active,
-[data-theme="material-you"] .liquid-dock button[data-active="true"] {
-  background: var(--md-primary-container) !important;
-  color: var(--md-on-primary-container) !important;
-  border-radius: var(--md-radius-pill) !important;
+/* ==========================================================================
+   ENGINE 6: TRANTOR SAGE-OBSIDIAN (Fintech Mobile Wallet Concept)
+   ========================================================================== */
+[data-engine="trantor"],
+[data-zero-style="trantor"] {
+  --bg-primary: #07080A;
+  --surface-card: #121418;
+  --surface-card-hover: #1A1D24;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --accent-sage: #A3E4D7;
+  --accent-sage-text: #0B0C10;
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+
+  background-color: var(--zero-bg-primary, #07080A) !important;
+  color: #F3F4F6 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+
+  /* Kill all decorative ambient orbs for flat fintech clarity */
+  .liquid-ambient-orb,
+  .liquid-ambient-orb-secondary {
+    display: none !important;
+  }
+
+  /* Cards & Containers: Deep matte surfaces (#121418), 24px border radius, subtle 1px border, flat layered depth */
+  .glass-card,
+  .settings-card,
+  .obsidian-card,
+  .liquid-card,
+  .liquid-glass,
+  [data-frosted-card="true"] {
+    background-color: #121418 !important;
+    background-image: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 24px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #F3F4F6 !important;
+    transition: background-color 150ms ease, border-color 150ms ease !important;
+  }
+
+  .glass-card:hover,
+  .settings-card:hover,
+  .obsidian-card:hover {
+    background-color: #1A1D24 !important;
+  }
+
+  /* Inset flat rows and list items */
+  .obsidian-inset,
+  .liquid-inset {
+    background: #1A1D24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 18px !important;
+    color: #F3F4F6 !important;
+  }
+
+  .obsidian-inset-neutral,
+  .liquid-row {
+    background: #121418 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 18px !important;
+    color: #9CA3AF !important;
+  }
+
+  /* Action Selectors, Tabs, and Filter Pills: Full rounded-full pill geometry */
+  .pill-tile,
+  .action-pill,
+  .obsidian-pill-active,
+  .liquid-pill-active {
+    background: var(--accent-sage, #A3E4D7) !important;
+    background-image: none !important;
+    color: #0B0C10 !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
+    border: 1px solid var(--accent-sage, #A3E4D7) !important;
+    border-radius: 9999px !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transform: none !important;
+  }
+
+  .pill-tile *,
+  .action-pill *,
+  .obsidian-pill-active *,
+  .liquid-pill-active * {
+    color: #0B0C10 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+  }
+
+  /* Inactive States: Dark surface backgrounds (#121418) with muted text (#9CA3AF) */
+  .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+  .action-pill-inactive,
+  .liquid-pill-inactive,
+  .obsidian-pill-inactive {
+    background: #121418 !important;
+    background-image: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #9CA3AF !important;
+    border-radius: 9999px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .pill-tile:not([data-active="true"]):not(.active):hover,
+  .action-pill-inactive:hover {
+    background: #1A1D24 !important;
+    color: #F3F4F6 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* Typography & Hierarchy: Numbers, balances, metrics */
+  .font-mono,
+  [data-tabular-nums="true"],
+  .zero-metric-num {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    letter-spacing: -0.035em !important;
+    font-weight: 700 !important;
+  }
+
+  /* Bottom Navigation Dock & Modal Sheets: Flat Layered Depth */
+  nav,
+  [data-bottom-nav="true"],
+  .zero-nav-dock {
+    background-color: rgba(18, 20, 24, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  /* Modals and Sheets */
+  .modal-sheet,
+  [role="dialog"] {
+    background-color: #121418 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 28px !important;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8) !important;
+  }
 }
 
-/* Primary actions, CTA buttons, Hold-to-Lock */
-[data-theme="material-you"] .btn-primary,
-[data-theme="material-you"] .liquid-cta-primary {
-  background: var(--md-primary) !important;
-  color: var(--md-on-primary) !important;
-  border-radius: var(--md-radius-pill) !important;
-}
 
-[data-theme="material-you"] .btn-secondary,
-[data-theme="material-you"] .liquid-cta-secondary {
-  background: var(--md-secondary-container) !important;
-  color: var(--md-on-secondary-container) !important;
-  border-radius: var(--md-radius-pill) !important;
-}
 
-/* Text guardrails */
-[data-theme="material-you"] h1,
-[data-theme="material-you"] h2,
-[data-theme="material-you"] h3,
-[data-theme="material-you"] h4,
-[data-theme="material-you"] .text-white {
-  color: var(--md-on-surface) !important;
-}
-
-[data-theme="material-you"] .text-zinc-400,
-[data-theme="material-you"] .text-neutral-400,
-[data-theme="material-you"] .text-zinc-500 {
-  color: var(--md-on-surface-variant) !important;
-}
-
-/* Modals & Dialogs */
-[data-theme="material-you"] [role="dialog"],
-[data-theme="material-you"] .modal-surface {
-  background-color: var(--md-surface-container-high) !important;
-  border: 1px solid var(--md-outline-variant) !important;
-  border-radius: var(--md-radius-card) !important;
-  color: var(--md-on-surface) !important;
-}
-
-/* Progress bars & gauges */
-[data-theme="material-you"] .liquid-shimmer-bar,
-[data-theme="material-you"] progress {
-  background-color: var(--md-primary) !important;
-}

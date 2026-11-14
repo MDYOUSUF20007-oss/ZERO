@@ -49,6 +49,9 @@ import {
   getRelativeLuminance,
   mixHexColors,
   normalizeInterfaceStyle,
+  normalizeEngineType,
+  seedToM3Palette,
+  familyToClassicPreset,
   resolveActiveAccentTokens,
   sanitizeThemeConfig,
 } from '../utils/themes';
@@ -1048,19 +1051,33 @@ export function useZeroStore() {
     localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, interfaceStyle);
     const runtime = computeThemeRuntime(themeConfig);
     const rootEl = document.documentElement;
-    rootEl.setAttribute('data-zero-style', interfaceStyle);
+    const normalizedEngine = normalizeEngineType(interfaceStyle);
+    rootEl.setAttribute('data-engine', normalizedEngine);
+    rootEl.setAttribute('data-zero-style', normalizedEngine);
 
-    if (interfaceStyle === 'material-you') {
-      rootEl.setAttribute('data-theme', 'material-you');
-      rootEl.setAttribute('data-seed', materialYouSeed);
-      rootEl.setAttribute('data-amoled', String(materialYouAmoled));
+    if (normalizedEngine === 'classic') {
+      rootEl.setAttribute('data-preset', familyToClassicPreset(themeConfig.family));
+      rootEl.setAttribute('data-zero-theme', themeConfig.family);
     } else {
-      rootEl.removeAttribute('data-theme');
-      rootEl.removeAttribute('data-seed');
-      rootEl.removeAttribute('data-amoled');
+      rootEl.removeAttribute('data-preset');
     }
 
-    if (interfaceStyle === 'material-you') {
+    if (normalizedEngine === 'material-you') {
+      rootEl.setAttribute('data-m3-palette', seedToM3Palette(materialYouSeed));
+      rootEl.setAttribute('data-theme', 'material-you');
+      rootEl.setAttribute('data-seed', materialYouSeed);
+    } else {
+      rootEl.removeAttribute('data-m3-palette');
+      rootEl.removeAttribute('data-theme');
+      rootEl.removeAttribute('data-seed');
+    }
+
+    rootEl.setAttribute(
+      'data-amoled',
+      String(normalizedEngine === 'material-you' ? materialYouAmoled : (themeConfig.family === 'amoled'))
+    );
+
+    if (normalizedEngine === 'material-you') {
       rootEl.className = 'dark';
       rootEl.setAttribute('data-zero-theme', materialYouAmoled ? 'amoled' : 'custom');
       rootEl.setAttribute('data-zero-has-gradient', 'false');
@@ -1096,7 +1113,7 @@ export function useZeroStore() {
       return;
     }
 
-    if (interfaceStyle === 'bespoke') {
+    if (normalizedEngine === 'minimalist') {
       const isLightPaper = runtime.mode === 'light';
       rootEl.className = isLightPaper ? 'light' : 'dark';
       rootEl.setAttribute('data-zero-theme', runtime.family);
@@ -1141,7 +1158,7 @@ export function useZeroStore() {
       return;
     }
 
-    if (interfaceStyle === 'fluent_glass') {
+    if (normalizedEngine === 'fluent') {
       // Fluent Glass Pro 60FPS over true #000000 AMOLED canvas — dynamic Theme Studio accent integration
       rootEl.className = 'dark';
       rootEl.setAttribute('data-zero-theme', 'amoled');
@@ -1223,6 +1240,91 @@ export function useZeroStore() {
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
         metaTheme.setAttribute('content', '#000000');
+      }
+      return;
+    }
+
+    if (normalizedEngine === 'classic-v2') {
+      rootEl.className = 'dark';
+      rootEl.setAttribute('data-zero-theme', 'amoled');
+      rootEl.setAttribute('data-zero-has-gradient', 'false');
+
+      rootEl.style.setProperty('--zero-bg-primary', '#08080A');
+      rootEl.style.setProperty('--zero-bg-image', 'none');
+      rootEl.style.setProperty('--zero-surface-1', 'rgba(17, 17, 22, 0.85)');
+      rootEl.style.setProperty('--zero-surface-2', 'rgba(24, 24, 32, 0.9)');
+      rootEl.style.setProperty('--zero-surface-3', 'rgba(28, 28, 36, 0.95)');
+      rootEl.style.setProperty('--zero-border', 'rgba(255, 255, 255, 0.08)');
+      rootEl.style.setProperty('--zero-border-subtle', 'rgba(255, 255, 255, 0.05)');
+      rootEl.style.setProperty('--zero-ink-primary', '#FFFFFF');
+      rootEl.style.setProperty('--zero-ink-secondary', '#E4E4E7');
+      rootEl.style.setProperty('--zero-ink-muted', '#8E8E93');
+      rootEl.style.setProperty('--zero-accent', '#FFAA00');
+      rootEl.style.setProperty('--zero-dial-stroke', '#FFAA00');
+      rootEl.style.setProperty('--accent-hex', '#FFAA00');
+      rootEl.style.setProperty('--accent-rgb', '255, 170, 0');
+      rootEl.style.setProperty('--accent-badge-text', '#08080A');
+      rootEl.style.setProperty('--accent-badge-gradient', 'linear-gradient(135deg, #FFAA00 0%, #FF8800 100%)');
+
+      try {
+        window.ZeroNative?.setInterfaceStyle?.('classic');
+        window.ZeroNative?.setActiveThemeAccent?.(
+          '#FFAA00',
+          '255, 170, 0',
+          '#08080A'
+        );
+      } catch {}
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', '#08080A');
+      }
+      return;
+    }
+
+    if (normalizedEngine === 'trantor') {
+      rootEl.className = 'dark';
+      rootEl.setAttribute('data-zero-theme', 'amoled');
+      rootEl.setAttribute('data-zero-has-gradient', 'false');
+
+      rootEl.style.setProperty('--bg-primary', '#07080A');
+      rootEl.style.setProperty('--surface-card', '#121418');
+      rootEl.style.setProperty('--surface-card-hover', '#1A1D24');
+      rootEl.style.setProperty('--border-subtle', 'rgba(255, 255, 255, 0.06)');
+      rootEl.style.setProperty('--accent-sage', '#A3E4D7');
+      rootEl.style.setProperty('--accent-sage-text', '#0B0C10');
+      rootEl.style.setProperty('--text-main', '#F3F4F6');
+      rootEl.style.setProperty('--text-muted', '#9CA3AF');
+
+      rootEl.style.setProperty('--zero-bg-primary', '#07080A');
+      rootEl.style.setProperty('--zero-bg-image', 'none');
+      rootEl.style.setProperty('--zero-surface-1', '#121418');
+      rootEl.style.setProperty('--zero-surface-2', '#161920');
+      rootEl.style.setProperty('--zero-surface-3', '#1A1D24');
+      rootEl.style.setProperty('--zero-border', 'rgba(255, 255, 255, 0.06)');
+      rootEl.style.setProperty('--zero-border-subtle', 'rgba(255, 255, 255, 0.04)');
+      rootEl.style.setProperty('--zero-ink-primary', '#F3F4F6');
+      rootEl.style.setProperty('--zero-ink-secondary', '#E5E7EB');
+      rootEl.style.setProperty('--zero-ink-muted', '#9CA3AF');
+      rootEl.style.setProperty('--zero-accent', '#A3E4D7');
+      rootEl.style.setProperty('--zero-dial-stroke', '#A3E4D7');
+      rootEl.style.setProperty('--accent-hex', '#A3E4D7');
+      rootEl.style.setProperty('--accent-rgb', '163, 228, 215');
+      rootEl.style.setProperty('--accent-badge-text', '#0B0C10');
+      rootEl.style.setProperty('--accent-badge-gradient', '#A3E4D7');
+
+      try {
+        window.ZeroNative?.setInterfaceStyle?.('classic');
+        window.ZeroNative?.setActiveThemeAccent?.(
+          '#A3E4D7',
+          '163, 228, 215',
+          '#0B0C10'
+        );
+      } catch {}
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', '#07080A');
       }
       return;
     }
@@ -1517,7 +1619,7 @@ export function useZeroStore() {
         );
         const activeTokensNow = resolveActiveAccentTokens(themeConfig);
         window.ZeroNative.setInterfaceStyle?.(interfaceStyleRef.current);
-        if (interfaceStyleRef.current === 'bespoke') {
+        if (interfaceStyleRef.current === 'bespoke' || interfaceStyleRef.current === 'minimalist') {
           window.ZeroNative.setActiveThemeAccent?.('#3B82F6', '59, 130, 246', '#FFFFFF');
         } else {
           // fluent_glass and classic both pass the live Theme Studio accent to native
