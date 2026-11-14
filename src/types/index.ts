@@ -14,6 +14,8 @@ export interface SessionRecord {
   tag: SessionTag;
   status: SessionStatus;
   dateStr: string; // YYYY-MM-DD
+  reflectionNote?: string;
+  flowRating?: 'deep_flow' | 'steady' | 'challenging';
 }
 
 export type ParachuteLedgerType = 'EARNED' | 'DEPLOYED';
@@ -87,6 +89,7 @@ export interface ActiveLockSession {
   durationSeconds: number;
   elapsedSeconds: number;
   remainingSeconds: number;
+  burnTheBoats?: boolean;
 }
 
 export interface VerifiedNativeCompletionEvent {

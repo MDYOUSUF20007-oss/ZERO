@@ -345,6 +345,59 @@ class VoidAudioSynthesizer {
       gain
     );
   }
+
+  /**
+   * Procedural Tibetan Singing Bowl / Zen Bell (Completion Acoustic Reward)
+   */
+  public playZenBowl(): void {
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      const fundamental = 261.63; // C4
+
+      const partials = [
+        { freq: fundamental, gain: 0.45, decay: 4.8 },
+        { freq: fundamental * 2.76, gain: 0.22, decay: 3.8 },
+        { freq: fundamental * 5.40, gain: 0.09, decay: 2.5 },
+      ];
+
+      // Subtle LFO shimmer
+      const lfo = ctx.createOscillator();
+      lfo.frequency.setValueAtTime(3.2, now);
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.setValueAtTime(0.06, now);
+
+      partials.forEach(({ freq, gain, decay }) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+
+        g.gain.setValueAtTime(0.001, now);
+        g.gain.linearRampToValueAtTime(gain, now + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+
+        lfo.connect(lfoGain).connect(g.gain);
+        osc.connect(g);
+        g.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + decay + 0.1);
+        setTimeout(() => {
+          try {
+            osc.disconnect();
+            g.disconnect();
+          } catch {}
+        }, (decay + 0.2) * 1000);
+      });
+
+      lfo.start(now);
+      lfo.stop(now + 5.0);
+    } catch {}
+  }
 }
 
 export const voidAudio = new VoidAudioSynthesizer();

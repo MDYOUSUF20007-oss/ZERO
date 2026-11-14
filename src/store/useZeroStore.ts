@@ -32,6 +32,7 @@ import type {
   HabitCalibrationProfile,
 } from '../types';
 import { haptics } from '../utils/haptics';
+import { voidAudio } from '../utils/voidAudio';
 import confetti from 'canvas-confetti';
 import {
   TIP_SNOOZE_SESSIONS,
@@ -414,6 +415,7 @@ export function useZeroStore() {
     return normalizeTipSkipCount(localStorage.getItem(UI_STORAGE_KEYS.TIP_SKIP_REMAINING));
   });
   const [postSessionTipPrompt, setPostSessionTipPrompt] = useState<SessionRecord | null>(null);
+  const [victorySession, setVictorySession] = useState<SessionRecord | null>(null);
 
   const [widgetsConfig, setWidgetsConfigState] = useState<DashboardWidgetsConfig>(() => {
     try {
@@ -812,6 +814,12 @@ export function useZeroStore() {
     ) => {
       if (committedSessions.length === 0) return;
       haptics.milestoneChime();
+      try {
+        voidAudio.playZenBowl();
+      } catch {}
+
+      const latestCompleted = committedSessions[committedSessions.length - 1];
+      setVictorySession(latestCompleted);
 
       for (const reward of rewards) {
         emitParachuteReward(reward);
@@ -1331,6 +1339,14 @@ export function useZeroStore() {
 
     haptics.lockEngaged();
 
+    const isBurnTheBoats = (() => {
+      try {
+        return localStorage.getItem('zero_burn_the_boats_v1') === 'true';
+      } catch {
+        return false;
+      }
+    })();
+
     const newLock: ActiveLockSession = {
       isLocked: true,
       tag,
@@ -1339,6 +1355,7 @@ export function useZeroStore() {
       durationSeconds: safeDuration,
       elapsedSeconds: 0,
       remainingSeconds: safeDuration,
+      burnTheBoats: isBurnTheBoats,
     };
 
     setActiveLock(newLock);
@@ -1348,6 +1365,7 @@ export function useZeroStore() {
   };
 
   const deployParachute = (): boolean => {
+    if (activeLock.burnTheBoats) return false;
     if (parachuteMetrics.currentBalance < 1 || !activeLock.isLocked) return false;
 
     const aborted = IntegrityEngine.commitEscapeTicketAbort(
@@ -2156,6 +2174,28 @@ export function useZeroStore() {
     localStorage.setItem(UI_STORAGE_KEYS.TIP_SKIP_REMAINING, '0');
   };
 
+  const saveSessionReflection = useCallback(
+    (sessionId: string, note: string, rating: 'deep_flow' | 'steady' | 'challenging') => {
+      setVictorySession(null);
+      setIntegrityState((prev) => {
+        const updatedSessions = prev.sessions.map((s) =>
+          s.id === sessionId ? { ...s, reflectionNote: note, flowRating: rating } : s
+        );
+        const next = { ...prev, sessions: updatedSessions };
+        integrityStateRef.current = next;
+        try {
+          localStorage.setItem('zero_sessions_v3', JSON.stringify(updatedSessions));
+        } catch {}
+        return next;
+      });
+    },
+    []
+  );
+
+  const dismissVictoryModal = useCallback(() => {
+    setVictorySession(null);
+  }, []);
+
   const completeOnboarding = useCallback((options?: {
     schedules?: RecurringSchedule[];
     bags?: OccasionBag[];
@@ -2233,6 +2273,9 @@ export function useZeroStore() {
     refreshPermissions,
     preLockAlert,
     postSessionTipPrompt,
+    victorySession,
+    saveSessionReflection,
+    dismissVictoryModal,
     tipSkipRemaining,
     dismissPostSessionTipPrompt,
     blockTipPromptForFiveSessions,

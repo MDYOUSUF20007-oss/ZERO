@@ -442,6 +442,15 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   });
   const [showIntentionRitual, setShowIntentionRitual] = useState<boolean>(false);
 
+  // Burn the Boats state
+  const [burnTheBoatsEnabled, setBurnTheBoatsEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('zero_burn_the_boats_v1') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const allTags = useMemo(
     () => mergeHashtagList([...customHashtags, ...localExtraTags], DEFAULT_SESSION_TAGS),
     [customHashtags, localExtraTags]
@@ -1045,7 +1054,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           </button>
 
           {/* Intention Ritual & Quick Features Control */}
-          <div className="flex items-center justify-between w-full px-1 mt-2.5">
+          <div className="flex items-center justify-between w-full px-1 mt-2.5 flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
@@ -1063,12 +1072,29 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               }`}
             >
               <Sparkles size={11} />
-              <span>5s Intention Breath: {intentionRitualEnabled ? 'On' : 'Off'}</span>
+              <span>5s Breath: {intentionRitualEnabled ? 'On' : 'Off'}</span>
             </button>
 
-            <span className="text-[11px] font-sans text-zinc-400">
-              Flip-to-Focus Ready
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                haptics.thud();
+                const nextVal = !burnTheBoatsEnabled;
+                setBurnTheBoatsEnabled(nextVal);
+                try {
+                  localStorage.setItem('zero_burn_the_boats_v1', String(nextVal));
+                } catch {}
+              }}
+              title="Burn the Boats disables emergency escape tickets for this session"
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
+                burnTheBoatsEnabled
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
+                  : 'liquid-pill-inactive text-zinc-400'
+              }`}
+            >
+              <Flame size={11} className={burnTheBoatsEnabled ? 'text-amber-400' : 'text-zinc-500'} />
+              <span>Burn Boats: {burnTheBoatsEnabled ? 'Active' : 'Off'}</span>
+            </button>
           </div>
         </div>
       </div>

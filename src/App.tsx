@@ -16,6 +16,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { LiquidDock } from './components/LiquidDock';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { InteractiveTour } from './components/InteractiveTour';
+import { SessionVictoryModal } from './components/SessionVictoryModal';
 import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
 import { IntegrityEngine } from './core/integrity/IntegrityEngine';
 import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from './utils/autoUpdater';
@@ -785,6 +786,20 @@ export function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mindful Closure: What Did You Build? Victory Card */}
+      {store.victorySession && (
+        <SessionVictoryModal
+          durationSeconds={store.victorySession.durationSeconds}
+          sessionTag={store.victorySession.tag}
+          onSave={(note, rating) => {
+            store.saveSessionReflection(store.victorySession!.id, note, rating);
+          }}
+          onDismiss={() => {
+            store.dismissVictoryModal();
+          }}
+        />
       )}
     </div>
     </InterfaceStyleProvider>

@@ -8,11 +8,13 @@ import type {
 } from '../types';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { isWorkBag } from '../utils/bagLayout';
-import { formatCompactDuration, resolveEffectiveAppRuleConfig } from '../utils/bagAppConfig';
+import { resolveEffectiveAppRuleConfig } from '../utils/bagAppConfig';
 import { buildPixelClockLayout } from '../utils/pixelFont';
-import { resolveAppBrandVisual } from '../utils/appBrandColors';
+import { resolveAppBrandVisual, type AppBrandVisual } from '../utils/appBrandColors';
 import { haptics } from '../utils/haptics';
 import { voidAudio, FOCUS_SOUND_TRACKS, type FocusSoundTrack } from '../utils/voidAudio';
+import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
+import { AppFrictionModal } from './AppFrictionModal';
 import {
   Phone,
   AlertTriangle,
@@ -28,6 +30,8 @@ import {
   Smartphone,
   CheckCircle2,
   X,
+  Quote,
+  Flame,
 } from 'lucide-react';
 
 interface TheVoidViewProps {
@@ -76,6 +80,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [tamperWarning, setTamperWarning] = useState<string | null>(null);
   const [showRetroPixel, setShowRetroPixel] = useState<boolean>(false);
 
+  // Quotes under Chronometer
+  const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
+    getRandomVoidQuote(profile?.motto)
+  );
+
   // Feature 1: Built-in Offline Focus Audio
   const [activeSound, setActiveSound] = useState<FocusSoundTrack>('none');
   const [soundVolume, setSoundVolume] = useState<number>(0.5);
@@ -90,6 +99,15 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [flipToFocusEnabled, setFlipToFocusEnabled] = useState<boolean>(true);
   const [isDeviceFaceDown, setIsDeviceFaceDown] = useState<boolean>(false);
   const wasFaceDownRef = useRef<boolean>(false);
+
+  // Mindful Micro-Friction Interstitial state
+  const [frictionTarget, setFrictionTarget] = useState<{
+    appName: string;
+    packageName: string;
+    visual: AppBrandVisual;
+  } | null>(null);
+
+  const hasPlayedCompletionChimeRef = useRef(false);
 
   const gradId = useId().replace(/:/g, '');
   const timerGradId = `${gradId}-timer`;
@@ -116,8 +134,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const timerText = formatCountdown(activeLock.remainingSeconds);
   const timerPixelLayout = useMemo(() => buildPixelClockLayout(timerText, 1, 0.16), [timerText]);
 
-  const displayPledge =
-    profile?.motto?.trim() || 'The obstacle is the way. Stay phone-free.';
   const normalizedWorkTag =
     (activeLock.tag || 'Deep Work').replace(/^#+/, '').trim() || 'Deep Work';
   const workTagDisplay = `#${normalizedWorkTag.toUpperCase()}`;
@@ -173,6 +189,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Completion Tibetan Singing Bowl Acoustic Reward
+  useEffect(() => {
+    if (activeLock.remainingSeconds <= 0 && !hasPlayedCompletionChimeRef.current) {
+      hasPlayedCompletionChimeRef.current = true;
+      voidAudio.playZenBowl();
+    }
+  }, [activeLock.remainingSeconds]);
+
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
@@ -188,7 +212,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       const beta = event.beta;
       if (beta === null) return;
 
-      // When the phone is face-down on a flat surface, beta is near 180 or -180
       const isFaceDown = Math.abs(beta) > 140;
 
       if (isFaceDown && !wasFaceDownRef.current) {
@@ -223,7 +246,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     const cyclePos = activeLock.elapsedSeconds % cycleSpan;
 
     if (cyclePos >= focusSpan) {
-      // In break interval
       const remainingBreak = cycleSpan - cyclePos;
       setPomodoroIsBreak(true);
       setPomodoroBreakSecondsLeft(remainingBreak);
@@ -256,6 +278,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   };
 
   const handleConfirmDeploy = () => {
+    if (activeLock.burnTheBoats) {
+      haptics.thud();
+      setTamperWarning('Burn the Boats is active. Escape tickets are strictly disabled for this session.');
+      setTimeout(() => setTamperWarning(null), 3500);
+      return;
+    }
     haptics.parachuteDeploy();
     setShowParachuteConfirm(false);
     onDeployParachute();
@@ -270,6 +298,35 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     } else {
       setPomodoroMode('off');
     }
+  };
+
+  const handleNextQuote = () => {
+    haptics.tick(850);
+    setCurrentQuote(getRandomVoidQuote(profile?.motto));
+  };
+
+  const handleRequestAppOpen = (appName: string, packageName: string, visual: AppBrandVisual) => {
+    haptics.tick(700);
+    setFrictionTarget({ appName, packageName, visual });
+  };
+
+  const handleExecuteAppOpen = () => {
+    if (!frictionTarget) return;
+    const { packageName, appName } = frictionTarget;
+    setFrictionTarget(null);
+
+    if (packageName.startsWith('tel:') || packageName.startsWith('sms:')) {
+      window.location.href = packageName;
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {
+      window.ZeroNative.openExternalUrl(`intent:#Intent;package=${packageName};end`);
+    } else {
+      window.location.href = `intent:#Intent;package=${packageName};end`;
+    }
+    haptics.thud();
+    alert(`Simulation Mode: Launching ${appName} (${packageName})`);
   };
 
   return (
@@ -394,7 +451,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       )}
 
-      {/* FEATURE 1: OFFLINE FOCUS AUDIO SOUNDSCAPE CARD (WHEN TOGGLED) */}
+      {/* FEATURE 1: OFFLINE FOCUS AUDIO SOUNDSCAPE DRAWER */}
       {showAudioDrawer && (
         <div className="relative z-20 w-full max-w-md mx-auto mb-2 p-3.5 rounded-2xl liquid-glass border border-white/10 shadow-2xl animate-fadeIn">
           <div className="flex items-center justify-between mb-2.5">
@@ -413,7 +470,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </button>
           </div>
 
-          {/* Sound selection pills */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-3">
             {FOCUS_SOUND_TRACKS.map((track) => (
               <button
@@ -437,7 +493,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             ))}
           </div>
 
-          {/* Volume slider */}
           {activeSound !== 'none' && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/5">
               <Volume2 size={13} className="text-zinc-400 shrink-0" />
@@ -459,7 +514,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       )}
 
       {/* MAIN BODY AREA */}
-      <div className="relative z-10 flex-1 w-full max-w-md mx-auto flex flex-col justify-center py-2 space-y-3.5">
+      <div className="relative z-10 flex-1 w-full max-w-md mx-auto flex flex-col justify-center py-2 space-y-3">
         {/* HERO CHRONOMETER GLASS CARD */}
         <div
           data-void-inverted-timer="true"
@@ -583,160 +638,142 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         </div>
 
-        {/* MOTTO / FOCUS PLEDGE CARD */}
-        <div className="relative w-full rounded-2xl liquid-glass px-4 py-2.5 flex items-center justify-between gap-3 text-xs font-sans text-zinc-300">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-lg liquid-inset flex items-center justify-center shrink-0">
-              <Shield size={12} className="theme-text-accent" />
-            </div>
-            <span className="italic truncate text-[11px] text-zinc-300">
-              &ldquo;{displayPledge}&rdquo;
-            </span>
+        {/* STOIC / MINDFUL FOCUS QUOTE UNDERNEATH THE CHRONOMETER */}
+        <div
+          onClick={handleNextQuote}
+          title="Tap to cycle focus wisdom"
+          className="relative w-full rounded-2xl liquid-glass px-4 py-3 flex items-start gap-3 cursor-pointer liquid-spring hover:brightness-110 active:scale-[0.99] transition-all border border-white/10 shadow-lg"
+        >
+          <div className="w-7 h-7 rounded-xl liquid-inset flex items-center justify-center shrink-0 mt-0.5 text-cyan-300">
+            <Quote size={13} className="theme-text-accent" />
           </div>
-          <div className="flex items-center gap-1 text-[10px] font-sans font-semibold uppercase px-2 py-0.5 rounded-full liquid-pill-active shrink-0">
-            <CheckCircle2 size={10} />
-            <span>Anti-Tamper Active</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-zinc-200 italic font-serif leading-relaxed line-clamp-2">
+              &ldquo;{currentQuote.quote}&rdquo;
+            </p>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-cyan-300">
+                — {currentQuote.author}
+              </span>
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+                Tap to cycle
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* ALLOWED APPS OCCASION BAG GLASS CONTAINER */}
-        <div className="relative w-full rounded-[24px] liquid-glass p-4 sm:p-4.5 overflow-hidden shadow-lg">
-          <div className="relative z-10 flex items-center justify-between gap-2 px-0.5 mb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-5 h-5 rounded-lg liquid-inset flex items-center justify-center shrink-0">
-                <Lock size={11} className="theme-text-accent" />
-              </div>
-              <span className="text-[11px] font-sans font-semibold tracking-wider uppercase theme-text-primary truncate">
-                BAG: {activeBag.name} ({visibleBagApps.length} APPS)
-              </span>
-            </div>
-            <span className="text-[10px] font-sans font-semibold uppercase px-2 py-0.5 rounded-full liquid-pill-active shrink-0">
-              {pomodoroIsBreak
-                ? 'Break Time Rest'
-                : visibleBagApps.length === 0
-                ? 'Monk Mode'
-                : 'Allowed Apps'}
+        {/* Status Anti-Tamper Indicator */}
+        <div className="flex items-center justify-between px-1 text-[11px] font-sans text-zinc-400">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 size={12} className="text-cyan-400" />
+            <span>Anti-Tamper Watchdog Active</span>
+          </div>
+          {activeLock.burnTheBoats && (
+            <span className="text-amber-400 font-semibold flex items-center gap-1 text-[10px] uppercase">
+              <Flame size={11} />
+              <span>Boats Burned</span>
             </span>
-          </div>
+          )}
+        </div>
+      </div>
 
-          <div className="relative z-10 max-h-[22vh] sm:max-h-[26vh] overflow-y-auto pr-0.5 space-y-2">
-            {visibleBagApps.length === 0 ? (
-              <div className="space-y-2.5">
-                {/* Monk Mode Sealed Card */}
-                <div className="px-4 py-3 rounded-xl liquid-row text-xs font-sans text-zinc-300 leading-relaxed flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl liquid-inset flex items-center justify-center shrink-0 text-cyan-300">
-                    <Shield size={16} strokeWidth={1.75} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-white font-semibold text-xs">Monk Mode Sealed</div>
-                    <div className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                      {activeBag.allowSms
-                        ? 'All apps are locked. Phone calls & SMS remain available.'
-                        : 'Zero distraction apps permitted. Only emergency dialer is open.'}
-                    </div>
-                  </div>
+      {/* FLOATING BOTTOM ALLOWED APPS DOCK (NOT A LIST, ICONS AT BOTTOM) */}
+      <div className="relative z-10 w-full max-w-md mx-auto mb-2 shrink-0">
+        <div className="text-[10px] font-sans font-semibold tracking-wider uppercase text-zinc-400 px-1 mb-1.5 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Lock size={10} className="theme-text-accent" />
+            <span>Bag: {activeBag.name}</span>
+          </span>
+          <span className="text-cyan-300">
+            {pomodoroIsBreak
+              ? '☕ Mindful Break'
+              : visibleBagApps.length === 0
+              ? 'Monk Mode'
+              : `${visibleBagApps.length} Apps Allowed`}
+          </span>
+        </div>
+
+        <div className="w-full rounded-[22px] liquid-glass p-2 border border-white/10 shadow-2xl flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
+          {visibleBagApps.length === 0 ? (
+            <div className="flex items-center justify-center gap-4 py-1">
+              {/* Compulsory Phone Icon */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleRequestAppOpen('Phone Calls', 'tel:', {
+                    bgColor: '#16A34A',
+                    textColor: '#FFFFFF',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    initial: 'P',
+                  })
+                }
+                className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-2xl liquid-inset flex items-center justify-center text-cyan-300 shadow-md">
+                  <Phone size={18} strokeWidth={2} />
                 </div>
+                <span className="text-[10px] font-sans font-medium text-zinc-300">Dialer</span>
+              </button>
 
-                {/* Compulsory Phone Calls */}
-                <div className="flex flex-col gap-2">
-                  <a
-                    href="tel:"
-                    className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring hover:brightness-110 active:scale-[0.99] cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="liquid-squircle text-cyan-200">
-                        <Phone size={15} strokeWidth={1.75} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-white tracking-wide truncate">
-                          Phone Calls
-                        </div>
-                        <div className="text-[10px] text-zinc-400 truncate font-sans">
-                          Compulsory Dialer • Always accessible
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-semibold uppercase px-2 py-0.5 rounded-full liquid-pill-active border shrink-0">
-                      ALWAYS ON
-                    </span>
-                  </a>
+              {activeBag.allowSms && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleRequestAppOpen('SMS Messaging', 'sms:', {
+                      bgColor: '#0284C7',
+                      textColor: '#FFFFFF',
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      initial: 'S',
+                    })
+                  }
+                  className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-2xl liquid-inset flex items-center justify-center text-cyan-300 shadow-md">
+                    <MessageSquare size={18} strokeWidth={2} />
+                  </div>
+                  <span className="text-[10px] font-sans font-medium text-zinc-300">SMS</span>
+                </button>
+              )}
 
-                  {activeBag.allowSms && (
-                    <a
-                      href="sms:"
-                      className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring hover:brightness-110 active:scale-[0.99] cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="liquid-squircle text-cyan-200">
-                          <MessageSquare size={15} strokeWidth={1.75} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-white tracking-wide truncate">
-                            SMS Messaging
-                          </div>
-                          <div className="text-[10px] text-zinc-400 truncate font-sans">
-                            Essential Communications
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-semibold uppercase px-2 py-0.5 rounded-full liquid-pill-active border shrink-0">
-                        ALWAYS ON
-                      </span>
-                    </a>
-                  )}
-                </div>
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-sans px-2">
+                <Shield size={12} className="text-cyan-400/60" />
+                <span>Monk Mode</span>
               </div>
-            ) : (
-              visibleBagApps.map((app) => {
+            </div>
+          ) : (
+            <div className="flex items-center justify-start sm:justify-center gap-3 w-full overflow-x-auto no-scrollbar py-0.5 px-1">
+              {visibleBagApps.map((app) => {
                 const brand = resolveAppBrandVisual(app);
-                const effRule = resolveEffectiveAppRuleConfig(app);
-                const statusLabel =
-                  effRule.mode === 'controlled'
-                    ? effRule.quotaSeconds > 0
-                      ? `QUOTA ${formatCompactDuration(effRule.quotaSeconds).toUpperCase()}`
-                      : 'CONTROLLED'
-                    : 'ALLOWED';
-
                 return (
-                  <div
+                  <button
                     key={app.packageName}
-                    className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl liquid-row liquid-spring hover:brightness-105"
+                    type="button"
+                    onClick={() => handleRequestAppOpen(app.appName, app.packageName, brand)}
+                    className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="liquid-squircle shrink-0"
-                        style={{
-                          backgroundColor: brand.bgColor,
-                          color: brand.textColor,
-                          border: `1px solid ${brand.borderColor}`,
-                        }}
-                      >
-                        {brand.initial}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-white truncate tracking-wide">
-                          {app.appName}
-                        </div>
-                        <div className="text-[10px] text-zinc-400 truncate font-sans font-medium">
-                          {effRule.mode === 'controlled' && effRule.quotaSeconds > 0
-                            ? `${formatCompactDuration(effRule.quotaSeconds)} session allowance`
-                            : 'Always accessible in Bag'}
-                        </div>
-                      </div>
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold shadow-md select-none transition-transform"
+                      style={{
+                        backgroundColor: brand.bgColor,
+                        color: brand.textColor,
+                        border: `1px solid ${brand.borderColor}`,
+                      }}
+                    >
+                      {brand.initial}
                     </div>
-                    <span className="px-2.5 py-0.5 text-[9px] font-sans font-semibold rounded-full liquid-pill-active uppercase tracking-wider shrink-0">
-                      {statusLabel}
+                    <span className="text-[10px] font-sans font-medium text-zinc-300 max-w-[54px] truncate text-center">
+                      {app.appName}
                     </span>
-                  </div>
+                  </button>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* BOTTOM ACTION BAR: Emergency Call & Emergency Escape Ticket */}
-      <div className="relative z-10 w-full max-w-md mx-auto pt-2 pb-1 shrink-0 grid grid-cols-2 gap-3">
+      <div className="relative z-10 w-full max-w-md mx-auto pt-1 pb-1 shrink-0 grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => {
@@ -752,17 +789,45 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         <button
           type="button"
           onClick={() => {
+            if (activeLock.burnTheBoats) {
+              haptics.thud();
+              setTamperWarning('Burn the Boats is active. Escape tickets are strictly disabled for this session.');
+              setTimeout(() => setTamperWarning(null), 3500);
+              return;
+            }
             haptics.thud();
             setShowParachuteConfirm(true);
           }}
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-pill text-xs font-sans font-medium text-zinc-300 hover:text-white transition-all cursor-pointer active:scale-95"
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-sans font-medium transition-all cursor-pointer active:scale-95 ${
+            activeLock.burnTheBoats
+              ? 'bg-amber-950/40 border border-amber-500/30 text-amber-300'
+              : 'liquid-pill text-zinc-300 hover:text-white'
+          }`}
         >
-          <AlertTriangle size={14} className="text-amber-400" />
-          <span>
-            Escape Ticket ({parachuteMetrics.currentBalance})
-          </span>
+          {activeLock.burnTheBoats ? (
+            <>
+              <Flame size={14} className="text-amber-400 animate-pulse" />
+              <span>Boats Burned</span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle size={14} className="text-amber-400" />
+              <span>Escape ({parachuteMetrics.currentBalance})</span>
+            </>
+          )}
         </button>
       </div>
+
+      {/* MINDFUL MICRO-FRICTION INTERSTITIAL BEFORE OPENING BAG APP */}
+      {frictionTarget && (
+        <AppFrictionModal
+          appName={frictionTarget.appName}
+          packageName={frictionTarget.packageName}
+          visual={frictionTarget.visual}
+          onConfirm={handleExecuteAppOpen}
+          onCancel={() => setFrictionTarget(null)}
+        />
+      )}
 
       {/* EMERGENCY CALL MODAL */}
       {showEmergencyModal && (
