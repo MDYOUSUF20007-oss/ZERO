@@ -19,6 +19,7 @@ import { ObsidianCard } from './ObsidianCard';
 import { getZeroRankFromHours } from '../utils/parachuteRewardsPolicy';
 import { evaluateBadges } from '../utils/achievements';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
+import { IntentionRitualModal } from './IntentionRitualModal';
 import {
   ShieldAlert,
   Clock,
@@ -430,6 +431,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   const holdStartTimeRef = useRef<number | null>(null);
   const holdAnimFrameRef = useRef<number | null>(null);
 
+  // 5-Second Intention Ritual state
+  const [intentionRitualEnabled, setIntentionRitualEnabled] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('zero_intention_ritual_v1');
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [showIntentionRitual, setShowIntentionRitual] = useState<boolean>(false);
+
   const allTags = useMemo(
     () => mergeHashtagList([...customHashtags, ...localExtraTags], DEFAULT_SESSION_TAGS),
     [customHashtags, localExtraTags]
@@ -461,11 +473,26 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
     setHoldProgress(prog);
 
     if (prog >= 1) {
-      triggerIgnition();
+      setIsHolding(false);
+      setHoldProgress(0);
+      holdStartTimeRef.current = null;
+      if (holdAnimFrameRef.current) cancelAnimationFrame(holdAnimFrameRef.current);
+      haptics.stopHoldCharge();
+
+      if (permissions.isNativeAndroid && !permissions.strictReady) {
+        onOpenPermissionGate();
+        return;
+      }
+
+      if (intentionRitualEnabled) {
+        setShowIntentionRitual(true);
+      } else {
+        triggerIgnition();
+      }
     } else {
       holdAnimFrameRef.current = requestAnimationFrame(updateHold);
     }
-  }, [triggerIgnition]);
+  }, [triggerIgnition, intentionRitualEnabled, permissions.isNativeAndroid, permissions.strictReady, onOpenPermissionGate]);
 
   const startHold = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -1016,8 +1043,51 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               )}
             </div>
           </button>
+
+          {/* Intention Ritual & Quick Features Control */}
+          <div className="flex items-center justify-between w-full px-1 mt-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.tick(700);
+                const nextVal = !intentionRitualEnabled;
+                setIntentionRitualEnabled(nextVal);
+                try {
+                  localStorage.setItem('zero_intention_ritual_v1', String(nextVal));
+                } catch {}
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
+                intentionRitualEnabled
+                  ? 'liquid-pill-active font-medium text-cyan-300'
+                  : 'liquid-pill-inactive text-zinc-400'
+              }`}
+            >
+              <Sparkles size={11} />
+              <span>5s Intention Breath: {intentionRitualEnabled ? 'On' : 'Off'}</span>
+            </button>
+
+            <span className="text-[11px] font-sans text-zinc-400">
+              Flip-to-Focus Ready
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* 5-Second Intention Ritual Modal */}
+      {showIntentionRitual && (
+        <IntentionRitualModal
+          tag={selectedTag}
+          durationFormatted={formatDialTime(durationSeconds)}
+          onComplete={() => {
+            setShowIntentionRitual(false);
+            triggerIgnition();
+          }}
+          onSkip={() => {
+            setShowIntentionRitual(false);
+            triggerIgnition();
+          }}
+        />
+      )}
     </div>
   );
 };
