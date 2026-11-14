@@ -34,25 +34,25 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
       className="fixed left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto"
       style={{ bottom: 'calc(20px + var(--zero-safe-bottom))' }}
     >
-      <div className="liquid-dock rounded-full p-1.5 relative overflow-hidden">
+      <div className="liquid-dock rounded-[2rem] p-1.5 relative overflow-hidden">
         {/* Top specular refraction highlight */}
         <div
           aria-hidden="true"
           className="absolute top-0 left-8 right-8 h-px pointer-events-none"
           style={{
             background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%)',
+              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.65) 50%, transparent 100%)',
           }}
         />
 
         <div className="grid grid-cols-4 relative">
-          {/* Smooth sliding glass pill indicator */}
+          {/* Smooth 60FPS spring sliding glass pill indicator */}
           <div
             aria-hidden="true"
-            className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none transition-transform duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform"
             style={{ transform: `translateX(${activeIdx * 100}%)` }}
           >
-            <div className="w-full h-full rounded-full liquid-dock-indicator" />
+            <div className="w-full h-full rounded-2xl liquid-dock-item-active" />
           </div>
 
           {TABS.map((tab) => {
@@ -66,7 +66,7 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
                   onSelectTab(tab.id);
                 }}
                 aria-current={active ? 'page' : undefined}
-                className={`relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-full liquid-spring ${
+                className={`relative z-10 flex flex-col items-center justify-center py-2 px-1 rounded-2xl liquid-spring ${
                   active ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
@@ -74,35 +74,35 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
                   {tab.id === 'dial' && (
                     <Clock
                       size={17}
-                      strokeWidth={1.75}
-                      className={active ? 'text-cyan-200' : undefined}
+                      strokeWidth={1.8}
+                      className={active ? 'text-white' : undefined}
                     />
                   )}
                   {tab.id === 'dashboard' && (
                     <BarChart3
                       size={17}
-                      strokeWidth={1.75}
-                      className={active ? 'text-cyan-200' : undefined}
+                      strokeWidth={1.8}
+                      className={active ? 'text-white' : undefined}
                     />
                   )}
                   {tab.id === 'schedules' && (
                     <Settings
                       size={17}
-                      strokeWidth={1.75}
-                      className={active ? 'text-cyan-200' : undefined}
+                      strokeWidth={1.8}
+                      className={active ? 'text-white' : undefined}
                     />
                   )}
                   {tab.id === 'support' && (
                     <Heart
                       size={17}
-                      strokeWidth={1.75}
-                      className={active ? 'text-cyan-200' : undefined}
+                      strokeWidth={1.8}
+                      className={active ? 'text-white' : undefined}
                     />
                   )}
                 </div>
                 <span
                   className={`text-[10px] mt-1 tracking-tight whitespace-nowrap font-sans ${
-                    active ? 'font-semibold text-white' : 'font-medium text-zinc-400'
+                    active ? 'font-bold text-white' : 'font-medium text-zinc-400'
                   }`}
                 >
                   {tab.label}

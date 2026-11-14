@@ -98,51 +98,51 @@ function getHeatmapCellStyle(
     const ringShadow = isSelected
       ? '0 0 0 2px #FFFFFF'
       : isToday
-      ? '0 0 0 1.5px #00F2FE'
+      ? '0 0 0 1.5px var(--liquid-accent-vibrant)'
       : undefined;
 
     switch (level) {
       case 1:
         return {
-          background: 'rgba(79, 172, 254, 0.16)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.22)',
-          borderLeft: '1px solid rgba(79, 172, 254, 0.28)',
-          borderRight: '1px solid rgba(79, 172, 254, 0.14)',
-          borderBottom: '1px solid rgba(79, 172, 254, 0.08)',
+          background: 'color-mix(in srgb, var(--liquid-accent-vibrant) 20%, rgba(255, 255, 255, 0.04))',
+          borderTop: '1px solid rgba(255, 255, 255, 0.24)',
+          borderLeft: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 35%, transparent)',
+          borderRight: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 15%, transparent)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
           boxShadow: ringShadow,
         };
       case 2:
         return {
-          background: 'rgba(79, 172, 254, 0.34)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.32)',
-          borderLeft: '1px solid rgba(0, 242, 254, 0.42)',
-          borderRight: '1px solid rgba(79, 172, 254, 0.22)',
-          borderBottom: '1px solid rgba(79, 172, 254, 0.12)',
+          background: 'color-mix(in srgb, var(--liquid-accent-vibrant) 40%, rgba(255, 255, 255, 0.06))',
+          borderTop: '1px solid rgba(255, 255, 255, 0.35)',
+          borderLeft: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 55%, transparent)',
+          borderRight: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 25%, transparent)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: ringShadow,
         };
       case 3:
         return {
-          background: 'rgba(0, 242, 254, 0.56)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.48)',
-          borderLeft: '1px solid rgba(0, 242, 254, 0.65)',
-          borderRight: '1px solid rgba(79, 172, 254, 0.35)',
-          borderBottom: '1px solid rgba(79, 172, 254, 0.2)',
-          boxShadow: ringShadow ?? '0 0 10px -2px rgba(0, 242, 254, 0.28)',
+          background: 'color-mix(in srgb, var(--liquid-accent-vibrant) 65%, rgba(255, 255, 255, 0.12))',
+          borderTop: '1px solid rgba(255, 255, 255, 0.55)',
+          borderLeft: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 75%, transparent)',
+          borderRight: '1px solid color-mix(in srgb, var(--liquid-accent-vibrant) 40%, transparent)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: ringShadow ?? '0 0 12px var(--liquid-accent-soft-glow)',
         };
       case 4:
         return {
           background:
-            'linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(186, 230, 253, 0.94) 55%, rgba(79, 172, 254, 0.95) 100%)',
+            'linear-gradient(95deg, #ffffff 0%, var(--liquid-accent-tint) 42%, var(--liquid-accent-vibrant) 100%)',
           borderTop: '1px solid #FFFFFF',
-          borderLeft: '1px solid rgba(255, 255, 255, 0.78)',
-          borderRight: '1px solid rgba(79, 172, 254, 0.5)',
-          borderBottom: '1px solid rgba(79, 172, 254, 0.3)',
-          boxShadow: ringShadow ?? '0 0 14px -2px rgba(79, 172, 254, 0.48)',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.95)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.75)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.45)',
+          boxShadow: ringShadow ?? '0 6px 20px var(--liquid-accent-glow), inset 0 1.5px 2px #ffffff',
         };
       case 0:
       default:
         return {
-          background: 'rgba(14, 16, 24, 0.72)',
+          background: 'rgba(255, 255, 255, 0.035)',
           borderTop: '1px solid rgba(255, 255, 255, 0.12)',
           borderLeft: '1px solid rgba(255, 255, 255, 0.07)',
           borderRight: '1px solid rgba(255, 255, 255, 0.04)',
@@ -806,7 +806,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div
                 className={
                   isFluentGlass
-                    ? 'bg-black/45 border border-white/10 rounded-full p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
+                    ? 'liquid-track rounded-full p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
                     : isBespoke
                     ? 'bg-neutral-950 border border-neutral-800 rounded-md p-1 grid grid-cols-4 gap-1 text-[11px] font-sans'
                     : 'obsidian-shell-bar rounded-xl p-1 grid grid-cols-4 gap-1 text-[10px]'
@@ -850,7 +850,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div
                   className={
                     isFluentGlass
-                      ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl liquid-row text-[11px]'
+                      ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-2xl liquid-track text-[11px]'
                       : isBespoke
                       ? 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md bg-neutral-950 border border-neutral-800 text-[11px]'
                       : 'flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl obsidian-inset-neutral text-[10px]'
@@ -953,7 +953,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             className="text-[9px] font-bold leading-none"
                             style={{
                               color:
-                                !isBespoke && cell.level === 4
+                                isFluentGlass && cell.level === 4
+                                  ? '#07040d'
+                                  : !isBespoke && cell.level === 4
                                   ? 'var(--accent-badge-text, #09090B)'
                                   : cell.level > 0
                                   ? '#FFFFFF'
@@ -966,7 +968,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                             className="text-[8px] mt-1 font-extrabold leading-none truncate max-w-full"
                             style={{
                               color:
-                                !isBespoke && cell.level === 4
+                                isFluentGlass && cell.level === 4
+                                  ? '#07040d'
+                                  : !isBespoke && cell.level === 4
                                   ? 'var(--accent-badge-text, #09090B)'
                                   : cell.seconds > 0
                                   ? isBespoke
@@ -2397,7 +2401,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               <div
                 className={
                   isFluentGlass
-                    ? 'w-full liquid-track rounded-full h-2.5 p-[1px] overflow-hidden'
+                    ? 'w-full liquid-track rounded-full h-3 p-0.5 overflow-hidden'
                     : isBespoke
                     ? 'w-full bg-neutral-950 border border-neutral-800 rounded-none h-2.5 overflow-hidden'
                     : 'w-full obsidian-inset-neutral rounded-full h-3 p-0.5 overflow-hidden'
@@ -2406,7 +2410,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                 <div
                   className={
                     isFluentGlass
-                      ? 'h-full rounded-full liquid-mercury-fill'
+                      ? 'h-full rounded-full liquid-shimmer-bar'
                       : isBespoke
                       ? 'h-full rounded-none bg-blue-600 transition-all duration-75'
                       : 'h-full rounded-full transition-all duration-500'
@@ -2481,7 +2485,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
       <div
         className={
           isFluentGlass
-            ? 'grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/15 rounded-full'
+            ? 'grid grid-cols-3 gap-1 p-1 liquid-track rounded-full'
             : isBespoke
             ? 'grid grid-cols-3 gap-1 p-1 bg-neutral-950 border border-neutral-800 rounded-md'
             : 'grid grid-cols-3 gap-1 p-1 obsidian-shell-bar rounded-2xl'

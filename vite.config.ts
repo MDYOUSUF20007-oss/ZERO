@@ -5,4 +5,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: './', // Ensures relative asset paths for GitHub Pages, WebViews, and local previews
+  build: {
+    chunkSizeWarningLimit: 1200,
+  },
 })

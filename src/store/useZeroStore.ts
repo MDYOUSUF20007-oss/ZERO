@@ -1072,7 +1072,7 @@ export function useZeroStore() {
     }
 
     if (interfaceStyle === 'fluent_glass') {
-      // Fluent Glass over true #000000 AMOLED canvas — accent tints inherit from Theme Studio
+      // Fluent Glass Pro 60FPS over true #000000 AMOLED canvas — dynamic Theme Studio accent integration
       rootEl.className = 'dark';
       rootEl.setAttribute('data-zero-theme', 'amoled');
       rootEl.setAttribute('data-zero-has-gradient', 'false');
@@ -1089,7 +1089,7 @@ export function useZeroStore() {
       rootEl.style.setProperty('--zero-ink-secondary', '#E4E4E7');
       rootEl.style.setProperty('--zero-ink-muted', '#A1A1AA');
       rootEl.style.setProperty('--zero-inverted-bg', '#FFFFFF');
-      rootEl.style.setProperty('--zero-inverted-text', '#09090B');
+      rootEl.style.setProperty('--zero-inverted-text', '#07040d');
       rootEl.style.setProperty('--zero-nav-bg', 'rgba(10, 10, 16, 0.72)');
       rootEl.style.setProperty('--zero-backdrop', 'rgba(0, 0, 0, 0.75)');
 
@@ -1101,18 +1101,33 @@ export function useZeroStore() {
       rootEl.style.setProperty('--accent-hex', fluentTokens.hex);
       rootEl.style.setProperty(
         '--accent-badge-gradient',
-        `linear-gradient(135deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 55%, #FFFFFF) 50%, ${fluentTokens.hex} 100%)`
+        `linear-gradient(95deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 28%, #FFFFFF) 42%, ${fluentTokens.hex} 100%)`
       );
-      rootEl.style.setProperty('--accent-badge-text', fluentTokens.badgeText);
+      rootEl.style.setProperty('--accent-badge-text', '#07040d');
       rootEl.style.setProperty('--accent-surface-rgb', fluentTokens.rgb);
       rootEl.style.setProperty('--accent-surface-hex', fluentTokens.hex);
       rootEl.style.setProperty(
         '--accent-surface-badge-gradient',
-        `linear-gradient(135deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 55%, #FFFFFF) 50%, ${fluentTokens.hex} 100%)`
+        `linear-gradient(95deg, #FFFFFF 0%, color-mix(in srgb, ${fluentTokens.hex} 28%, #FFFFFF) 42%, ${fluentTokens.hex} 100%)`
       );
-      rootEl.style.setProperty('--accent-surface-badge-text', fluentTokens.badgeText);
+      rootEl.style.setProperty('--accent-surface-badge-text', '#07040d');
 
-      // Fluent Glass glass-tint surfaces respond to accent: backgrounds use a subtle rgba blend
+      // Liquid Glass Pro dynamic tokens:
+      rootEl.style.setProperty('--liquid-accent-vibrant', fluentTokens.hex);
+      rootEl.style.setProperty(
+        '--liquid-accent-tint',
+        `color-mix(in srgb, ${fluentTokens.hex} 28%, #ffffff)`
+      );
+      rootEl.style.setProperty(
+        '--liquid-accent-glow',
+        `color-mix(in srgb, ${fluentTokens.hex} 50%, transparent)`
+      );
+      rootEl.style.setProperty(
+        '--liquid-accent-soft-glow',
+        `color-mix(in srgb, ${fluentTokens.hex} 22%, transparent)`
+      );
+
+      // Fluent Glass glass-tint surfaces respond to accent
       rootEl.style.setProperty('--fg-accent-tint-14', `rgba(${fluentTokens.rgb}, 0.14)`);
       rootEl.style.setProperty('--fg-accent-tint-10', `rgba(${fluentTokens.rgb}, 0.10)`);
       rootEl.style.setProperty('--fg-accent-tint-06', `rgba(${fluentTokens.rgb}, 0.06)`);
@@ -1175,6 +1190,21 @@ export function useZeroStore() {
     rootEl.style.setProperty('--accent-surface-hex', surfaceTokens.hex);
     rootEl.style.setProperty('--accent-surface-badge-gradient', surfaceTokens.badgeGradient);
     rootEl.style.setProperty('--accent-surface-badge-text', surfaceTokens.badgeText);
+
+    // Keep Liquid Glass tokens synced in all modes
+    rootEl.style.setProperty('--liquid-accent-vibrant', derived.hex);
+    rootEl.style.setProperty(
+      '--liquid-accent-tint',
+      `color-mix(in srgb, ${derived.hex} 28%, #ffffff)`
+    );
+    rootEl.style.setProperty(
+      '--liquid-accent-glow',
+      `color-mix(in srgb, ${derived.hex} 50%, transparent)`
+    );
+    rootEl.style.setProperty(
+      '--liquid-accent-soft-glow',
+      `color-mix(in srgb, ${derived.hex} 22%, transparent)`
+    );
 
     try {
       window.ZeroNative?.setInterfaceStyle?.('classic');

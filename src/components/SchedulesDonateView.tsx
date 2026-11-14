@@ -363,7 +363,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             viewMode === 'settings_os' ? 'grid-cols-4' : 'grid-cols-5'
           } gap-1 p-1 ${
             isFluentGlass
-              ? 'liquid-card rounded-full text-[11px] font-sans'
+              ? 'liquid-track rounded-full text-[11px] font-sans'
               : isBespoke
               ? 'bg-black border border-neutral-800 rounded-md text-[11px] font-sans'
               : 'obsidian-shell-bar rounded-2xl text-[10px] font-mono'
@@ -904,7 +904,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         aria-label={`Toggle ${sched.name}`}
                         style={
                           sched.isEnabled
-                            ? isBespoke
+                            ? isFluentGlass
+                              ? {
+                                  background: 'linear-gradient(135deg, var(--liquid-accent-vibrant), var(--liquid-accent-tint))',
+                                  borderColor: 'rgba(255, 255, 255, 0.45)',
+                                  boxShadow: '0 0 12px var(--liquid-accent-soft-glow)',
+                                }
+                              : isBespoke
                               ? {
                                   backgroundColor: '#2563EB',
                                   borderColor: '#3B82F6',
@@ -916,12 +922,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                                 }
                             : undefined
                         }
-                        className={`relative border shrink-0 ${
+                        className={`relative border shrink-0 toggle-track ${
                           isBespoke
                             ? `w-11 h-6 rounded-sm transition-colors duration-75 ${
                                 sched.isEnabled
                                   ? ''
                                   : 'bg-neutral-950 border-neutral-700'
+                              }`
+                            : isFluentGlass
+                            ? `w-12 h-6 rounded-full transition-colors ${
+                                sched.isEnabled
+                                  ? ''
+                                  : 'liquid-track'
                               }`
                             : `w-12 h-6 rounded-full transition-colors ${
                                 sched.isEnabled
@@ -934,13 +946,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           style={
                             sched.isEnabled
                               ? {
-                                  backgroundColor: isBespoke
+                                  backgroundColor: isBespoke || isFluentGlass
                                     ? '#FFFFFF'
                                     : 'var(--accent-badge-text, #09090B)',
                                 }
                               : undefined
                           }
-                          className={`w-4 h-4 transform ${
+                          className={`w-4 h-4 transform toggle-thumb ${
                             isBespoke
                               ? `rounded-sm transition-transform duration-75 ${
                                   sched.isEnabled
@@ -963,7 +975,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <span
                           key={day}
                           className={`text-[10px] px-2 py-0.5 ${
-                            isBespoke
+                            isFluentGlass
+                              ? `rounded-full font-sans font-semibold ${
+                                  sched.days.includes(idx)
+                                    ? 'liquid-pill-active'
+                                    : 'liquid-pill-inactive'
+                                }`
+                              : isBespoke
                               ? `rounded-sm font-sans font-semibold border ${
                                   sched.days.includes(idx)
                                     ? 'bg-blue-600 text-white border-blue-500'
@@ -3009,7 +3027,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         type="button"
                         onClick={() => toggleDaySelection(idx)}
                         className={`flex-1 py-1.5 text-[10px] font-semibold ${
-                          isBespoke
+                          isFluentGlass
+                            ? `rounded-full font-sans ${
+                                newDays.includes(idx)
+                                  ? 'liquid-pill-active'
+                                  : 'liquid-pill-inactive'
+                              }`
+                            : isBespoke
                             ? `rounded-sm border transition-colors duration-75 ${
                                 newDays.includes(idx)
                                   ? 'bg-blue-600 text-white border-blue-500'

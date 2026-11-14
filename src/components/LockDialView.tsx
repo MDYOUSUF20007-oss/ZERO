@@ -316,6 +316,8 @@ const DialWheelSection = React.memo(function DialWheelSection({
         className={
           isBespoke
             ? 'zero-dial-surface relative w-64 h-64 sm:w-72 sm:h-72 rounded-md bg-black border border-neutral-800 flex items-center justify-center cursor-grab active:cursor-grabbing'
+            : isFluentGlass
+            ? 'zero-dial-surface zero-dial-ring liquid-dial-outer relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
             : 'zero-dial-surface zero-dial-ring obsidian-dial-bezel relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow'
         }
         style={{ touchAction: 'none' }}
@@ -329,9 +331,9 @@ const DialWheelSection = React.memo(function DialWheelSection({
           {isFluentGlass && (
             <defs>
               <linearGradient id="zeroLiquidDialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="50%" stopColor="#00F2FE" />
-                <stop offset="100%" stopColor="#4FACFE" />
+                <stop offset="0%" style={{ stopColor: '#ffffff' }} />
+                <stop offset="50%" style={{ stopColor: 'var(--liquid-accent-tint)' }} />
+                <stop offset="100%" style={{ stopColor: 'var(--liquid-accent-vibrant)' }} />
               </linearGradient>
             </defs>
           )}
@@ -370,10 +372,10 @@ const DialWheelSection = React.memo(function DialWheelSection({
             <div
               className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border"
               style={{
-                backgroundColor: isFluentGlass ? '#E0F7FF' : 'var(--accent-hex, #FFFFFF)',
+                backgroundColor: isFluentGlass ? '#ffffff' : 'var(--accent-hex, #FFFFFF)',
                 borderColor: '#09090B',
                 boxShadow: isFluentGlass
-                  ? '0 0 14px rgba(0, 242, 254, 0.85)'
+                  ? '0 0 18px #ffffff, 0 0 28px var(--liquid-accent-vibrant)'
                   : '0 0 14px var(--accent-hex, rgba(255, 255, 255, 0.75))',
               }}
             />
@@ -446,8 +448,8 @@ const DialWheelSection = React.memo(function DialWheelSection({
               isFluentGlass
                 ? `px-3 py-1.5 text-xs font-sans tabular-nums rounded-xl ${
                     durationSeconds === preset.seconds
-                      ? 'liquid-pill-active font-semibold'
-                      : 'liquid-pill text-zinc-300'
+                      ? 'liquid-pill-active'
+                      : 'liquid-pill-inactive'
                   }`
                 : isBespoke
                 ? `px-3 py-1.5 text-xs font-mono tabular-nums rounded-md border transition-colors duration-75 ${
@@ -896,13 +898,30 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 className={`w-6 h-6 obsidian-icon-box flex items-center justify-center ${
                   isBespoke ? 'rounded-sm' : isFluentGlass ? 'rounded-xl' : 'rounded-lg'
                 }`}
+                style={
+                  isFluentGlass
+                    ? {
+                        background:
+                          'linear-gradient(135deg, #ffffff 0%, var(--liquid-accent-tint) 50%, var(--liquid-accent-vibrant) 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.95)',
+                        boxShadow: '0 2px 10px var(--liquid-accent-glow)',
+                        color: '#07040d',
+                      }
+                    : undefined
+                }
               >
                 <Palette
                   size={12}
-                  strokeWidth={1.75}
-                  style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  strokeWidth={2}
+                  style={
+                    isFluentGlass
+                      ? { color: '#07040d' }
+                      : isModernFont
+                      ? undefined
+                      : { color: 'var(--accent-hex, #FFFFFF)' }
+                  }
                   className={
-                    isFluentGlass ? 'text-cyan-200' : isBespoke ? 'text-blue-500' : undefined
+                    isFluentGlass ? 'text-[#07040d]' : isBespoke ? 'text-blue-500' : undefined
                   }
                 />
               </div>
@@ -1264,8 +1283,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     isFluentGlass
                       ? `px-3 py-1.5 rounded-xl text-xs font-sans whitespace-nowrap ${
                           selectedTag === tag
-                            ? 'liquid-pill-active font-semibold'
-                            : 'liquid-pill text-zinc-300 font-medium'
+                            ? 'liquid-pill-active'
+                            : 'liquid-pill-inactive'
                         }`
                       : isBespoke
                       ? `px-3 py-1.5 rounded-md text-xs font-sans font-medium whitespace-nowrap border transition-colors duration-75 ${
@@ -1415,7 +1434,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchCancel={cancelHold}
             className={
               isFluentGlass
-                ? `relative w-full h-14 py-4 rounded-2xl liquid-card font-sans font-semibold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
+                ? `relative w-full h-14 py-4 rounded-3xl liquid-glass border border-white/30 font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
                     isHolding ? 'scale-[0.98]' : ''
                   }`
                 : isBespoke
@@ -1457,9 +1476,9 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               }`}
               style={{
                 width: `${holdProgress * 100}%`,
-                opacity: isHolding ? (isBespoke ? 1 : 0.96) : 0,
+                opacity: isHolding ? (isBespoke ? 1 : 0.98) : 0,
                 background: isFluentGlass
-                  ? 'linear-gradient(90deg, rgba(79, 172, 254, 0.88) 0%, rgba(0, 242, 254, 0.95) 85%, #FFFFFF 100%)'
+                  ? 'linear-gradient(90deg, #ffffff 0%, var(--liquid-accent-tint) 45%, var(--liquid-accent-vibrant) 100%)'
                   : isBespoke
                   ? '#2563EB'
                   : 'var(--accent-badge-gradient, linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%))',
@@ -1468,9 +1487,9 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
 
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors duration-75 ${
-                holdProgress > 0.5
+                holdProgress > 0.4
                   ? isFluentGlass
-                    ? 'font-semibold text-zinc-950'
+                    ? 'font-extrabold text-[#07040d]'
                     : isBespoke
                     ? 'font-semibold text-white'
                     : 'font-black'
@@ -1481,7 +1500,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   ? undefined
                   : {
                       color:
-                        holdProgress > 0.5
+                        holdProgress > 0.4
                           ? 'var(--accent-badge-text, #09090B)'
                           : undefined,
                     }

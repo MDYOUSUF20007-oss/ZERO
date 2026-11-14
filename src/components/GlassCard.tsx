@@ -4,8 +4,9 @@ import type { ObsidianCardProps } from './ObsidianCard';
 export type GlassCardProps = ObsidianCardProps;
 
 /**
- * Microsoft Fluent 2 Liquid Glass surface card:
- * Translucent directional specular borders + 28px backdrop refraction + 0.03 fractal noise.
+ * Liquid Glass Pro 60FPS Surface Card:
+ * Authentic optical glass refraction, specular top-edge highlight, dynamic Theme Studio inner glow,
+ * and rounded-3xl geometry.
  */
 export const GlassCard: React.FC<GlassCardProps> = ({
   headerContent,
@@ -31,9 +32,9 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const widthClass = fullWidth ? 'w-full' : '';
 
   const interactiveClasses =
-    onClick && !disabled ? 'cursor-pointer liquid-spring hover:brightness-110' : '';
+    onClick && !disabled ? 'cursor-pointer liquid-spring hover:brightness-105 active:scale-[0.98]' : '';
 
-  const sharedClassName = `relative flex flex-col justify-between ${widthClass} rounded-[20px] overflow-hidden liquid-card font-sans ${interactiveClasses} ${className}`;
+  const sharedClassName = `relative flex flex-col justify-between ${widthClass} rounded-3xl overflow-hidden liquid-glass font-sans ${interactiveClasses} ${className}`;
 
   // Strip opaque classic/bespoke style overrides so glass translucency is preserved across every card
   const passthroughStyle: CSSProperties | undefined = style
@@ -52,16 +53,16 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
   const innerMarkup = (
     <>
-      {/* Subtle 0.03 opacity tactile frosted Acrylic noise layer */}
+      {/* Subtle 0.03 opacity tactile frosted noise layer */}
       <div aria-hidden="true" className="liquid-noise-overlay z-0" />
 
-      {/* Top Specular Refraction Rim */}
+      {/* Top Specular Optical Highlight Rim */}
       <div
         aria-hidden="true"
-        className="absolute top-0 left-5 right-5 h-px pointer-events-none z-20"
+        className="absolute top-0 left-6 right-6 h-[1px] pointer-events-none z-20"
         style={{
           background:
-            'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0.06) 100%)',
+            'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.06) 100%)',
         }}
       />
 
@@ -71,7 +72,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           className="absolute -top-12 -left-10 w-44 h-44 rounded-full pointer-events-none blur-2xl z-0"
           style={{
             background:
-              'radial-gradient(circle, rgba(79, 172, 254, 0.16) 0%, rgba(0, 242, 254, 0.05) 45%, transparent 72%)',
+              'radial-gradient(circle, var(--liquid-accent-glow) 0%, var(--liquid-accent-soft-glow) 45%, transparent 72%)',
           }}
         />
       )}
@@ -84,7 +85,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       {/* Tier 2: Footer Strip */}
       {footerContent && (
         <div
-          className={`relative z-10 shrink-0 border-t border-white/[0.08] bg-black/25 ${resolvedFooterClass}`}
+          className={`relative z-10 shrink-0 border-t border-white/[0.08] bg-black/30 backdrop-blur-md ${resolvedFooterClass}`}
         >
           {footerContent}
         </div>

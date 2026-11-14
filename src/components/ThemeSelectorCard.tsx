@@ -96,11 +96,8 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
           </div>
 
           {isFluentGlass && (
-            <div className="p-3 rounded-xl liquid-row text-[11px] text-zinc-300 leading-relaxed">
-              <span className="font-semibold text-white">Fluent Glass</span> anchors all
-              views to pure <span className="font-mono text-cyan-200">#000000</span> AMOLED with
-              refractive ambient light fields. Swatches below save your underlying Theme Studio preset
-              for <span className="text-white font-medium">Classic UI</span>.
+            <div className="p-3.5 rounded-2xl liquid-glass border border-white/20 text-[11px] text-zinc-300 leading-relaxed">
+              <span className="font-extrabold text-white">Liquid Glass Pro</span> dynamically refracts the active Theme Studio accent palette across all dials, pills, cards, and floating ambient orbs. Select any finish or custom swatch below to instantly transform your experience.
             </div>
           )}
 
@@ -281,7 +278,13 @@ export const ThemeSelectorCard: React.FC<ThemeSelectorCardProps> = ({
                           : undefined,
                       }}
                       className={`p-2.5 text-left flex items-center gap-2.5 ${
-                        isBespoke
+                        isFluentGlass
+                          ? `rounded-2xl liquid-spring ${
+                              active
+                                ? 'liquid-pill-active'
+                                : 'liquid-glass border border-white/10 hover:border-white/25'
+                            }`
+                          : isBespoke
                           ? `rounded-md border transition-colors duration-75 ${
                               active
                                 ? 'bg-neutral-950 text-white'
