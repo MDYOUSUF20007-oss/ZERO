@@ -53,26 +53,24 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
   const innerMarkup = (
     <>
-      {/* Subtle 0.03 opacity tactile frosted noise layer */}
-      <div aria-hidden="true" className="liquid-noise-overlay z-0" />
-
       {/* Top Specular Optical Highlight Rim */}
       <div
         aria-hidden="true"
         className="absolute top-0 left-6 right-6 h-[1px] pointer-events-none z-20"
         style={{
           background:
-            'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.06) 100%)',
+            'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.50) 50%, transparent 100%)',
         }}
       />
 
       {ambientGlow && (
         <div
           aria-hidden="true"
-          className="absolute -top-12 -left-10 w-44 h-44 rounded-full pointer-events-none blur-2xl z-0"
+          className="absolute -top-12 -left-10 w-44 h-44 rounded-full pointer-events-none z-0"
           style={{
             background:
-              'radial-gradient(circle, var(--accent-primary) 0%, var(--accent-soft) 45%, transparent 72%)',
+              'radial-gradient(circle, var(--accent-primary) 0%, var(--accent-soft) 40%, transparent 70%)',
+            opacity: 0.45,
           }}
         />
       )}
@@ -85,7 +83,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       {/* Tier 2: Footer Strip */}
       {footerContent && (
         <div
-          className={`relative z-10 shrink-0 border-t border-white/[0.08] bg-black/30 backdrop-blur-md ${resolvedFooterClass}`}
+          className={`relative z-10 shrink-0 border-t border-white/[0.08] bg-black/35 ${resolvedFooterClass}`}
         >
           {footerContent}
         </div>

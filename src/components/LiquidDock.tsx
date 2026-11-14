@@ -49,15 +49,19 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
           {/* Smooth 60FPS spring sliding glass pill indicator */}
           <div
             aria-hidden="true"
-            className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none transition-transform duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform"
-            style={{ transform: `translateX(${activeIdx * 100}%)` }}
+            className="absolute top-0 bottom-0 left-0 w-1/4 p-0.5 pointer-events-none will-change-transform"
+            style={{
+              transform: `translateX(${activeIdx * 100}%)`,
+              transition: 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
           >
             <div
               className="w-full h-full rounded-2xl liquid-dock-item-active"
               style={{
                 background: 'var(--accent-soft, rgba(168, 85, 247, 0.20))',
                 border: '1px solid var(--accent-border, rgba(168, 85, 247, 0.55))',
-                boxShadow: '0 4px 16px -2px var(--accent-soft, rgba(168, 85, 247, 0.30))',
+                boxShadow:
+                  'inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 16px var(--liquid-accent-soft-glow)',
               }}
             />
           </div>

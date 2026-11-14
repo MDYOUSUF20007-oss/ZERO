@@ -109,10 +109,10 @@ const DialTickRing = React.memo(function DialTickRing() {
       cy="144"
       r="132"
       fill="none"
-      stroke="rgba(255, 255, 255, 0.2)"
-      strokeOpacity="0.75"
-      strokeWidth="12"
-      strokeDasharray="2 10"
+      stroke="rgba(255, 255, 255, 0.18)"
+      strokeOpacity="0.85"
+      strokeWidth="9"
+      strokeDasharray="1.5 8.5"
     />
   );
 });
@@ -253,6 +253,7 @@ const DialWheelSection = React.memo(function DialWheelSection({
     const onMouseMove = (e: MouseEvent) => scheduleMove(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
       if (!isDraggingRef.current || e.touches.length === 0) return;
+      if (e.cancelable) e.preventDefault();
       scheduleMove(e.touches[0].clientX, e.touches[0].clientY);
     };
 
@@ -269,7 +270,7 @@ const DialWheelSection = React.memo(function DialWheelSection({
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onEnd);
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onEnd);
     window.addEventListener('touchcancel', onEnd);
     window.addEventListener('blur', onEnd);
@@ -332,12 +333,17 @@ const DialWheelSection = React.memo(function DialWheelSection({
           style={{ transform: `rotate(${initialAngle}deg)` }}
         >
           <div
-            className="absolute top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border border-black/40"
+            className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-white/60 flex items-center justify-center"
             style={{
               backgroundColor: '#ffffff',
-              boxShadow: '0 0 18px #ffffff, 0 0 28px var(--liquid-accent-vibrant)',
+              boxShadow: '0 0 16px #ffffff, 0 0 26px var(--liquid-accent-vibrant)',
             }}
-          />
+          >
+            <div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: 'var(--liquid-accent-vibrant)' }}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
@@ -945,9 +951,12 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             style={{
               touchAction: 'none',
               backgroundColor: 'var(--accent-soft)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.28)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: '1px solid var(--accent-border)',
+              boxShadow: isHolding
+                ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 28px var(--liquid-accent-glow)'
+                : 'inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 20px -4px var(--liquid-accent-soft-glow)',
             }}
           >
             <div

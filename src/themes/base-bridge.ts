@@ -63,12 +63,10 @@ export const BASE_ENGINE_BRIDGE_CSS = `
      Smooth Micro-Interactions & Hardware Acceleration
      ------------------------------------------------------------- */
   .liquid-spring {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, filter 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
-    will-change: transform, opacity;
-    transform: translateZ(0);
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
   }
   .liquid-spring:active {
-    transform: scale(0.97) translateZ(0) !important;
+    transform: scale(0.97) !important;
   }
 
   /* -------------------------------------------------------------
@@ -82,38 +80,34 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .settings-card,
   [data-frosted-card="true"],
   [data-obsidian-card="true"] {
-    background-color: var(--bg-surface, rgba(16, 24, 38, 0.65)) !important;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.38) !important;
+    background-color: var(--bg-surface, rgba(14, 20, 32, 0.72)) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 40%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.32) !important;
     border-radius: 20px !important;
-    box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
-    backdrop-filter: blur(28px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 12px 32px -4px rgba(0, 0, 0, 0.55) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
     color: var(--text-primary, #f0f9ff) !important;
-    will-change: transform, opacity;
-    transform: translateZ(0);
   }
 
   .obsidian-inset,
   .liquid-inset {
-    background-color: rgba(24, 36, 58, 0.72) !important;
-    border: 1px solid rgba(186, 230, 253, 0.20) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background-color: rgba(22, 32, 50, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
     border-radius: 14px !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
   }
 
   .obsidian-inset-neutral,
   .liquid-row {
-    background-color: rgba(15, 23, 42, 0.60) !important;
-    border: 1px solid rgba(186, 230, 253, 0.10) !important;
+    background-color: rgba(15, 23, 42, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 14px !important;
   }
 
   /* -------------------------------------------------------------
-     Fluent Glass Tactile Pills & Buttons
+     Fluent Glass Tactile Pills & Buttons (Ultra-Fast 0ms Overhead)
      ------------------------------------------------------------- */
   .theme-pill-active,
   .liquid-pill-active,
@@ -124,34 +118,39 @@ export const BASE_ENGINE_BRIDGE_CSS = `
     color: var(--accent-primary) !important;
     border: 1px solid var(--accent-border) !important;
     border-radius: 9999px !important;
-    box-shadow: 0 4px 16px -2px var(--accent-soft) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
+    box-shadow: 0 0 14px var(--liquid-accent-soft-glow) !important;
   }
 
   .theme-pill,
   .liquid-pill-inactive,
   .obsidian-pill-inactive,
   .action-pill-inactive {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
     background-image: none !important;
     color: #94a3b8 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
     border-radius: 9999px !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
   }
 
   /* -------------------------------------------------------------
-     Radial Dial Glass Surface
+     Radial Dial Glass Surface & Zero-Lag Touch Dragging
      ------------------------------------------------------------- */
   .zero-dial-surface {
-    background-color: rgba(16, 24, 38, 0.50) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    background-color: rgba(14, 20, 32, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
     border-radius: 9999px !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.20), 0 16px 40px -8px rgba(0, 0, 0, 0.6) !important;
+    contain: layout style paint;
+    touch-action: none !important;
+  }
+
+  /* Instant 0ms Tracking on Touch Drag */
+  .zero-dial-surface[data-dial-dragging="true"] .zero-dial-knob-layer,
+  .zero-dial-surface[data-dial-dragging="true"] .zero-dial-arc {
+    transition: none !important;
   }
 
   /* -------------------------------------------------------------
@@ -161,13 +160,13 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .zero-bottom-nav,
   nav[data-bottom-nav="true"],
   nav[data-frosted-chrome="true"] {
-    background-color: rgba(10, 16, 28, 0.78) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    background-color: rgba(10, 16, 28, 0.82) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.32) !important;
     border-radius: 2rem !important;
-    backdrop-filter: blur(32px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-    box-shadow: 0 16px 48px -4px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 16px 44px -4px rgba(0, 0, 0, 0.65) !important;
   }
 
   /* -------------------------------------------------------------
@@ -175,15 +174,15 @@ export const BASE_ENGINE_BRIDGE_CSS = `
      ------------------------------------------------------------- */
   .zero-ambient-canvas {
     display: block !important;
-    opacity: 0.85 !important;
+    opacity: 0.90 !important;
   }
 
   /* Semantic Helper Utilities */
   .theme-bg-primary { background-color: #000000 !important; color: #f0f9ff !important; }
-  .theme-bg-secondary { background-color: rgba(16, 24, 38, 0.65) !important; color: #f0f9ff !important; }
+  .theme-bg-secondary { background-color: rgba(14, 20, 32, 0.72) !important; color: #f0f9ff !important; }
   .theme-text-primary { color: #f0f9ff !important; }
   .theme-text-secondary { color: #bae6fd !important; }
   .theme-text-muted { color: #7dd3fc !important; }
   .theme-text-accent { color: var(--accent-primary) !important; }
-  .theme-border { border-color: rgba(255, 255, 255, 0.12) !important; }
+  .theme-border { border-color: rgba(255, 255, 255, 0.10) !important; }
 `;
