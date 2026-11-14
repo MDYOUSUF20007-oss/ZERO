@@ -322,15 +322,14 @@ export function useZeroStore() {
 
   const [interfaceStyle, setInterfaceStyleState] = useState<InterfaceStyle>(() => {
     try {
-      const migrated = localStorage.getItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED) === '1';
-      if (!migrated) {
-        localStorage.setItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED, '1');
-        localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'classic');
-        return 'classic';
+      const saved = localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE);
+      if (saved) {
+        return normalizeInterfaceStyle(saved);
       }
-      return normalizeInterfaceStyle(localStorage.getItem(UI_STORAGE_KEYS.INTERFACE_STYLE));
+      localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'fluent_glass');
+      return 'fluent_glass';
     } catch {
-      return 'classic';
+      return 'fluent_glass';
     }
   });
   const interfaceStyleRef = useRef<InterfaceStyle>(interfaceStyle);
@@ -339,7 +338,14 @@ export function useZeroStore() {
   }, [interfaceStyle]);
 
   const setInterfaceStyle = useCallback((nextStyle: InterfaceStyle) => {
-    setInterfaceStyleState(normalizeInterfaceStyle(nextStyle));
+    const normalized = normalizeInterfaceStyle(nextStyle);
+    setInterfaceStyleState(normalized);
+    try {
+      localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, normalized);
+      window.ZeroNative?.setInterfaceStyle?.(normalized);
+    } catch {
+      // Ignore web preview
+    }
   }, []);
 
   const [materialYouSeed, setMaterialYouSeedState] = useState<MaterialYouSeed>(() => {
@@ -1054,7 +1060,7 @@ export function useZeroStore() {
     };
 
     try {
-      window.ZeroNative?.setInterfaceStyle?.('classic');
+      window.ZeroNative?.setInterfaceStyle?.(interfaceStyle);
       window.ZeroNative?.setActiveThemeAccent?.(
         derived.hex,
         derived.rgb,
@@ -2082,9 +2088,8 @@ export function useZeroStore() {
     setActiveBagIdState(DEFAULT_BAGS[0].id);
     setThemeState('amoled');
     setThemeConfigState(DEFAULT_THEME_CONFIG);
-    localStorage.setItem(UI_STORAGE_KEYS.CLASSIC_DEFAULT_MIGRATED, '1');
-    setInterfaceStyleState('classic');
-    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'classic');
+    setInterfaceStyleState('fluent_glass');
+    localStorage.setItem(UI_STORAGE_KEYS.INTERFACE_STYLE, 'fluent_glass');
     setWidgetsConfigState(DEFAULT_WIDGETS_CONFIG);
     setTipSkipRemaining(0);
     tipSkipRemainingRef.current = 0;

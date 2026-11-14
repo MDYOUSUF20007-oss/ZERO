@@ -13,25 +13,18 @@ import type {
 } from '../types';
 
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
+  if (value === 'bespoke' || value === 'minimalist' || value === 'minimal') return 'bespoke';
+  if (value === 'fluent' || value === 'fluent_glass' || value === 'fluent-glass' || value === 'liquid_glass') return 'fluent_glass';
   if (value === 'onyx' || value === 'classic-v2' || value === 'classic_v2' || value === 'v2') return 'classic-v2';
   if (value === 'fintech' || value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
-  if (value === 'minimalist') return 'minimalist';
-  if (value === 'bespoke') return 'bespoke';
-  if (value === 'fluent') return 'fluent';
-  if (value === 'fluent_glass' || value === 'fluent-glass') return 'fluent_glass';
   if (value === 'material-you' || value === 'material_you') return 'material-you';
-  // Legacy alias: treat old persisted 'liquid_glass' as 'fluent_glass'
-  if (value === 'liquid_glass') return 'fluent_glass';
   return 'classic';
 }
 
 export function normalizeEngineType(value: unknown): EngineType {
-  if (value === 'onyx' || value === 'classic-v2' || value === 'classic_v2' || value === 'v2') return 'classic-v2';
-  if (value === 'fintech' || value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
   if (value === 'minimalist' || value === 'bespoke') return 'minimalist';
   if (value === 'fluent' || value === 'fluent_glass' || value === 'fluent-glass' || value === 'liquid_glass') return 'fluent';
-  if (value === 'material-you' || value === 'material_you') return 'material-you';
-  return 'classic';
+  return 'fluent';
 }
 
 export function seedToM3Palette(seed?: string | null): M3Palette {

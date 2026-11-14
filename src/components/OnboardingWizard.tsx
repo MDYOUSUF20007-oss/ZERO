@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { createDefaultAppRuleConfig } from '../utils/bagAppConfig';
 import { haptics } from '../utils/haptics';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import {
   Palette,
   Target,
@@ -83,6 +84,16 @@ export function OnboardingWizard({
   onComplete,
   onOpenRestore,
 }: OnboardingWizardProps) {
+  const {
+    accent,
+    setAccent,
+    fluentOrbIntensity,
+    setFluentOrbIntensity,
+    setTheme,
+  } = useInterfaceStyle();
+  const isCyan = accent === 'cyan';
+  const isSelectedBespoke = interfaceStyle === 'bespoke';
+
   const [step, setStep] = useState<number>(1);
   const totalSteps = 7;
 
@@ -203,21 +214,25 @@ export function OnboardingWizard({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black text-white flex flex-col justify-between p-4 sm:p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xl text-white flex flex-col justify-between p-4 sm:p-6 selection:bg-white selection:text-black">
       {/* Top Header & Progress Bar */}
       <div className="max-w-lg mx-auto w-full pt-2">
         <div className="flex items-center justify-between text-xs text-zinc-400 font-mono mb-2">
           <span className="flex items-center gap-1.5 font-bold tracking-wider text-white">
-            <Sparkles size={14} className="text-blue-400" />
+            <Sparkles size={14} className={isCyan ? 'text-cyan-400' : 'text-purple-400'} />
             ZERO CALIBRATION
           </span>
           <span>
             STEP {step} OF {totalSteps}
           </span>
         </div>
-        <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+        <div className="w-full bg-zinc-800/80 h-1.5 rounded-full overflow-hidden">
           <div
-            className="bg-blue-500 h-full transition-all duration-300"
+            className={`h-full transition-all duration-300 ${
+              isCyan
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-sm shadow-cyan-400/50'
+                : 'bg-gradient-to-r from-purple-500 to-indigo-500 shadow-sm shadow-purple-400/50'
+            }`}
             style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
@@ -229,138 +244,190 @@ export function OnboardingWizard({
         {step === 1 && (
           <div className="space-y-5 animate-fadeIn">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-mono mb-2">
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono mb-2 border ${
+                  isCyan
+                    ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                    : 'bg-purple-500/10 border-purple-500/30 text-purple-400'
+                }`}
+              >
                 <Palette size={13} /> Visual Preference First
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-white">Choose Your Aesthetic</h2>
-              <p className="text-sm text-zinc-400 mt-1">
-                Zero adapts immediately. You can switch or tweak color palettes anytime in Theme Studio.
+              <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+                Zero adapts immediately. Fluent Glass is our primary design system with living ambient mesh &amp; specular acrylic cards.
               </p>
             </div>
 
             {/* Interface Style Selector */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.tick(900);
-                  setInterfaceStyle('bespoke');
-                }}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
-                  interfaceStyle === 'bespoke'
-                    ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50'
-                    : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
-                }`}
-              >
-                <div className="font-semibold text-sm text-white flex items-center justify-between">
-                  Bespoke Minimalist
-                  {interfaceStyle === 'bespoke' && <Check size={16} className="text-blue-400" />}
-                </div>
-                <div className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  Utility typography, sharp borders, pure focus with zero distractions.
-                </div>
-              </button>
-
+            <div className="grid grid-cols-2 gap-3">
+              {/* Fluent Glass (Recommended) */}
               <button
                 type="button"
                 onClick={() => {
                   haptics.tick(900);
                   setInterfaceStyle('fluent_glass');
+                  setTheme('fluent_glass');
                 }}
-                className={`p-3.5 rounded-xl border text-left transition-all ${
-                  interfaceStyle === 'fluent_glass'
-                    ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50'
+                className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
+                  !isSelectedBespoke
+                    ? isCyan
+                      ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400/50 shadow-xl shadow-cyan-950/50'
+                      : 'border-purple-400 bg-purple-950/40 ring-1 ring-purple-400/50 shadow-xl shadow-purple-950/50'
                     : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
                 }`}
               >
-                <div className="font-semibold text-sm text-white flex items-center justify-between">
-                  Fluent Glass
-                  {interfaceStyle === 'fluent_glass' && <Check size={16} className="text-blue-400" />}
+                <div>
+                  <div className="font-bold text-sm text-white flex items-center justify-between">
+                    <span>Fluent Glass</span>
+                    {!isSelectedBespoke && (
+                      <Check size={16} className={isCyan ? 'text-cyan-400' : 'text-purple-400'} />
+                    )}
+                  </div>
+                  <div
+                    className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-mono tracking-wider font-semibold uppercase mt-1.5 border ${
+                      !isSelectedBespoke
+                        ? isCyan
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                          : 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                    }`}
+                  >
+                    RECOMMENDED • ACRYLIC
+                  </div>
+                  <div className="text-xs text-zinc-300 mt-2 leading-relaxed">
+                    Pitch-black canvas with living ambient fluid mesh, specular double-bevel refraction &amp; floating pill dock.
+                  </div>
                 </div>
-                <div className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  Frosted glass textures, subtle radial halos & depth effects.
+              </button>
+
+              {/* Bespoke Minimalist */}
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.tick(900);
+                  setInterfaceStyle('bespoke');
+                  setTheme('bespoke');
+                }}
+                className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
+                  isSelectedBespoke
+                    ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50 shadow-xl shadow-blue-950/40'
+                    : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
+                }`}
+              >
+                <div>
+                  <div className="font-bold text-sm text-white flex items-center justify-between">
+                    <span>Bespoke Minimalist</span>
+                    {isSelectedBespoke && <Check size={16} className="text-blue-400" />}
+                  </div>
+                  <div className="inline-block px-1.5 py-0.5 rounded text-[9px] font-mono tracking-wider font-semibold uppercase mt-1.5 bg-zinc-800 text-zinc-400 border border-zinc-700">
+                    MONOCHROME
+                  </div>
+                  <div className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                    Utility typography, sharp borders, pure obsidian black with zero ambient glow.
+                  </div>
                 </div>
               </button>
             </div>
 
-            {/* Theme Family Swatches */}
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-zinc-400 tracking-wider">
-                Palette Preset
+            {/* Accent Color Selection (Live switch) */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-mono uppercase text-zinc-400 tracking-wider flex items-center justify-between">
+                <span>Accent Color</span>
+                <span className="text-[10px] text-zinc-500 font-mono">Applies instantly</span>
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {/* Pure Pitch AMOLED */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Deep Purple */}
                 <button
                   type="button"
                   onClick={() => {
                     haptics.tick(900);
+                    setAccent('purple');
                     setThemeConfig({
                       ...themeConfig,
                       family: 'amoled',
-                      amoledGradient: 'pure',
                     });
                   }}
-                  className={`p-3 rounded-xl border text-center transition-all ${
-                    themeConfig.family === 'amoled' && themeConfig.amoledGradient === 'pure'
-                      ? 'border-white bg-zinc-900 ring-1 ring-white/50'
-                      : 'border-zinc-800 bg-black hover:border-zinc-700'
+                  className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${
+                    accent === 'purple'
+                      ? 'border-purple-400 bg-purple-950/50 ring-1 ring-purple-400/50 text-white shadow-md shadow-purple-950/40'
+                      : 'border-zinc-800 bg-zinc-900/70 hover:border-zinc-700 text-zinc-300'
                   }`}
                 >
-                  <div className="w-6 h-6 rounded-full bg-black border border-zinc-700 mx-auto mb-1.5" />
-                  <div className="text-xs font-bold text-white">Pure Pitch</div>
-                  <div className="text-[10px] text-zinc-500">0% Glow</div>
+                  <div className="w-5 h-5 rounded-full bg-purple-600 border border-purple-400 shrink-0 shadow-sm shadow-purple-500/50" />
+                  <div className="text-left min-w-0">
+                    <div className="text-xs font-bold leading-tight">Deep Purple</div>
+                    <div className="text-[10px] text-purple-300/80 font-mono">#A855F7</div>
+                  </div>
+                  {accent === 'purple' && <Check size={14} className="text-purple-400 ml-auto shrink-0" />}
                 </button>
 
-                {/* Abyssal Ember AMOLED */}
+                {/* Cyber Cyan */}
                 <button
                   type="button"
                   onClick={() => {
                     haptics.tick(900);
+                    setAccent('cyan');
                     setThemeConfig({
                       ...themeConfig,
                       family: 'amoled',
-                      amoledGradient: 'ember',
                     });
                   }}
-                  className={`p-3 rounded-xl border text-center transition-all ${
-                    themeConfig.family === 'amoled' && themeConfig.amoledGradient === 'ember'
-                      ? 'border-amber-400 bg-zinc-900 ring-1 ring-amber-400/50'
-                      : 'border-zinc-800 bg-black hover:border-zinc-700'
+                  className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${
+                    accent === 'cyan'
+                      ? 'border-cyan-400 bg-cyan-950/50 ring-1 ring-cyan-400/50 text-white shadow-md shadow-cyan-950/40'
+                      : 'border-zinc-800 bg-zinc-900/70 hover:border-zinc-700 text-zinc-300'
                   }`}
                 >
-                  <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500 mx-auto mb-1.5" />
-                  <div className="text-xs font-bold text-amber-400">Amber Ember</div>
-                  <div className="text-[10px] text-zinc-500">Warm Halo</div>
-                </button>
-
-                {/* Matte Studio */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptics.tick(900);
-                    setThemeConfig({
-                      ...themeConfig,
-                      family: 'matte',
-                      mattePreset: 'graphite',
-                      matteBaseColor: '#141518',
-                      matteAccentColor: '#F59E0B',
-                    });
-                  }}
-                  className={`p-3 rounded-xl border text-center transition-all ${
-                    themeConfig.family === 'matte'
-                      ? 'border-zinc-300 bg-zinc-900 ring-1 ring-zinc-300/50'
-                      : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-500 mx-auto mb-1.5" />
-                  <div className="text-xs font-bold text-zinc-200">Matte Studio</div>
-                  <div className="text-[10px] text-zinc-500">Studio Tone</div>
+                  <div className="w-5 h-5 rounded-full bg-cyan-400 border border-cyan-300 shrink-0 shadow-sm shadow-cyan-400/50" />
+                  <div className="text-left min-w-0">
+                    <div className="text-xs font-bold leading-tight">Cyber Cyan</div>
+                    <div className="text-[10px] text-cyan-300/80 font-mono">#00F0FF</div>
+                  </div>
+                  {accent === 'cyan' && <Check size={14} className="text-cyan-400 ml-auto shrink-0" />}
                 </button>
               </div>
             </div>
 
+            {/* Ambient Mesh Glow Intensity */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-mono uppercase text-zinc-400 tracking-wider flex items-center justify-between">
+                <span>Ambient Mesh Glow</span>
+                <span className="text-[10px] text-zinc-500 font-mono">Look at background</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Stealth', value: 0, desc: '0% Glow' },
+                  { label: 'Subtle', value: 0.35, desc: '35% Balanced' },
+                  { label: 'Radiant', value: 0.75, desc: '75% Vibrant' },
+                ].map((p) => {
+                  const isGlowActive = Math.abs(fluentOrbIntensity - p.value) < 0.15;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(900);
+                        setFluentOrbIntensity(p.value);
+                      }}
+                      className={`p-2.5 rounded-xl border text-center transition-all ${
+                        isGlowActive
+                          ? isCyan
+                            ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400/40 text-white'
+                            : 'border-purple-400 bg-purple-950/40 ring-1 ring-purple-400/40 text-white'
+                          : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 text-zinc-400'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{p.label}</div>
+                      <div className="text-[10px] text-zinc-500 mt-0.5">{p.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Instant Backup Restore Shortcut */}
-            <div className="pt-3 border-t border-zinc-900">
+            <div className="pt-2 border-t border-zinc-900">
               <button
                 type="button"
                 onClick={() => {
@@ -804,9 +871,13 @@ export function OnboardingWizard({
         <button
           type="button"
           onClick={handleNext}
-          className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+          className={`py-3 px-6 rounded-xl text-white text-xs font-bold flex items-center gap-2 transition-all shadow-lg ${
+            isCyan
+              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/25'
+              : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/25'
+          }`}
         >
-          {step === totalSteps ? 'Complete Calibration' : 'Continue'}
+          <span>{step === totalSteps ? 'Complete Calibration' : 'Continue'}</span>
           <ArrowRight size={15} />
         </button>
       </div>

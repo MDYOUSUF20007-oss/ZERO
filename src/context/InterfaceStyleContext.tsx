@@ -185,9 +185,13 @@ export interface InterfaceStyleProviderProps {
 
 export function InterfaceStyleProvider({
   children,
+  interfaceStyle: interfaceStyleProp,
+  setInterfaceStyle: setInterfaceStyleProp,
   materialYouSeed: materialYouSeedProp,
   setMaterialYouSeed: setMaterialYouSeedProp,
 }: InterfaceStyleProviderProps) {
+  const isBespokeActive = interfaceStyleProp === 'bespoke' || interfaceStyleProp === 'minimalist';
+
   const [accent, setAccentState] = useState<AccentColorId>(() => {
     if (typeof window === 'undefined') return 'purple';
     if (materialYouSeedProp === 'cyan' || materialYouSeedProp === 'purple') {
@@ -250,7 +254,8 @@ export function InterfaceStyleProvider({
   }, []);
 
   useEffect(() => {
-    mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity);
+    const currentGlow = isBespokeActive ? 0 : fluentOrbIntensity;
+    mountIsolatedThemeEngine('fluent', accent, currentGlow);
     initActiveThemeMod();
     try {
       window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
@@ -259,12 +264,19 @@ export function InterfaceStyleProvider({
     } catch {
       // Ignore storage errors
     }
-  }, [accent, fluentOrbIntensity]);
+  }, [accent, fluentOrbIntensity, isBespokeActive]);
 
-  const setTheme = useCallback((_next: InterfaceStyle) => {
-    mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity);
+  const setInterfaceStyle = useCallback((next: InterfaceStyle) => {
+    const isNextBespoke = next === 'bespoke' || next === 'minimalist';
+    const targetStyle = isNextBespoke ? 'bespoke' : 'fluent_glass';
+    setInterfaceStyleProp?.(targetStyle);
     setThemeState('fluent');
-  }, [accent, fluentOrbIntensity]);
+    if (isNextBespoke) {
+      mountIsolatedThemeEngine('fluent', accent, 0);
+    } else {
+      mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity > 0 ? fluentOrbIntensity : 0.35);
+    }
+  }, [setInterfaceStyleProp, accent, fluentOrbIntensity]);
 
   const restartWithTheme = useCallback((nextTheme: InterfaceStyle) => {
     if (typeof window === 'undefined') return;
@@ -282,7 +294,7 @@ export function InterfaceStyleProvider({
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
     removeActiveModStyles();
-    mountIsolatedThemeEngine('fluent', safeAccent, fluentOrbIntensity);
+    mountIsolatedThemeEngine('fluent', safeAccent, isBespokeActive ? 0 : fluentOrbIntensity);
     setAccentState(safeAccent);
     setMaterialYouSeedProp?.(safeAccent);
     try {
@@ -290,35 +302,35 @@ export function InterfaceStyleProvider({
     } catch {
       // Ignore storage errors
     }
-  }, [fluentOrbIntensity, setMaterialYouSeedProp]);
+  }, [fluentOrbIntensity, isBespokeActive, setMaterialYouSeedProp]);
 
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({
       theme: 'fluent',
-      setTheme,
+      setTheme: setInterfaceStyle,
       restartWithTheme,
       accent,
       setAccent,
-      interfaceStyle: 'fluent',
-      setInterfaceStyle: setTheme,
-      style: 'fluent',
-      setStyle: setTheme,
+      interfaceStyle: isBespokeActive ? 'bespoke' : 'fluent_glass',
+      setInterfaceStyle,
+      style: isBespokeActive ? 'bespoke' : 'fluent_glass',
+      setStyle: setInterfaceStyle,
       activeEngine: THEME_ENGINES.fluent,
       availableThemes: AVAILABLE_THEMES,
 
-      engine: 'fluent',
-      setEngine: setTheme,
+      engine: isBespokeActive ? 'bespoke' : 'fluent',
+      setEngine: setInterfaceStyle,
       isOnyx: false,
       isFintech: false,
       isClassic: false,
       isClassicV2: false,
       isTrantor: false,
       isMaterialYou: false,
-      isFluent: true,
-      isFluentGlass: true,
-      isLiquidGlass: true,
-      isMinimalist: false,
-      isBespoke: false,
+      isFluent: !isBespokeActive,
+      isFluentGlass: !isBespokeActive,
+      isLiquidGlass: !isBespokeActive,
+      isMinimalist: isBespokeActive,
+      isBespoke: isBespokeActive,
 
       classicPreset: 'amoled',
       setClassicPreset: () => {},
@@ -353,7 +365,7 @@ export function InterfaceStyleProvider({
       trantorAccent: accent === 'cyan' ? '#67d4ff' : '#d0bcff',
       setTrantorAccent: () => {},
     }),
-    [theme, setTheme, accent, setAccent, fluentOrbIntensity, setFluentOrbIntensity]
+    [theme, isBespokeActive, setInterfaceStyle, accent, setAccent, fluentOrbIntensity, setFluentOrbIntensity]
   );
 
   return (
