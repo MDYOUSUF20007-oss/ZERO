@@ -685,6 +685,64 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </span>
               </div>
 
+              {/* Live Optical Glass Preview Box */}
+              <div className="relative w-full rounded-2xl p-3.5 overflow-hidden border theme-border bg-black/60 select-none">
+                {/* Drifting Ambient Orb Background */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -top-4 -right-4 w-32 h-32 rounded-full pointer-events-none blur-xl transition-all duration-300"
+                  style={{
+                    background:
+                      'radial-gradient(circle, var(--accent-primary) 0%, var(--accent-soft) 50%, transparent 80%)',
+                    opacity: Math.max(0.45, fluentOrbIntensity * 0.95),
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full pointer-events-none blur-xl transition-all duration-300"
+                  style={{
+                    background:
+                      'radial-gradient(circle, var(--accent-secondary, var(--accent-primary)) 0%, transparent 75%)',
+                    opacity: Math.max(0.3, fluentOrbIntensity * 0.7),
+                  }}
+                />
+
+                {/* Sample Glass Card floating above orbs */}
+                <div className="relative z-10 liquid-glass p-3 rounded-xl border border-white/20 transition-all duration-150">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-5 h-5 rounded-md liquid-inset flex items-center justify-center shrink-0">
+                        <Sparkles size={11} className="theme-text-accent" />
+                      </div>
+                      <span className="text-xs font-semibold theme-text-primary truncate">
+                        Live Glass Optics
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full liquid-pill-active shrink-0">
+                      {Math.round(fluentGlassStrength * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] theme-text-secondary leading-relaxed">
+                    Card surface opacity, backdrop frost &amp; specular highlight rim reacting live.
+                  </p>
+                  <div className="mt-2 pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[10px] theme-text-muted">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Contrast Guard
+                    </span>
+                    <span className="font-mono">
+                      {fluentGlassStrength <= 0.15
+                        ? 'Ultra-Clear'
+                        : fluentGlassStrength < 0.35
+                        ? 'Transparent'
+                        : fluentGlassStrength < 0.65
+                        ? 'Balanced'
+                        : 'Frosted'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Slider Track */}
               <div className="flex items-center gap-3">
                 <input
@@ -793,18 +851,42 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                           applyThemeModStyles(mod);
                           setActiveModId(mod.id);
                         }}
-                        className={`p-3 text-left rounded-xl border transition-all ${
+                        className={`p-3 text-left rounded-xl border transition-all cursor-pointer ${
                           isModActive
-                            ? 'border-blue-500 bg-blue-500/15 ring-1 ring-blue-500/50'
-                            : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700'
+                            ? 'theme-pill-active font-semibold shadow-lg'
+                            : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
                         }`}
+                        style={
+                          isModActive
+                            ? {
+                                borderColor: 'var(--accent-border, var(--accent-primary))',
+                                backgroundColor: 'var(--accent-soft)',
+                                boxShadow: '0 0 16px var(--liquid-accent-soft-glow)',
+                              }
+                            : undefined
+                        }
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-xs text-white truncate">{mod.name}</span>
-                          {isModActive && <Check size={13} className="text-blue-400 shrink-0" />}
+                          {isModActive && (
+                            <Check
+                              size={13}
+                              className="shrink-0 theme-text-accent"
+                              style={{ color: 'var(--accent-primary)' }}
+                            />
+                          )}
                         </div>
-                        <p className="text-[10px] text-zinc-400 line-clamp-2 leading-relaxed">{mod.description}</p>
-                        <div className="text-[9px] font-mono text-zinc-500 mt-2 truncate">by {mod.author}</div>
+                        <p className="text-[10px] text-zinc-300 line-clamp-2 leading-relaxed">{mod.description}</p>
+                        <div className="text-[9px] font-mono text-zinc-400 mt-2 truncate flex items-center justify-between">
+                          <span>by {mod.author}</span>
+                          {mod.accentColor && (
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0"
+                              style={{ backgroundColor: mod.accentColor }}
+                              title={`Accent: ${mod.accentColor}`}
+                            />
+                          )}
+                        </div>
                       </button>
                     );
                   })}
@@ -814,7 +896,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowImportModModal(true)}
-                    className="flex-1 py-2 px-3 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 text-xs font-semibold text-zinc-300 flex items-center justify-center gap-1.5 transition-colors"
+                    className="flex-1 py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Upload size={13} />
                     <span>Import Mod JSON</span>
@@ -3133,9 +3215,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {/* Import Theme Mod JSON Modal */}
       {showImportModModal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-w-md w-full bg-zinc-950 border border-zinc-700 rounded-2xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-              <h3 className="text-sm font-bold text-white">Import Theme Mod JSON</h3>
+          <div className="max-w-md w-full modal-glass border theme-border rounded-2xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b theme-border">
+              <h3 className="text-sm font-bold theme-text-primary">Import Theme Mod JSON</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -3148,7 +3230,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 ✕
               </button>
             </div>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs theme-text-muted">
               Paste a custom ThemeModConfig JSON string with custom variables and colors.
             </p>
             <textarea
@@ -3159,7 +3241,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               }}
               rows={6}
               placeholder='{ "id": "my_theme", "name": "My Custom Theme", "family": "matte", ... }'
-              className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-mono text-white outline-none focus:border-blue-500 resize-none"
+              className="w-full p-2.5 rounded-xl bg-black/50 border theme-border text-xs font-mono text-white outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 resize-none"
             />
             {importModError && (
               <div className="text-[11px] font-mono text-red-400 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
@@ -3174,7 +3256,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   setImportModError(null);
                   setImportModJson('');
                 }}
-                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
@@ -3194,7 +3276,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   setImportModJson('');
                   setImportModError(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-xl liquid-pill-active text-xs font-bold transition-all cursor-pointer shadow-md liquid-spring active:scale-[0.98]"
               >
                 Import &amp; Apply
               </button>

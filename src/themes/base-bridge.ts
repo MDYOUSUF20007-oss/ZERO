@@ -97,6 +97,7 @@ export const BASE_ENGINE_BRIDGE_CSS = `
     box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.24)), 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 0 18px -4px var(--liquid-accent-soft-glow) !important;
     backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
     -webkit-backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
+    text-shadow: var(--glass-text-shadow, none) !important;
     color: var(--text-primary, #f0f9ff) !important;
   }
 
@@ -253,6 +254,19 @@ export const BASE_ENGINE_BRIDGE_CSS = `
     backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
     -webkit-backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
     box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.22)), 0 16px 44px -4px rgba(0, 0, 0, 0.65) !important;
+  }
+
+  /* -------------------------------------------------------------
+     Dynamic Modal & Bottom-Sheet Optical Depth Hierarchy
+     ------------------------------------------------------------- */
+  .modal-glass,
+  [data-modal-glass="true"],
+  .zero-modal-card {
+    background-color: var(--glass-modal-bg, rgba(12, 18, 30, 0.88)) !important;
+    backdrop-filter: var(--glass-modal-blur, blur(20px) saturate(180%)) !important;
+    -webkit-backdrop-filter: var(--glass-modal-blur, blur(20px) saturate(180%)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.30)) !important;
   }
 
   /* -------------------------------------------------------------

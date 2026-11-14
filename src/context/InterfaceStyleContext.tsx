@@ -80,6 +80,12 @@ export function applyGlassTokens(root: HTMLElement, strength: number): void {
   const dockAlpha = (0.25 + clamped * 0.60).toFixed(3);
   const dialAlpha = (0.12 + clamped * 0.48).toFixed(3);
   const glowMult = (0.20 + clamped * 0.70).toFixed(3);
+  const modalBgAlpha = (0.72 + clamped * 0.22).toFixed(3);
+  const modalBlurPx = Math.round(16 + clamped * 12);
+  const textShadowRule =
+    clamped < 0.25
+      ? `0 1px 3px rgba(0, 0, 0, ${(0.85 * (1 - clamped / 0.25)).toFixed(2)})`
+      : 'none';
 
   root.style.setProperty('--glass-opacity', clamped.toString());
   root.style.setProperty('--glass-surface-bg', `rgba(16, 26, 44, ${bgAlpha})`);
@@ -96,6 +102,9 @@ export function applyGlassTokens(root: HTMLElement, strength: number): void {
   root.style.setProperty('--glass-dock-bg', `rgba(10, 16, 28, ${dockAlpha})`);
   root.style.setProperty('--glass-dial-bg', `rgba(14, 20, 32, ${dialAlpha})`);
   root.style.setProperty('--glass-glow-mult', glowMult);
+  root.style.setProperty('--glass-modal-bg', `rgba(10, 16, 28, ${modalBgAlpha})`);
+  root.style.setProperty('--glass-modal-blur', `blur(${modalBlurPx}px) saturate(180%)`);
+  root.style.setProperty('--glass-text-shadow', textShadowRule);
 }
 
 function mountIsolatedThemeEngine(
