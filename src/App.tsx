@@ -14,9 +14,15 @@ import { EscapeTicketModal } from './components/EscapeTicketModal';
 import { ObsidianCard } from './components/ObsidianCard';
 import { AmbientBackground } from './components/AmbientBackground';
 import { LiquidDock } from './components/LiquidDock';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { InteractiveTour } from './components/InteractiveTour';
 import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
+import { IntegrityEngine } from './core/integrity/IntegrityEngine';
+import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from './utils/autoUpdater';
+import { checkAndEnforceRoutines } from './utils/routineEngine';
 import { haptics } from './utils/haptics';
-import { Clock, Heart, BellRing, Settings, X } from 'lucide-react';
+import type { AppUpdateReleaseInfo, HabitCalibrationProfile, RecurringSchedule, OccasionBag } from './types';
+import { Clock, Heart, BellRing, Settings, X, BarChart3, AlertTriangle, Download, Sparkles, Upload } from 'lucide-react';
 
 export function App() {
   const store = useZeroStore();
@@ -31,8 +37,178 @@ export function App() {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<'welcome' | 'edit'>('welcome');
   const [showSessionFlexModal, setShowSessionFlexModal] = useState(false);
+  const [showOnboardingWizard, setShowOnboardingWizard] = useState(!store.onboardingComplete);
+  const [showInteractiveTour, setShowInteractiveTour] = useState(false);
+  const [exitToast, setExitToast] = useState(false);
+  const [integrityViolation, setIntegrityViolation] = useState<string | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateReleaseInfo | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [backupNudgeVisible, setBackupNudgeVisible] = useState(false);
+  const lastBackPressRef = useRef<number>(0);
   const hasAutoPromptedRef = useRef(false);
-  const hasAutoShownWelcomeRef = useRef(false);
+
+  // Author integrity verification on startup
+  useEffect(() => {
+    const check = IntegrityEngine.verifyAuthorIntegrity();
+    if (!check.ok || !check.signatureValid) {
+      setIntegrityViolation(
+        check.error || 'CRITICAL INTEGRITY VIOLATION: Author credits or support endpoints have been modified.'
+      );
+    }
+  }, []);
+
+  // Auto-updater check on launch (throttled to 24h)
+  useEffect(() => {
+    checkForAppUpdate().then((info) => {
+      if (info && isUpdatePromptDue()) {
+        setUpdateInfo(info);
+        setShowUpdateModal(true);
+      }
+    });
+  }, []);
+
+  // 7-day recurring local backup reminder nudge
+  useEffect(() => {
+    if (!store.autoBackupEnabled && IntegrityEngine.isWeeklyBackupDue(false, store.lastBackupTimestamp)) {
+      setBackupNudgeVisible(true);
+    }
+  }, [store.autoBackupEnabled, store.lastBackupTimestamp]);
+
+  // Routine execution engine synchronization
+  useEffect(() => {
+    checkAndEnforceRoutines(store.schedules);
+  }, [store.schedules]);
+
+  useEffect(() => {
+    const onResume = () => {
+      checkAndEnforceRoutines(store.schedules);
+    };
+    window.addEventListener('focus', onResume);
+    document.addEventListener('visibilitychange', onResume);
+    return () => {
+      window.removeEventListener('focus', onResume);
+      document.removeEventListener('visibilitychange', onResume);
+    };
+  }, [store.schedules]);
+
+  // Android Back Gesture & Navigation Stack Hierarchical Popping
+  useEffect(() => {
+    const onBackAction = () => {
+      if (showTicketModal) {
+        setShowTicketModal(false);
+        return;
+      }
+      if (showProfileModal) {
+        setShowProfileModal(false);
+        return;
+      }
+      if (showBagModal) {
+        setShowBagModal(false);
+        return;
+      }
+      if (showPermissionModal) {
+        setShowPermissionModal(false);
+        return;
+      }
+      if (showSessionFlexModal) {
+        setShowSessionFlexModal(false);
+        return;
+      }
+      if (showUpdateModal) {
+        setShowUpdateModal(false);
+        return;
+      }
+      if (showInteractiveTour) {
+        setShowInteractiveTour(false);
+        return;
+      }
+      if (showOnboardingWizard) {
+        return;
+      }
+
+      if (activeTab !== 'dial') {
+        setActiveTab('dial');
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        try {
+          if (window.ZeroNative?.exitApp) {
+            window.ZeroNative.exitApp();
+          } else if ((window as any).Capacitor?.Plugins?.App?.exitApp) {
+            (window as any).Capacitor.Plugins.App.exitApp();
+          }
+        } catch {}
+      } else {
+        lastBackPressRef.current = now;
+        setExitToast(true);
+        setTimeout(() => setExitToast(false), 2000);
+      }
+    };
+
+    const capApp = (window as any).Capacitor?.Plugins?.App;
+    let removeListener: (() => void) | undefined;
+    if (capApp?.addListener) {
+      capApp.addListener('backButton', onBackAction).then((sub: any) => {
+        if (sub?.remove) removeListener = () => sub.remove();
+      });
+    }
+
+    document.addEventListener('backbutton', onBackAction);
+
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ page: 'zero_root' }, '');
+      const onPopState = () => {
+        window.history.pushState({ page: 'zero_root' }, '');
+        onBackAction();
+      };
+      window.addEventListener('popstate', onPopState);
+      return () => {
+        if (removeListener) removeListener();
+        document.removeEventListener('backbutton', onBackAction);
+        window.removeEventListener('popstate', onPopState);
+      };
+    }
+  }, [
+    showTicketModal,
+    showProfileModal,
+    showBagModal,
+    showPermissionModal,
+    showSessionFlexModal,
+    showUpdateModal,
+    showInteractiveTour,
+    showOnboardingWizard,
+    activeTab,
+  ]);
+
+  const handleOnboardingComplete = (
+    profile: HabitCalibrationProfile,
+    recommendedSchedules: RecurringSchedule[],
+    recommendedBags: OccasionBag[]
+  ) => {
+    store.completeOnboarding({
+      schedules: recommendedSchedules,
+      bags: recommendedBags,
+      profile,
+    });
+    localStorage.setItem('zero_habit_calibration_profile_v1', JSON.stringify(profile));
+
+    if (!store.profile) {
+      store.saveProfileAndClaimGift({
+        displayName: 'Zero User',
+        handle: 'focus',
+        primaryMission: 'Deep Work',
+        dailyGoalHours: profile.dailyReclaimTargetHours || 3,
+        motto: profile.primaryGoal,
+        avatarId: 'zen_circle',
+        accentColor: '#3B82F6',
+      });
+    }
+
+    setShowOnboardingWizard(false);
+    setShowInteractiveTour(true);
+  };
 
   // Ask for required Android permissions upfront on first launch if not armed yet
   useEffect(() => {
@@ -49,30 +225,6 @@ export function App() {
     store.activeLock.isLocked,
     store.permissions.isNativeAndroid,
     store.permissions.strictReady,
-  ]);
-
-  // First-timer special popup: make an interactive profile & claim 1 free starter Escape Ticket
-  useEffect(() => {
-    if (
-      !hasAutoShownWelcomeRef.current &&
-      !store.onboardingComplete &&
-      !store.activeLock.isLocked &&
-      !showPermissionModal &&
-      !store.profile &&
-      !store.hasClaimedFirstTimeParachute &&
-      !store.hasDismissedWelcomeModal
-    ) {
-      hasAutoShownWelcomeRef.current = true;
-      setProfileModalMode('welcome');
-      setShowProfileModal(true);
-    }
-  }, [
-    store.onboardingComplete,
-    store.activeLock.isLocked,
-    showPermissionModal,
-    store.profile,
-    store.hasClaimedFirstTimeParachute,
-    store.hasDismissedWelcomeModal,
   ]);
 
   const [restoreToast, setRestoreToast] = useState<string>('');
@@ -256,7 +408,7 @@ export function App() {
       >
         {activeTab === 'dial' && (
           <LockDialView
-            onIgnite={store.igniteSession}
+            onIgnite={integrityViolation ? () => false : store.igniteSession}
             parachuteMetrics={store.parachuteMetrics}
             activeBag={store.activeBag}
             permissions={store.permissions}
@@ -356,6 +508,7 @@ export function App() {
             hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
             onOpenProfileModal={openInteractiveProfile}
             onClaimFirstDonationBonus={store.claimFirstDonationBonus}
+            onRecalibrateHabitProfile={() => setShowOnboardingWizard(true)}
           />
         )}
       </main>
@@ -542,20 +695,12 @@ export function App() {
                     }`
               }`}
             >
-              <div className="relative">
-                <span className="text-sm leading-none">🎫</span>
-                {store.parachuteMetrics.currentBalance > 0 && (
-                  <span
-                    className={`absolute -top-1.5 -right-3 text-[9px] font-mono tabular-nums px-1 font-bold ${
-                      isBespoke
-                        ? 'rounded-sm bg-blue-600 text-white border border-blue-500'
-                        : 'rounded-full font-black obsidian-pill-active'
-                    }`}
-                  >
-                    {store.parachuteMetrics.currentBalance}
-                  </span>
-                )}
-              </div>
+              <BarChart3
+                size={17}
+                style={
+                  activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
+                }
+              />
               <span
                 className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
                   isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
@@ -639,6 +784,156 @@ export function App() {
             </button>
           </div>
         </nav>
+      )}
+
+      {/* Integrity Violation Unremovable Banner */}
+      {integrityViolation && (
+        <div className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-950 border-b border-red-500 text-white flex items-center justify-between gap-3 shadow-2xl">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle size={20} className="text-red-400 shrink-0" />
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-red-200">
+                Tamper Alert: Integrity Verification Failed
+              </h4>
+              <p className="text-[11px] text-red-300">
+                Official author constants or support endpoints have been modified. Focus blocking actions are locked.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FTUE Theme-First & Habit Calibration Wizard */}
+      {(showOnboardingWizard || !store.onboardingComplete) && (
+        <OnboardingWizard
+          themeConfig={store.themeConfig}
+          setThemeConfig={store.setThemeConfig}
+          interfaceStyle={store.interfaceStyle}
+          setInterfaceStyle={store.setInterfaceStyle}
+          installedApps={store.installedApps}
+          onComplete={handleOnboardingComplete}
+          onOpenRestore={() => {
+            setShowOnboardingWizard(false);
+            openInteractiveProfile();
+          }}
+        />
+      )}
+
+      {/* 4-Step Interactive Tour */}
+      {showInteractiveTour && (
+        <InteractiveTour
+          onComplete={() => setShowInteractiveTour(false)}
+          onNavigateTab={setActiveTab}
+        />
+      )}
+
+      {/* 2-Second Swipe Again to Exit Toast */}
+      {exitToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="px-4 py-2 rounded-full bg-zinc-900/95 border border-zinc-700 text-xs font-medium text-white shadow-xl flex items-center gap-2">
+            <span>Swipe back again to exit Zero</span>
+          </div>
+        </div>
+      )}
+
+      {/* 7-Day Recurring Local Backup Reminder Nudge */}
+      {backupNudgeVisible && (
+        <div className="fixed bottom-24 right-4 z-40 max-w-sm pointer-events-auto">
+          <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-700 shadow-2xl space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Upload size={14} className="text-blue-400" />
+                Backup Due (7 Days)
+              </span>
+              <button
+                type="button"
+                onClick={() => setBackupNudgeVisible(false)}
+                className="text-zinc-500 hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <p className="text-[11px] text-zinc-300 leading-snug">
+              Your discipline stats and Escape Tickets are stored locally. Export a .zbak backup to prevent data loss.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setBackupNudgeVisible(false);
+                  store.exportZbakData();
+                }}
+                className="flex-1 py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold text-center"
+              >
+                Save .zbak
+              </button>
+              <button
+                type="button"
+                onClick={() => setBackupNudgeVisible(false)}
+                className="py-1.5 px-3 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white text-xs"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Updater Release Prompt Modal */}
+      {showUpdateModal && updateInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-zinc-950 border border-zinc-700 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+                  <Download size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Update Available: v{updateInfo.latestVersion}</h3>
+                  <p className="text-[11px] text-zinc-400">Current version: v{updateInfo.currentVersion}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  recordUpdatePromptShown();
+                  setShowUpdateModal(false);
+                }}
+                className="p-1 text-zinc-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="text-xs text-zinc-300 max-h-40 overflow-y-auto space-y-1.5 p-3 rounded-xl bg-zinc-900 border border-zinc-800 whitespace-pre-wrap font-mono">
+              {updateInfo.releaseNotes}
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  recordUpdatePromptShown();
+                  setShowUpdateModal(false);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Remind Me in 7 Days
+              </button>
+              <a
+                href={updateInfo.apkDownloadUrl || updateInfo.htmlUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  recordUpdatePromptShown();
+                  setShowUpdateModal(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+              >
+                <Download size={14} />
+                <span>Download APK</span>
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </InterfaceStyleProvider>

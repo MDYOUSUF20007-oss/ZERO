@@ -2233,7 +2233,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
         />
       )}
 
-      {/* Hero 20-Hour Escape Ticket Progression Card */}
+      {/* Hero 35-Hour Escape Ticket Progression Card */}
       <ObsidianCard
         asButton={Boolean(onOpenTicketModal)}
         onClick={
@@ -2364,7 +2364,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* 20-Hour Progress Bar */}
+            {/* 35-Hour Progress Bar */}
             <div
               className={`space-y-2 pt-3 border-t ${
                 isBespoke ? 'border-neutral-800' : 'border-white/10'
@@ -2390,7 +2390,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   }`}
                   style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
-                  {parachuteMetrics.currentProgressHours} / 20.0 hrs
+                  {parachuteMetrics.currentProgressHours} / 35.0 hrs
                 </span>
               </div>
 
@@ -2432,7 +2432,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                   {parachuteMetrics.hoursUntilNextParachute} hours remaining
                 </span>
                 <span className={isFluentGlass ? 'font-sans' : 'font-mono'}>
-                  20h monotonic threshold
+                  35h monotonic threshold
                 </span>
               </div>
             </div>
@@ -2471,7 +2471,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               }
               style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
             >
-              {onOpenTicketModal ? 'View Ticket ->' : '20h Milestone'}
+              {onOpenTicketModal ? 'View Ticket ->' : '35h Milestone'}
             </span>
           </>
         }
@@ -2604,7 +2604,7 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               isModernFont ? 'font-sans text-neutral-400' : 'font-mono text-zinc-400'
             }`}
           >
-            Immutable log of Escape Tickets earned via 20-hour milestones and emergency exits.
+            Immutable log of Escape Tickets earned via 35-hour milestones and emergency exits.
           </div>
 
           {ledger.length === 0 ? (
@@ -2621,10 +2621,10 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               }
               headerContent={
                 <span>
-                  No escape ticket transactions yet. Complete 20 hours of blockage to earn your first ticket!
+                  No escape ticket transactions yet. Complete 35 hours of blockage to earn your first ticket!
                 </span>
               }
-              footerContent={<span>20h monotonic focus = +1 Emergency Escape Ticket</span>}
+              footerContent={<span>35h monotonic focus = +1 Emergency Escape Ticket</span>}
             />
           ) : (
             <div className={isModernFont ? 'space-y-3' : 'space-y-2.5'}>

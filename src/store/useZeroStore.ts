@@ -1029,66 +1029,35 @@ export function useZeroStore() {
       const isLightPaper = runtime.mode === 'light';
       rootEl.className = isLightPaper ? 'light' : 'dark';
       rootEl.setAttribute('data-zero-theme', runtime.family);
-      rootEl.setAttribute('data-zero-has-gradient', 'false');
+      rootEl.setAttribute(
+        'data-zero-has-gradient',
+        runtime.family === 'amoled' && themeConfig.amoledGradient !== 'pure' ? 'true' : 'false'
+      );
 
       Object.entries(runtime.cssVars).forEach(([cssVar, val]) => {
         rootEl.style.setProperty(cssVar, val);
       });
 
-      if (isLightPaper) {
-        rootEl.style.setProperty('--zero-bg-image', 'none');
-        rootEl.style.setProperty('--zero-accent', '#1D4ED8');
-        rootEl.style.setProperty('--zero-dial-stroke', '#1D4ED8');
-        rootEl.style.setProperty('--accent-rgb', '29, 78, 216');
-        rootEl.style.setProperty('--accent-hex', '#1D4ED8');
-        rootEl.style.setProperty('--accent-badge-gradient', '#1D4ED8');
-        rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
-        rootEl.style.setProperty('--accent-surface-rgb', '59, 130, 246');
-        rootEl.style.setProperty('--accent-surface-hex', '#3B82F6');
-        rootEl.style.setProperty('--accent-surface-badge-gradient', '#2563EB');
-        rootEl.style.setProperty('--accent-surface-badge-text', '#FFFFFF');
-      } else {
-        // Anchor dark mode strictly in pure AMOLED #000000 with neutral borders and functional utility blue
-        rootEl.style.setProperty('--zero-bg-primary', '#000000');
-        rootEl.style.setProperty('--zero-bg-image', 'none');
-        rootEl.style.setProperty('--zero-bg-size', '100% 100%');
-        rootEl.style.setProperty('--zero-surface-1', '#000000');
-        rootEl.style.setProperty('--zero-surface-2', '#0A0A0A');
-        rootEl.style.setProperty('--zero-surface-3', '#171717');
-        rootEl.style.setProperty('--zero-border', '#262626');
-        rootEl.style.setProperty('--zero-border-subtle', '#171717');
-        rootEl.style.setProperty('--zero-ink-primary', '#FAFAFA');
-        rootEl.style.setProperty('--zero-ink-secondary', '#D4D4D4');
-        rootEl.style.setProperty('--zero-ink-muted', '#737373');
-        rootEl.style.setProperty('--zero-inverted-bg', '#FAFAFA');
-        rootEl.style.setProperty('--zero-inverted-text', '#000000');
-        rootEl.style.setProperty('--zero-nav-bg', '#000000');
-        rootEl.style.setProperty('--zero-backdrop', 'rgba(0, 0, 0, 0.92)');
-        rootEl.style.setProperty('--zero-accent', '#3B82F6');
-        rootEl.style.setProperty('--zero-dial-stroke', '#3B82F6');
-        rootEl.style.setProperty('--accent-rgb', '59, 130, 246');
-        rootEl.style.setProperty('--accent-hex', '#3B82F6');
-        rootEl.style.setProperty('--accent-badge-gradient', '#2563EB');
-        rootEl.style.setProperty('--accent-badge-text', '#FFFFFF');
-        rootEl.style.setProperty('--accent-surface-rgb', '59, 130, 246');
-        rootEl.style.setProperty('--accent-surface-hex', '#3B82F6');
-        rootEl.style.setProperty('--accent-surface-badge-gradient', '#2563EB');
-        rootEl.style.setProperty('--accent-surface-badge-text', '#FFFFFF');
-      }
+      const activeAccent = resolveActiveAccentTokens(themeConfig);
+      rootEl.style.setProperty('--zero-accent', activeAccent.hex);
+      rootEl.style.setProperty('--zero-dial-stroke', activeAccent.hex);
+      rootEl.style.setProperty('--accent-rgb', activeAccent.rgb);
+      rootEl.style.setProperty('--accent-hex', activeAccent.hex);
+      rootEl.style.setProperty('--accent-badge-gradient', activeAccent.hex);
+      rootEl.style.setProperty('--accent-badge-text', activeAccent.badgeText);
+      rootEl.style.setProperty('--accent-surface-rgb', activeAccent.rgb);
+      rootEl.style.setProperty('--accent-surface-hex', activeAccent.hex);
+      rootEl.style.setProperty('--accent-surface-badge-gradient', activeAccent.hex);
+      rootEl.style.setProperty('--accent-surface-badge-text', activeAccent.badgeText);
 
-      const nativeTokens = {
-        hex: '#3B82F6',
-        rgb: '59, 130, 246',
-        badgeText: '#FFFFFF',
-      };
-      activeAccentTokensRef.current = nativeTokens;
+      activeAccentTokensRef.current = activeAccent;
 
       try {
         window.ZeroNative?.setInterfaceStyle?.('bespoke');
         window.ZeroNative?.setActiveThemeAccent?.(
-          nativeTokens.hex,
-          nativeTokens.rgb,
-          nativeTokens.badgeText
+          activeAccent.hex,
+          activeAccent.rgb,
+          activeAccent.badgeText
         );
       } catch {
         // Ignore on web preview
@@ -1096,7 +1065,7 @@ export function useZeroStore() {
 
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
-        metaTheme.setAttribute('content', isLightPaper ? runtime.metaThemeColor : '#000000');
+        metaTheme.setAttribute('content', runtime.metaThemeColor || (isLightPaper ? '#F4F1EA' : '#000000'));
       }
       return;
     }
@@ -2263,6 +2232,23 @@ export function useZeroStore() {
     localStorage.setItem(UI_STORAGE_KEYS.TIP_SKIP_REMAINING, '0');
   };
 
+  const completeOnboarding = useCallback((options?: {
+    schedules?: RecurringSchedule[];
+    bags?: OccasionBag[];
+    profile?: HabitCalibrationProfile;
+  }) => {
+    setOnboardingComplete(true);
+    localStorage.setItem(UI_STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+    if (options?.schedules) {
+      setSchedules(options.schedules);
+      localStorage.setItem(UI_STORAGE_KEYS.SCHEDULES, JSON.stringify(options.schedules));
+    }
+    if (options?.bags) {
+      setBags(options.bags);
+      localStorage.setItem(UI_STORAGE_KEYS.BAGS, JSON.stringify(options.bags));
+    }
+  }, []);
+
   // NOTE: Notice ZERO direct setters for focus stats, Escape Tickets, or donor badges are exported!
   return {
     theme,
@@ -2286,6 +2272,8 @@ export function useZeroStore() {
     hasClaimedFirstDonationParachute,
     hasDismissedWelcomeModal,
     onboardingComplete,
+    setOnboardingComplete,
+    completeOnboarding,
     todayReclaimedHours,
     parachuteRewardEvent,
     justEarnedParachute,

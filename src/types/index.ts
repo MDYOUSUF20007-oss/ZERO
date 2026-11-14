@@ -9,7 +9,7 @@ export interface SessionRecord {
   startTime: number;
   endTime: number;
   durationSeconds: number; // Raw time device was locked
-  earnedParachuteSeconds: number; // Weighted seconds credited towards 20h Parachute (0 if parachuted or daytime-only sleep)
+  earnedParachuteSeconds: number; // Weighted seconds credited towards 35h Parachute (0 if parachuted or daytime-only sleep)
   weightMultiplier: number; // 1.0, 0.25, or 0.0
   tag: SessionTag;
   status: SessionStatus;
@@ -46,7 +46,7 @@ export interface ZeroProfile {
 
 export interface ParachuteRewardEvent {
   id: string;
-  source: 'first_timer_profile' | 'first_donation_50' | 'milestone_20h';
+  source: 'first_timer_profile' | 'first_donation_50' | 'milestone_20h' | 'milestone_35h';
   delta: number;
   newBalance: number;
   title: string;
@@ -207,6 +207,53 @@ export interface NativeEnvironmentSecurity {
   reasons: string[];
 }
 
+export type LaunchModePreset = 'recommended' | 'full_productive' | 'explore';
+export type FrictionLevel = 'gentle' | 'moderate' | 'ironclad';
+
+export interface HabitCalibrationProfile {
+  primaryGoal: string;
+  distractionTriggers: string[];
+  distractionApps: string[];
+  frictionLevel: FrictionLevel;
+  vulnerabilityWindow: string;
+  dailyReclaimTargetHours: number;
+  launchMode: LaunchModePreset;
+  calibratedAt: number;
+}
+
+export interface ThemeModConfig {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  version: string;
+  family: ThemeFamily;
+  amoledGradient?: AmoledGradientId;
+  baseColor?: string;
+  accentColor?: string;
+  paperColor?: string;
+  inkAccent?: string;
+  cssVars?: Record<string, string>;
+}
+
+export interface GithubContributor {
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+  role?: string;
+}
+
+export interface AppUpdateReleaseInfo {
+  latestVersion: string;
+  currentVersion: string;
+  releaseNotes: string;
+  apkDownloadUrl: string | null;
+  htmlUrl: string;
+  hasUpdate: boolean;
+  publishedAt: string;
+}
+
 export interface ZeroBackupPayload {
   schemaVersion: number;
   appName: 'Zero';
@@ -218,6 +265,7 @@ export interface ZeroBackupPayload {
   hasClaimedFirstTimeParachute?: boolean;
   hasClaimedFirstDonationParachute?: boolean;
   profile?: ZeroProfile | null;
+  habitCalibration?: HabitCalibrationProfile | null;
   sleepFarmingMode: SleepFarmingMode;
   ledger: ParachuteLedgerEntry[];
   sessions: SessionRecord[];
@@ -257,6 +305,7 @@ export interface ZeroZbakPayload {
   theme: ThemeStyle;
   themeConfig: ThemeConfig;
   profile: ZeroProfile | null;
+  habitCalibration?: HabitCalibrationProfile | null;
   // Full Compact Logs for Exact Heatmap / Analytics Restoration
   sessions: SessionRecord[];
   ledger: ParachuteLedgerEntry[];
@@ -391,6 +440,10 @@ export interface ZeroNativeBridgeInterface {
   acknowledgeVerifiedCompletions?(eventIdsJson: string): void;
   setActiveThemeAccent?(accentHex: string, accentRgb: string, badgeTextHex: string): void;
   setInterfaceStyle?(style: InterfaceStyle): void;
+  setRoutinesJson?(routinesJson: string): void;
+  syncRoutinesToNative?(routinesJson: string): void;
+  verifyAuthorIntegrity?(): boolean;
+  exitApp?(): void;
 }
 
 type StringOrStr = string;

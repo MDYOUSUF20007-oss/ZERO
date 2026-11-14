@@ -1,6 +1,6 @@
 ﻿/**
  * Verification test suite for Zero Core Logic:
- * 1. 20-Hour Parachute Progression Math (72,000s milestone rollover)
+ * 1. 35-Hour Parachute Progression Math (126,000s milestone rollover)
  * 2. Anti-Sleep-Farming Rule (0.25x Parachute credit vs 0.0x daytime only)
  * 3. Aborted Session Penalty (0 credit for parachuted sessions, forfeited progress)
  * 4. Anti-Tamper Reboot Timestamp Recovery
@@ -106,7 +106,7 @@ import type {
   ZeroZbakPayload,
 } from '../src/types/index.ts';
 
-const SECONDS_PER_PARACHUTE = 72000; // 20 Hours
+const SECONDS_PER_PARACHUTE = 126000; // 35 Hours
 
 type SleepMode = 'quarter_credit' | 'daytime_only' | 'full_credit';
 
@@ -192,14 +192,14 @@ console.log('=== TEST 1: Initial State Verification ===');
 const engine = new TestParachuteEngine();
 console.assert(engine.cumulativeParachuteSeconds === 0, 'Initial seconds should be 0');
 console.assert(engine.balance === 0, 'Initial balance should be 0');
-console.assert(engine.hoursUntilNext === 20, 'Initial hours until next should be 20');
+console.assert(engine.hoursUntilNext === 35, 'Initial hours until next should be 35');
 console.log('PASS: Initial State');
 
 console.log('\n=== TEST 2: Daytime Focus Session (10 Hours = 36,000s) ===');
 engine.completeSession(36000, 'Deep Work');
 console.assert(engine.cumulativeParachuteSeconds === 36000, 'Daytime gets 1.0x credit (36000s)');
 console.assert(engine.progressHours === 10, '10 hours toward next parachute');
-console.assert(engine.hoursUntilNext === 10, '10 hours remaining');
+console.assert(engine.hoursUntilNext === 25, '25 hours remaining');
 console.log('PASS: Daytime 1.0x Focus Session');
 
 console.log('\n=== TEST 3: Anti-Sleep-Farming Rule (0.25x Credit) ===');
@@ -209,8 +209,8 @@ const earnedSleepSecs = engine.completeSession(28800, 'Sleep');
 console.assert(earnedSleepSecs === 7200, '8h Sleep session should credit exactly 2.0h (7,200s)');
 console.assert(engine.totalReclaimedSeconds === 36000 + 28800, 'Total reclaimed time correctly logs full 18h phone-free');
 console.assert(engine.cumulativeParachuteSeconds === 36000 + 7200, 'Parachute cumulative meter is 43,200s (12.0h)');
-console.assert(engine.progressHours === 12, 'Parachute meter is at 12.0 / 20.0 hrs');
-console.assert(engine.hoursUntilNext === 8, '8 hours left until Parachute');
+console.assert(engine.progressHours === 12, 'Parachute meter is at 12.0 / 35.0 hrs');
+console.assert(engine.hoursUntilNext === 23, '23 hours left until Parachute');
 console.log('PASS: Anti-Sleep-Farming 0.25x Rate Enforced (No 8h free parachute exploit)');
 
 console.log('\n=== TEST 4: Anti-Sleep-Farming "Daytime Only" Mode (0.0x Credit) ===');
@@ -220,14 +220,14 @@ console.assert(earnedDaytimeOnlySleep === 0, 'Under daytime_only mode, sleep awa
 console.assert(engine.cumulativeParachuteSeconds === 43200, 'Cumulative parachute seconds do not increase');
 console.log('PASS: Daytime Only Anti-Sleep Rule Enforced');
 
-console.log('\n=== TEST 5: Crossing 20-Hour Milestone (+28,800s Daytime) ===');
+console.log('\n=== TEST 5: Crossing 35-Hour Milestone (+82,800s Daytime) ===');
 engine.sleepMode = 'quarter_credit';
-engine.completeSession(28800, 'Deep Work'); // 43,200 + 28,800 = 72,000s (20.0h)!
-console.assert(engine.cumulativeParachuteSeconds === 72000, 'Cumulative seconds reach 72000');
+engine.completeSession(82800, 'Deep Work'); // 43,200 + 82,800 = 126,000s (35.0h)!
+console.assert(engine.cumulativeParachuteSeconds === 126000, 'Cumulative seconds reach 126000');
 console.assert(engine.balance === 1, '1 Parachute earned!');
 console.assert(engine.progressHours === 0, 'Rollover progress hours reset to 0');
-console.assert(engine.hoursUntilNext === 20, 'Hours until next reset to 20');
-console.log('PASS: 20-Hour Milestone Reached & Rollover');
+console.assert(engine.hoursUntilNext === 35, 'Hours until next reset to 35');
+console.log('PASS: 35-Hour Milestone Reached & Rollover');
 
 console.log('\n=== TEST 6: Aborted Session Penalty (Anti-Exploit) ===');
 // User locks for 4 hours, but aborts at hour 3 with Parachute
@@ -299,7 +299,7 @@ failIf(donationClaim.granted === true && donationClaim.nextBonusParachutes === 2
 const repeatDonationClaim = claimFirstDonationParachute(donationClaim.nextAlreadyClaimed, donationClaim.nextBonusParachutes);
 failIf(repeatDonationClaim.granted === false && repeatDonationClaim.nextBonusParachutes === 2, 'Repeat donation claim must stay capped at 1');
 
-// Parachute balance adds bonus gifts without forging 20h milestones, and decrements on deployment
+// Parachute balance adds bonus gifts without forging 35h milestones, and decrements on deployment
 const bonusSnap = computeParachuteBalance({
   cumulativeSeconds: 0,
   bonusParachutes: repeatDonationClaim.nextBonusParachutes,
@@ -856,15 +856,15 @@ failIf(
   'Web preview monotonic check must block wall-clock fast-forward attacks'
 );
 
-// 3. Valid Native Android monotonic event (72,000s = 20h -> unlocks 1 Escape Ticket)
+// 3. Valid Native Android monotonic event (126,000s = 35h -> unlocks 1 Escape Ticket)
 const validNativeBase = {
-  eventId: 'nat_sess_1_1794300000000',
+  eventId: 'nat_sess_1_1794354000000',
   sessionId: 'sess_1',
   tag: 'Deep Work',
   startTime: 1794228000000,
-  endTime: 1794300000000,
-  durationSeconds: 72000,
-  elapsedMonotonicMs: 72_000_000,
+  endTime: 1794354000000,
+  durationSeconds: 126000,
+  elapsedMonotonicMs: 126_000_000,
   usedRebootFallback: false,
 };
 const validNativeEvent: VerifiedNativeCompletionEvent = {
@@ -884,15 +884,15 @@ iState = validRes.state;
 failIf(
   validRes.acceptedEventIds.length === 1 &&
     validRes.committedSessions.length === 1 &&
-    iState.cumulativeSeconds === 72000 &&
-    iState.totalReclaimedSeconds === 72000 &&
+    iState.cumulativeSeconds === 126000 &&
+    iState.totalReclaimedSeconds === 126000 &&
     validRes.rewards.length === 1 &&
     IntegrityEngine.computeParachuteBalance({
       cumulativeSeconds: iState.cumulativeSeconds,
       bonusParachutes: iState.bonusParachutes,
       usedParachutes: iState.usedParachutes,
     }).currentBalance === 1,
-  'Verified native SystemClock.elapsedRealtime() completion must credit 20h and mint 1 Escape Ticket'
+  'Verified native SystemClock.elapsedRealtime() completion must credit 35h and mint 1 Escape Ticket'
 );
 
 // 4. Reject tampered HMAC, wrong clock source, short monotonic elapsed time, and duplicate event replay
@@ -930,7 +930,7 @@ const maliciousRes = IntegrityEngine.commitNativeSessionCompletions(
 failIf(
   maliciousRes.committedSessions.length === 0 &&
     maliciousRes.rejectedEventIds.length === 3 &&
-    maliciousRes.state.cumulativeSeconds === 72000,
+    maliciousRes.state.cumulativeSeconds === 126000,
   'Tampered digest, non-monotonic clock, short monotonic duration & replay must add 0 seconds'
 );
 
@@ -939,10 +939,10 @@ const abortOk = IntegrityEngine.commitEscapeTicketAbort(
   iState,
   {
     tag: 'Deep Work',
-    startTime: 1794310000000,
+    startTime: 1794360000000,
     durationSeconds: 7200,
     elapsedSeconds: 5400,
-    nowWallMs: 1794315400000,
+    nowWallMs: 1794365400000,
   },
   false
 );
@@ -951,8 +951,8 @@ if (abortOk.ok) {
   iState = abortOk.state;
   failIf(
     iState.usedParachutes === 1 &&
-      iState.cumulativeSeconds === 72000 &&
-      iState.totalReclaimedSeconds === 72000 &&
+      iState.cumulativeSeconds === 126000 &&
+      iState.totalReclaimedSeconds === 126000 &&
       iState.sessions[0].status === 'parachuted' &&
       iState.sessions[0].earnedParachuteSeconds === 0,
     'Escape ticket abort must deduct 1 ticket and permanently void aborted elapsed seconds'

@@ -3,6 +3,7 @@ import type {
   AppLockRuleConfig,
   BagApp,
   CloudReminderInterval,
+  HabitCalibrationProfile,
   NativeEnvironmentSecurity,
   NativePermissionStatus,
   OccasionBag,
@@ -25,7 +26,7 @@ import type {
 // ISOLATED CORE INTEGRITY CONSTANTS (Read-Only / Frozen)
 // ============================================================================
 
-export const SECONDS_PER_PARACHUTE = 72000; // 20 Hours exactly
+export const SECONDS_PER_PARACHUTE = 126000; // 35 Hours exactly (35 * 3600)
 export const FIRST_DONATION_BONUS_INR = 50;
 export const ZBAK_FILE_NAME = 'zero-backup.zbak';
 export const ZBAK_PREFIX = 'ZBAK1';
@@ -33,6 +34,12 @@ export const ZDON_PREFIX = 'ZDON1';
 export const WEEKLY_BACKUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export const MONTHLY_BACKUP_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const NATIVE_MONOTONIC_SOURCE = 'android_elapsed_realtime';
+
+export const OFFICIAL_AUTHOR_GITHUB = 'MDYOUSUF20007-oss';
+export const OFFICIAL_AUTHOR_KOFI = 'https://ko-fi.com/mdyousuf2620';
+export const OFFICIAL_AUTHOR_SUPPORT_EMAIL = 'mdyousuf982007@proton.me';
+export const OFFICIAL_AUTHOR_PAYLOAD = `${OFFICIAL_AUTHOR_GITHUB}|${OFFICIAL_AUTHOR_KOFI}|${OFFICIAL_AUTHOR_SUPPORT_EMAIL}`;
+export const OFFICIAL_AUTHOR_SHA256 = '4f6d1d95365a4666d49dda4217353ca05064329573420607ac54534963a91213';
 
 const MAX_BONUS_PARACHUTES = 2; // Strictly 1 starter profile gift + 1 first ₹50+ tip gift
 
@@ -197,6 +204,49 @@ export function hmacSha256Hex(keyStr: string, messageStr: string): string {
   outerInput.set(oKeyPad, 0);
   outerInput.set(innerHash, blockSize);
   return bytesToHex(sha256Bytes(outerInput));
+}
+
+export function sha256Hex(messageStr: string): string {
+  return bytesToHex(sha256Bytes(textEncoder.encode(messageStr)));
+}
+
+export function verifyAuthorIntegrity(): {
+  ok: boolean;
+  signatureValid: boolean;
+  error?: string;
+} {
+  const currentPayload = `${OFFICIAL_AUTHOR_GITHUB}|${OFFICIAL_AUTHOR_KOFI}|${OFFICIAL_AUTHOR_SUPPORT_EMAIL}`;
+  const computedHash = sha256Hex(currentPayload);
+
+  if (
+    OFFICIAL_AUTHOR_GITHUB !== 'MDYOUSUF20007-oss' ||
+    OFFICIAL_AUTHOR_KOFI !== 'https://ko-fi.com/mdyousuf2620' ||
+    OFFICIAL_AUTHOR_SUPPORT_EMAIL !== 'mdyousuf982007@proton.me' ||
+    !timingSafeEqualHex(computedHash, OFFICIAL_AUTHOR_SHA256)
+  ) {
+    return {
+      ok: false,
+      signatureValid: false,
+      error: 'CRITICAL INTEGRITY VIOLATION: Author credits or support endpoints have been modified.',
+    };
+  }
+
+  if (typeof window !== 'undefined' && window.ZeroNative?.verifyAuthorIntegrity) {
+    try {
+      const nativeValid = window.ZeroNative.verifyAuthorIntegrity();
+      if (!nativeValid) {
+        return {
+          ok: false,
+          signatureValid: false,
+          error: 'CRITICAL INTEGRITY VIOLATION: Native layer detected altered author signatures.',
+        };
+      }
+    } catch {
+      // Ignore if native bridge call fails
+    }
+  }
+
+  return { ok: true, signatureValid: true };
 }
 
 export function timingSafeEqualHex(a: string, b: string): boolean {
@@ -805,6 +855,7 @@ export interface VerifiedRestoreOutcome {
   message: string;
   state?: ProtectedIntegrityState;
   profile?: ZeroProfile | null;
+  habitCalibration?: HabitCalibrationProfile | null;
   schedules?: RecurringSchedule[];
   bags?: OccasionBag[];
   activeBagId?: string;
@@ -1102,7 +1153,7 @@ function appendVerifiedCompletedSession(
       id: `txn_${input.endTime}`,
       timestamp: input.endTime,
       type: 'EARNED',
-      description: `20-Hour Milestone reached! (+${delta} Emergency Escape Ticket earned)`,
+      description: `35-Hour Milestone reached! (+${delta} Emergency Escape Ticket earned)`,
       delta,
       tag: input.tag,
       note:
@@ -1112,11 +1163,11 @@ function appendVerifiedCompletedSession(
     });
 
     rewards.push({
-      source: 'milestone_20h',
+      source: 'milestone_35h',
       delta,
       newBalance: updatedBalance,
-      title: delta > 1 ? `+${delta} Escape Tickets Earned!` : '20h Milestone Escape Ticket!',
-      subtitle: `You completed 20 cumulative hours of phone-free discipline in #${input.tag}.`,
+      title: delta > 1 ? `+${delta} Escape Tickets Earned!` : '35h Milestone Escape Ticket!',
+      subtitle: `You completed 35 cumulative hours of phone-free discipline in #${input.tag}.`,
     });
   }
 
@@ -1706,6 +1757,7 @@ function applyVerifiedRestore(input: RestoreInputPayload, persist = true): Verif
         : nextBags[0].id;
     const nextThemeConfig = input.sanitizeThemeConfig(parsed.themeConfig, parsed.theme || 'amoled');
     const nextSleepMode: SleepFarmingMode = parsed.sleepFarmingMode || 'quarter_credit';
+    const nextHabitCalibration = parsed.habitCalibration || null;
     const restoredNow = Date.now();
 
     const nextState: ProtectedIntegrityState = sanitizeStoredState({
@@ -1732,6 +1784,7 @@ function applyVerifiedRestore(input: RestoreInputPayload, persist = true): Verif
       message: `Restored ${nextSessions.length} sessions (${restoredHours}h reclaimed), ${nextBags.length} Bags${donorNote}.`,
       state: nextState,
       profile: nextProfile,
+      habitCalibration: nextHabitCalibration,
       schedules: nextSchedules,
       bags: nextBags,
       activeBagId: nextActiveBagId,
@@ -1816,6 +1869,7 @@ function buildZbakPayload(input: {
   theme: ThemeStyle;
   themeConfig: ThemeConfig;
   profile: ZeroProfile | null;
+  habitCalibration?: HabitCalibrationProfile | null;
 }): ZeroZbakPayload {
   const now = Date.now();
   const { state } = input;
@@ -1856,6 +1910,7 @@ function buildZbakPayload(input: {
     theme: input.theme,
     themeConfig: input.themeConfig,
     profile: input.profile,
+    habitCalibration: input.habitCalibration ?? null,
     sessions: state.sessions.slice(0, 1000),
     ledger: state.ledger.slice(0, 300),
   };
@@ -2102,6 +2157,7 @@ export const IntegrityEngine = Object.freeze({
       hasClaimedFirstTimeParachute: input.state.hasClaimedFirstTimeParachute,
       hasClaimedFirstDonationParachute: input.state.hasClaimedFirstDonationParachute,
       profile: input.profile,
+      habitCalibration: input.habitCalibration ?? null,
       sleepFarmingMode: input.sleepFarmingMode,
       ledger: input.state.ledger,
       sessions: input.state.sessions,
@@ -2118,4 +2174,10 @@ export const IntegrityEngine = Object.freeze({
   DEFAULT_SAFE_ENVIRONMENT_SECURITY,
   parseEnvironmentSecurityJson,
   isSensitiveFeatureRestricted,
+  OFFICIAL_AUTHOR_GITHUB,
+  OFFICIAL_AUTHOR_KOFI,
+  OFFICIAL_AUTHOR_SUPPORT_EMAIL,
+  OFFICIAL_AUTHOR_PAYLOAD,
+  OFFICIAL_AUTHOR_SHA256,
+  verifyAuthorIntegrity,
 });

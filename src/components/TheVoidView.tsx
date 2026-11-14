@@ -1309,7 +1309,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                       {Math.floor(activeLock.elapsedSeconds / 60)}m
                     </span>
                     ) will be <strong>permanently voided</strong> and will NOT count toward your next
-                    20-hour milestone.
+                    35-hour milestone.
                   </div>
                   <p className="text-neutral-400 text-xs">
                     Are you sure you want to surrender this session?

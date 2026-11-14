@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Clock, Heart, Settings, Ticket } from 'lucide-react';
+import { Clock, Heart, Settings, BarChart3 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 
 export type ZeroNavTab = 'dial' | 'dashboard' | 'schedules' | 'support';
@@ -79,18 +79,11 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
                     />
                   )}
                   {tab.id === 'dashboard' && (
-                    <>
-                      <Ticket
-                        size={17}
-                        strokeWidth={1.75}
-                        className={active ? 'text-cyan-200' : undefined}
-                      />
-                      {ticketCount > 0 && (
-                        <span className="absolute -top-1.5 -right-3.5 text-[9px] font-sans font-semibold tabular-nums px-1.5 py-px rounded-full bg-cyan-400/20 text-cyan-100 border border-cyan-300/35">
-                          {ticketCount}
-                        </span>
-                      )}
-                    </>
+                    <BarChart3
+                      size={17}
+                      strokeWidth={1.75}
+                      className={active ? 'text-cyan-200' : undefined}
+                    />
                   )}
                   {tab.id === 'schedules' && (
                     <Settings

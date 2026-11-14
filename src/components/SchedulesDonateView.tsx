@@ -33,6 +33,16 @@ import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { ThemeSelectorCard } from './ThemeSelectorCard';
 import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import { ObsidianCard } from './ObsidianCard';
+import { CreditsModal } from './CreditsModal';
+import {
+  getAllThemeMods,
+  applyThemeModStyles,
+  removeActiveModStyles,
+  getActiveThemeModId,
+  saveUserCustomMod,
+  validateThemeModJson,
+} from '../utils/themeMods';
+import { isOvernightSchedule } from '../utils/routineEngine';
 import {
   Plus,
   Trash2,
@@ -63,6 +73,8 @@ import {
   Sliders,
   Save,
   Ticket,
+  Users,
+  Target,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -110,6 +122,7 @@ interface SchedulesDonateViewProps {
   hasClaimedFirstDonationParachute?: boolean;
   onOpenProfileModal?: () => void;
   onClaimFirstDonationBonus?: () => boolean;
+  onRecalibrateHabitProfile?: () => void;
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -187,6 +200,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   hasClaimedFirstDonationParachute = false,
   onOpenProfileModal,
   onClaimFirstDonationBonus,
+  onRecalibrateHabitProfile,
 }) => {
   const {
     interfaceStyle: ctxInterfaceStyle,
@@ -205,6 +219,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     sectionOverride?.section || 'schedules'
   );
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [themeModsList, setThemeModsList] = useState(() => getAllThemeMods());
+  const [activeModId, setActiveModId] = useState<string | null>(() => getActiveThemeModId());
+  const [showImportModModal, setShowImportModModal] = useState(false);
+  const [importModJson, setImportModJson] = useState('');
+  const [importModError, setImportModError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sectionOverride?.section) {
@@ -479,6 +499,98 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <ThemeSelectorCard
             themeConfig={themeConfig}
             onChange={onThemeConfigChange}
+          />
+
+          {/* Theme Mods & Community Themes Card */}
+          <ObsidianCard
+            ambientGlow={!isBespoke}
+            className={isModernFont ? 'font-sans' : 'font-mono'}
+            headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 sm:p-5 space-y-3'}
+            footerClassName={isModernFont ? 'px-5 py-3 flex items-center justify-between text-[11px] text-zinc-400' : 'px-4 sm:px-5 py-2.5 flex items-center justify-between text-[10px] text-zinc-400'}
+            headerContent={
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={
+                        isFluentGlass
+                          ? 'liquid-squircle text-cyan-200'
+                          : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                              isBespoke ? 'rounded-md' : 'rounded-xl'
+                            }`
+                      }
+                    >
+                      <Sparkles size={15} />
+                    </div>
+                    <div>
+                      <h2 className="text-xs text-white font-semibold uppercase tracking-wider">
+                        Community Theme Mods
+                      </h2>
+                      <p className="text-[11px] text-zinc-400">
+                        Custom stylesheets &amp; verified palettes
+                      </p>
+                    </div>
+                  </div>
+                  {activeModId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeActiveModStyles();
+                        setActiveModId(null);
+                      }}
+                      className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                    >
+                      Clear Mod
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {themeModsList.map((mod) => {
+                    const isModActive = activeModId === mod.id;
+                    return (
+                      <button
+                        key={mod.id}
+                        type="button"
+                        onClick={() => {
+                          applyThemeModStyles(mod);
+                          setActiveModId(mod.id);
+                        }}
+                        className={`p-3 text-left rounded-xl border transition-all ${
+                          isModActive
+                            ? 'border-blue-500 bg-blue-500/15 ring-1 ring-blue-500/50'
+                            : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-xs text-white truncate">{mod.name}</span>
+                          {isModActive && <Check size={13} className="text-blue-400 shrink-0" />}
+                        </div>
+                        <p className="text-[10px] text-zinc-400 line-clamp-2 leading-relaxed">{mod.description}</p>
+                        <div className="text-[9px] font-mono text-zinc-500 mt-2 truncate">by {mod.author}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModModal(true)}
+                    className="flex-1 py-2 px-3 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 text-xs font-semibold text-zinc-300 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Upload size={13} />
+                    <span>Import Mod JSON</span>
+                  </button>
+                </div>
+              </>
+            }
+            footerContent={
+              <>
+                <span>Safe CSS Variables Sandbox</span>
+                <span className="text-zinc-300 font-semibold">{themeModsList.length} Mods Available</span>
+              </>
+            }
           />
           <ObsidianCard
             className={isModernFont ? 'font-sans' : 'font-mono'}
@@ -1515,7 +1627,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <span>Aborted Session Penalty (Anti-Exploit)</span>
                 </div>
                 <p className="text-zinc-300 leading-relaxed text-[11px]">
-                  Using an Emergency Escape Ticket forfeits all accumulated hours in that specific broken session toward the 20-hour meter.
+                  Using an Emergency Escape Ticket forfeits all accumulated hours in that specific broken session toward the 35-hour meter.
                 </p>
               </>
             }
@@ -1523,6 +1635,51 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <div>
                 <strong className="text-white">Example:</strong> If you set a 4-hour lock and use an escape ticket at hour 3, you spend 1 Escape Ticket and receive <strong className="text-red-300">0 hours</strong> toward your next one.
               </div>
+            }
+          />
+
+          {/* CARD: Habit Calibration Profile */}
+          <ObsidianCard
+            className={isBespoke ? 'font-sans' : 'font-mono'}
+            headerClassName={isBespoke ? 'p-5 space-y-3.5' : 'p-4 space-y-3'}
+            footerClassName={isBespoke ? 'px-5 py-2.5 flex items-center justify-between text-[11px] text-zinc-400' : 'px-4 py-2 flex items-center justify-between text-[10px] text-zinc-400'}
+            headerContent={
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-zinc-100 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                    <Target
+                      size={14}
+                      className={isBespoke ? 'text-blue-500' : undefined}
+                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                    />
+                    <span>Habit Calibration Profile</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-400">5 Questions</span>
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Recalibrate your primary focus goal, distraction triggers, friction delay, vulnerability window, and daily reclaim target.
+                </p>
+                {onRecalibrateHabitProfile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.tick(900);
+                      onRecalibrateHabitProfile();
+                    }}
+                    className={`w-full py-2.5 px-3 obsidian-pill-active font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 ${
+                      isBespoke
+                        ? 'rounded-md transition-colors duration-75'
+                        : 'rounded-xl font-black active:scale-95 transition-all'
+                    }`}
+                  >
+                    <Sliders size={14} />
+                    <span>Re-calibrate Habit Profile</span>
+                  </button>
+                )}
+              </>
+            }
+            footerContent={
+              <span>Tunes recommended routines and friction engine</span>
             }
           />
 
@@ -2342,19 +2499,33 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             footerClassName="px-5 py-3 flex items-center justify-between text-xs gap-2"
             headerContent={
               <>
-                <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
-                  <div
-                    className={
-                      isFluentGlass
-                        ? 'liquid-squircle text-rose-300'
-                        : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                            isBespoke ? 'rounded-md' : 'rounded-xl'
-                          }`
-                    }
-                  >
-                    <Heart size={15} strokeWidth={1.75} className="text-red-400 fill-red-400" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
+                    <div
+                      className={
+                        isFluentGlass
+                          ? 'liquid-squircle text-rose-300'
+                          : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                              isBespoke ? 'rounded-md' : 'rounded-xl'
+                            }`
+                      }
+                    >
+                      <Heart size={15} strokeWidth={1.75} className="text-red-400 fill-red-400" />
+                    </div>
+                    <span>THE ZERO-DISTRACTIONS PROMISE</span>
                   </div>
-                  <span>THE ZERO-DISTRACTIONS PROMISE</span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.tick(900);
+                      setShowCreditsModal(true);
+                    }}
+                    className="px-3 py-1 text-xs font-bold rounded-lg bg-white text-black hover:bg-zinc-200 transition-colors shadow-sm flex items-center gap-1.5 shrink-0"
+                  >
+                    <Users size={12} />
+                    <span>Credits</span>
+                  </button>
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed">
                   Zero App (Zero-Distractions) is 100% free, libre, and open-source software (FOSS). There are no paywalls,
@@ -2362,7 +2533,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </p>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   We believe your attention belongs to you—not to algorithms or paywalled apps.
-                  Emergency Escape Tickets can never be purchased outright; earn 1 every 20 focus
+                  Emergency Escape Tickets can never be purchased outright; earn 1 every 35 focus
                   hours, plus one-time free gifts (+1 starter on first profile, and strictly on your
                   1st tip of minimum ₹<span className="font-mono tabular-nums">{FIRST_DONATION_BONUS_INR}</span>: +1 thank-you ticket &amp; Golden{' '}
                   <strong className="text-white">ZERO-SUPPORTER</strong> badge).
@@ -2881,6 +3052,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </div>
                 </div>
 
+                {isOvernightSchedule(newStartTime, newEndTime) && (
+                  <div className="p-2.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono flex items-center gap-2">
+                    <Moon size={14} className="text-indigo-400 shrink-0" />
+                    <span>Overnight Shift: Crosses midnight into next morning</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-[11px] text-zinc-400 block mb-1">Focus Tag</label>
                   <select
@@ -2936,6 +3114,84 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </>
             }
           />
+        </div>
+      )}
+      {/* Credits & Contributors Modal */}
+      <CreditsModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+      />
+
+      {/* Import Theme Mod JSON Modal */}
+      {showImportModModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-zinc-950 border border-zinc-700 rounded-2xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+              <h3 className="text-sm font-bold text-white">Import Theme Mod JSON</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportModModal(false);
+                  setImportModError(null);
+                  setImportModJson('');
+                }}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Paste a custom ThemeModConfig JSON string with custom variables and colors.
+            </p>
+            <textarea
+              value={importModJson}
+              onChange={(e) => {
+                setImportModJson(e.target.value);
+                setImportModError(null);
+              }}
+              rows={6}
+              placeholder='{ "id": "my_theme", "name": "My Custom Theme", "family": "matte", ... }'
+              className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-mono text-white outline-none focus:border-blue-500 resize-none"
+            />
+            {importModError && (
+              <div className="text-[11px] font-mono text-red-400 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+                {importModError}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportModModal(false);
+                  setImportModError(null);
+                  setImportModJson('');
+                }}
+                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const check = validateThemeModJson(importModJson);
+                  if (!check.ok) {
+                    setImportModError(check.error);
+                    return;
+                  }
+                  saveUserCustomMod(check.mod);
+                  setThemeModsList(getAllThemeMods());
+                  applyThemeModStyles(check.mod);
+                  setActiveModId(check.mod.id);
+                  setShowImportModModal(false);
+                  setImportModJson('');
+                  setImportModError(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
+              >
+                Import &amp; Apply
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

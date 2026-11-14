@@ -60,7 +60,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
 
   const balanceSentence =
     balance === 0
-      ? 'Vault empty — complete 20h focus to earn one'
+      ? 'Vault empty — complete 35h focus to earn one'
       : balance === 1
       ? 'You have 1 Escape Ticket ready in your vault'
       : `You have ${balance} Escape Tickets ready in your vault`;
@@ -156,7 +156,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-white/60 font-medium">Progress to Next Escape Ticket</span>
                   <span className="font-mono tabular-nums font-semibold text-[#7DD3FC]">
-                    {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
+                    {parachuteMetrics.currentProgressHours} / 35.0h ({parachuteMetrics.progressPercentage}%)
                   </span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-white/[0.06] border border-white/[0.08] overflow-hidden">
@@ -195,13 +195,13 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               </div>
               <div className="min-w-0 flex-1 space-y-0.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-white">Every 20 Focus Hours (+1 Ticket)</span>
+                  <span className="text-[11px] font-semibold text-white">Every 35 Focus Hours (+1 Ticket)</span>
                   <span className="liquid-pill text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-lg text-white/60 shrink-0">
                     Unlimited
                   </span>
                 </div>
                 <p className="text-[10px] text-white/40 leading-relaxed">
-                  Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
+                  Finish lock sessions completely to fill the 35-hour counter. Active rate:{' '}
                   <span className="text-white/70 font-semibold inline-flex items-center gap-1">
                     <Moon size={10} strokeWidth={1.75} className="text-[#7DD3FC]" />
                     {sleepRateLabel}
@@ -279,7 +279,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
               <span>
                 Using a ticket ends the lock early, costs{' '}
                 <strong className="text-white/70">1 Ticket</strong>, and voids that broken
-                session&rsquo;s progress toward your next 20h ticket.
+                session&rsquo;s progress toward your next 35h ticket.
               </span>
             </div>
           </div>
@@ -407,7 +407,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                       Progress to Next Escape Ticket
                     </span>
                     <span className="font-mono tabular-nums font-semibold text-blue-400">
-                      {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
+                      {parachuteMetrics.currentProgressHours} / 35.0h ({parachuteMetrics.progressPercentage}%)
                     </span>
                   </div>
                   <div className="w-full h-2 rounded-none bg-neutral-950 border border-neutral-800 overflow-hidden">
@@ -454,14 +454,14 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-white">
-                        Every 20 Focus Hours (+1 Ticket)
+                        Every 35 Focus Hours (+1 Ticket)
                       </span>
                       <span className="font-mono text-[9px] font-semibold uppercase px-2 py-0.5 rounded-sm bg-black border border-neutral-800 text-neutral-200 shrink-0">
                         Unlimited
                       </span>
                     </div>
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
+                      Finish lock sessions completely to fill the 35-hour counter. Active rate:{' '}
                       <span className="font-mono text-neutral-200 font-medium inline-flex items-center gap-1">
                         <Moon size={10} className="text-blue-500" />
                         {sleepRateLabel}
@@ -544,7 +544,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 <span>
                   Using a ticket ends the lock early, costs{' '}
                   <strong className="font-mono text-white">1 Ticket</strong>, and voids that broken
-                  session&rsquo;s progress toward your next 20h ticket.
+                  session&rsquo;s progress toward your next 35h ticket.
                 </span>
               </>
             }
@@ -693,12 +693,12 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 </div>
               </div>
 
-              {/* Next Ticket 20h Milestone Meter on Stub */}
+              {/* Next Ticket 35h Milestone Meter on Stub */}
               <div className="space-y-1.5 pt-2 border-t border-dashed border-white/15">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-zinc-300 font-bold">Progress to Next Escape Ticket</span>
                   <span className="font-black" style={{ color: 'var(--accent-hex, #FFFFFF)' }}>
-                    {parachuteMetrics.currentProgressHours} / 20.0h ({parachuteMetrics.progressPercentage}%)
+                    {parachuteMetrics.currentProgressHours} / 35.0h ({parachuteMetrics.progressPercentage}%)
                   </span>
                 </div>
                 <div className="w-full h-2.5 rounded-full obsidian-inset-neutral overflow-hidden p-[1px]">
@@ -744,7 +744,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 How to Gain More Escape Tickets
               </div>
 
-              {/* 1. 20h Milestone */}
+              {/* 1. 35h Milestone */}
               <div className="p-3 rounded-xl obsidian-inset-neutral flex items-start gap-2.5">
                 <div className="w-7 h-7 rounded-lg obsidian-icon-box flex items-center justify-center shrink-0 mt-0.5">
                   <Clock size={13} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
@@ -752,14 +752,14 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold text-white">
-                      Every 20 Focus Hours (+1 🎫)
+                      Every 35 Focus Hours (+1 🎫)
                     </span>
                     <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded obsidian-inset text-zinc-200 shrink-0">
                       Unlimited
                     </span>
                   </div>
                   <p className="text-[10px] text-zinc-400 leading-relaxed">
-                    Finish lock sessions completely to fill the 20-hour counter. Active rate:{' '}
+                    Finish lock sessions completely to fill the 35-hour counter. Active rate:{' '}
                     <span className="text-zinc-200 font-semibold inline-flex items-center gap-1">
                       <Moon size={10} style={{ color: 'var(--accent-hex, #FFFFFF)' }} />
                       {sleepRateLabel}
@@ -856,7 +856,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
             <>
               <ShieldAlert size={13} className="text-red-400 shrink-0 mt-0.5" />
               <span>
-                Using a ticket ends the lock early, costs <strong className="text-white">1 🎫</strong>, and voids that broken session&rsquo;s progress toward your next 20h ticket.
+                Using a ticket ends the lock early, costs <strong className="text-white">1 🎫</strong>, and voids that broken session&rsquo;s progress toward your next 35h ticket.
               </span>
             </>
           }

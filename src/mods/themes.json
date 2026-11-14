@@ -1,0 +1,104 @@
+[
+  {
+    "id": "mod_cyberpunk_neon",
+    "name": "Cyberpunk Neon",
+    "description": "High-voltage neon cyan and electric magenta on pure pitch-black OLED background.",
+    "author": "Mohammed Yusuf (@MDYOUSUF20007-oss)",
+    "version": "1.0.0",
+    "family": "amoled",
+    "amoledGradient": "electric_violet",
+    "accentColor": "#00F0FF",
+    "cssVars": {
+      "--zero-bg-primary": "#000000",
+      "--zero-surface-card": "rgba(10, 10, 20, 0.85)",
+      "--zero-border": "rgba(0, 240, 255, 0.25)",
+      "--zero-accent": "#00F0FF",
+      "--zero-accent-rgb": "0, 240, 255"
+    }
+  },
+  {
+    "id": "mod_tokyo_night",
+    "name": "Tokyo Night",
+    "description": "Inspired by Tokyo after dark: deep indigo canvas with clean pastel lavender accents.",
+    "author": "Zero Community",
+    "version": "1.0.0",
+    "family": "matte",
+    "baseColor": "#1a1b26",
+    "accentColor": "#7aa2f7",
+    "cssVars": {
+      "--zero-bg-primary": "#1a1b26",
+      "--zero-surface-card": "#24283b",
+      "--zero-border": "#414868",
+      "--zero-accent": "#7aa2f7",
+      "--zero-accent-rgb": "122, 162, 247"
+    }
+  },
+  {
+    "id": "mod_forest_emerald",
+    "name": "Forest Emerald",
+    "description": "Lush evergreen obsidian depths paired with radiant botanical emerald tones.",
+    "author": "Zero Community",
+    "version": "1.0.0",
+    "family": "amoled",
+    "amoledGradient": "jade_matrix",
+    "accentColor": "#10B981",
+    "cssVars": {
+      "--zero-bg-primary": "#051009",
+      "--zero-surface-card": "rgba(8, 25, 16, 0.85)",
+      "--zero-border": "rgba(16, 185, 129, 0.25)",
+      "--zero-accent": "#10B981",
+      "--zero-accent-rgb": "16, 185, 129"
+    }
+  },
+  {
+    "id": "mod_nord_frost",
+    "name": "Nordic Frost",
+    "description": "Arctic slate blues and crisp frost highlights designed for soothing low-eyestrain focus.",
+    "author": "Zero Community",
+    "version": "1.0.0",
+    "family": "matte",
+    "baseColor": "#2e3440",
+    "accentColor": "#88c0d0",
+    "cssVars": {
+      "--zero-bg-primary": "#2e3440",
+      "--zero-surface-card": "#3b4252",
+      "--zero-border": "#4c566a",
+      "--zero-accent": "#88c0d0",
+      "--zero-accent-rgb": "136, 192, 208"
+    }
+  },
+  {
+    "id": "mod_solarized_ember",
+    "name": "Solarized Ember",
+    "description": "Warm charcoal base with radiant golden amber and volcanic ember accents.",
+    "author": "Zero Community",
+    "version": "1.0.0",
+    "family": "amoled",
+    "amoledGradient": "solar_gold",
+    "accentColor": "#F59E0B",
+    "cssVars": {
+      "--zero-bg-primary": "#000000",
+      "--zero-surface-card": "rgba(25, 18, 5, 0.85)",
+      "--zero-border": "rgba(245, 158, 11, 0.25)",
+      "--zero-accent": "#F59E0B",
+      "--zero-accent-rgb": "245, 158, 11"
+    }
+  },
+  {
+    "id": "mod_dracula_velvet",
+    "name": "Dracula Velvet",
+    "description": "Classic dark gothic elegance with rich violet tones and vibrant magenta highlights.",
+    "author": "Zero Community",
+    "version": "1.0.0",
+    "family": "matte",
+    "baseColor": "#282a36",
+    "accentColor": "#bd93f9",
+    "cssVars": {
+      "--zero-bg-primary": "#282a36",
+      "--zero-surface-card": "#44475a",
+      "--zero-border": "#6272a4",
+      "--zero-accent": "#bd93f9",
+      "--zero-accent-rgb": "189, 147, 249"
+    }
+  }
+]

@@ -156,6 +156,7 @@ public class MainActivity extends BridgeActivity {
         if (signatureVerified) {
             registerPlugin(CloudAutoBackupPlugin.class);
             registerPlugin(ZeroEngagePlugin.class);
+            registerPlugin(ZeroBridgePlugin.class);
         }
         super.onCreate(savedInstanceState);
         if (!signatureVerified) {
