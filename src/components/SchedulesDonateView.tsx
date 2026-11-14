@@ -31,7 +31,6 @@ import { evaluatePermissionPriority } from '../utils/permissionPriority';
 import { RestrictedSettingsGuideCard } from './RestrictedSettingsGuideCard';
 import { ProfileAvatar } from './ProfileAvatar';
 import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
-import { ThemeStudio } from './ThemeStudio';
 import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import { ObsidianCard } from './ObsidianCard';
 import { CreditsModal } from './CreditsModal';
@@ -175,13 +174,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onDeleteSchedule,
   onTriggerTestWarning,
   themeConfig,
-  onThemeConfigChange,
+  onThemeConfigChange: _onThemeConfigChange,
   interfaceStyle: interfaceStyleProp,
   onInterfaceStyleChange,
   materialYouSeed: materialYouSeedProp,
   onMaterialYouSeedChange,
-  materialYouAmoled: materialYouAmoledProp,
-  onMaterialYouAmoledChange,
+  materialYouAmoled: _materialYouAmoledProp,
+  onMaterialYouAmoledChange: _onMaterialYouAmoledChange,
   sectionOverride = null,
   viewMode = 'all',
   sleepFarmingMode,
@@ -220,16 +219,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     isMaterialYou,
     materialYouSeed: ctxMaterialYouSeed,
     setMaterialYouSeed: ctxSetMaterialYouSeed,
-    materialYouAmoled: ctxMaterialYouAmoled,
-    setMaterialYouAmoled: ctxSetMaterialYouAmoled,
   } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
   const activeInterfaceStyle = interfaceStyleProp ?? ctxInterfaceStyle;
   const applyInterfaceStyle = onInterfaceStyleChange ?? ctxSetInterfaceStyle;
   const activeMaterialYouSeed = materialYouSeedProp ?? ctxMaterialYouSeed ?? 'purple';
   const applyMaterialYouSeed = onMaterialYouSeedChange ?? ctxSetMaterialYouSeed ?? (() => {});
-  const activeMaterialYouAmoled = materialYouAmoledProp ?? ctxMaterialYouAmoled ?? false;
-  const applyMaterialYouAmoled = onMaterialYouAmoledChange ?? ctxSetMaterialYouAmoled ?? (() => {});
 
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
@@ -512,15 +507,230 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </div>
       )}
 
-      {/* SECTION 0: THEME SETTINGS (THEME STUDIO + RUNTIME INTERFACE STYLE SWITCHER) */}
+      {/* SECTION 0: THEME SETTINGS (INTERFACE STYLE + 2 TONAL ACCENT COLORS + COMMUNITY MODS) */}
       {effectiveSection === 'themes' && (
-        <div className={isBespoke || isFluentGlass ? 'space-y-5' : 'space-y-4'}>
-          <ThemeStudio
-            themeConfig={themeConfig}
-            onChange={onThemeConfigChange}
-          />
+        <div className="space-y-4">
+          {/* Dedicated Runtime Switcher Card */}
+          <div className="theme-card p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl theme-bg-secondary flex items-center justify-center shrink-0 border theme-border">
+                  <Sliders size={15} strokeWidth={1.75} className="theme-text-accent" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-xs theme-text-primary font-semibold uppercase tracking-wider">
+                    Interface Style
+                  </h2>
+                  <p className="text-[11px] theme-text-muted truncate">
+                    Instant runtime visual engine switcher
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full theme-pill-active border shrink-0">
+                {activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
+                  ? 'Material You'
+                  : activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
+                  ? 'Fluent Glass'
+                  : activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
+                  ? 'Bespoke'
+                  : 'Classic UI'}
+              </span>
+            </div>
 
-          {/* Theme Mods & Community Themes Card */}
+            {/* 4 Engine Radio Options */}
+            <div role="radiogroup" aria-label="Interface Style" className="space-y-2.5">
+              {/* 1. Material You (Default) */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'}
+                onClick={() => applyInterfaceStyle('material')}
+                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
+                  activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
+                    ? 'theme-pill-active'
+                    : 'theme-pill hover:opacity-90'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
+                    <span>Material You</span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
+                      M3
+                    </span>
+                  </div>
+                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
+                    Stepped tonal surface elevation, pill shapes, dynamic seed palettes, spring motion, and true AMOLED mode.
+                  </p>
+                </div>
+                <div
+                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
+                    activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you'
+                      ? 'theme-pill-active'
+                      : 'border-neutral-600 bg-transparent'
+                  }`}
+                >
+                  {(activeInterfaceStyle === 'material' || activeInterfaceStyle === 'material-you') && (
+                    <Check size={11} strokeWidth={2} />
+                  )}
+                </div>
+              </button>
+
+              {/* 2. Fluent Glass */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'}
+                onClick={() => applyInterfaceStyle('fluent')}
+                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
+                  activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
+                    ? 'theme-pill-active'
+                    : 'theme-pill hover:opacity-90'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
+                    <span>Fluent Glass</span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
+                      Acrylic
+                    </span>
+                  </div>
+                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
+                    Pitch-black #000000 AMOLED canvas with drifting sub-surface ambient orbs, specular Acrylic refraction cards, mercury gauges, and a floating pill dock.
+                  </p>
+                </div>
+                <div
+                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
+                    activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass'
+                      ? 'theme-pill-active'
+                      : 'border-neutral-600 bg-transparent'
+                  }`}
+                >
+                  {(activeInterfaceStyle === 'fluent' || activeInterfaceStyle === 'fluent_glass') && (
+                    <Check size={11} strokeWidth={2} />
+                  )}
+                </div>
+              </button>
+
+              {/* 3. Bespoke Minimalist */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'}
+                onClick={() => applyInterfaceStyle('minimal')}
+                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
+                  activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
+                    ? 'theme-pill-active'
+                    : 'theme-pill hover:opacity-90'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
+                    <span>Bespoke Minimalist</span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
+                      E-Ink
+                    </span>
+                  </div>
+                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
+                    Pure AMOLED #000000 canvas, 1px neutral structural borders, sans typography with tabular telemetry, and instant mechanical controls.
+                  </p>
+                </div>
+                <div
+                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
+                    activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke'
+                      ? 'theme-pill-active'
+                      : 'border-neutral-600 bg-transparent'
+                  }`}
+                >
+                  {(activeInterfaceStyle === 'minimal' || activeInterfaceStyle === 'minimalist' || activeInterfaceStyle === 'bespoke') && (
+                    <Check size={11} strokeWidth={2} />
+                  )}
+                </div>
+              </button>
+
+              {/* 4. Classic UI */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeInterfaceStyle === 'classic'}
+                onClick={() => applyInterfaceStyle('classic')}
+                className={`w-full p-3.5 text-left flex items-start justify-between gap-3 rounded-2xl transition-all cursor-pointer ${
+                  activeInterfaceStyle === 'classic'
+                    ? 'theme-pill-active'
+                    : 'theme-pill hover:opacity-90'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
+                    <span>Classic UI</span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
+                      Obsidian
+                    </span>
+                  </div>
+                  <p className="text-[11px] theme-text-muted mt-1 leading-relaxed">
+                    Frosted Obsidian layout style with specular highlights, pill geometry, gradient badges, and ambient glows.
+                  </p>
+                </div>
+                <div
+                  className={`w-4 h-4 mt-0.5 border rounded-full flex items-center justify-center shrink-0 ${
+                    activeInterfaceStyle === 'classic'
+                      ? 'theme-pill-active'
+                      : 'border-neutral-600 bg-transparent'
+                  }`}
+                >
+                  {activeInterfaceStyle === 'classic' && (
+                    <Check size={11} strokeWidth={2} />
+                  )}
+                </div>
+              </button>
+            </div>
+
+            {/* 2 Choosable Accent Colors Directly Underneath Interface Style */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <label className="text-[11px] font-semibold theme-text-primary block">
+                Accent Color
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'purple', name: 'Deep Purple', color: '#D0BCFF', bg: '#4F378B' },
+                  { id: 'cyan', name: 'Cyber Cyan', color: '#67D4FF', bg: '#004E5F' },
+                ].map((seed) => {
+                  const isSelected = activeMaterialYouSeed === seed.id || (seed.id === 'purple' && activeMaterialYouSeed !== 'cyan');
+                  return (
+                    <button
+                      key={seed.id}
+                      type="button"
+                      onClick={() => applyMaterialYouSeed(seed.id as any)}
+                      className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'theme-pill-active'
+                          : 'theme-pill hover:opacity-90'
+                      }`}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border border-white/20"
+                        style={{ backgroundColor: seed.color }}
+                      >
+                        {isSelected && (
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: seed.bg }}
+                          />
+                        )}
+                      </div>
+                      <span className="text-xs font-medium truncate">{seed.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t theme-border flex items-center justify-between text-[11px] theme-text-muted">
+              <span>Applies instantaneously — no restart required</span>
+              <span className="theme-text-primary font-semibold">Active &amp; Persistent</span>
+            </div>
+          </div>
+
+          {/* Theme Mods & Community Themes Card (Directly Underneath the 2 Colors) */}
           <ObsidianCard
             ambientGlow={!isBespoke}
             className={isModernFont ? 'font-sans' : 'font-mono'}
@@ -608,502 +818,6 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               <>
                 <span>Safe CSS Variables Sandbox</span>
                 <span className="text-zinc-300 font-semibold">{themeModsList.length} Mods Available</span>
-              </>
-            }
-          />
-          <ObsidianCard
-            className={isModernFont ? 'font-sans' : 'font-mono'}
-            headerClassName={isModernFont ? 'p-4 text-xs text-zinc-300 leading-relaxed' : 'p-3.5 text-[11px] text-zinc-300 leading-relaxed'}
-            footerClassName={isModernFont ? 'px-4 py-2.5 flex items-center justify-between text-[11px] text-zinc-400' : 'px-3.5 py-2 flex items-center justify-between text-[10px] text-zinc-400'}
-            headerContent={
-              <p>
-                Pick between <strong className="text-white">AMOLED</strong> (pure black &amp; subtle
-                gradients), <strong className="text-white">Paper like Kindle</strong> (E-Ink light
-                mode with custom paper &amp; ink pickers), or{' '}
-                <strong className="text-white">Matte Studio</strong> (charcoal studio finishes with
-                custom surface &amp; accent colors).
-              </p>
-            }
-            footerContent={
-              <>
-                <span>Contrast-Protected Cards</span>
-                <span className="text-zinc-300 font-semibold">JSON &amp; Auto-Saved</span>
-              </>
-            }
-          />
-
-          {/* Dedicated Runtime Switcher Card at the bottom of Theme Settings */}
-          <ObsidianCard
-            ambientGlow={!isBespoke}
-            className={isModernFont ? 'font-sans' : 'font-mono'}
-            headerClassName={isModernFont ? 'p-5 space-y-4' : 'p-4 sm:p-5 space-y-3'}
-            footerClassName={
-              isModernFont
-                ? 'px-5 py-3 flex items-center justify-between gap-2 text-[11px] text-zinc-400'
-                : 'px-4 sm:px-5 py-2.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400'
-            }
-            headerContent={
-              <>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className={
-                        isFluentGlass
-                          ? 'liquid-squircle text-cyan-200'
-                          : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
-                              isBespoke ? 'rounded-md' : 'rounded-xl'
-                            }`
-                      }
-                    >
-                      <Sliders
-                        size={15}
-                        strokeWidth={1.75}
-                        style={
-                          isFluentGlass ? undefined : { color: 'var(--accent-hex, var(--zero-accent))' }
-                        }
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="text-xs text-white font-semibold uppercase tracking-wider">
-                        Interface Style
-                      </h2>
-                      <p className="text-[11px] text-zinc-400 truncate">
-                        Instant runtime visual engine switcher
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-semibold uppercase px-2.5 py-0.5 border shrink-0 ${
-                      isMaterialYou
-                        ? 'rounded-full border-transparent font-bold bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)]'
-                        : isFluentGlass
-                        ? 'rounded-full liquid-pill-active font-bold border-transparent'
-                        : isBespoke
-                        ? 'rounded-sm border-blue-500/50 bg-blue-600/15 text-blue-300'
-                        : 'rounded-full obsidian-pill-active font-black'
-                    }`}
-                  >
-                    {activeInterfaceStyle === 'material-you'
-                      ? 'Material You'
-                      : activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                      ? 'Fluent Glass'
-                      : activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
-                      ? 'Bespoke'
-                      : 'Classic'}
-                  </span>
-                </div>
-
-                <div role="radiogroup" aria-label="Interface Style" className="space-y-2.5">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'classic'}
-                    onClick={() => applyInterfaceStyle('classic')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'classic'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'classic'
-                              ? 'bg-neutral-950 border-blue-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'classic'
-                              ? 'obsidian-inset text-white'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Classic UI (Default)</span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Frosted Obsidian layout style with specular highlights, pill geometry, gradient badges, and ambient glows.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'classic'
-                          ? isBespoke
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'obsidian-pill-active'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {activeInterfaceStyle === 'classic' && <Check size={11} strokeWidth={1.75} />}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'classic-v2'}
-                    onClick={() => applyInterfaceStyle('classic-v2')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'classic-v2'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'classic-v2'
-                              ? 'bg-neutral-950 border-amber-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'classic-v2'
-                              ? 'obsidian-inset text-white border-amber-500/50'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Classic UI Version 2 (Beta Test)</span>
-                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                          Onyx
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Hardware Accessibility Shield aesthetic: Pure #08080A obsidian canvas, warm amber #FFAA00 accents, rounded-3xl tactile cards, and floating pill dock.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'classic-v2'
-                          ? isBespoke
-                            ? 'bg-amber-600 border-amber-500 text-white'
-                            : 'bg-gradient-to-r from-amber-400 to-amber-600 text-black font-bold'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {activeInterfaceStyle === 'classic-v2' && <Check size={11} strokeWidth={2} />}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'trantor'}
-                    onClick={() => applyInterfaceStyle('trantor')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'trantor'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'trantor'
-                              ? 'bg-[#121418] border-teal-400 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'trantor'
-                              ? 'bg-[#121418] border border-teal-400/60 text-white shadow-sm'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Trantor Sage-Obsidian</span>
-                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono bg-teal-500/15 text-teal-300 border border-teal-500/30">
-                          Fintech
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        High-end dark mobile wallet aesthetic: #121418 matte surfaces, crisp Sage Mint (#A3E4D7) inversions, and flat layered depth.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'trantor'
-                          ? 'bg-[#A3E4D7] border-[#A3E4D7] text-[#0B0C10] font-bold'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {activeInterfaceStyle === 'trantor' && <Check size={11} strokeWidth={2} />}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'}
-                    onClick={() => applyInterfaceStyle('minimalist')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
-                              ? 'bg-neutral-950 border-blue-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
-                              ? 'obsidian-inset text-white'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Bespoke Minimalist</span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Pure AMOLED #000000 canvas, 1px neutral structural borders, sans typography with tabular telemetry, and instant mechanical controls.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist'
-                          ? isBespoke
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'obsidian-pill-active'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {(activeInterfaceStyle === 'bespoke' || activeInterfaceStyle === 'minimalist') && <Check size={11} strokeWidth={1.75} />}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'}
-                    onClick={() => applyInterfaceStyle('fluent')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                              ? 'bg-neutral-950 border-blue-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                              ? 'obsidian-inset text-white'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Fluent Glass</span>
-                        <span
-                          className={`text-[9px] uppercase px-1.5 py-0.5 font-semibold tracking-wider ${
-                            isFluentGlass
-                              ? 'rounded-full bg-cyan-400/20 text-cyan-200 border border-cyan-300/35'
-                              : isBespoke
-                              ? 'rounded-sm bg-blue-600/20 text-blue-300 border border-blue-500/40'
-                              : 'rounded-full obsidian-pill-active font-black'
-                          }`}
-                        >
-                          Fluent 2
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Pitch-black #000000 AMOLED canvas with drifting sub-surface ambient orbs, specular Acrylic refraction cards, mercury gauges, and a floating pill dock.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent'
-                          ? isBespoke
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'obsidian-pill-active'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {(activeInterfaceStyle === 'fluent_glass' || activeInterfaceStyle === 'fluent') && (
-                        <Check size={11} strokeWidth={1.75} />
-                      )}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={activeInterfaceStyle === 'material-you'}
-                    onClick={() => applyInterfaceStyle('material-you')}
-                    className={`w-full p-3.5 text-left flex items-start justify-between gap-3 ${
-                      isMaterialYou
-                        ? `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'material-you'
-                              ? 'bg-[var(--md-surface-container-high)] text-white'
-                              : 'bg-[var(--md-surface-container)] text-zinc-400'
-                          }`
-                        : isFluentGlass
-                        ? `rounded-2xl liquid-spring ${
-                            activeInterfaceStyle === 'material-you'
-                              ? 'liquid-inset text-white'
-                              : 'liquid-row text-zinc-400 hover:text-zinc-200'
-                          }`
-                        : isBespoke
-                        ? `rounded-md border transition-colors duration-75 ${
-                            activeInterfaceStyle === 'material-you'
-                              ? 'bg-neutral-950 border-blue-500 text-white'
-                              : 'bg-black border-neutral-800 text-neutral-300 hover:border-neutral-600'
-                          }`
-                        : `rounded-2xl transition-all ${
-                            activeInterfaceStyle === 'material-you'
-                              ? 'obsidian-inset text-white'
-                              : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                          }`
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white flex items-center gap-2 flex-wrap">
-                        <span>Material You</span>
-                        <span
-                          className={`text-[9px] uppercase px-1.5 py-0.5 font-semibold tracking-wider ${
-                            isMaterialYou
-                              ? 'rounded-full bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)]'
-                              : isFluentGlass
-                              ? 'rounded-full bg-cyan-400/20 text-cyan-200 border border-cyan-300/35'
-                              : isBespoke
-                              ? 'rounded-sm bg-blue-600/20 text-blue-300 border border-blue-500/40'
-                              : 'rounded-full obsidian-pill-active font-black'
-                          }`}
-                        >
-                          M3
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                        Stepped tonal surface elevation, pill shapes, dynamic seed palettes, spring motion, and true AMOLED mode.
-                      </p>
-                    </div>
-                    <div
-                      className={`w-4 h-4 mt-0.5 border flex items-center justify-center shrink-0 ${
-                        isBespoke ? 'rounded-sm' : 'rounded-full'
-                      } ${
-                        activeInterfaceStyle === 'material-you'
-                          ? isMaterialYou
-                            ? 'bg-[var(--md-primary)] text-[var(--md-on-primary)] border-[var(--md-primary)]'
-                            : isBespoke
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'obsidian-pill-active'
-                          : 'border-neutral-600 bg-transparent'
-                      }`}
-                    >
-                      {activeInterfaceStyle === 'material-you' && (
-                        <Check size={11} strokeWidth={1.75} />
-                      )}
-                    </div>
-                  </button>
-                </div>
-
-                {activeInterfaceStyle === 'material-you' && (
-                  <div className="pt-3 border-t border-zinc-800/80 space-y-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-zinc-300 block mb-2">
-                        Tonal Seed Palette
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {(
-                          [
-                            { id: 'purple', name: 'Deep Purple', color: '#D0BCFF', bg: '#4F378B' },
-                            { id: 'cyan', name: 'Cyber Cyan', color: '#66E3FF', bg: '#004E5F' },
-                            { id: 'emerald', name: 'Neon Emerald', color: '#6DD58C', bg: '#005227' },
-                            { id: 'crimson', name: 'Crimson Pulse', color: '#FFB2BE', bg: '#7D293A' },
-                          ] as const
-                        ).map((seed) => {
-                          const isSelected = activeMaterialYouSeed === seed.id;
-                          return (
-                            <button
-                              key={seed.id}
-                              type="button"
-                              onClick={() => applyMaterialYouSeed(seed.id)}
-                              className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
-                                isSelected
-                                  ? 'border-[var(--md-primary)] bg-[var(--md-surface-container-high)] text-white shadow-sm'
-                                  : 'border-zinc-800 bg-[var(--md-surface-container-low)] text-zinc-400 hover:border-zinc-700'
-                              }`}
-                            >
-                              <div
-                                className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border border-white/20"
-                                style={{ backgroundColor: seed.color }}
-                              >
-                                {isSelected && (
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: seed.bg }}
-                                  />
-                                )}
-                              </div>
-                              <span className="text-xs font-medium truncate">{seed.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <span className="text-xs font-semibold text-white block">
-                          AMOLED Pitch-Black
-                        </span>
-                        <span className="text-[10px] text-zinc-400 block">
-                          Forces true #000000 background canvas
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => applyMaterialYouAmoled(!activeMaterialYouAmoled)}
-                        className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                          activeMaterialYouAmoled
-                            ? 'bg-[var(--md-primary)]'
-                            : 'bg-zinc-800 border border-zinc-700'
-                        }`}
-                        aria-pressed={activeMaterialYouAmoled}
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-full transition-transform ${
-                            activeMaterialYouAmoled
-                              ? 'translate-x-5 bg-[var(--md-on-primary)]'
-                              : 'translate-x-0 bg-zinc-400'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            }
-            footerContent={
-              <>
-                <span>Applies instantaneously — no restart required</span>
-                <span className="text-zinc-300 font-semibold">Saved Locally &amp; Native</span>
               </>
             }
           />

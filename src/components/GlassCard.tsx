@@ -72,7 +72,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           className="absolute -top-12 -left-10 w-44 h-44 rounded-full pointer-events-none blur-2xl z-0"
           style={{
             background:
-              'radial-gradient(circle, var(--liquid-accent-glow) 0%, var(--liquid-accent-soft-glow) 45%, transparent 72%)',
+              'radial-gradient(circle, var(--accent-primary) 0%, var(--accent-soft) 45%, transparent 72%)',
           }}
         />
       )}

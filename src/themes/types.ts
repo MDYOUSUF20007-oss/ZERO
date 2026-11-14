@@ -1,4 +1,5 @@
-export type CanonicalThemeId = 'amoled' | 'fluent' | 'material' | 'classic' | 'minimal';
+export type CanonicalThemeId = 'material' | 'fluent' | 'minimal' | 'classic';
+export type AccentColorId = 'purple' | 'cyan';
 
 // Prevents TypeScript TS2367 errors if any legacy component compares against an old theme string
 export type InterfaceStyle = CanonicalThemeId | (string & {});

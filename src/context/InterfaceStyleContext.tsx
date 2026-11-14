@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   type CanonicalThemeId,
+  type AccentColorId,
   type InterfaceStyle,
   type ThemeEngineDefinition,
   THEME_ENGINES,
@@ -17,10 +18,11 @@ import {
 } from '../themes';
 import type { ThemeConfig, ClassicPreset, M3Palette } from '../types';
 
-export type { CanonicalThemeId, InterfaceStyle, ThemeEngineDefinition };
+export type { CanonicalThemeId, AccentColorId, InterfaceStyle, ThemeEngineDefinition };
 export { AVAILABLE_THEMES, normalizeThemeId };
 
-const STORAGE_KEY = 'zero_isolated_theme_engine_v4';
+const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
+const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -35,6 +37,7 @@ const LEGACY_STORAGE_KEYS = [
   'zero_custom_theme',
   'zero_theme_v2',
   'zero_clean_theme_v3',
+  'zero_isolated_theme_engine_v4',
 ];
 
 const LEGACY_CLASSES = [
@@ -56,7 +59,7 @@ const LEGACY_CLASSES = [
   'material',
 ];
 
-function mountIsolatedThemeEngine(themeId: CanonicalThemeId): void {
+function mountIsolatedThemeEngine(themeId: CanonicalThemeId, accent: AccentColorId): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
@@ -67,15 +70,18 @@ function mountIsolatedThemeEngine(themeId: CanonicalThemeId): void {
   if (body) {
     body.removeAttribute('style');
     body.removeAttribute('data-theme');
+    body.removeAttribute('data-engine');
+    body.removeAttribute('data-accent');
     body.removeAttribute('data-style');
     body.classList.remove(...LEGACY_CLASSES);
   }
 
-  // 2. Remove legacy classes and attributes from <html>
+  // 2. Set strict DOM attributes
   root.classList.remove(...LEGACY_CLASSES);
   root.removeAttribute('data-style');
   root.setAttribute('data-theme', themeId);
   root.setAttribute('data-engine', themeId);
+  root.setAttribute('data-accent', accent);
   root.classList.add('dark');
 
   // 3. Destroy previous theme engine CSS and mount ONLY the active theme engine file's CSS
@@ -87,13 +93,15 @@ function mountIsolatedThemeEngine(themeId: CanonicalThemeId): void {
     document.head.appendChild(styleTag);
   }
 
-  const engine = THEME_ENGINES[themeId] ?? THEME_ENGINES.amoled;
+  const engine = THEME_ENGINES[themeId] ?? THEME_ENGINES.material;
   styleTag.textContent = engine.css;
 }
 
 export interface InterfaceStyleContextValue {
   theme: CanonicalThemeId;
   setTheme: (next: InterfaceStyle) => void;
+  accent: AccentColorId;
+  setAccent: (next: AccentColorId) => void;
   interfaceStyle: InterfaceStyle;
   setInterfaceStyle: (next: InterfaceStyle) => void;
   style: InterfaceStyle;
@@ -123,7 +131,7 @@ export interface InterfaceStyleContextValue {
   amoled: boolean;
   setAmoled: (a: boolean) => void;
   materialYouSeed: string;
-  setMaterialYouSeed: (s: string) => void;
+  setMaterialYouSeed: (s: any) => void;
   materialYouAmoled: boolean;
   setMaterialYouAmoled: (a: boolean) => void;
   fluentOrbIntensity: number;
@@ -165,60 +173,84 @@ export interface InterfaceStyleProviderProps {
 }
 
 export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps) {
+  const [accent, setAccentState] = useState<AccentColorId>(() => {
+    if (typeof window === 'undefined') return 'purple';
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_ACCENT);
+      return saved === 'cyan' ? 'cyan' : 'purple';
+    } catch {
+      return 'purple';
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
-    if (typeof window === 'undefined') return 'amoled';
+    if (typeof window === 'undefined') return 'material';
     try {
       for (const oldKey of LEGACY_STORAGE_KEYS) {
         window.localStorage.removeItem(oldKey);
       }
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved = window.localStorage.getItem(STORAGE_KEY_THEME);
       const initial = normalizeThemeId(saved);
-      mountIsolatedThemeEngine(initial);
+      mountIsolatedThemeEngine(initial, 'purple');
       return initial;
     } catch {
-      mountIsolatedThemeEngine('amoled');
-      return 'amoled';
+      mountIsolatedThemeEngine('material', 'purple');
+      return 'material';
     }
   });
 
   useEffect(() => {
-    mountIsolatedThemeEngine(theme);
+    mountIsolatedThemeEngine(theme, accent);
     try {
-      window.localStorage.setItem(STORAGE_KEY, theme);
+      window.localStorage.setItem(STORAGE_KEY_THEME, theme);
+      window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [theme, accent]);
+
+  const setTheme = useCallback((next: InterfaceStyle) => {
+    const normalized = normalizeThemeId(String(next));
+    mountIsolatedThemeEngine(normalized, accent);
+    setThemeState(normalized);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_THEME, normalized);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [accent]);
+
+  const setAccent = useCallback((nextAccent: AccentColorId) => {
+    const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
+    mountIsolatedThemeEngine(theme, safeAccent);
+    setAccentState(safeAccent);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_ACCENT, safeAccent);
     } catch {
       // Ignore storage errors
     }
   }, [theme]);
 
-  const setTheme = useCallback((next: InterfaceStyle) => {
-    const normalized = normalizeThemeId(String(next));
-    mountIsolatedThemeEngine(normalized);
-    setThemeState(normalized);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, normalized);
-    } catch {
-      // Ignore storage errors
-    }
-  }, []);
-
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({
       theme,
       setTheme,
+      accent,
+      setAccent,
       interfaceStyle: theme,
       setInterfaceStyle: setTheme,
       style: theme,
       setStyle: setTheme,
-      activeEngine: THEME_ENGINES[theme] ?? THEME_ENGINES.amoled,
+      activeEngine: THEME_ENGINES[theme] ?? THEME_ENGINES.material,
       availableThemes: AVAILABLE_THEMES,
 
       engine: theme,
       setEngine: setTheme,
-      isOnyx: theme === 'amoled',
-      isFintech: theme === 'material',
+      isOnyx: false,
+      isFintech: false,
       isClassic: theme === 'classic',
-      isClassicV2: theme === 'classic',
-      isTrantor: theme === 'material',
+      isClassicV2: false,
+      isTrantor: false,
       isMaterialYou: theme === 'material',
       isFluent: theme === 'fluent',
       isFluentGlass: theme === 'fluent',
@@ -228,12 +260,14 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
 
       classicPreset: 'amoled',
       setClassicPreset: () => {},
-      m3Palette: 'deep-purple',
+      m3Palette: accent === 'cyan' ? 'cyber-cyan' : 'deep-purple',
       setM3Palette: () => {},
-      amoled: theme === 'amoled',
+      amoled: true,
       setAmoled: () => {},
-      materialYouSeed: 'purple',
-      setMaterialYouSeed: () => {},
+      materialYouSeed: accent,
+      setMaterialYouSeed: (s: any) => {
+        setAccent(s === 'cyan' ? 'cyan' : 'purple');
+      },
       materialYouAmoled: true,
       setMaterialYouAmoled: () => {},
       fluentOrbIntensity: 0.75,
@@ -250,14 +284,14 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
       setMinimalistTelemetryDensity: () => {},
       classicV2Surface: 'obsidian',
       setClassicV2Surface: () => {},
-      classicV2Accent: '#FFAA00',
+      classicV2Accent: accent === 'cyan' ? '#00f0ff' : '#a855f7',
       setClassicV2Accent: () => {},
       trantorSurface: 'matte',
       setTrantorSurface: () => {},
-      trantorAccent: '#A3E4D7',
+      trantorAccent: accent === 'cyan' ? '#67d4ff' : '#d0bcff',
       setTrantorAccent: () => {},
     }),
-    [theme, setTheme]
+    [theme, setTheme, accent, setAccent]
   );
 
   return (

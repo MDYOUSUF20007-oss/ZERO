@@ -27,7 +27,7 @@ export interface ObsidianCardProps {
 }
 
 export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
-  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass, isMaterialYou } = useInterfaceStyle();
 
   if (isFluentGlass) {
     return <GlassCard {...props} />;
@@ -54,12 +54,12 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
     'data-restricted-guide': dataRestrictedGuide,
   } = props;
 
-  const resolvedHeaderClass = headerClassName ?? (isBespoke ? 'p-5' : 'p-4');
-  const resolvedFooterClass = footerClassName ?? (isBespoke ? 'px-5 py-3' : 'px-4 py-2.5');
+  const resolvedHeaderClass = headerClassName ?? (isBespoke ? 'p-5' : isMaterialYou ? 'p-5' : 'p-4');
+  const resolvedFooterClass = footerClassName ?? (isBespoke ? 'px-5 py-3' : isMaterialYou ? 'px-5 py-3' : 'px-4 py-2.5');
 
-  const resolvedAccent = isBespoke ? null : accentOverride ?? null;
-
+  const resolvedAccent = isBespoke || isMaterialYou ? null : accentOverride ?? null;
   const isPureAmoledBanner = dataAmoledBanner === 'true';
+
   const accentVarsStyle: CSSProperties = resolvedAccent
     ? ({
         '--accent-rgb': resolvedAccent.rgb,
@@ -67,17 +67,35 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
       } as CSSProperties)
     : {};
 
-  const borderExpr = isBespoke
-    ? '1px solid var(--zero-border, #262626)'
+  const cardRadius = isBespoke
+    ? '6px'
+    : isMaterialYou
+    ? '24px'
+    : '16px';
+
+  const cardBorder = isMaterialYou
+    ? 'none'
+    : isBespoke
+    ? '1px solid #262626'
+    : isPureAmoledBanner
+    ? '1px solid rgba(255, 255, 255, 0.12)'
     : resolvedAccent
     ? `1.5px solid rgba(${resolvedAccent.rgb}, 0.45)`
-    : '1.5px solid rgba(var(--accent-rgb, 255, 255, 255), 0.45)';
+    : '1px solid var(--accent-border, rgba(255, 255, 255, 0.16))';
 
-  const shadowExpr = isBespoke
+  const cardShadow = isMaterialYou || isBespoke
+    ? 'none'
+    : isPureAmoledBanner
     ? 'none'
     : resolvedAccent
-    ? `0 0 28px -4px rgba(${resolvedAccent.rgb}, 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)`
-    : '0 0 28px -4px rgba(var(--accent-rgb, 255, 255, 255), 0.24), inset 0 1px 0 0 rgba(255, 255, 255, 0.14)';
+    ? `0 0 24px -4px rgba(${resolvedAccent.rgb}, 0.24)`
+    : 'var(--surface-shadow, none)';
+
+  const cardBackground = isBespoke || isPureAmoledBanner
+    ? '#000000'
+    : isMaterialYou
+    ? 'var(--bg-surface, #211f26)'
+    : 'var(--bg-surface, #0c0c14)';
 
   const topHighlightBg = resolvedAccent
     ? `linear-gradient(90deg, transparent 0%, ${resolvedAccent.hex} 50%, transparent 100%)`
@@ -87,42 +105,30 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
     ? onClick && !disabled
       ? 'cursor-pointer hover:border-neutral-600 transition-colors duration-75'
       : ''
+    : isMaterialYou
+    ? onClick && !disabled
+      ? 'cursor-pointer hover:brightness-105 active:scale-[0.99] transition-all'
+      : ''
     : onClick && !disabled
     ? 'cursor-pointer hover:scale-[1.005] active:scale-[0.995]'
     : '';
 
   const widthClass = fullWidth ? 'w-full' : '';
-  const sharedClassName = isBespoke
-    ? `relative flex flex-col justify-between ${widthClass} rounded-md overflow-hidden transition-colors duration-75 ${interactiveClasses} ${className}`
-    : `relative flex flex-col justify-between ${widthClass} rounded-2xl overflow-hidden transition-all duration-300 ${interactiveClasses} ${className}`;
-
-  const bespokeStyleOverrides: CSSProperties =
-    isBespoke && style
-      ? {
-          ...style,
-          background: '#000000',
-          backgroundColor: '#000000',
-          borderColor: '#262626',
-          boxShadow: 'none',
-        }
-      : style || {};
+  const sharedClassName = `relative flex flex-col justify-between ${widthClass} obsidian-card overflow-hidden transition-all duration-150 ${interactiveClasses} ${className}`;
 
   const sharedStyle: CSSProperties = {
     ...accentVarsStyle,
-    background: isBespoke
-      ? '#000000'
-      : isPureAmoledBanner
-      ? '#000000'
-      : 'linear-gradient(180deg, rgba(26, 26, 30, 0.96) 0%, rgba(12, 12, 14, 0.99) 100%)',
-    border: borderExpr,
-    boxShadow: shadowExpr,
-    ...bespokeStyleOverrides,
+    backgroundColor: cardBackground,
+    border: cardBorder,
+    boxShadow: cardShadow,
+    borderRadius: cardRadius,
+    ...style,
   };
 
   const innerMarkup = (
     <>
       {/* Top Specular Metallic Highlight Line (Classic UI only) */}
-      {!isBespoke && (
+      {!isBespoke && !isMaterialYou && (
         <div
           aria-hidden="true"
           className="absolute top-0 left-6 right-6 h-[1.5px] pointer-events-none z-20"
@@ -134,7 +140,7 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
       )}
 
       {/* Optional Ambient Radial Glow (Classic UI only) */}
-      {!isBespoke && ambientGlow && (
+      {!isBespoke && !isMaterialYou && ambientGlow && (
         <div
           aria-hidden="true"
           className="absolute -top-10 -left-10 w-40 h-40 rounded-full pointer-events-none blur-2xl"
@@ -146,7 +152,7 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
         />
       )}
 
-      {!isBespoke && overlays}
+      {!isBespoke && !isMaterialYou && overlays}
 
       {/* Tier 1: Primary Header & Content */}
       <div className={`relative z-10 ${resolvedHeaderClass}`}>{headerContent}</div>
@@ -158,10 +164,16 @@ export const ObsidianCard: React.FC<ObsidianCardProps> = (props) => {
           style={{
             background: isBespoke
               ? '#050505'
+              : isMaterialYou
+              ? 'var(--bg-secondary, #1d1b20)'
               : isPureAmoledBanner
               ? 'rgba(10, 7, 18, 0.92)'
               : 'rgba(5, 5, 7, 0.65)',
-            borderColor: isBespoke ? '#262626' : 'rgba(255, 255, 255, 0.07)',
+            borderColor: isBespoke
+              ? '#262626'
+              : isMaterialYou
+              ? 'var(--border-subtle, rgba(255, 255, 255, 0.06))'
+              : 'rgba(255, 255, 255, 0.07)',
           }}
         >
           {footerContent}

@@ -241,8 +241,10 @@ export function App() {
     setShowProfileModal(true);
   };
 
-  const isBespoke = store.interfaceStyle === 'bespoke' || store.interfaceStyle === 'minimalist';
+  const isBespoke = store.interfaceStyle === 'bespoke' || store.interfaceStyle === 'minimalist' || store.interfaceStyle === 'minimal';
   const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent';
+  const isMaterialYou = store.interfaceStyle === 'material' || store.interfaceStyle === 'material-you' || (!isBespoke && !isFluentGlass && store.interfaceStyle !== 'classic');
+  const isClassic = store.interfaceStyle === 'classic';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
@@ -281,7 +283,7 @@ export function App() {
       setThemeConfig={store.setThemeConfig}
     >
       <div className="min-h-screen zero-app-shell flex flex-col justify-between relative selection:bg-white selection:text-black">
-        {isFluentGlass && <AmbientBackground />}
+        <AmbientBackground />
 
         {/* Top Status Bar Safe-Area Scrim */}
         <div
@@ -639,15 +641,22 @@ export function App() {
       ) : (
         <nav
           data-frosted-chrome="true"
-          className={`fixed bottom-0 left-0 right-0 z-40 border-t pt-2 px-2 sm:px-3 ${
-            isBespoke ? 'bg-black' : 'obsidian-shell-bar backdrop-blur-md'
-          }`}
+          className={`fixed bottom-0 left-0 right-0 z-40 ${
+            isMaterialYou
+              ? 'zero-bottom-nav'
+              : isBespoke
+              ? 'bg-black border-t'
+              : 'obsidian-shell-bar backdrop-blur-md border-t'
+          } pt-2 px-2 sm:px-3`}
           style={{
             paddingBottom: 'calc(0.5rem + var(--zero-safe-bottom))',
-            borderColor: isBespoke ? '#262626' : 'rgba(var(--accent-rgb, 255, 255, 255), 0.35)',
+            backgroundColor: isMaterialYou ? '#211f26' : isBespoke ? '#000000' : 'rgba(5, 5, 8, 0.96)',
+            borderColor: isMaterialYou ? 'transparent' : isBespoke ? '#262626' : 'var(--accent-border, rgba(99, 102, 241, 0.40))',
+            borderTopWidth: isMaterialYou ? 0 : '1px',
+            boxShadow: isClassic ? '0 0 20px -4px var(--accent-soft, rgba(99, 102, 241, 0.25))' : 'none',
           }}
         >
-          {!isBespoke && (
+          {isClassic && (
             <div
               aria-hidden="true"
               className="absolute top-0 left-8 right-8 h-[1.5px] pointer-events-none"
@@ -658,146 +667,95 @@ export function App() {
               }}
             />
           )}
-          <div className={`max-w-md mx-auto grid grid-cols-4 ${isBespoke ? 'gap-1.5' : 'gap-1'}`}>
-            <button
-              onClick={() => {
-                haptics.tick(900);
-                setActiveTab('dial');
-              }}
-              className={`flex flex-col items-center justify-center py-2 px-1 ${
-                isBespoke
-                  ? `rounded-md transition-colors duration-75 border ${
-                      activeTab === 'dial'
-                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                    }`
-                  : `rounded-2xl transition-all ${
-                      activeTab === 'dial'
-                        ? 'obsidian-inset font-bold text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                    }`
-              }`}
-            >
-              <Clock
-                size={17}
-                style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
-              />
-              <span
-                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
-                }`}
-                style={activeTab === 'dial' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
-              >
-                Dial
-              </span>
-            </button>
+          <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
+            {[
+              { id: 'dial', label: 'Dial', icon: Clock },
+              { id: 'dashboard', label: 'Insights', icon: BarChart3 },
+              { id: 'schedules', label: 'Settings & OS', icon: Settings },
+              { id: 'support', label: 'Support', icon: Heart },
+            ].map(({ id: tabId, label, icon: Icon }) => {
+              const active = activeTab === tabId;
+              return (
+                <button
+                  key={tabId}
+                  onClick={() => {
+                    haptics.tick(900);
+                    setActiveTab(tabId as any);
+                  }}
+                  className={`relative flex flex-col items-center justify-center py-1.5 px-1 ${
+                    isMaterialYou
+                      ? 'transition-all'
+                      : isBespoke
+                      ? `rounded-md transition-colors duration-75 border ${
+                          active
+                            ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
+                            : 'text-neutral-500 hover:text-neutral-200 border-transparent'
+                        }`
+                      : `rounded-2xl transition-all ${
+                          active
+                            ? 'obsidian-inset font-bold text-white shadow-sm'
+                            : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                        }`
+                  }`}
+                >
+                  {/* Minimal: sharp 2px top accent bar above active tab */}
+                  {isBespoke && active && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute -top-2 left-2 right-2 h-0.5"
+                      style={{ backgroundColor: 'var(--accent-primary, #ffffff)' }}
+                    />
+                  )}
 
-            <button
-              onClick={() => {
-                haptics.tick(900);
-                setActiveTab('dashboard');
-              }}
-              className={`flex flex-col items-center justify-center py-2 px-1 relative ${
-                isBespoke
-                  ? `rounded-md transition-colors duration-75 border ${
-                      activeTab === 'dashboard'
-                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                    }`
-                  : `rounded-2xl transition-all ${
-                      activeTab === 'dashboard'
-                        ? 'obsidian-inset font-bold text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                    }`
-              }`}
-            >
-              <BarChart3
-                size={17}
-                style={
-                  activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-                }
-              />
-              <span
-                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
-                }`}
-                style={
-                  activeTab === 'dashboard' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-                }
-              >
-                Insights
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                haptics.tick(900);
-                setActiveTab('schedules');
-              }}
-              className={`flex flex-col items-center justify-center py-2 px-1 ${
-                isBespoke
-                  ? `rounded-md transition-colors duration-75 border ${
-                      activeTab === 'schedules'
-                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                    }`
-                  : `rounded-2xl transition-all ${
-                      activeTab === 'schedules'
-                        ? 'obsidian-inset font-bold text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                    }`
-              }`}
-            >
-              <Settings
-                size={17}
-                style={
-                  activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-                }
-              />
-              <span
-                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-normal'
-                }`}
-                style={
-                  activeTab === 'schedules' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined
-                }
-              >
-                Settings &amp; OS
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                haptics.tick(900);
-                setActiveTab('support');
-              }}
-              className={`flex flex-col items-center justify-center py-2 px-1 ${
-                isBespoke
-                  ? `rounded-md transition-colors duration-75 border ${
-                      activeTab === 'support'
-                        ? 'bg-neutral-950 border-neutral-700 font-semibold text-white'
-                        : 'text-neutral-500 hover:text-neutral-200 border-transparent'
-                    }`
-                  : `rounded-2xl transition-all ${
-                      activeTab === 'support'
-                        ? 'obsidian-inset font-bold text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                    }`
-              }`}
-            >
-              <Heart
-                size={17}
-                style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
-              />
-              <span
-                className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
-                  isBespoke ? 'font-sans font-medium' : 'font-mono sm:tracking-wider'
-                }`}
-                style={activeTab === 'support' ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
-              >
-                Support
-              </span>
-            </button>
+                  {/* Material: Pill-shaped tonal indicator (64px x 32px) wrapping the active tab icon */}
+                  {isMaterialYou ? (
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-16 h-8 rounded-full flex items-center justify-center transition-all ${
+                          active ? 'theme-pill-active' : 'bg-transparent text-zinc-400'
+                        }`}
+                        style={
+                          active
+                            ? {
+                                backgroundColor: 'var(--accent-soft)',
+                                color: 'var(--accent-primary)',
+                              }
+                            : { color: '#cac4d0' }
+                        }
+                      >
+                        <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                      </div>
+                      <span
+                        className={`text-[11px] mt-1 font-sans tracking-normal transition-colors ${
+                          active
+                            ? 'font-bold text-white'
+                            : 'font-medium text-zinc-400'
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <Icon
+                        size={17}
+                        style={active && !isBespoke ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+                      />
+                      <span
+                        className={`text-[10px] mt-1 tracking-tight uppercase whitespace-nowrap ${
+                          isBespoke
+                            ? 'font-sans font-medium'
+                            : 'font-mono sm:tracking-wider'
+                        }`}
+                        style={active && !isBespoke ? { color: 'var(--accent-hex, #FFFFFF)' } : undefined}
+                      >
+                        {label}
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
