@@ -34,6 +34,12 @@ import {
   Quote,
   Flame,
   Play,
+  Moon,
+  Bookmark,
+  Trash2,
+  Plus,
+  BellOff,
+  Bell,
 } from 'lucide-react';
 
 interface TheVoidViewProps {
@@ -110,6 +116,66 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   // ZeroTube Productive Study Player state
   const [showZeroTube, setShowZeroTube] = useState<boolean>(false);
+
+  // Parachute reflection reason
+  const [parachuteReason, setParachuteReason] = useState<string>('');
+
+  // Feature: AOD Glanceable Pixel Clock Mode
+  const [isAodMode, setIsAodMode] = useState<boolean>(false);
+
+  // Feature: Distraction Parking Lot (Mental RAM Discharge)
+  const [parkedThoughts, setParkedThoughts] = useState<
+    Array<{ id: string; text: string; timestamp: number }>
+  >(() => {
+    try {
+      return JSON.parse(localStorage.getItem('zero_parked_thoughts_v1') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [showParkingLot, setShowParkingLot] = useState<boolean>(false);
+  const [newThoughtInput, setNewThoughtInput] = useState<string>('');
+
+  // Silence Mode / Optional DND state (Phone is silent, Calls & WhatsApp unblocked)
+  const [isDndEnabled, setIsDndEnabled] = useState<boolean>(false);
+
+  // AOD Burn-in Protection Pixel Drift (+/- 2-4px periodically)
+  const [aodDrift, setAodDrift] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!isAodMode) return;
+    const driftTimer = setInterval(() => {
+      setAodDrift({
+        x: Math.floor(Math.random() * 9) - 4,
+        y: Math.floor(Math.random() * 9) - 4,
+      });
+    }, 60000);
+    return () => clearInterval(driftTimer);
+  }, [isAodMode]);
+
+  const handleParkThought = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newThoughtInput.trim()) return;
+    haptics.tick(700);
+    const updated = [
+      ...parkedThoughts,
+      { id: `thought-${Date.now()}`, text: newThoughtInput.trim(), timestamp: Date.now() },
+    ];
+    setParkedThoughts(updated);
+    try {
+      localStorage.setItem('zero_parked_thoughts_v1', JSON.stringify(updated));
+    } catch {}
+    setNewThoughtInput('');
+  };
+
+  const handleDeleteThought = (id: string) => {
+    haptics.thud();
+    const updated = parkedThoughts.filter((t) => t.id !== id);
+    setParkedThoughts(updated);
+    try {
+      localStorage.setItem('zero_parked_thoughts_v1', JSON.stringify(updated));
+    } catch {}
+  };
 
   const hasPlayedCompletionChimeRef = useRef(false);
 
@@ -290,8 +356,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       setTimeout(() => setTamperWarning(null), 3500);
       return;
     }
+    if (!parachuteReason.trim()) return;
     haptics.parachuteDeploy();
     setShowParachuteConfirm(false);
+    setParachuteReason('');
     onDeployParachute();
   };
 
@@ -362,6 +430,67 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       )}
 
+      {/* FEATURE: AOD GLANCEABLE PIXEL TIMER OVERLAY (AMOLED BURN-IN DRIFT) */}
+      {isAodMode && (
+        <div
+          role="presentation"
+          onClick={() => {
+            haptics.tick(700);
+            setIsAodMode(false);
+          }}
+          className="fixed inset-0 z-[255] bg-black flex flex-col items-center justify-center p-6 text-center select-none cursor-pointer"
+        >
+          <div
+            className="flex flex-col items-center transition-transform duration-1000"
+            style={{
+              transform: `translate(${aodDrift.x}px, ${aodDrift.y}px)`,
+            }}
+          >
+            <span className="text-[9px] font-mono tracking-widest uppercase text-cyan-400/40 mb-3 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-cyan-400/40 animate-pulse" />
+              <span>AOD GLANCEABLE // {workTagDisplay}</span>
+            </span>
+
+            {/* Ultra-dimmed 5x7 Dot-Matrix Pixel Countdown */}
+            <svg
+              role="img"
+              aria-label={`AOD Remaining lock time ${timerPixelLayout.normalizedText}`}
+              viewBox={`0 0 ${timerPixelLayout.totalCols} ${timerPixelLayout.totalRows}`}
+              className="h-16 sm:h-20 w-auto max-w-full overflow-visible opacity-45 hover:opacity-75 transition-opacity"
+              shapeRendering="crispEdges"
+            >
+              <defs>
+                <linearGradient id={`${gradId}-aod`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.5" />
+                </linearGradient>
+              </defs>
+              {timerPixelLayout.rects.map((rect, idx) => (
+                <rect
+                  key={idx}
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.w}
+                  height={rect.h}
+                  fill={`url(#${gradId}-aod)`}
+                />
+              ))}
+            </svg>
+
+            {/* Dim system clock & battery indicator */}
+            <div className="mt-4 flex items-center gap-3 text-[11px] font-mono text-zinc-500 tabular-nums">
+              <span>{clockText}</span>
+              <span>•</span>
+              <span>{batteryPct}%</span>
+            </div>
+
+            <p className="mt-10 text-[9px] font-mono tracking-widest text-zinc-600 uppercase animate-pulse">
+              TAP ANYWHERE TO RETURN TO THE VOID
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Sub-Surface Ambient Glow Orbs */}
       <div
         aria-hidden="true"
@@ -392,7 +521,42 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Distraction Parking Lot button */}
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(700);
+              setShowParkingLot(true);
+            }}
+            title="Distraction Parking Lot (Discharge Mental RAM)"
+            className={`p-1.5 rounded-lg liquid-spring cursor-pointer relative ${
+              parkedThoughts.length > 0
+                ? 'liquid-pill-active text-amber-300'
+                : 'liquid-pill-inactive text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Bookmark size={13} strokeWidth={1.75} />
+            {parkedThoughts.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-black text-[8px] font-bold flex items-center justify-center shadow">
+                {parkedThoughts.length}
+              </span>
+            )}
+          </button>
+
+          {/* Glanceable Pixel AOD Mode button */}
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(700);
+              setIsAodMode(true);
+            }}
+            title="AOD Glanceable Pixel Clock"
+            className="p-1.5 rounded-lg liquid-spring cursor-pointer liquid-pill-inactive text-zinc-400 hover:text-white"
+          >
+            <Moon size={13} strokeWidth={1.75} />
+          </button>
+
           {/* Flip to focus sensor status pill */}
           <button
             type="button"
@@ -437,9 +601,9 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             )}
           </button>
 
-          <div className="flex items-center gap-1.5 text-zinc-300">
+          <div className="flex items-center gap-1 text-zinc-300">
             <Wifi size={12} className="text-zinc-400" />
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Battery size={13} className="text-zinc-300" />
               <span className="text-[11px] font-mono">{batteryPct}%</span>
             </div>
@@ -688,18 +852,41 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         </div>
 
-        {/* Status Anti-Tamper Indicator */}
+        {/* Status Anti-Tamper & Phone Silence Shield Indicator */}
         <div className="flex items-center justify-between px-1 text-[11px] font-sans text-zinc-400">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 size={12} className="text-cyan-400" />
-            <span>Anti-Tamper Watchdog Active</span>
+            <span className="truncate">Silent Mode • Calls &amp; WhatsApp Live</span>
           </div>
-          {activeLock.burnTheBoats && (
-            <span className="text-amber-400 font-semibold flex items-center gap-1 text-[10px] uppercase">
-              <Flame size={11} />
-              <span>Boats Burned</span>
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {activeLock.burnTheBoats ? (
+              <span className="text-amber-400 font-semibold flex items-center gap-1 text-[10px] uppercase">
+                <Flame size={11} />
+                <span>Boats Burned</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.thud();
+                  setIsDndEnabled(!isDndEnabled);
+                }}
+                title={
+                  isDndEnabled
+                    ? 'Strict DND Active (Emergency calls may be silenced)'
+                    : 'Turn on Optional Strict DND (Warning: silences calls)'
+                }
+                className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${
+                  isDndEnabled
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40 font-semibold'
+                    : 'bg-white/[0.04] text-zinc-500 border-white/5 hover:text-zinc-300'
+                }`}
+              >
+                {isDndEnabled ? <BellOff size={10} /> : <Bell size={10} />}
+                <span>{isDndEnabled ? 'DND On' : 'DND Off'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -992,25 +1179,133 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 35-hour milestone.
               </div>
 
-              <p className="text-zinc-400 text-xs">
-                Are you sure you want to surrender this focus session?
-              </p>
+              {/* Cognitive Mirror Question */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block">
+                  Why am I breaking this session for myself?
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Type your reason to stay conscious of this decision..."
+                  value={parachuteReason}
+                  onChange={(e) => setParachuteReason(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-amber-400 resize-none"
+                  autoFocus
+                />
+                <p className="text-[10px] text-zinc-500 italic">
+                  This answer is not saved anywhere. It serves only as a mindful mirror before you break.
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2 pt-1">
               <button
                 type="button"
+                disabled={!parachuteReason.trim()}
                 onClick={handleConfirmDeploy}
-                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-sans font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md"
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-black font-sans font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md"
               >
-                Use Escape Ticket (-1 Balance)
+                Confirm Break &amp; Deploy (-1 Ticket)
               </button>
               <button
                 type="button"
-                onClick={() => setShowParachuteConfirm(false)}
+                onClick={() => {
+                  setShowParachuteConfirm(false);
+                  setParachuteReason('');
+                }}
                 className="w-full py-2.5 liquid-pill text-zinc-300 font-medium text-xs rounded-xl hover:text-white cursor-pointer"
               >
                 Cancel &amp; Stay Focused
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DISTRACTION PARKING LOT MODAL (MENTAL RAM DISCHARGE) */}
+      {showParkingLot && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
+        >
+          <div className="relative w-full max-w-sm rounded-[24px] modal-glass p-5 shadow-2xl border border-white/10 space-y-3 font-sans select-none">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bookmark size={16} className="text-cyan-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Distraction Parking Lot
+                  </h3>
+                  <p className="text-[10px] text-zinc-400">Clear mental RAM in 3 seconds</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowParkingLot(false)}
+                className="w-7 h-7 rounded-full liquid-pill-inactive flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Got an intrusive thought? Park it here so you don&apos;t lose it or act on it. It stays sealed until your session ends.
+            </p>
+
+            <form onSubmit={handleParkThought} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="e.g. Look up that book, email Alex..."
+                value={newThoughtInput}
+                onChange={(e) => setNewThoughtInput(e.target.value)}
+                maxLength={100}
+                className="flex-1 px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-cyan-400"
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={!newThoughtInput.trim()}
+                className="px-3.5 py-2 rounded-xl liquid-pill-active disabled:opacity-40 text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <Plus size={13} />
+                <span>Park</span>
+              </button>
+            </form>
+
+            {/* List of parked thoughts */}
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {parkedThoughts.length === 0 ? (
+                <div className="py-4 text-center text-zinc-500 text-xs italic">
+                  No parked thoughts yet. Mental RAM is clear.
+                </div>
+              ) : (
+                parkedThoughts.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/5 text-xs text-zinc-200"
+                  >
+                    <span className="truncate pr-2">{item.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteThought(item.id)}
+                      className="text-zinc-500 hover:text-red-400 p-1 cursor-pointer shrink-0 transition-colors"
+                      title="Discard thought"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowParkingLot(false)}
+                className="w-full py-2.5 liquid-pill text-zinc-300 font-medium text-xs rounded-xl hover:text-white cursor-pointer"
+              >
+                Close &amp; Keep Flowing
               </button>
             </div>
           </div>

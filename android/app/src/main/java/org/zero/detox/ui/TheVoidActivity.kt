@@ -11,6 +11,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
+import android.media.AudioManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
@@ -137,8 +138,32 @@ class TheVoidActivity : AppCompatActivity() {
         isBespokeStyle = VoidThemeStore.isBespokeStyle(this)
 
         tryDeviceOwnerPinning()
+        applyVoidSilentMode()
         buildViewHierarchy()
         startTickers()
+    }
+
+    private var originalRingerMode: Int? = null
+
+    private fun applyVoidSilentMode() {
+        try {
+            val am = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            originalRingerMode = am.ringerMode
+            // Set to VIBRATE mode: silences intrusive sounds while ensuring critical Phone Calls
+            // and WhatsApp messages remain audible/vibrating and visible (Never force strict DND).
+            if (am.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+                am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun restoreRingerMode() {
+        try {
+            val am = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            originalRingerMode?.let {
+                am.ringerMode = it
+            }
+        } catch (_: Exception) {}
     }
 
     @Suppress("DEPRECATION")
@@ -1007,10 +1032,40 @@ class TheVoidActivity : AppCompatActivity() {
             return
         }
 
+        val input = EditText(this).apply {
+            hint = "Why am I breaking this session for myself?"
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#71717A"))
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(8).toFloat()
+                setColor(Color.parseColor("#18181B"))
+                setStroke(dp(1), Color.parseColor("#3F3F46"))
+            }
+        }
+        val note = TextView(this).apply {
+            text = "Your answer is not saved anywhere. It serves only as a mindful mirror."
+            setTextColor(Color.parseColor("#A1A1AA"))
+            textSize = 10f
+            setPadding(dp(4), dp(8), dp(4), 0)
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(10), dp(20), dp(4))
+            addView(input)
+            addView(note)
+        }
+
         AlertDialog.Builder(this)
-            .setTitle("Use Emergency Escape Ticket?")
-            .setMessage("You have $balance Emergency Escape Ticket(s).\n\nUsing 1 ticket consumes it and terminates the lock.\n\nABORTED SESSION PENALTY: All elapsed time in this session is VOIDED and will NOT count toward your next 20h Escape Ticket.")
-            .setPositiveButton("Use (-1 Escape Ticket)") { _, _ ->
+            .setTitle("Why am I breaking this session?")
+            .setMessage("You have $balance Emergency Escape Ticket(s).\n\nABORTED SESSION PENALTY: All elapsed focus time in this session will be permanently voided.")
+            .setView(container)
+            .setPositiveButton("Break Session (-1 Ticket)") { _, _ ->
+                val reason = input.text.toString().trim()
+                if (reason.isEmpty()) {
+                    Toast.makeText(this, "A reflection is required before breaking.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
                 val success = lockEngine.deployParachute()
                 if (success) {
                     isInForeground = false
@@ -1187,6 +1242,7 @@ class TheVoidActivity : AppCompatActivity() {
     override fun onDestroy() {
         isInForeground = false
         countDownTimer?.cancel()
+        restoreRingerMode()
         super.onDestroy()
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Check } from 'lucide-react';
+import { Trophy, Check, Bookmark } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 
 interface SessionVictoryModalProps {
@@ -17,6 +17,19 @@ export const SessionVictoryModal: React.FC<SessionVictoryModalProps> = ({
 }) => {
   const [note, setNote] = useState<string>('');
   const [rating, setRating] = useState<'deep_flow' | 'steady' | 'challenging'>('deep_flow');
+  const [parkedThoughts] = useState<Array<{ id: string; text: string; timestamp: number }>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('zero_parked_thoughts_v1') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const clearParkedThoughts = () => {
+    try {
+      localStorage.removeItem('zero_parked_thoughts_v1');
+    } catch {}
+  };
 
   const formatReclaimed = (secs: number) => {
     const hours = Math.floor(secs / 3600);
@@ -27,8 +40,15 @@ export const SessionVictoryModal: React.FC<SessionVictoryModalProps> = ({
   };
 
   const handleFinish = () => {
+    clearParkedThoughts();
     haptics.milestoneChime();
     onSave(note.trim(), rating);
+  };
+
+  const handleDismiss = () => {
+    clearParkedThoughts();
+    haptics.thud();
+    onDismiss();
   };
 
   return (
@@ -102,6 +122,26 @@ export const SessionVictoryModal: React.FC<SessionVictoryModalProps> = ({
           </div>
         </div>
 
+        {/* Unsealed Parked Thoughts */}
+        {parkedThoughts.length > 0 && (
+          <div className="text-left space-y-1.5 p-3 rounded-xl liquid-inset border border-cyan-400/20 bg-cyan-500/5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Bookmark size={11} />
+                <span>Unsealed Parked Thoughts ({parkedThoughts.length})</span>
+              </span>
+            </div>
+            <ul className="space-y-1 max-h-24 overflow-y-auto pr-1">
+              {parkedThoughts.map((t) => (
+                <li key={t.id} className="text-xs text-zinc-300 flex items-start gap-1.5">
+                  <span className="text-cyan-400 mt-0.5">•</span>
+                  <span className="break-words">{t.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Buttons */}
         <div className="space-y-2 pt-2">
           <button
@@ -115,10 +155,7 @@ export const SessionVictoryModal: React.FC<SessionVictoryModalProps> = ({
 
           <button
             type="button"
-            onClick={() => {
-              haptics.thud();
-              onDismiss();
-            }}
+            onClick={handleDismiss}
             className="w-full py-2 liquid-pill text-zinc-400 hover:text-white text-xs rounded-xl cursor-pointer"
           >
             Skip Note
