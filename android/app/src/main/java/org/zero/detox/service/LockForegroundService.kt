@@ -24,6 +24,7 @@ import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
 import androidx.core.app.NotificationCompat
+import org.zero.detox.MainActivity
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
@@ -279,7 +280,7 @@ class LockForegroundService : Service() {
     }
 
     private fun snapBackToVoid() {
-        val voidIntent = Intent(this@LockForegroundService, TheVoidActivity::class.java).apply {
+        val voidIntent = Intent(this@LockForegroundService, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -342,7 +343,7 @@ class LockForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun buildLockNotification(tag: String): Notification {
-        val voidIntent = Intent(this, TheVoidActivity::class.java).apply {
+        val voidIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(

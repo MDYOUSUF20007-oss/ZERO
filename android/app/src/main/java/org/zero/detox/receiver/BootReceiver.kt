@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
+import org.zero.detox.MainActivity
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.service.LockForegroundService
@@ -52,11 +53,11 @@ class BootReceiver : BroadcastReceiver() {
                 ContextCompat.startForegroundService(context, serviceIntent)
             } catch (_: Exception) {}
 
-            val voidIntent = Intent(context, TheVoidActivity::class.java).apply {
+            val voidIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             }
             try {
                 context.startActivity(voidIntent)

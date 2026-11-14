@@ -826,4 +826,28 @@ class ZeroNativeBridge(
     fun acknowledgeVerifiedCompletions(eventIdsJson: String) {
         parachuteStore.acknowledgeVerifiedCompletions(eventIdsJson)
     }
+
+    @JavascriptInterface
+    fun launchBagApp(packageName: String): Boolean {
+        if (!bagStore.isPackageAllowedDuringLock(packageName)) {
+            return false
+        }
+        TheVoidActivity.activeBagPackage = packageName
+        TheVoidActivity.bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3500L
+        return try {
+            val launchIntent = activity.packageManager.getLaunchIntentForPackage(packageName)
+                ?: if (packageName.contains("morphe")) {
+                    activity.packageManager.getLaunchIntentForPackage("com.google.android.youtube")
+                } else null
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                activity.startActivity(launchIntent)
+                true
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

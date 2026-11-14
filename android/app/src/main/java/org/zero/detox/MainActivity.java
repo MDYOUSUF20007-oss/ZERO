@@ -32,6 +32,7 @@ import org.zero.detox.data.ParachuteStore;
 import org.zero.detox.plugin.CloudAutoBackupPlugin;
 import org.zero.detox.plugin.ZeroEngagePlugin;
 import org.zero.detox.security.AppSecurityGuard;
+import org.zero.detox.ui.TheVoidActivity;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_ONBOARDING = "zero_onboarding_prefs";
@@ -275,12 +276,19 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        TheVoidActivity.isInForeground = true;
         if (!signatureVerified || !AppSecurityGuard.isAppSignatureValid(this)) {
             signatureVerified = false;
             showTamperAlertAndTerminate();
             return;
         }
         dispatchPermissionRefreshToJs();
+    }
+
+    @Override
+    public void onPause() {
+        TheVoidActivity.isInForeground = false;
+        super.onPause();
     }
 
     @Override

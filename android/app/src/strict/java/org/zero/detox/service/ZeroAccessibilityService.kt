@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
+import org.zero.detox.MainActivity
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
 import org.zero.detox.engage.EngageConfig
@@ -743,7 +744,7 @@ class ZeroAccessibilityService : AccessibilityService() {
         if (nowElapsed - lastVoidSnapElapsed < 180L) return
         lastVoidSnapElapsed = nowElapsed
         try {
-            val voidIntent = Intent(this, TheVoidActivity::class.java).apply {
+            val voidIntent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or

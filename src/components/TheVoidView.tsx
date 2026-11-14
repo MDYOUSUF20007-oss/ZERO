@@ -14,6 +14,7 @@ import { resolveAppBrandVisual, type AppBrandVisual } from '../utils/appBrandCol
 import { haptics } from '../utils/haptics';
 import { voidAudio, FOCUS_SOUND_TRACKS, type FocusSoundTrack } from '../utils/voidAudio';
 import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
+import { computeThemeRuntime, DEFAULT_THEME_CONFIG } from '../utils/themes';
 import { AppFrictionModal } from './AppFrictionModal';
 import { ZeroTubeModal } from './ZeroTubeModal';
 import {
@@ -66,9 +67,19 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   parachuteMetrics,
   activeBag,
   profile = null,
+  themeConfig,
   onDeployParachute,
 }) => {
   const { fluentOrbIntensity, gpuThermalSafeguard } = useInterfaceStyle();
+  const themeRuntime = useMemo(
+    () => computeThemeRuntime(themeConfig ?? DEFAULT_THEME_CONFIG),
+    [themeConfig]
+  );
+  const activeAccent =
+    themeRuntime.cssVars['--zero-accent'] ||
+    themeRuntime.cssVars['--accent-primary'] ||
+    '#38bdf8';
+  const isLightMode = themeRuntime.mode === 'light';
   const [clockText, setClockText] = useState<string>(() => format12HourClock(new Date()));
   const [batteryPct, setBatteryPct] = useState<number>(() => {
     if (typeof window !== 'undefined' && window.ZeroNative) {
@@ -399,6 +410,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       return;
     }
 
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchBagApp) {
+      const launched = (window.ZeroNative as any).launchBagApp(packageName);
+      if (launched) {
+        haptics.thud();
+        return;
+      }
+    }
+
     if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {
       window.ZeroNative.openExternalUrl(`intent:#Intent;package=${packageName};end`);
     } else {
@@ -411,10 +430,17 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   return (
     <div
       data-void-terminal="true"
-      className="fixed inset-0 z-50 flex flex-col justify-between overflow-x-hidden overflow-y-auto select-none bg-black text-white px-4 py-3 sm:px-6"
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-x-hidden overflow-y-auto select-none px-4 py-3 sm:px-6 transition-colors duration-300 ${
+        isLightMode ? 'text-stone-900' : 'text-white'
+      }`}
       style={{
+        backgroundColor: themeRuntime.cssVars['--zero-bg-primary'] || '#000000',
+        backgroundImage: themeRuntime.cssVars['--zero-bg-image'],
+        backgroundSize: themeRuntime.cssVars['--zero-bg-size'],
+        color: themeRuntime.cssVars['--zero-ink-primary'] || (isLightMode ? '#1C1917' : '#FFFFFF'),
         paddingTop: 'calc(0.75rem + var(--zero-safe-top))',
         paddingBottom: 'calc(0.75rem + var(--zero-safe-bottom))',
+        ...themeRuntime.cssVars,
       }}
     >
       {/* FEATURE 4: FLIP-TO-FOCUS PURE AMOLED BLACKOUT OVERLAY */}
@@ -446,8 +472,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               transform: `translate(${aodDrift.x}px, ${aodDrift.y}px)`,
             }}
           >
-            <span className="text-[9px] font-mono tracking-widest uppercase text-cyan-400/40 mb-3 flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-cyan-400/40 animate-pulse" />
+            <span
+              className="text-[9px] font-mono tracking-widest uppercase mb-3 flex items-center gap-1.5"
+              style={{ color: activeAccent }}
+            >
+              <span className="w-1 h-1 rounded-full animate-pulse" style={{ backgroundColor: activeAccent }} />
               <span>AOD GLANCEABLE // {workTagDisplay}</span>
             </span>
 
@@ -462,7 +491,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               <defs>
                 <linearGradient id={`${gradId}-aod`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor={activeAccent} stopOpacity="0.5" />
                 </linearGradient>
               </defs>
               {timerPixelLayout.rects.map((rect, idx) => (
@@ -492,31 +521,42 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       )}
 
       {/* Dynamic Sub-Surface Ambient Glow Orbs */}
-      <div
-        aria-hidden="true"
-        className="fixed -top-20 -left-20 w-80 h-80 rounded-full pointer-events-none blur-3xl transition-all duration-700"
-        style={{
-          background:
-            'radial-gradient(circle, var(--accent-primary, #38bdf8) 0%, var(--accent-soft, rgba(56,189,248,0.3)) 45%, transparent 70%)',
-          opacity: gpuThermalSafeguard ? 0.15 : Math.max(0.2, fluentOrbIntensity * 0.75),
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full pointer-events-none blur-3xl transition-all duration-700"
-        style={{
-          background:
-            'radial-gradient(circle, var(--accent-secondary, var(--accent-primary, #38bdf8)) 0%, transparent 65%)',
-          opacity: gpuThermalSafeguard ? 0.12 : Math.max(0.18, fluentOrbIntensity * 0.6),
-        }}
-      />
+      {themeRuntime.family !== 'kindle' && (
+        <>
+          <div
+            aria-hidden="true"
+            className="fixed -top-20 -left-20 w-80 h-80 rounded-full pointer-events-none blur-3xl transition-all duration-700"
+            style={{
+              background: `radial-gradient(circle, ${activeAccent} 0%, rgba(56,189,248,0.25) 45%, transparent 70%)`,
+              opacity: gpuThermalSafeguard ? 0.15 : Math.max(0.2, fluentOrbIntensity * 0.75),
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full pointer-events-none blur-3xl transition-all duration-700"
+            style={{
+              background: `radial-gradient(circle, ${activeAccent} 0%, transparent 65%)`,
+              opacity: gpuThermalSafeguard ? 0.12 : Math.max(0.18, fluentOrbIntensity * 0.6),
+            }}
+          />
+        </>
+      )}
 
       {/* TOP STATUS BAR: Live Clock, Status, Battery, Controls */}
-      <div className="relative z-10 w-full max-w-md mx-auto flex items-center justify-between text-xs font-sans tabular-nums text-zinc-400 pt-1 pb-2 shrink-0">
+      <div className="relative z-10 w-full max-w-md mx-auto flex items-center justify-between text-xs font-sans tabular-nums pt-1 pb-2 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-zinc-200 tracking-wide">{clockText}</span>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full liquid-pill-active text-[10px] font-semibold uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span className={`font-semibold tracking-wide ${isLightMode ? 'text-stone-800' : 'text-zinc-200'}`}>
+            {clockText}
+          </span>
+          <div
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+            style={{
+              backgroundColor: isLightMode ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+              color: activeAccent,
+              border: `1px solid ${activeAccent}40`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: activeAccent }} />
             <span>VOID ARMED</span>
           </div>
         </div>
@@ -686,7 +726,16 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         {/* HERO CHRONOMETER GLASS CARD */}
         <div
           data-void-inverted-timer="true"
-          className="relative w-full rounded-[26px] liquid-glass p-5 sm:p-6 text-center overflow-hidden shadow-2xl transition-all duration-200"
+          className={`relative w-full rounded-[26px] p-5 sm:p-6 text-center overflow-hidden shadow-2xl transition-all duration-200 ${
+            isLightMode
+              ? 'bg-amber-50/70 border border-stone-300 shadow-stone-300/30'
+              : 'liquid-glass border border-white/10'
+          }`}
+          style={
+            themeRuntime.family === 'matte'
+              ? { backgroundColor: themeRuntime.cssVars['--zero-surface-1'] || '#1c1c22' }
+              : undefined
+          }
         >
           {/* Top specular highlight rim */}
           <div
@@ -703,9 +752,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           <div className="relative z-10 flex items-center justify-between gap-2 mb-3">
             <span
               data-void-work-hashtag="true"
-              className="text-xs font-bold uppercase tracking-wider text-cyan-300 truncate flex items-center gap-1.5"
+              className="text-xs font-bold uppercase tracking-wider truncate flex items-center gap-1.5"
+              style={{ color: activeAccent }}
             >
-              <Sparkles size={12} className="theme-text-accent" />
+              <Sparkles size={12} style={{ color: activeAccent }} />
               {workBagActive ? `MISSION ${workTagDisplay}` : `LOCKED IN ${workTagDisplay}`}
             </span>
 
@@ -717,9 +767,16 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 pomodoroIsBreak
                   ? 'bg-amber-500/20 text-amber-200 border-amber-400/40 animate-pulse'
                   : pomodoroMode !== 'off'
-                  ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                  ? 'border-cyan-400/30'
+                  : isLightMode
+                  ? 'text-stone-600 bg-black/[0.04] border-stone-300'
                   : 'text-zinc-400 bg-white/[0.05] border-white/10 hover:text-white'
               }`}
+              style={
+                pomodoroMode !== 'off' && !pomodoroIsBreak
+                  ? { color: activeAccent, borderColor: `${activeAccent}50`, backgroundColor: `${activeAccent}15` }
+                  : undefined
+              }
             >
               <Coffee size={10} />
               <span>
@@ -738,7 +795,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           <div className="relative z-10 py-1 my-1">
             {/* System Clock (5x7 Dot-Matrix Pixel Layout) */}
             <div className="flex flex-col items-center justify-center pt-0.5 pb-2">
-              <span className="text-[9.5px] font-mono tracking-widest uppercase text-zinc-400 mb-1">
+              <span className={`text-[9.5px] font-mono tracking-widest uppercase mb-1 ${isLightMode ? 'text-stone-500' : 'text-zinc-400'}`}>
                 SYSTEM TIME // SYNCED
               </span>
               <svg
@@ -750,8 +807,22 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               >
                 <defs>
                   <linearGradient id={clockGradId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="100%" stopColor="rgba(255,255,255,0.72)" />
+                    <stop
+                      offset="0%"
+                      stopColor={
+                        isLightMode
+                          ? (themeRuntime.cssVars['--zero-ink-primary'] || '#1C1917')
+                          : '#FFFFFF'
+                      }
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={
+                        isLightMode
+                          ? (themeRuntime.cssVars['--zero-ink-secondary'] || '#37332F')
+                          : 'rgba(255,255,255,0.72)'
+                      }
+                    />
                   </linearGradient>
                 </defs>
                 {clockPixelLayout.rects.map((rect, idx) => (
@@ -768,26 +839,45 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </div>
 
             {/* Glowing Accent Divider */}
-            <div className="w-24 h-[1px] mx-auto bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent my-1" />
+            <div
+              className="w-24 h-[1px] mx-auto my-1"
+              style={{
+                background: `linear-gradient(90deg, transparent 0%, ${activeAccent}66 50%, transparent 100%)`,
+              }}
+            />
 
             {/* Countdown Timer (5x7 Dot-Matrix Pixel Layout with Radiant Theme Gradient) */}
             <div className="flex flex-col items-center justify-center pt-2 pb-1">
-              <span className="text-[9.5px] font-mono tracking-widest uppercase text-cyan-300 mb-1.5 flex items-center gap-1.5">
-                <Lock size={10} className="theme-text-accent" />
+              <span
+                className="text-[9.5px] font-mono tracking-widest uppercase mb-1.5 flex items-center gap-1.5"
+                style={{ color: activeAccent }}
+              >
+                <Lock size={10} style={{ color: activeAccent }} />
                 <span>COUNTDOWN TIMER // SEALED</span>
               </span>
               <svg
                 role="img"
                 aria-label={`Remaining lock time ${timerPixelLayout.normalizedText}`}
                 viewBox={`0 0 ${timerPixelLayout.totalCols} ${timerPixelLayout.totalRows}`}
-                className="h-12 sm:h-14 w-auto max-w-full overflow-visible filter drop-shadow-[0_0_24px_var(--liquid-accent-soft-glow)]"
+                className="h-12 sm:h-14 w-auto max-w-full overflow-visible"
+                style={{ filter: `drop-shadow(0 0 20px ${activeAccent}44)` }}
                 shapeRendering="crispEdges"
               >
                 <defs>
                   <linearGradient id={timerGradId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="45%" stopColor="var(--liquid-accent-tint, #38bdf8)" />
-                    <stop offset="100%" stopColor="var(--liquid-accent-vibrant, #00f0ff)" />
+                    <stop
+                      offset="0%"
+                      stopColor={
+                        isLightMode
+                          ? (themeRuntime.cssVars['--zero-ink-primary'] || '#1C1917')
+                          : '#FFFFFF'
+                      }
+                    />
+                    <stop offset="45%" stopColor={activeAccent} />
+                    <stop
+                      offset="100%"
+                      stopColor={themeRuntime.cssVars['--zero-dial-stroke'] || activeAccent}
+                    />
                   </linearGradient>
                 </defs>
                 {timerPixelLayout.rects.map((rect, idx) => (
@@ -801,7 +891,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   />
                 ))}
               </svg>
-              <div className="flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-widest text-zinc-400 mt-2">
+              <div className={`flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-widest mt-2 ${isLightMode ? 'text-stone-500' : 'text-zinc-400'}`}>
                 <span>Target Finish {targetEndTimeFormatted}</span>
               </div>
             </div>
@@ -809,19 +899,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
           {/* Smooth Progress Track */}
           <div className="relative z-10 mt-3.5 pt-2 border-t border-white/[0.08]">
-            <div className="flex items-center justify-between text-[11px] font-sans font-medium text-zinc-400 mb-1.5 tabular-nums">
+            <div className={`flex items-center justify-between text-[11px] font-sans font-medium mb-1.5 tabular-nums ${isLightMode ? 'text-stone-600' : 'text-zinc-400'}`}>
               <span>{Math.floor(activeLock.elapsedSeconds / 60)}m completed</span>
-              <span className="text-zinc-200 font-semibold">{progressPct}%</span>
+              <span className={`font-semibold ${isLightMode ? 'text-stone-900' : 'text-zinc-200'}`}>{progressPct}%</span>
               <span>{Math.ceil(activeLock.remainingSeconds / 60)}m left</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-white/[0.08] overflow-hidden p-0.5">
+            <div className={`w-full h-1.5 rounded-full overflow-hidden p-0.5 ${isLightMode ? 'bg-stone-300/60' : 'bg-white/[0.08]'}`}>
               <div
                 className="h-full rounded-full transition-all duration-1000 ease-out"
                 style={{
                   width: `${progressPct}%`,
-                  background:
-                    'linear-gradient(90deg, var(--accent-primary, #38bdf8), var(--accent-secondary, #00f0ff))',
-                  boxShadow: '0 0 10px var(--liquid-accent-soft-glow)',
+                  background: `linear-gradient(90deg, ${activeAccent}, ${themeRuntime.cssVars['--zero-dial-stroke'] || activeAccent})`,
+                  boxShadow: `0 0 10px ${activeAccent}66`,
                 }}
               />
             </div>
@@ -832,20 +921,38 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         <div
           onClick={handleNextQuote}
           title="Tap to cycle focus wisdom"
-          className="relative w-full rounded-2xl liquid-glass px-4 py-3 flex items-start gap-3 cursor-pointer liquid-spring hover:brightness-110 active:scale-[0.99] transition-all border border-white/10 shadow-lg"
+          className={`relative w-full rounded-2xl px-4 py-3 flex items-start gap-3 cursor-pointer liquid-spring hover:brightness-110 active:scale-[0.99] transition-all border shadow-lg ${
+            isLightMode
+              ? 'bg-amber-50/70 border-stone-300 text-stone-900'
+              : 'liquid-glass border-white/10 text-white'
+          }`}
+          style={
+            themeRuntime.family === 'matte'
+              ? { backgroundColor: themeRuntime.cssVars['--zero-surface-1'] || '#1c1c22' }
+              : undefined
+          }
         >
-          <div className="w-7 h-7 rounded-xl liquid-inset flex items-center justify-center shrink-0 mt-0.5 text-cyan-300">
-            <Quote size={13} className="theme-text-accent" />
+          <div
+            className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+            style={{
+              backgroundColor: isLightMode ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+              color: activeAccent,
+            }}
+          >
+            <Quote size={13} style={{ color: activeAccent }} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-zinc-200 italic font-serif leading-relaxed line-clamp-2">
+            <p className={`text-xs italic font-serif leading-relaxed line-clamp-2 ${isLightMode ? 'text-stone-800' : 'text-zinc-200'}`}>
               &ldquo;{currentQuote.quote}&rdquo;
             </p>
             <div className="flex items-center justify-between gap-2 mt-1">
-              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-cyan-300">
+              <span
+                className="text-[10px] font-sans font-semibold uppercase tracking-wider"
+                style={{ color: activeAccent }}
+              >
                 — {currentQuote.author}
               </span>
-              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+              <span className={`text-[9px] font-mono uppercase tracking-widest ${isLightMode ? 'text-stone-500' : 'text-zinc-500'}`}>
                 Tap to cycle
               </span>
             </div>
@@ -920,7 +1027,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
           </div>
         </div>
 
-        <div className="w-full rounded-[22px] liquid-glass p-2 border border-white/10 shadow-2xl flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
+        <div
+          className={`w-full rounded-[22px] p-2 border shadow-2xl flex items-center justify-center gap-3 overflow-x-auto no-scrollbar ${
+            isLightMode
+              ? 'bg-amber-50/80 border-stone-300'
+              : 'liquid-glass border-white/10'
+          }`}
+          style={
+            themeRuntime.family === 'matte'
+              ? { backgroundColor: themeRuntime.cssVars['--zero-surface-1'] || '#1c1c22' }
+              : undefined
+          }
+        >
           {visibleBagApps.length === 0 ? (
             <div className="flex items-center justify-center gap-4 py-1">
               {/* Compulsory Phone Icon */}

@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.zero.detox.MainActivity
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.service.LockForegroundService
@@ -247,11 +248,11 @@ class LockEngine @JvmOverloads constructor(
         } catch (_: Exception) {}
 
         try {
-            val voidIntent = Intent(context, TheVoidActivity::class.java).apply {
+            val voidIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             }
             context.startActivity(voidIntent)
         } catch (_: Exception) {}
