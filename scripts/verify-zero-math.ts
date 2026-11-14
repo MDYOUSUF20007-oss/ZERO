@@ -530,8 +530,8 @@ const sampleZbakPayload: ZeroZbakPayload = {
   exportedAt: '2026-11-10T07:00:00.000Z',
   exportedAtMs: 1794294000000,
   onboardingComplete: true,
-  cumulativeSeconds: 144000, // 40h -> 2 earned tickets
-  totalReclaimedSeconds: 180000,
+  cumulativeSeconds: 252000, // 70h -> 2 earned tickets (35h per ticket)
+  totalReclaimedSeconds: 252000,
   totalCompletedSessions: 12,
   currentStreak: 5,
   usedParachutes: 1,

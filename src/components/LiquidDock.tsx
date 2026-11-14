@@ -6,7 +6,7 @@ export type ZeroNavTab = 'dial' | 'dashboard' | 'schedules' | 'support';
 
 interface LiquidDockProps {
   activeTab: ZeroNavTab;
-  ticketCount: number;
+  ticketCount?: number;
   onSelectTab: (tab: ZeroNavTab) => void;
 }
 
@@ -19,7 +19,7 @@ const TABS: Array<{ id: ZeroNavTab; label: string }> = [
 
 export const LiquidDock: React.FC<LiquidDockProps> = ({
   activeTab,
-  ticketCount,
+  ticketCount: _ticketCount,
   onSelectTab,
 }) => {
   const activeIdx = Math.max(

@@ -392,7 +392,12 @@ if (!indexHtml) {
       directives.set(tokens[0].toLowerCase(), tokens.slice(1));
     }
 
-    const ALLOWED_CONNECT = new Set(["'self'", 'https://mdyousuf20007-oss.github.io', 'content:']);
+    const ALLOWED_CONNECT = new Set([
+      "'self'",
+      'https://mdyousuf20007-oss.github.io',
+      'https://api.github.com',
+      'content:',
+    ]);
     const ALLOWED_FORM = new Set(["'self'", 'https://mdyousuf20007-oss.github.io', 'content:']);
 
     const defaultSrc = directives.get('default-src') || [];
@@ -491,13 +496,36 @@ if (
   );
 }
 
+const ALLOWED_NETWORK_PRIMITIVE_FILES = new Set([
+  'src/components/CreditsModal.tsx',
+  'src/utils/autoUpdater.ts',
+]);
+
 for (const relFile of srcCodeFiles) {
   const code = stripJsComments(readText(relFile) || '');
   if (/\bfetch\s*\(|\bXMLHttpRequest\b|\bnew\s+WebSocket\b|navigator\.sendBeacon\s*\(/.test(code)) {
-    fail(
-      'E6',
-      `Unauthorized network exfiltration primitive (fetch/XHR/WebSocket/sendBeacon) found in ${relFile}.`
-    );
+    if (ALLOWED_NETWORK_PRIMITIVE_FILES.has(relFile)) {
+      if (/\bXMLHttpRequest\b|\bnew\s+WebSocket\b|navigator\.sendBeacon\s*\(/.test(code)) {
+        fail(
+          'E6',
+          `Unauthorized network exfiltration primitive (XHR/WebSocket/sendBeacon) found in ${relFile}.`
+        );
+      }
+      const fetchUrls = [...code.matchAll(/\bfetch\s*\(\s*[`'"]([^`'"]+)[`'"]/g)].map((m) => m[1]);
+      for (const url of fetchUrls) {
+        if (!url.startsWith('https://api.github.com/repos/MDYOUSUF20007-oss/ZERO/')) {
+          fail(
+            'E6',
+            `Unauthorized fetch URL "${url}" in ${relFile}. Must strictly target official GitHub repo API.`
+          );
+        }
+      }
+    } else {
+      fail(
+        'E6',
+        `Unauthorized network exfiltration primitive (fetch/XHR/WebSocket/sendBeacon) found in ${relFile}.`
+      );
+    }
   }
 }
 

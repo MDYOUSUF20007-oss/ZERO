@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { haptics } from '../utils/haptics';
-import { Sparkles, ArrowRight, X, Clock, BarChart3, Settings, Heart } from 'lucide-react';
+import { ArrowRight, X, Clock, BarChart3, Settings, Heart } from 'lucide-react';
 
 interface InteractiveTourProps {
   onComplete: () => void;
