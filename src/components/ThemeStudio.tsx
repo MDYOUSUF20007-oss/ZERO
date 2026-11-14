@@ -1,239 +1,106 @@
 import React from 'react';
-import type { ThemeConfig, EngineType } from '../types';
+import type { ThemeConfig } from '../types';
 import { haptics } from '../utils/haptics';
-import { ObsidianCard } from './ObsidianCard';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
-import { ClassicStudio } from './studios/ClassicStudio';
-import { ClassicV2Studio } from './studios/ClassicV2Studio';
-import { TrantorStudio } from './studios/TrantorStudio';
-import { MaterialYouStudio } from './studios/MaterialYouStudio';
-import { FluentGlassStudio } from './studios/FluentGlassStudio';
-import { MinimalistStudio } from './studios/MinimalistStudio';
-import {
-  Palette,
-  Layers,
-  Sparkles,
-  Droplet,
-  Zap,
-  Check,
-  Shield,
-  Wallet,
-} from 'lucide-react';
+import { Palette, Check } from 'lucide-react';
 
 export interface ThemeStudioProps {
-  themeConfig: ThemeConfig;
-  onChange: (next: ThemeConfig) => void;
+  themeConfig?: ThemeConfig;
+  onChange?: (next: ThemeConfig) => void;
 }
 
-export const ThemeStudio: React.FC<ThemeStudioProps> = ({ themeConfig, onChange }) => {
-  const {
-    engine,
-    setEngine,
-    classicPreset,
-    m3Palette,
-    amoled,
-    isClassicV2,
-    isTrantor,
-    isMaterialYou,
-    isFluentGlass,
-    isBespoke,
-  } = useInterfaceStyle();
+export const ThemeStudio: React.FC<ThemeStudioProps> = () => {
+  const { theme, setTheme, availableThemes, activeEngine } = useInterfaceStyle();
 
-  const handleSelectEngine = (nextEngine: EngineType) => {
+  const handleSelectTheme = (themeId: string) => {
     haptics.tick(750);
-    setEngine(nextEngine);
+    setTheme(themeId);
   };
 
-  const activeThemeSummary = isTrantor
-    ? 'Trantor Sage-Obsidian • Fintech Mobile Wallet'
-    : isClassicV2
-    ? 'Classic UI Version 2 (Beta Test) • Onyx Shield'
-    : isMaterialYou
-    ? `Material You (M3) • ${m3Palette.replace('-', ' ')} • ${amoled ? 'AMOLED' : 'Tonal'}`
-    : isFluentGlass
-    ? 'Fluent Glass • Optic Acrylic Refraction'
-    : isBespoke
-    ? 'Bespoke Minimalist • 1px Structural #000000'
-    : themeConfig.family === 'amoled' || classicPreset === 'amoled'
-    ? `Classic UI AMOLED • ${themeConfig.amoledGradient}`
-    : themeConfig.family === 'kindle' || classicPreset === 'paper-kindle'
-    ? `Classic UI Kindle • ${themeConfig.kindlePaperColor}`
-    : `Classic UI Matte • ${themeConfig.matteBaseColor}`;
-
   return (
-    <ObsidianCard
-      ambientGlow={!isBespoke}
-      className={isBespoke || isFluentGlass || isMaterialYou ? 'font-sans' : 'font-mono'}
-      headerClassName="p-4 sm:p-5 space-y-4"
-      footerClassName="px-4 sm:px-5 py-3 flex items-center justify-between gap-2 flex-wrap text-[11px] text-zinc-400"
-      headerContent={
-        <>
-          {/* Universal Engine Header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
-              <div
-                className={`w-8 h-8 flex items-center justify-center shrink-0 ${
-                  isFluentGlass
-                    ? 'liquid-squircle text-cyan-200'
-                    : isMaterialYou
-                    ? 'rounded-full bg-[var(--m3-primary-container)] text-[var(--m3-on-primary-container)]'
-                    : isBespoke
-                    ? 'rounded-md bg-neutral-900 border border-neutral-700 text-blue-400'
-                    : 'rounded-xl obsidian-icon-box'
-                }`}
-              >
-                <Palette
-                  size={15}
-                  strokeWidth={1.75}
-                  style={
-                    isFluentGlass || isMaterialYou
-                      ? undefined
-                      : { color: 'var(--accent-hex, var(--zero-accent))' }
-                  }
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="leading-tight">Theme Studio</span>
-                <span className="text-[10px] text-zinc-400 font-normal lowercase tracking-normal">
-                  Universal Design Engine
-                </span>
-              </div>
-            </div>
-
-            <span
-              className={`text-[10px] font-bold uppercase px-2.5 py-0.5 border shrink-0 ${
-                isTrantor
-                  ? 'rounded-full border-teal-500/50 bg-teal-500/15 text-teal-300'
-                  : isClassicV2
-                  ? 'rounded-full border-amber-500/50 bg-amber-500/15 text-amber-300'
-                  : isMaterialYou
-                  ? 'rounded-full border-transparent bg-[var(--m3-primary-container)] text-[var(--m3-on-primary-container)]'
-                  : isFluentGlass
-                  ? 'rounded-full liquid-pill-active border-transparent'
-                  : isBespoke
-                  ? 'rounded-sm border-blue-500/50 bg-blue-600/20 text-blue-300'
-                  : 'rounded-full obsidian-pill-active font-bold'
-              }`}
-            >
-              {engine === 'trantor'
-                ? 'Trantor Sage'
-                : engine === 'classic-v2'
-                ? 'Classic v2 (Beta)'
-                : engine === 'material-you'
-                ? 'Material You'
-                : engine === 'fluent'
-                ? 'Fluent Glass'
-                : engine === 'minimalist'
-                ? 'Bespoke'
-                : 'Classic UI'}
+    <div className="theme-card p-4 sm:p-5 space-y-4 font-sans">
+      {/* Universal Engine Header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 text-xs theme-text-primary font-semibold uppercase tracking-wider">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 theme-bg-secondary border theme-border">
+            <Palette size={15} strokeWidth={1.75} className="theme-text-accent" />
+          </div>
+          <div className="flex flex-col">
+            <span className="leading-tight">Theme Engine</span>
+            <span className="text-[10px] theme-text-muted font-normal lowercase tracking-normal">
+              Isolated DOM Engine Architecture
             </span>
           </div>
+        </div>
 
-          {/* Top Engine Selector Strip */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-              <span>Select Engine Studio</span>
-              <span className="text-zinc-500 font-normal lowercase">pure css scoped</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2" role="radiogroup" aria-label="Engine Selector">
-              {[
-                {
-                  id: 'classic' as const,
-                  name: 'Classic UI',
-                  tag: 'Obsidian',
-                  icon: Layers,
-                },
-                {
-                  id: 'classic-v2' as const,
-                  name: 'Classic v2',
-                  tag: 'Beta Test',
-                  icon: Shield,
-                },
-                {
-                  id: 'trantor' as const,
-                  name: 'Trantor',
-                  tag: 'Sage-Obsidian',
-                  icon: Wallet,
-                },
-                {
-                  id: 'material-you' as const,
-                  name: 'Material You',
-                  tag: 'M3 Tonal',
-                  icon: Sparkles,
-                },
-                {
-                  id: 'fluent' as const,
-                  name: 'Fluent Glass',
-                  tag: 'Acrylic',
-                  icon: Droplet,
-                },
-                {
-                  id: 'minimalist' as const,
-                  name: 'Bespoke',
-                  tag: 'Mechanical',
-                  icon: Zap,
-                },
-              ].map((item) => {
-                const isSelected = engine === item.id;
-                const IconComponent = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => handleSelectEngine(item.id)}
-                    className={`p-2.5 text-left rounded-xl border transition-all flex flex-col gap-1 ${
-                      isSelected
-                        ? isTrantor
-                          ? 'border-teal-400 bg-[#121418] text-[#F3F4F6] font-semibold shadow-md'
-                          : isClassicV2
-                          ? 'border-amber-400 bg-zinc-900 text-white font-semibold shadow-md'
-                          : isMaterialYou
-                          ? 'border-[var(--m3-primary)] bg-[var(--m3-primary-container)] text-[var(--m3-on-primary-container)] shadow-sm'
-                          : isFluentGlass
-                          ? 'border-cyan-300/60 bg-white/10 text-white shadow-lg'
-                          : isBespoke
-                          ? 'border-blue-500 bg-neutral-950 text-white font-semibold'
-                          : 'border-white/40 bg-zinc-900/90 text-white font-semibold'
-                        : 'border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <IconComponent size={13} className={isSelected ? 'text-white' : 'text-zinc-400'} />
-                      {isSelected && <Check size={12} className="shrink-0 text-white" />}
-                    </div>
-                    <div className="text-xs font-semibold truncate leading-tight">{item.name}</div>
-                    <div className="text-[10px] text-zinc-400 leading-none">{item.tag}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full theme-pill-active border shrink-0">
+          {activeEngine.badge}
+        </span>
+      </div>
 
-          {/* DYNAMICALLY RENDER INDEPENDENT ENGINE-NATIVE STUDIOS */}
-          {engine === 'classic' && (
-            <ClassicStudio themeConfig={themeConfig} onChange={onChange} />
-          )}
+      {/* Top Engine Selector Strip */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider theme-text-muted">
+          <span>Active Interface Theme</span>
+          <span className="theme-text-muted font-normal lowercase">single-mount css</span>
+        </div>
 
-          {engine === 'classic-v2' && <ClassicV2Studio />}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Theme Selector">
+          {availableThemes.map((item) => {
+            const isSelected = theme === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => handleSelectTheme(item.id)}
+                className={`p-3 text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                  isSelected ? 'theme-pill-active' : 'theme-pill hover:opacity-90'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  {/* Swatch dots */}
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0"
+                      style={{ backgroundColor: item.swatchBg }}
+                    />
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0"
+                      style={{ backgroundColor: item.swatchSurface }}
+                    />
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0"
+                      style={{ backgroundColor: item.swatchAccent }}
+                    />
+                  </div>
+                  {isSelected && <Check size={14} className="shrink-0 theme-text-accent" />}
+                </div>
 
-          {engine === 'trantor' && <TrantorStudio />}
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-semibold leading-tight">{item.name}</span>
+                    <span className="text-[9px] uppercase px-1.5 py-0.2 rounded border theme-border font-mono">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <span className="text-[10px] theme-text-muted line-clamp-2 leading-tight">
+                    {item.description}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          {engine === 'material-you' && <MaterialYouStudio />}
-
-          {engine === 'fluent' && <FluentGlassStudio />}
-
-          {engine === 'minimalist' && <MinimalistStudio />}
-        </>
-      }
-      footerContent={
-        <>
-          <span className="text-zinc-300 font-semibold">{activeThemeSummary}</span>
-          <span className="text-zinc-500 font-mono text-[10px]">Engine Isolated</span>
-        </>
-      }
-    />
+      {/* Footer info bar */}
+      <div className="pt-2 border-t theme-border flex items-center justify-between gap-2 flex-wrap text-[11px] theme-text-muted">
+        <span className="theme-text-primary font-semibold">{activeEngine.name} • {activeEngine.badge}</span>
+        <span className="font-mono text-[10px]">Zero Class Leakage</span>
+      </div>
+    </div>
   );
 };
 

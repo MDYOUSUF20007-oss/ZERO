@@ -156,24 +156,10 @@ export function applyThemeModStyles(mod: ThemeModConfig): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.setAttribute('data-zero-mod', mod.id);
-
-  if (mod.cssVars) {
-    for (const [key, val] of Object.entries(mod.cssVars)) {
-      root.style.setProperty(key, val);
-    }
-  }
-
-  if (mod.accentColor) {
-    root.style.setProperty('--zero-accent', mod.accentColor);
-    root.style.setProperty('--accent-hex', mod.accentColor);
-  }
 }
 
 export function removeActiveModStyles(): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.removeAttribute('data-zero-mod');
-  for (const v of SAFE_CSS_VAR_ALLOWLIST) {
-    root.style.removeProperty(v);
-  }
 }

@@ -348,7 +348,10 @@ export type InterfaceStyle =
   | 'fluent_glass'
   | 'trantor'
   | 'onyx'
-  | 'fintech';
+  | 'fintech'
+  | 'amoled'
+  | 'material'
+  | 'minimal';
 
 export type MaterialYouSeed = 'purple' | 'cyan' | 'emerald' | 'crimson';
 
