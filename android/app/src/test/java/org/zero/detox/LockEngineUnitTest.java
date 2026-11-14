@@ -102,7 +102,7 @@ public class LockEngineUnitTest {
     }
 
     @Test
-    public void parachute20HourMilestone_mathAndSyncWork() {
+    public void parachute35HourMilestone_mathAndSyncWork() {
         final Map<String, SharedPreferences> prefMap = new HashMap<>();
         Context fakeContext = new ContextWrapper(null) {
             @Override
@@ -112,7 +112,7 @@ public class LockEngineUnitTest {
         };
 
         ParachuteStore store = new ParachuteStore(fakeContext);
-        store.syncLedgerState(72_000L + 18_000L, 0);
+        store.syncLedgerState(126_000L + 18_000L, 0);
         assertEquals(1, store.getParachuteBalance());
         assertEquals(5.0, store.getMetrics().getCurrentProgressHours(), 0.01);
     }

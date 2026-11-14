@@ -11,8 +11,8 @@ import org.json.JSONObject
  * verified native monotonic completion proofs, and maintains the 20-Hour progression logic.
  *
  * Formula:
- * 1 Emergency Escape Ticket = 72,000 completed seconds (20 cumulative hours).
- * Rollover progress = completed_blocked_seconds % 72000.
+ * 1 Emergency Escape Ticket = 126,000 completed seconds (35 cumulative hours).
+ * Rollover progress = completed_blocked_seconds % 126000.
  */
 class ParachuteStore(context: Context) {
 
@@ -23,7 +23,7 @@ class ParachuteStore(context: Context) {
         const val KEY_BONUS_PARACHUTES = "bonus_parachutes_count"
         const val KEY_TRANSACTION_HISTORY = "parachute_ledger_json"
         const val KEY_PENDING_VERIFIED_COMPLETIONS = "pending_verified_completions_json"
-        const val SECONDS_PER_PARACHUTE = 72_000L // 20 Hours exactly
+        const val SECONDS_PER_PARACHUTE = 126_000L // 35 Hours exactly
         private const val MAX_PENDING_COMPLETIONS = 100
     }
 
@@ -141,7 +141,7 @@ class ParachuteStore(context: Context) {
             val earnedCount = newMilestones - previousMilestones
             appendLedgerEntry(
                 type = "EARNED",
-                description = "20-Hour Phone Blockage Milestone reached (+${earnedCount} Escape Ticket)",
+                description = "35-Hour Phone Blockage Milestone reached (+${earnedCount} Escape Ticket)",
                 delta = earnedCount,
                 tag = tag,
                 timestamp = timestamp
