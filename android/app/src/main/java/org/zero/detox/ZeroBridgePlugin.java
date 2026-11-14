@@ -70,9 +70,9 @@ public class ZeroBridgePlugin extends Plugin {
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
-        } catch (Throwable t) {
-            Log.e(TAG, "Failed to persist routines to SharedPreferences", t);
-            call.reject("Failed to sync routines to native", t);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to persist routines to SharedPreferences", e);
+            call.reject("Failed to sync routines to native", e);
         }
     }
 
@@ -83,9 +83,9 @@ public class ZeroBridgePlugin extends Plugin {
                 getActivity().finishAffinity();
             }
             call.resolve();
-        } catch (Throwable t) {
-            Log.e(TAG, "Failed to exit app", t);
-            call.reject("Could not exit app", t);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to exit app", e);
+            call.reject("Could not exit app", e);
         }
     }
 }
