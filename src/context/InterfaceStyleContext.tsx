@@ -100,6 +100,7 @@ function mountIsolatedThemeEngine(themeId: CanonicalThemeId, accent: AccentColor
 export interface InterfaceStyleContextValue {
   theme: CanonicalThemeId;
   setTheme: (next: InterfaceStyle) => void;
+  restartWithTheme: (next: InterfaceStyle) => void;
   accent: AccentColorId;
   setAccent: (next: AccentColorId) => void;
   interfaceStyle: InterfaceStyle;
@@ -212,6 +213,19 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
     setThemeState('fluent');
   }, [accent]);
 
+  const restartWithTheme = useCallback((nextTheme: InterfaceStyle) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const normalized = normalizeThemeId(nextTheme);
+      window.localStorage.setItem(STORAGE_KEY_THEME, normalized);
+      document.documentElement.removeAttribute('style');
+      if (document.body) document.body.removeAttribute('style');
+    } catch {
+      // ignore
+    }
+    window.location.reload();
+  }, []);
+
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
     mountIsolatedThemeEngine('fluent', safeAccent);
@@ -227,6 +241,7 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
     () => ({
       theme: 'fluent',
       setTheme,
+      restartWithTheme,
       accent,
       setAccent,
       interfaceStyle: 'fluent',
