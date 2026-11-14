@@ -518,11 +518,13 @@ export function App() {
             onResetTipPromptBlock={store.resetTipPromptBlock}
             profile={store.profile}
             isZeroSupporter={store.isZeroSupporter}
+            isDeveloper={store.isDeveloper}
             remainingEscapeTickets={store.parachuteMetrics.currentBalance}
             hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
             hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
             onOpenProfileModal={openInteractiveProfile}
             onClaimFirstDonationBonus={store.claimFirstDonationBonus}
+            onActivateDonorToken={store.activateDonorUnlockToken}
             onRecalibrateHabitProfile={() => setShowOnboardingWizard(true)}
           />
         )}

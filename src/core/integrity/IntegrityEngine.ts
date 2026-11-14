@@ -52,6 +52,7 @@ const PROTECTED_STORAGE_KEYS = Object.freeze({
   CLAIMED_FIRST_TIME_PARACHUTE: 'zero_claimed_first_time_parachute_v1',
   CLAIMED_FIRST_DONATION_PARACHUTE: 'zero_claimed_first_donation_parachute_v1',
   CONSUMED_NATIVE_EVENTS: 'zero_consumed_native_events_v1',
+  DEVELOPER_MODE: 'zero_developer_mode_v1',
   SESSIONS: 'zero_sessions_history_v3',
   LEDGER: 'zero_parachute_ledger_v3',
   SEED_PURGE_FLAG: 'zero_seed_purged_v4',
@@ -833,6 +834,7 @@ export interface ProtectedIntegrityState {
   hasClaimedFirstTimeParachute: boolean;
   hasClaimedFirstDonationParachute: boolean;
   isZeroSupporter: boolean;
+  isDeveloper?: boolean;
   sessions: SessionRecord[];
   ledger: ParachuteLedgerEntry[];
   consumedNativeEventIds: string[];
@@ -885,6 +887,7 @@ function createEmptyProtectedState(): ProtectedIntegrityState {
     hasClaimedFirstTimeParachute: false,
     hasClaimedFirstDonationParachute: false,
     isZeroSupporter: false,
+    isDeveloper: false,
     sessions: [],
     ledger: [],
     consumedNativeEventIds: [],
@@ -892,19 +895,27 @@ function createEmptyProtectedState(): ProtectedIntegrityState {
 }
 
 function sanitizeStoredState(raw: Partial<ProtectedIntegrityState>): ProtectedIntegrityState {
+  const isDeveloper =
+    Boolean(raw.isDeveloper) ||
+    (typeof localStorage !== 'undefined' &&
+      localStorage.getItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE) === '1');
   const claimedFirstTime = Boolean(raw.hasClaimedFirstTimeParachute);
   const claimedFirstDonation = Boolean(raw.hasClaimedFirstDonationParachute);
-  const maxAllowedBonus = (claimedFirstTime ? 1 : 0) + (claimedFirstDonation ? 1 : 0);
+  const maxAllowedBonus = isDeveloper
+    ? 500
+    : (claimedFirstTime ? 1 : 0) + (claimedFirstDonation ? 1 : 0);
+  const maxBonusCeiling = isDeveloper ? 500 : MAX_BONUS_PARACHUTES;
   const rawBonus = Math.max(0, Math.floor(Number(raw.bonusParachutes) || 0));
 
   return {
     cumulativeSeconds: Math.max(0, Math.round(Number(raw.cumulativeSeconds) || 0)),
     totalReclaimedSeconds: Math.max(0, Math.round(Number(raw.totalReclaimedSeconds) || 0)),
     usedParachutes: Math.max(0, Math.floor(Number(raw.usedParachutes) || 0)),
-    bonusParachutes: Math.min(MAX_BONUS_PARACHUTES, maxAllowedBonus, rawBonus),
+    bonusParachutes: Math.min(maxBonusCeiling, maxAllowedBonus, rawBonus),
     hasClaimedFirstTimeParachute: claimedFirstTime,
     hasClaimedFirstDonationParachute: claimedFirstDonation,
-    isZeroSupporter: claimedFirstDonation,
+    isZeroSupporter: claimedFirstDonation || isDeveloper,
+    isDeveloper,
     sessions: Array.isArray(raw.sessions) ? [...raw.sessions] : [],
     ledger: Array.isArray(raw.ledger) ? [...raw.ledger] : [],
     consumedNativeEventIds: Array.isArray(raw.consumedNativeEventIds)
@@ -933,6 +944,9 @@ function persistProtectedState(state: ProtectedIntegrityState): void {
     PROTECTED_STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE,
     state.hasClaimedFirstDonationParachute ? '1' : '0'
   );
+  if (state.isDeveloper) {
+    localStorage.setItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE, '1');
+  }
   localStorage.setItem(
     PROTECTED_STORAGE_KEYS.CONSUMED_NATIVE_EVENTS,
     JSON.stringify(state.consumedNativeEventIds.slice(-500))
@@ -1015,6 +1029,8 @@ function loadProtectedState(): ProtectedIntegrityState {
     localStorage.getItem(PROTECTED_STORAGE_KEYS.CLAIMED_FIRST_TIME_PARACHUTE) === '1';
   const claimedFirstDonation =
     localStorage.getItem(PROTECTED_STORAGE_KEYS.CLAIMED_FIRST_DONATION_PARACHUTE) === '1';
+  const isDeveloper =
+    localStorage.getItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE) === '1';
 
   return sanitizeStoredState({
     cumulativeSeconds: Number(
@@ -1027,7 +1043,8 @@ function loadProtectedState(): ProtectedIntegrityState {
     bonusParachutes: Number(localStorage.getItem(PROTECTED_STORAGE_KEYS.BONUS_PARACHUTES) || '0'),
     hasClaimedFirstTimeParachute: claimedFirstTime,
     hasClaimedFirstDonationParachute: claimedFirstDonation,
-    isZeroSupporter: claimedFirstDonation,
+    isZeroSupporter: claimedFirstDonation || isDeveloper,
+    isDeveloper,
     sessions,
     ledger,
     consumedNativeEventIds,
@@ -1489,7 +1506,7 @@ function claimFirstDonationSupporterPerks(
   };
 }
 
-function activateDonorUnlockToken(
+export function activateDonorUnlockToken(
   currentState: ProtectedIntegrityState,
   rawToken: string,
   persist = true
@@ -1515,12 +1532,13 @@ function activateDonorUnlockToken(
   // Developer Token: Awards test Escape Tickets & Founder Status (replenishable for UI testing)
   if (verified.payload.tier === 'developer') {
     const devTicketsToAdd = Math.max(10, Math.min(100, verified.payload.devTickets ?? 50));
-    const nextBonus = currentState.bonusParachutes + devTicketsToAdd;
+    const nextBonus = Math.min(500, currentState.bonusParachutes + devTicketsToAdd);
     const nextState: ProtectedIntegrityState = {
       ...currentState,
       bonusParachutes: nextBonus,
       isZeroSupporter: true,
       hasClaimedFirstDonationParachute: true,
+      isDeveloper: true,
     };
     if (persist) {
       persistProtectedState(nextState);
@@ -1838,6 +1856,9 @@ function applyVerifiedRestore(input: RestoreInputPayload, persist = true): Verif
 function resetProtectedState(persist = true): ProtectedIntegrityState {
   const empty = createEmptyProtectedState();
   if (persist) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE);
+    }
     persistProtectedState(empty);
   }
   return empty;

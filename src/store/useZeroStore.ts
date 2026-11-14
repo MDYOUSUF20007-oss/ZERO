@@ -312,6 +312,7 @@ export function useZeroStore() {
     hasClaimedFirstTimeParachute,
     hasClaimedFirstDonationParachute,
     isZeroSupporter,
+    isDeveloper,
     sessions,
     ledger,
   } = integrityState;
@@ -1566,27 +1567,67 @@ export function useZeroStore() {
     [profile?.createdAt, emitParachuteReward, syncNativeLedger]
   );
 
-  const claimFirstDonationBonus = useCallback((): boolean => {
-    const claim = IntegrityEngine.claimFirstDonationSupporterPerks(
-      integrityStateRef.current,
-      true
-    );
-    if (!claim.granted) return false;
+  const activateDonorUnlockToken = useCallback(
+    (rawToken: string): { ok: boolean; message: string; grantedNewPerks: boolean } => {
+      const res = IntegrityEngine.activateDonorUnlockToken(
+        integrityStateRef.current,
+        rawToken,
+        true
+      );
+      if (!res.ok) {
+        return { ok: false, message: res.message, grantedNewPerks: false };
+      }
 
-    integrityStateRef.current = claim.state;
-    setIntegrityState(claim.state);
-    syncNativeLedger(
-      claim.state.cumulativeSeconds,
-      claim.state.usedParachutes,
-      claim.state.bonusParachutes
-    );
-    setPostSessionTipPrompt(null);
+      integrityStateRef.current = res.state;
+      setIntegrityState(res.state);
+      syncNativeLedger(
+        res.state.cumulativeSeconds,
+        res.state.usedParachutes,
+        res.state.bonusParachutes
+      );
+      setPostSessionTipPrompt(null);
 
-    if (claim.reward) {
-      emitParachuteReward(claim.reward);
-    }
-    return true;
-  }, [emitParachuteReward, syncNativeLedger]);
+      if (res.reward) {
+        emitParachuteReward(res.reward);
+      }
+
+      return {
+        ok: true,
+        message: res.message,
+        grantedNewPerks: res.grantedNewPerks,
+      };
+    },
+    [emitParachuteReward, syncNativeLedger]
+  );
+
+  const claimFirstDonationBonus = useCallback(
+    (rawToken?: string): boolean => {
+      if (rawToken && rawToken.trim()) {
+        const res = activateDonorUnlockToken(rawToken.trim());
+        return res.ok;
+      }
+      const claim = IntegrityEngine.claimFirstDonationSupporterPerks(
+        integrityStateRef.current,
+        true
+      );
+      if (!claim.granted) return false;
+
+      integrityStateRef.current = claim.state;
+      setIntegrityState(claim.state);
+      syncNativeLedger(
+        claim.state.cumulativeSeconds,
+        claim.state.usedParachutes,
+        claim.state.bonusParachutes
+      );
+      setPostSessionTipPrompt(null);
+
+      if (claim.reward) {
+        emitParachuteReward(claim.reward);
+      }
+      return true;
+    },
+    [activateDonorUnlockToken, emitParachuteReward, syncNativeLedger]
+  );
 
   const dismissWelcomePrompt = useCallback(() => {
     setHasDismissedWelcomeModal(true);
@@ -1597,9 +1638,9 @@ export function useZeroStore() {
       IntegrityEngine.evaluateBadges({
         sessions,
         totalReclaimedHours: parachuteMetrics.totalReclaimedHours,
-        isZeroSupporter,
+        isZeroSupporter: Boolean(isZeroSupporter || isDeveloper),
       }),
-    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter]
+    [sessions, parachuteMetrics.totalReclaimedHours, isZeroSupporter, isDeveloper]
   );
 
   const currentStreak = useMemo(
@@ -2153,6 +2194,8 @@ export function useZeroStore() {
     addCustomHashtag,
     removeCustomHashtag,
     isZeroSupporter,
+    isDeveloper: Boolean(isDeveloper),
+    activateDonorUnlockToken,
     badgeSummary,
     currentStreak,
     hasClaimedFirstTimeParachute,

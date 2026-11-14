@@ -794,6 +794,22 @@ failIf(
   devVerifyOk.ok === true && devVerifyOk.payload.tier === 'developer' && devVerifyOk.payload.devTickets === 50,
   'Developer token must verify with developer tier and 50 devTickets'
 );
+
+const testDevInitial = IntegrityEngine.resetProtectedState(false);
+const activatedDev = IntegrityEngine.activateDonorUnlockToken(testDevInitial, devToken, false);
+failIf(
+  activatedDev.ok &&
+    activatedDev.grantedNewPerks &&
+    activatedDev.state.isDeveloper &&
+    activatedDev.state.isZeroSupporter &&
+    activatedDev.state.bonusParachutes === 50,
+  'Developer token activation must grant 50 testing tickets and developer status'
+);
+const replenishedDev = IntegrityEngine.activateDonorUnlockToken(activatedDev.state, devToken, false);
+failIf(
+  replenishedDev.ok && replenishedDev.state.bonusParachutes === 100,
+  'Developer token must be replenishable for UI testing'
+);
 console.log('PASS: Signed Donor Unlock Token & Developer Sandbox Tokens Verified');
 
 console.log('\n=== TEST 15: Isolated Read-Only IntegrityEngine & Monotonic Native Event Proofs ===');

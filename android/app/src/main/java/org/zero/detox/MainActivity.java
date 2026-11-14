@@ -148,7 +148,11 @@ public class MainActivity extends BridgeActivity {
                         try {
                             Intent upiIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(validated.getNormalizedUrl()));
                             upiIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(Intent.createChooser(upiIntent, "Pay via UPI"));
+                            try {
+                                startActivity(upiIntent);
+                            } catch (Throwable t2) {
+                                startActivity(Intent.createChooser(upiIntent, "Pay via UPI"));
+                            }
                         } catch (Throwable t) {
                             Log.e("ZeroMainActivity", "Failed to launch UPI intent", t);
                         }

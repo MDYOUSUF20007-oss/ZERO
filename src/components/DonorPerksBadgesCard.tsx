@@ -29,22 +29,26 @@ import {
 
 interface DonorPerksBadgesCardProps {
   isZeroSupporter: boolean;
+  isDeveloper?: boolean;
   hasClaimedFirstDonationParachute: boolean;
   remainingEscapeTickets: number;
   cloudAutoBackupEnabled?: boolean;
   environmentSecurity?: NativeEnvironmentSecurity;
-  onClaimFirstDonationBonus?: () => boolean;
+  onClaimFirstDonationBonus?: (rawToken?: string) => boolean;
+  onActivateDonorToken?: (rawToken: string) => { ok: boolean; message: string; grantedNewPerks: boolean };
   onImportData?: (rawInput: string) => { ok: boolean; message: string };
   onRestoreSuccess?: () => void;
 }
 
 export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   isZeroSupporter,
+  isDeveloper,
   hasClaimedFirstDonationParachute,
   remainingEscapeTickets,
   cloudAutoBackupEnabled = false,
   environmentSecurity,
   onClaimFirstDonationBonus,
+  onActivateDonorToken,
   onImportData,
   onRestoreSuccess,
 }) => {
@@ -55,7 +59,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   const [confirmingManualTip, setConfirmingManualTip] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
-  const badgeUnlocked = Boolean(isZeroSupporter || hasClaimedFirstDonationParachute);
+  const badgeUnlocked = Boolean(isZeroSupporter || hasClaimedFirstDonationParachute || isDeveloper);
   const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
 
   const handleCopySupportEmail = async () => {
@@ -95,9 +99,29 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
       }
     }
 
+    if (onActivateDonorToken) {
+      const res = onActivateDonorToken(trimmed);
+      setTokenNotice({ ok: res.ok, message: res.message });
+      if (res.ok) {
+        setTokenInput('');
+      }
+      return;
+    }
+
     const verified = verifyDonorUnlockToken(trimmed);
     if (!verified.ok) {
       setTokenNotice({ ok: false, message: verified.error });
+      return;
+    }
+
+    if (verified.payload.tier === 'developer') {
+      onClaimFirstDonationBonus?.(trimmed);
+      setTokenInput('');
+      const tickets = verified.payload.devTickets ?? 50;
+      setTokenNotice({
+        ok: true,
+        message: `Verified Developer Token for ${verified.payload.email}! Granted +${tickets} Testing Escape Tickets & Founder Status.`,
+      });
       return;
     }
 
@@ -110,7 +134,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
       return;
     }
 
-    const granted = onClaimFirstDonationBonus?.() ?? false;
+    const granted = onClaimFirstDonationBonus?.(trimmed) ?? false;
     setTokenInput('');
     setTokenNotice({
       ok: true,
@@ -154,7 +178,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               <span>Donor Perks &amp; Badges</span>
             </div>
             {badgeUnlocked ? (
-              <ZeroSupporterGoldenBadge compact />
+              <ZeroSupporterGoldenBadge compact isDeveloper={isDeveloper} />
             ) : (
               <span
                 className={

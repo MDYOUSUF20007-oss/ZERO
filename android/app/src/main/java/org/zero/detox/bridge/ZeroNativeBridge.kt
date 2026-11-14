@@ -709,8 +709,13 @@ class ZeroNativeBridge(
                     val rawUpi = Intent(Intent.ACTION_VIEW, parsed).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    Intent.createChooser(rawUpi, "Pay via UPI").apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        activity.startActivity(rawUpi)
+                        return@runOnUiThread
+                    } catch (_: Exception) {
+                        Intent.createChooser(rawUpi, "Pay via UPI").apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
                     }
                 } else {
                     Intent(Intent.ACTION_VIEW, parsed).apply {

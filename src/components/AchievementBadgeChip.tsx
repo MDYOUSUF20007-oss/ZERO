@@ -97,19 +97,26 @@ export function renderBadgeIcon(id: AchievementBadgeId, size: number = 14) {
 
 export const ZeroSupporterGoldenBadge: React.FC<{
   compact?: boolean;
-}> = ({ compact = false }) => {
+  isDeveloper?: boolean;
+  label?: string;
+}> = ({ compact = false, isDeveloper = false, label }) => {
   const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const badgeLabel = label || (isDeveloper ? 'ZERO-FOUNDER' : 'ZERO-SUPPORTER');
 
   if (isFluentGlass) {
     return (
       <span
         data-gold-badge="true"
-        className={`inline-flex items-center gap-1 rounded-full font-sans font-semibold uppercase tracking-wider bg-gradient-to-r from-white/15 via-cyan-300/15 to-sky-400/20 text-cyan-100 border border-cyan-300/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] shrink-0 ${
+        className={`inline-flex items-center gap-1 rounded-full font-sans font-semibold uppercase tracking-wider ${
+          isDeveloper
+            ? 'bg-gradient-to-r from-purple-500/25 via-cyan-400/25 to-sky-400/30 text-cyan-100 border border-purple-400/40 shadow-[0_0_12px_rgba(168,85,247,0.35)]'
+            : 'bg-gradient-to-r from-white/15 via-cyan-300/15 to-sky-400/20 text-cyan-100 border border-cyan-300/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]'
+        } shrink-0 ${
           compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-0.5 text-[10px]'
         }`}
       >
-        <Crown size={compact ? 10 : 11} strokeWidth={1.75} className="shrink-0 text-cyan-300" />
-        <span>ZERO-SUPPORTER</span>
+        <Crown size={compact ? 10 : 11} strokeWidth={1.75} className={`shrink-0 ${isDeveloper ? 'text-purple-300' : 'text-cyan-300'}`} />
+        <span>{badgeLabel}</span>
       </span>
     );
   }
@@ -118,12 +125,14 @@ export const ZeroSupporterGoldenBadge: React.FC<{
     return (
       <span
         data-gold-badge="true"
-        className={`inline-flex items-center gap-1 rounded-sm font-mono font-semibold uppercase tracking-wider bg-neutral-950 text-blue-400 border border-blue-500 shrink-0 ${
+        className={`inline-flex items-center gap-1 rounded-sm font-mono font-semibold uppercase tracking-wider bg-neutral-950 ${
+          isDeveloper ? 'text-purple-400 border border-purple-500' : 'text-blue-400 border border-blue-500'
+        } shrink-0 ${
           compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-0.5 text-[10px]'
         }`}
       >
-        <Crown size={compact ? 10 : 11} className="shrink-0 text-blue-500" />
-        <span>ZERO-SUPPORTER</span>
+        <Crown size={compact ? 10 : 11} className={`shrink-0 ${isDeveloper ? 'text-purple-400' : 'text-blue-500'}`} />
+        <span>{badgeLabel}</span>
       </span>
     );
   }
@@ -131,12 +140,16 @@ export const ZeroSupporterGoldenBadge: React.FC<{
   return (
     <span
       data-gold-badge="true"
-      className={`inline-flex items-center gap-1 rounded-full font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 text-black border border-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.55)] shrink-0 ${
+      className={`inline-flex items-center gap-1 rounded-full font-mono font-black uppercase tracking-wider ${
+        isDeveloper
+          ? 'bg-gradient-to-r from-purple-400 via-amber-300 to-cyan-300 text-black border border-purple-200 shadow-[0_0_16px_rgba(168,85,247,0.65)]'
+          : 'bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 text-black border border-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.55)]'
+      } shrink-0 ${
         compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-0.5 text-[10px]'
       }`}
     >
       <Crown size={compact ? 10 : 11} className="shrink-0" />
-      <span>ZERO-SUPPORTER</span>
+      <span>{badgeLabel}</span>
     </span>
   );
 };

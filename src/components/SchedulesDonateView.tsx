@@ -125,8 +125,10 @@ interface SchedulesDonateViewProps {
   remainingEscapeTickets?: number;
   hasClaimedFirstTimeParachute?: boolean;
   hasClaimedFirstDonationParachute?: boolean;
+  isDeveloper?: boolean;
   onOpenProfileModal?: () => void;
-  onClaimFirstDonationBonus?: () => boolean;
+  onClaimFirstDonationBonus?: (rawToken?: string) => boolean;
+  onActivateDonorToken?: (rawToken: string) => { ok: boolean; message: string; grantedNewPerks: boolean };
   onRecalibrateHabitProfile?: () => void;
 }
 
@@ -204,11 +206,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onResetTipPromptBlock,
   profile = null,
   isZeroSupporter,
+  isDeveloper,
   remainingEscapeTickets = 0,
   hasClaimedFirstTimeParachute = false,
   hasClaimedFirstDonationParachute = false,
   onOpenProfileModal,
   onClaimFirstDonationBonus,
+  onActivateDonorToken,
   onRecalibrateHabitProfile,
 }) => {
   const {
@@ -226,7 +230,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const activeAccent = accent || (materialYouSeedProp === 'cyan' ? 'cyan' : 'purple');
 
   const [cloudNotice, setCloudNotice] = useState<{ ok: boolean; message: string } | null>(null);
-  const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? hasClaimedFirstDonationParachute);
+  const supporterBadgeUnlocked = Boolean(isZeroSupporter ?? (hasClaimedFirstDonationParachute || isDeveloper));
   const restoreDisabled = Boolean(environmentSecurity?.restrictions?.backupRestoreDisabled);
   const [activeSection, setActiveSection] = useState<'schedules' | 'themes' | 'settings' | 'os_security' | 'support'>(
     sectionOverride?.section || 'schedules'
@@ -1779,11 +1783,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           {/* CARD #7: DONOR PERKS & BADGES */}
           <DonorPerksBadgesCard
             isZeroSupporter={supporterBadgeUnlocked}
+            isDeveloper={isDeveloper}
             hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
             remainingEscapeTickets={remainingEscapeTickets}
             cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
             environmentSecurity={environmentSecurity}
             onClaimFirstDonationBonus={onClaimFirstDonationBonus}
+            onActivateDonorToken={onActivateDonorToken}
             onImportData={onImportData}
             onRestoreSuccess={onRestoreSuccess}
           />
@@ -2728,7 +2734,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <CheckCircle2 size={12} />
                         <span>Min ₹{FIRST_DONATION_BONUS_INR} 1st Tip Bonus Claimed</span>
                       </span>
-                      <ZeroSupporterGoldenBadge compact />
+                      <ZeroSupporterGoldenBadge compact isDeveloper={isDeveloper} />
                     </div>
                   )}
 
@@ -2848,11 +2854,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             {/* Donor Perks & Badges (Manual Ko-fi Verification & Signed Token) */}
             <DonorPerksBadgesCard
               isZeroSupporter={supporterBadgeUnlocked}
+              isDeveloper={isDeveloper}
               hasClaimedFirstDonationParachute={hasClaimedFirstDonationParachute}
               remainingEscapeTickets={remainingEscapeTickets}
               cloudAutoBackupEnabled={Boolean(cloudBackupStatus?.enabled)}
               environmentSecurity={environmentSecurity}
               onClaimFirstDonationBonus={onClaimFirstDonationBonus}
+              onActivateDonorToken={onActivateDonorToken}
               onImportData={onImportData}
               onRestoreSuccess={onRestoreSuccess}
             />
