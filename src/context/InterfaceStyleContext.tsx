@@ -26,6 +26,7 @@ const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
 const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
 const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
 const STORAGE_KEY_GLASS_STRENGTH = 'zero_fluent_glass_strength_v1';
+const STORAGE_KEY_GPU_SAFEGUARD = 'zero_gpu_thermal_safeguard_v1';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -144,6 +145,15 @@ function mountIsolatedThemeEngine(
   // Set real-time fluent glass parameters
   applyGlassTokens(root, glassStrength);
 
+  // Restore GPU Battery & Thermal Safeguard attribute
+  try {
+    if (window.localStorage.getItem(STORAGE_KEY_GPU_SAFEGUARD) === 'true') {
+      root.setAttribute('data-gpu-safeguard', 'true');
+    }
+  } catch {
+    // ignore
+  }
+
   // 3. Destroy previous theme engine CSS and mount ONLY the active theme engine file's CSS
   let styleTag = document.getElementById(STYLE_TAG_ID) as HTMLStyleElement | null;
   if (!styleTag) {
@@ -199,6 +209,8 @@ export interface InterfaceStyleContextValue {
   setFluentOrbIntensity: (i: number) => void;
   fluentGlassStrength: number;
   setFluentGlassStrength: (s: number) => void;
+  gpuThermalSafeguard: boolean;
+  setGpuThermalSafeguard: (enabled: boolean) => void;
   fluentBlurStrength: number;
   setFluentBlurStrength: (b: number) => void;
   fluentSpecularHighlight: number;
@@ -285,6 +297,20 @@ export function InterfaceStyleProvider({
     }
   });
 
+  const [gpuThermalSafeguard, setGpuThermalSafeguardState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_GPU_SAFEGUARD);
+      if (saved !== null) return saved === 'true';
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-transparency: reduce)').matches) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
     if (typeof window === 'undefined') return 'fluent';
     try {
@@ -331,6 +357,32 @@ export function InterfaceStyleProvider({
       // ignore
     }
   }, []);
+
+  const setGpuThermalSafeguard = useCallback((enabled: boolean) => {
+    setGpuThermalSafeguardState(enabled);
+    if (typeof document !== 'undefined') {
+      if (enabled) {
+        document.documentElement.setAttribute('data-gpu-safeguard', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-gpu-safeguard');
+      }
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_GPU_SAFEGUARD, enabled.toString());
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (gpuThermalSafeguard) {
+        document.documentElement.setAttribute('data-gpu-safeguard', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-gpu-safeguard');
+      }
+    }
+  }, [gpuThermalSafeguard]);
 
   useEffect(() => {
     const currentGlow = isBespokeActive ? 0 : fluentOrbIntensity;
@@ -429,6 +481,8 @@ export function InterfaceStyleProvider({
       setFluentOrbIntensity,
       fluentGlassStrength,
       setFluentGlassStrength,
+      gpuThermalSafeguard,
+      setGpuThermalSafeguard,
       fluentBlurStrength: Math.round(2 + fluentGlassStrength * 22),
       setFluentBlurStrength: (b: number) => {
         const normalized = Math.max(0.05, Math.min(1, (b - 2) / 22));
@@ -464,6 +518,8 @@ export function InterfaceStyleProvider({
       setFluentOrbIntensity,
       fluentGlassStrength,
       setFluentGlassStrength,
+      gpuThermalSafeguard,
+      setGpuThermalSafeguard,
     ]
   );
 

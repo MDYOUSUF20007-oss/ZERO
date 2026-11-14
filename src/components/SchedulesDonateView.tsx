@@ -76,6 +76,7 @@ import {
   Ticket,
   Users,
   Target,
+  Zap,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -225,6 +226,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setFluentOrbIntensity,
     fluentGlassStrength,
     setFluentGlassStrength,
+    gpuThermalSafeguard,
+    setGpuThermalSafeguard,
     accent,
     setAccent,
   } = useInterfaceStyle();
@@ -787,6 +790,63 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* GPU Battery & Thermal Safeguard Toggle */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl theme-bg-secondary flex items-center justify-center shrink-0 border theme-border">
+                    <Zap
+                      size={15}
+                      strokeWidth={1.75}
+                      className={gpuThermalSafeguard ? 'text-amber-400' : 'theme-text-muted'}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="text-xs font-semibold theme-text-primary block truncate">
+                      GPU Battery &amp; Thermal Safeguard
+                    </label>
+                    <p className="text-[11px] theme-text-muted leading-tight">
+                      Disables heavy blur shaders &amp; pauses mesh drift for cool, low-battery 60FPS
+                    </p>
+                  </div>
+                </div>
+
+                {/* Switch Toggle */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={gpuThermalSafeguard}
+                  onClick={() => {
+                    haptics.tick(gpuThermalSafeguard ? 600 : 900);
+                    setGpuThermalSafeguard(!gpuThermalSafeguard);
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    gpuThermalSafeguard ? 'bg-amber-500' : 'bg-zinc-800'
+                  }`}
+                  aria-label="Toggle GPU Battery & Thermal Safeguard"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      gpuThermalSafeguard ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] theme-text-muted pt-0.5">
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      gpuThermalSafeguard ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400'
+                    }`}
+                  />
+                  {gpuThermalSafeguard ? 'Active • Eco Shaderless (Cold GPU)' : 'Standard • High Acrylic Glass'}
+                </span>
+                <span className="font-mono">{gpuThermalSafeguard ? '0ms Overhead' : 'Hardware Composited'}</span>
               </div>
             </div>
 

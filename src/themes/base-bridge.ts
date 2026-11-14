@@ -270,6 +270,32 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
+     GPU Battery & Thermal Safeguard (Zero Shader Pass Architecture)
+     ------------------------------------------------------------- */
+  html[data-gpu-safeguard="true"] .glass-card,
+  html[data-gpu-safeguard="true"] .obsidian-card,
+  html[data-gpu-safeguard="true"] .liquid-glass,
+  html[data-gpu-safeguard="true"] .liquid-card,
+  html[data-gpu-safeguard="true"] .theme-card,
+  html[data-gpu-safeguard="true"] .settings-card,
+  html[data-gpu-safeguard="true"] .zero-dial-surface,
+  html[data-gpu-safeguard="true"] .liquid-dock,
+  html[data-gpu-safeguard="true"] .modal-glass,
+  html[data-gpu-safeguard="true"] [data-modal-glass="true"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(14, 20, 32, 0.94) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75) !important;
+  }
+
+  html[data-gpu-safeguard="true"] .ambient-mesh-node-1,
+  html[data-gpu-safeguard="true"] .ambient-mesh-node-2,
+  html[data-gpu-safeguard="true"] .ambient-mesh-node-3,
+  html[data-gpu-safeguard="true"] .ambient-mesh-node-4 {
+    animation-play-state: paused !important;
+  }
+
+  /* -------------------------------------------------------------
      Living Ambient Canvas
      ------------------------------------------------------------- */
   .zero-ambient-canvas {
