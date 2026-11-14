@@ -23,6 +23,7 @@ export { AVAILABLE_THEMES, normalizeThemeId };
 
 const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
 const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
+const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -59,7 +60,11 @@ const LEGACY_CLASSES = [
   'material',
 ];
 
-function mountIsolatedThemeEngine(themeId: CanonicalThemeId, accent: AccentColorId): void {
+function mountIsolatedThemeEngine(
+  themeId: CanonicalThemeId,
+  accent: AccentColorId,
+  glowIntensity = 0.35
+): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
@@ -83,6 +88,10 @@ function mountIsolatedThemeEngine(themeId: CanonicalThemeId, accent: AccentColor
   root.setAttribute('data-engine', themeId);
   root.setAttribute('data-accent', accent);
   root.classList.add('dark');
+
+  // Set real-time ambient glow parameters
+  root.style.setProperty('--ambient-glow-opacity', glowIntensity.toString());
+  root.style.setProperty('--ambient-glow-scale', (0.75 + glowIntensity * 0.45).toString());
 
   // 3. Destroy previous theme engine CSS and mount ONLY the active theme engine file's CSS
   let styleTag = document.getElementById(STYLE_TAG_ID) as HTMLStyleElement | null;
@@ -184,34 +193,63 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
     }
   });
 
+  const [fluentOrbIntensity, setFluentOrbIntensityState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.35;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_GLOW);
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) return parsed;
+      }
+      return 0.35;
+    } catch {
+      return 0.35;
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
     if (typeof window === 'undefined') return 'fluent';
     try {
       for (const oldKey of LEGACY_STORAGE_KEYS) {
         window.localStorage.removeItem(oldKey);
       }
-      mountIsolatedThemeEngine('fluent', 'purple');
+      mountIsolatedThemeEngine('fluent', 'purple', 0.35);
       return 'fluent';
     } catch {
-      mountIsolatedThemeEngine('fluent', 'purple');
+      mountIsolatedThemeEngine('fluent', 'purple', 0.35);
       return 'fluent';
     }
   });
 
+  const setFluentOrbIntensity = useCallback((intensity: number) => {
+    const clamped = Math.max(0, Math.min(1, Math.round(intensity * 100) / 100));
+    setFluentOrbIntensityState(clamped);
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty('--ambient-glow-opacity', clamped.toString());
+      document.documentElement.style.setProperty('--ambient-glow-scale', (0.75 + clamped * 0.45).toString());
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_GLOW, clamped.toString());
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
-    mountIsolatedThemeEngine('fluent', accent);
+    mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity);
     try {
       window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
       window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
+      window.localStorage.setItem(STORAGE_KEY_GLOW, fluentOrbIntensity.toString());
     } catch {
       // Ignore storage errors
     }
-  }, [accent]);
+  }, [accent, fluentOrbIntensity]);
 
   const setTheme = useCallback((_next: InterfaceStyle) => {
-    mountIsolatedThemeEngine('fluent', accent);
+    mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity);
     setThemeState('fluent');
-  }, [accent]);
+  }, [accent, fluentOrbIntensity]);
 
   const restartWithTheme = useCallback((nextTheme: InterfaceStyle) => {
     if (typeof window === 'undefined') return;
@@ -228,14 +266,14 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
 
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
-    mountIsolatedThemeEngine('fluent', safeAccent);
+    mountIsolatedThemeEngine('fluent', safeAccent, fluentOrbIntensity);
     setAccentState(safeAccent);
     try {
       window.localStorage.setItem(STORAGE_KEY_ACCENT, safeAccent);
     } catch {
       // Ignore storage errors
     }
-  }, []);
+  }, [fluentOrbIntensity]);
 
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({
@@ -277,11 +315,11 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
       },
       materialYouAmoled: true,
       setMaterialYouAmoled: () => {},
-      fluentOrbIntensity: 0.75,
-      setFluentOrbIntensity: () => {},
-      fluentBlurStrength: 28,
+      fluentOrbIntensity,
+      setFluentOrbIntensity,
+      fluentBlurStrength: 16,
       setFluentBlurStrength: () => {},
-      fluentSpecularHighlight: 0.38,
+      fluentSpecularHighlight: 0.32,
       setFluentSpecularHighlight: () => {},
       minimalistBorderWidth: '1px',
       setMinimalistBorderWidth: () => {},
@@ -298,7 +336,7 @@ export function InterfaceStyleProvider({ children }: InterfaceStyleProviderProps
       trantorAccent: accent === 'cyan' ? '#67d4ff' : '#d0bcff',
       setTrantorAccent: () => {},
     }),
-    [theme, setTheme, accent, setAccent]
+    [theme, setTheme, accent, setAccent, fluentOrbIntensity, setFluentOrbIntensity]
   );
 
   return (

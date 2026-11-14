@@ -15,34 +15,34 @@ export const AmbientBackground: React.FC = () => {
     >
       {/* Top-left Celestial Glow Orb */}
       <div
-        className="absolute -top-32 -left-28 w-[420px] h-[420px] sm:w-[540px] sm:h-[540px] rounded-full pointer-events-none"
+        className="absolute -top-32 -left-28 w-[420px] h-[420px] sm:w-[540px] sm:h-[540px] rounded-full pointer-events-none transition-opacity duration-200"
         style={{
           background:
             'radial-gradient(circle at 45% 45%, var(--accent-primary) 0%, var(--accent-soft) 30%, transparent 68%)',
-          opacity: 0.32,
-          transform: 'translate3d(0, 0, 0)',
+          opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.90)',
+          transform: 'scale(var(--ambient-glow-scale, 1)) translate3d(0, 0, 0)',
         }}
       />
 
       {/* Mid-right Secondary Refractive Tint Orb */}
       <div
-        className="absolute top-[26%] -right-36 w-[440px] h-[440px] sm:w-[560px] sm:h-[560px] rounded-full pointer-events-none"
+        className="absolute top-[26%] -right-36 w-[440px] h-[440px] sm:w-[560px] sm:h-[560px] rounded-full pointer-events-none transition-opacity duration-200"
         style={{
           background:
             'radial-gradient(circle at 50% 50%, var(--accent-secondary) 0%, var(--liquid-accent-tint) 35%, transparent 70%)',
-          opacity: 0.22,
-          transform: 'translate3d(0, 0, 0)',
+          opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.65)',
+          transform: 'scale(var(--ambient-glow-scale, 1)) translate3d(0, 0, 0)',
         }}
       />
 
       {/* Bottom Floating Specular Glow Orb */}
       <div
-        className="absolute -bottom-40 left-[15%] w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] rounded-full pointer-events-none"
+        className="absolute -bottom-40 left-[15%] w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] rounded-full pointer-events-none transition-opacity duration-200"
         style={{
           background:
             'radial-gradient(circle at 50% 50%, var(--accent-primary) 0%, var(--accent-soft) 28%, transparent 65%)',
-          opacity: 0.20,
-          transform: 'translate3d(0, 0, 0)',
+          opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.55)',
+          transform: 'scale(var(--ambient-glow-scale, 1)) translate3d(0, 0, 0)',
         }}
       />
     </div>

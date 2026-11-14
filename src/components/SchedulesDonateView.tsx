@@ -217,6 +217,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     isMaterialYou,
     materialYouSeed: ctxMaterialYouSeed,
     setMaterialYouSeed: ctxSetMaterialYouSeed,
+    fluentOrbIntensity,
+    setFluentOrbIntensity,
   } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass || isMaterialYou;
   const activeMaterialYouSeed = materialYouSeedProp ?? ctxMaterialYouSeed ?? 'purple';
@@ -574,6 +576,73 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         )}
                       </div>
                       <span className="text-xs font-medium truncate">{seed.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ambient Glow Intensity Slider */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold theme-text-primary block">
+                  Ambient Glow Intensity
+                </label>
+                <span className="text-[10px] font-mono tabular-nums text-zinc-400">
+                  {Math.round(fluentOrbIntensity * 100)}%
+                  <span className="text-zinc-500 ml-1.5">
+                    {fluentOrbIntensity === 0
+                      ? '• Stealth AMOLED'
+                      : fluentOrbIntensity < 0.3
+                      ? '• Subtle'
+                      : fluentOrbIntensity < 0.6
+                      ? '• Balanced'
+                      : '• Radiant'}
+                  </span>
+                </span>
+              </div>
+
+              {/* Slider Track */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={Math.round(fluentOrbIntensity * 100)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) / 100;
+                    setFluentOrbIntensity(val);
+                    haptics.tick(600 + val * 600);
+                  }}
+                  className="w-full accent-cyan-400 cursor-pointer h-1.5 rounded-lg bg-zinc-800"
+                  aria-label="Ambient Glow Intensity"
+                />
+              </div>
+
+              {/* 3 Quick Presets */}
+              <div className="grid grid-cols-3 gap-2 pt-0.5">
+                {[
+                  { label: 'Stealth (0%)', value: 0 },
+                  { label: 'Subtle (35%)', value: 0.35 },
+                  { label: 'Radiant (75%)', value: 0.75 },
+                ].map((preset) => {
+                  const isActive = Math.abs(fluentOrbIntensity - preset.value) < 0.05;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(850);
+                        setFluentOrbIntensity(preset.value);
+                      }}
+                      className={`py-1.5 px-2 text-[10px] font-medium rounded-lg border transition-all text-center ${
+                        isActive
+                          ? 'theme-pill-active font-semibold'
+                          : 'theme-pill text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {preset.label}
                     </button>
                   );
                 })}
