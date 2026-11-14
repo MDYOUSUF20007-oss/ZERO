@@ -13,8 +13,8 @@ import type {
 } from '../types';
 
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
-  if (value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
-  if (value === 'classic-v2' || value === 'classic_v2' || value === 'onyx' || value === 'v2') return 'classic-v2';
+  if (value === 'onyx' || value === 'classic-v2' || value === 'classic_v2' || value === 'v2') return 'classic-v2';
+  if (value === 'fintech' || value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
   if (value === 'minimalist') return 'minimalist';
   if (value === 'bespoke') return 'bespoke';
   if (value === 'fluent') return 'fluent';
@@ -26,8 +26,8 @@ export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
 }
 
 export function normalizeEngineType(value: unknown): EngineType {
-  if (value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
-  if (value === 'classic-v2' || value === 'classic_v2' || value === 'onyx' || value === 'v2') return 'classic-v2';
+  if (value === 'onyx' || value === 'classic-v2' || value === 'classic_v2' || value === 'v2') return 'classic-v2';
+  if (value === 'fintech' || value === 'trantor' || value === 'trantor_sage' || value === 'trantor-sage' || value === 'sage' || value === 'sage-obsidian') return 'trantor';
   if (value === 'minimalist' || value === 'bespoke') return 'minimalist';
   if (value === 'fluent' || value === 'fluent_glass' || value === 'fluent-glass' || value === 'liquid_glass') return 'fluent';
   if (value === 'material-you' || value === 'material_you') return 'material-you';

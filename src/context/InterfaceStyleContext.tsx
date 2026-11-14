@@ -18,6 +18,7 @@ import {
 } from '../utils/themes';
 
 export type { EngineType, ClassicPreset, M3Palette };
+export type AppTheme = 'onyx' | 'fintech' | 'fluent';
 
 export type M3Elevation = 'flat' | 'subtle' | 'elevated' | 'high';
 export type MinimalistBorderWidth = 'hairline' | '1px' | 'heavy';
@@ -25,6 +26,10 @@ export type MinimalistTypography = 'sans' | 'mono' | 'technical';
 export type MinimalistTelemetryDensity = 'compact' | 'standard' | 'dense';
 
 export interface InterfaceStyleContextValue {
+  /** Active DOM theme state ('onyx' | 'fintech' | 'fluent') */
+  theme: AppTheme;
+  setTheme: (theme: AppTheme) => void;
+
   /** Active top-level interface engine */
   engine: EngineType;
   setEngine: (engine: EngineType) => void;
@@ -34,6 +39,8 @@ export interface InterfaceStyleContextValue {
   setInterfaceStyle: (style: InterfaceStyle) => void;
 
   /** Engine boolean guard helpers */
+  isOnyx: boolean;
+  isFintech: boolean;
   isClassic: boolean;
   isClassicV2: boolean;
   isTrantor: boolean;
@@ -100,12 +107,16 @@ export interface InterfaceStyleContextValue {
 }
 
 const DEFAULT_CONTEXT: InterfaceStyleContextValue = {
-  engine: 'classic',
+  theme: 'onyx',
+  setTheme: () => {},
+  engine: 'classic-v2',
   setEngine: () => {},
-  interfaceStyle: 'classic',
+  interfaceStyle: 'classic-v2',
   setInterfaceStyle: () => {},
-  isClassic: true,
-  isClassicV2: false,
+  isOnyx: true,
+  isFintech: false,
+  isClassic: false,
+  isClassicV2: true,
   isTrantor: false,
   isMaterialYou: false,
   isFluent: false,
@@ -366,6 +377,15 @@ export const InterfaceStyleProvider: React.FC<InterfaceStyleProviderProps> = ({
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
+
+    // Unified DOM Theme Scoping: 'onyx' | 'fintech' | 'fluent'
+    const domTheme: AppTheme =
+      activeEngine === 'fluent'
+        ? 'fluent'
+        : activeEngine === 'trantor'
+        ? 'fintech'
+        : 'onyx';
+    root.setAttribute('data-theme', domTheme);
 
     // 1. data-engine="classic" | "material-you" | "fluent" | "minimalist"
     root.setAttribute('data-engine', activeEngine);
@@ -634,13 +654,38 @@ export const InterfaceStyleProvider: React.FC<InterfaceStyleProviderProps> = ({
     }
   }, []);
 
+  const activeTheme: AppTheme =
+    activeEngine === 'fluent'
+      ? 'fluent'
+      : activeEngine === 'trantor'
+      ? 'fintech'
+      : 'onyx';
+
+  const handleSetTheme = useCallback(
+    (nextTheme: AppTheme) => {
+      if (nextTheme === 'fluent') {
+        handleSetEngine('fluent');
+      } else if (nextTheme === 'fintech') {
+        handleSetEngine('trantor');
+      } else {
+        handleSetEngine('classic-v2');
+      }
+    },
+    [handleSetEngine]
+  );
+
   const contextValue: InterfaceStyleContextValue = {
+    theme: activeTheme,
+    setTheme: handleSetTheme,
+
     engine: activeEngine,
     setEngine: handleSetEngine,
 
     interfaceStyle: activeEngine,
     setInterfaceStyle: (style: InterfaceStyle) => handleSetEngine(normalizeEngineType(style)),
 
+    isOnyx: activeTheme === 'onyx',
+    isFintech: activeTheme === 'fintech',
     isClassic: activeEngine === 'classic',
     isClassicV2: activeEngine === 'classic-v2',
     isTrantor: activeEngine === 'trantor',

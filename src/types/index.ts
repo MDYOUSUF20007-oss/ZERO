@@ -326,9 +326,11 @@ export interface CloudAutoBackupStatus {
   lastError?: string | null;
 }
 
+export type AppTheme = 'onyx' | 'fintech' | 'fluent';
+
 export type ThemeFamily = 'amoled' | 'kindle' | 'matte';
 
-export type EngineType = 'classic' | 'classic-v2' | 'material-you' | 'fluent' | 'minimalist' | 'trantor';
+export type EngineType = 'classic' | 'classic-v2' | 'material-you' | 'fluent' | 'minimalist' | 'trantor' | 'onyx' | 'fintech';
 export type ClassicPreset = 'amoled' | 'paper-kindle' | 'matte-studio';
 export type ClassicV2Surface = 'obsidian' | 'pitch-black' | 'carbon';
 export type ClassicV2Accent = '#FFAA00' | '#FF7700' | '#FFD000' | '#FF9500' | '#10B981';
@@ -344,7 +346,9 @@ export type InterfaceStyle =
   | 'minimalist'
   | 'bespoke'
   | 'fluent_glass'
-  | 'trantor';
+  | 'trantor'
+  | 'onyx'
+  | 'fintech';
 
 export type MaterialYouSeed = 'purple' | 'cyan' | 'emerald' | 'crimson';
 

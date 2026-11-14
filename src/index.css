@@ -2,54 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+[data-theme="onyx"] {
   color-scheme: dark;
   --zero-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
   --zero-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
   --zero-safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
   --zero-safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 
-  /* Live Theme Runtime Tokens (default: Pure Pitch AMOLED) */
-  --zero-bg-primary: #000000;
+  /* Core Decoupled Design Tokens (Onyx: Obsidian / Deep Shield / Sharp Gold) */
+  --bg-base: #0B0C10;
+  --surface: #12141C;
+  --surface-border: rgba(255, 170, 0, 0.22);
+  --text-main: #FFFFFF;
+  --text-muted: #8E8E93;
+  --accent: #FFAA00;
+  --accent-glow: rgba(255, 170, 0, 0.35);
+
+  /* Runtime Theme Tokens & Backwards-Compatible Variables */
+  --zero-bg-primary: var(--bg-base);
   --zero-bg-image: none;
   --zero-bg-size: 100% 100%;
-  --zero-surface-1: #080809;
-  --zero-surface-2: #121215;
-  --zero-surface-3: #1E1E22;
-  --zero-border: #27272A;
-  --zero-border-subtle: #18181B;
-  --zero-ink-primary: #FFFFFF;
+  --zero-surface-1: var(--surface);
+  --zero-surface-2: #181A24;
+  --zero-surface-3: #202330;
+  --zero-border: var(--surface-border);
+  --zero-border-subtle: rgba(255, 255, 255, 0.08);
+  --zero-ink-primary: var(--text-main);
   --zero-ink-secondary: #E4E4E7;
-  --zero-ink-muted: #A1A1AA;
+  --zero-ink-muted: var(--text-muted);
   --zero-inverted-bg: #FFFFFF;
   --zero-inverted-text: #000000;
-  --zero-accent: #FFFFFF;
-  --zero-dial-stroke: #EDEDED;
-  --zero-nav-bg: rgba(0, 0, 0, 0.92);
-  --zero-backdrop: rgba(0, 0, 0, 0.92);
+  --zero-accent: var(--accent);
+  --zero-dial-stroke: var(--accent);
+  --zero-nav-bg: rgba(11, 12, 16, 0.94);
+  --zero-backdrop: rgba(11, 12, 16, 0.94);
 
-  /* Live Theme Accent Tokens (synced with Theme Studio runtime finish; defaults to Pure Pitch AMOLED) */
-  --accent-rgb: 255, 255, 255;
-  --accent-hex: #FFFFFF;
-  --accent-badge-gradient: linear-gradient(135deg, #FFFFFF 0%, #D4D4D8 100%);
-  --accent-badge-text: #09090B;
+  /* Accent Tokens */
+  --accent-rgb: 255, 170, 0;
+  --accent-hex: var(--accent);
+  --accent-badge-gradient: linear-gradient(135deg, #FFAA00 0%, #FF8800 100%);
+  --accent-badge-text: #0B0C10;
 
-  /* ─── LIQUID GLASS PRO 60FPS DYNAMIC TOKENS ─── */
-  --liquid-accent-vibrant: var(--accent-hex, #9333ea);
+  /* Spring Physics Curves */
+  --spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="fintech"] {
+  /* Core Decoupled Design Tokens (Fintech: Dark Slate Backdrop / Precision Cyan-Sage) */
+  --bg-base: #090D16;
+  --surface: #111827;
+  --surface-border: rgba(0, 242, 254, 0.22);
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --accent: #00F2FE;
+  --accent-glow: rgba(0, 242, 254, 0.35);
+
+  /* Runtime Theme Tokens & Backwards-Compatible Variables */
+  --zero-bg-primary: var(--bg-base);
+  --zero-surface-1: var(--surface);
+  --zero-surface-2: #162032;
+  --zero-surface-3: #1E293B;
+  --zero-border: var(--surface-border);
+  --zero-border-subtle: rgba(255, 255, 255, 0.06);
+  --zero-ink-primary: var(--text-main);
+  --zero-ink-secondary: #E5E7EB;
+  --zero-ink-muted: var(--text-muted);
+  --zero-accent: var(--accent);
+  --zero-dial-stroke: var(--accent);
+  --zero-nav-bg: rgba(9, 13, 22, 0.94);
+  --zero-backdrop: rgba(9, 13, 22, 0.94);
+
+  /* Accent Tokens */
+  --accent-rgb: 0, 242, 254;
+  --accent-hex: var(--accent);
+  --accent-badge-gradient: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);
+  --accent-badge-text: #090D16;
+}
+
+[data-theme="fluent"] {
+  /* Core Decoupled Design Tokens (Fluent Glass: Translucent / Backdrop Blur / Modern Glow) */
+  --bg-base: #000000;
+  --surface: rgba(255, 255, 255, 0.07);
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --text-main: #FFFFFF;
+  --text-muted: #A1A1AA;
+  --accent: #66E3FF;
+  --accent-glow: rgba(102, 227, 255, 0.35);
+
+  /* Runtime Theme Tokens & Backwards-Compatible Variables */
+  --zero-bg-primary: var(--bg-base);
+  --zero-surface-1: var(--surface);
+  --zero-surface-2: rgba(255, 255, 255, 0.1);
+  --zero-surface-3: rgba(255, 255, 255, 0.15);
+  --zero-border: var(--surface-border);
+  --zero-border-subtle: rgba(255, 255, 255, 0.08);
+  --zero-ink-primary: var(--text-main);
+  --zero-ink-secondary: #E4E4E7;
+  --zero-ink-muted: var(--text-muted);
+  --zero-accent: var(--accent);
+  --zero-dial-stroke: var(--accent);
+  --zero-nav-bg: rgba(0, 0, 0, 0.88);
+  --zero-backdrop: rgba(0, 0, 0, 0.88);
+
+  /* Accent Tokens */
+  --accent-rgb: 102, 227, 255;
+  --accent-hex: var(--accent);
+  --accent-badge-gradient: linear-gradient(135deg, #66E3FF 0%, #38BDF8 100%);
+  --accent-badge-text: #07040D;
+
+  /* Optical Glass Tokens */
+  --liquid-accent-vibrant: var(--accent);
   --liquid-accent-tint: color-mix(in srgb, var(--liquid-accent-vibrant) 28%, #ffffff);
   --liquid-accent-glow: color-mix(in srgb, var(--liquid-accent-vibrant) 50%, transparent);
   --liquid-accent-soft-glow: color-mix(in srgb, var(--liquid-accent-vibrant) 22%, transparent);
-
-  /* Optical Glass Surface Tokens */
   --glass-bg-start: rgba(255, 255, 255, 0.085);
   --glass-bg-end: rgba(255, 255, 255, 0.015);
   --glass-border: rgba(255, 255, 255, 0.14);
   --glass-highlight: rgba(255, 255, 255, 0.38);
   --glass-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.78);
-
-  /* 60FPS Spring Physics Curves */
-  --spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
-  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 body {
@@ -2350,6 +2422,170 @@ body.theme-liquid-glass,
     border-radius: 28px !important;
     box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8) !important;
   }
+}
+
+/* ==========================================================================
+   SURGICAL DECOUPLED THEME ARCHITECTURE: DATA-THEME VARIABLE SCOPING
+   ========================================================================== */
+
+/* 1. Onyx Theme Engine Encapsulation */
+[data-theme="onyx"] .glass-card,
+[data-theme="onyx"] .settings-card,
+[data-theme="onyx"] .obsidian-card,
+[data-theme="onyx"] .liquid-card,
+[data-theme="onyx"] .liquid-glass,
+[data-theme="onyx"] [data-frosted-card="true"] {
+  background: var(--surface) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 30px var(--accent-glow) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="onyx"] .pill-tile,
+[data-theme="onyx"] .action-pill,
+[data-theme="onyx"] .obsidian-pill-active,
+[data-theme="onyx"] .liquid-pill-active {
+  background: linear-gradient(135deg, var(--accent) 0%, #FF8800 100%) !important;
+  color: #08080A !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 170, 0, 0.5) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 16px rgba(255, 170, 0, 0.28) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="onyx"] .pill-tile *,
+[data-theme="onyx"] .action-pill *,
+[data-theme="onyx"] .obsidian-pill-active *,
+[data-theme="onyx"] .liquid-pill-active * {
+  color: #08080A !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+[data-theme="onyx"] .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+[data-theme="onyx"] .action-pill-inactive,
+[data-theme="onyx"] .liquid-pill-inactive,
+[data-theme="onyx"] .obsidian-pill-inactive {
+  background: #181820 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-muted) !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+}
+
+/* 2. Fintech Theme Engine Encapsulation */
+[data-theme="fintech"] .glass-card,
+[data-theme="fintech"] .settings-card,
+[data-theme="fintech"] .obsidian-card,
+[data-theme="fintech"] .liquid-card,
+[data-theme="fintech"] .liquid-glass,
+[data-theme="fintech"] [data-frosted-card="true"] {
+  background-color: var(--surface) !important;
+  background-image: none !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="fintech"] .glass-card:hover,
+[data-theme="fintech"] .settings-card:hover,
+[data-theme="fintech"] .obsidian-card:hover {
+  background-color: #1A1D24 !important;
+}
+
+[data-theme="fintech"] .pill-tile,
+[data-theme="fintech"] .action-pill,
+[data-theme="fintech"] .obsidian-pill-active,
+[data-theme="fintech"] .liquid-pill-active {
+  background: var(--accent) !important;
+  background-image: none !important;
+  color: #090D16 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 16px var(--accent-glow) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="fintech"] .pill-tile *,
+[data-theme="fintech"] .action-pill *,
+[data-theme="fintech"] .obsidian-pill-active *,
+[data-theme="fintech"] .liquid-pill-active * {
+  color: #090D16 !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+[data-theme="fintech"] .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+[data-theme="fintech"] .action-pill-inactive,
+[data-theme="fintech"] .liquid-pill-inactive,
+[data-theme="fintech"] .obsidian-pill-inactive {
+  background: var(--surface) !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-muted) !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 3. Fluent Glass Theme Engine Encapsulation */
+[data-theme="fluent"] .glass-card,
+[data-theme="fluent"] .settings-card,
+[data-theme="fluent"] .obsidian-card,
+[data-theme="fluent"] .liquid-card,
+[data-theme="fluent"] .liquid-glass,
+[data-theme="fluent"] [data-frosted-card="true"] {
+  background: var(--surface) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.16) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="fluent"] .pill-tile,
+[data-theme="fluent"] .action-pill,
+[data-theme="fluent"] .obsidian-pill-active,
+[data-theme="fluent"] .liquid-pill-active {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, var(--accent) 100%) !important;
+  color: #07040D !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="fluent"] .pill-tile *,
+[data-theme="fluent"] .action-pill *,
+[data-theme="fluent"] .obsidian-pill-active *,
+[data-theme="fluent"] .liquid-pill-active * {
+  color: #07040D !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+[data-theme="fluent"] .pill-tile:not([data-active="true"]):not(.active):not(.obsidian-pill-active):not(.liquid-pill-active),
+[data-theme="fluent"] .action-pill-inactive,
+[data-theme="fluent"] .liquid-pill-inactive,
+[data-theme="fluent"] .obsidian-pill-inactive {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-muted) !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
 }
 
 
