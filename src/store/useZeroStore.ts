@@ -28,6 +28,7 @@ import type {
   ThemeConfig,
   InterfaceStyle,
   DashboardWidgetsConfig,
+  HabitCalibrationProfile,
 } from '../types';
 import { haptics } from '../utils/haptics';
 import confetti from 'canvas-confetti';

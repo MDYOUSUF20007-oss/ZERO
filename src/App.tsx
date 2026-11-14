@@ -22,7 +22,7 @@ import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from '.
 import { checkAndEnforceRoutines } from './utils/routineEngine';
 import { haptics } from './utils/haptics';
 import type { AppUpdateReleaseInfo, HabitCalibrationProfile, RecurringSchedule, OccasionBag } from './types';
-import { Clock, Heart, BellRing, Settings, X, BarChart3, AlertTriangle, Download, Sparkles, Upload } from 'lucide-react';
+import { Clock, Heart, BellRing, Settings, X, BarChart3, AlertTriangle, Download, Upload } from 'lucide-react';
 
 export function App() {
   const store = useZeroStore();
@@ -201,8 +201,8 @@ export function App() {
         primaryMission: 'Deep Work',
         dailyGoalHours: profile.dailyReclaimTargetHours || 3,
         motto: profile.primaryGoal,
-        avatarId: 'zen_circle',
-        accentColor: '#3B82F6',
+        avatarId: 'monk',
+        accentColor: 'cyan',
       });
     }
 

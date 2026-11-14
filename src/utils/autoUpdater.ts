@@ -99,9 +99,11 @@ export async function checkForAppUpdate(force = false): Promise<AppUpdateRelease
       }
     }
 
+    const isNewer = isVersionNewer(cleanTag || CURRENT_APP_VERSION, CURRENT_APP_VERSION);
     const releaseInfo: AppUpdateReleaseInfo = {
       latestVersion: cleanTag || CURRENT_APP_VERSION,
       currentVersion: CURRENT_APP_VERSION,
+      hasUpdate: isNewer,
       releaseNotes: data.body || 'New features and bug fixes in this release.',
       apkDownloadUrl: apkDownloadUrl || data.html_url || OFFICIAL_FALLBACK_RELEASES_URL,
       htmlUrl: data.html_url || OFFICIAL_FALLBACK_RELEASES_URL,
@@ -110,7 +112,7 @@ export async function checkForAppUpdate(force = false): Promise<AppUpdateRelease
 
     localStorage.setItem(STORAGE_KEYS.CACHED_RELEASE, JSON.stringify(releaseInfo));
 
-    if (isVersionNewer(releaseInfo.latestVersion, CURRENT_APP_VERSION)) {
+    if (isNewer) {
       return releaseInfo;
     }
 

@@ -43,6 +43,7 @@ import {
   validateThemeModJson,
 } from '../utils/themeMods';
 import { isOvernightSchedule } from '../utils/routineEngine';
+import { haptics } from '../utils/haptics';
 import {
   Plus,
   Trash2,

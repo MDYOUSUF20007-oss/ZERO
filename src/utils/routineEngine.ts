@@ -26,7 +26,7 @@ export function isScheduleActiveNow(
   schedule: RecurringSchedule,
   now: Date = new Date()
 ): boolean {
-  if (!schedule || !schedule.enabled) return false;
+  if (!schedule || !schedule.isEnabled) return false;
   if (!Array.isArray(schedule.days) || schedule.days.length === 0) return false;
 
   const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -73,7 +73,7 @@ export function isScheduleWarningActive(
   warningThresholdMinutes = 5,
   now: Date = new Date()
 ): boolean {
-  if (!schedule || !schedule.enabled) return false;
+  if (!schedule || !schedule.isEnabled) return false;
   const todayDay = now.getDay();
   if (!schedule.days.includes(todayDay)) return false;
 

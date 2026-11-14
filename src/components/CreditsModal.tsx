@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { GithubContributor } from '../types';
 import { haptics } from '../utils/haptics';
-import { X, ExternalLink, Heart, Github, Award, Code, Users } from 'lucide-react';
+import { X, ExternalLink, Heart, Award, Code, Users } from 'lucide-react';
 
 interface CreditsModalProps {
   isOpen: boolean;
@@ -132,7 +132,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
               rel="noreferrer"
               className="flex-1 py-1.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-mono text-zinc-200 flex items-center justify-center gap-1.5 transition-colors"
             >
-              <Github size={13} /> GitHub Profile
+              <Code size={13} /> GitHub Profile
             </a>
             <a
               href="https://ko-fi.com/mdyousuf2620"

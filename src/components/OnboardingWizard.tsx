@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import type {
   HabitCalibrationProfile,
   FrictionLevel,
@@ -9,7 +9,7 @@ import type {
   OccasionBag,
   BagApp,
 } from '../types';
-import { AMOLED_GRADIENTS, KINDLE_PRESETS, MATTE_PRESETS } from '../utils/themes';
+import { createDefaultAppRuleConfig } from '../utils/bagAppConfig';
 import { haptics } from '../utils/haptics';
 import {
   Palette,
@@ -24,7 +24,6 @@ import {
   ExternalLink,
   Sliders,
   Sparkles,
-  Smartphone,
   Eye,
   Check,
 } from 'lucide-react';
@@ -80,7 +79,7 @@ export function OnboardingWizard({
   setThemeConfig,
   interfaceStyle,
   setInterfaceStyle,
-  installedApps,
+  installedApps: _installedApps,
   onComplete,
   onOpenRestore,
 }: OnboardingWizardProps) {
@@ -98,8 +97,6 @@ export function OnboardingWizard({
   const [vulnerabilityWindow, setVulnerabilityWindow] = useState<string>('late_night');
   const [dailyReclaimTarget, setDailyReclaimTarget] = useState<number>(3);
   const [launchMode, setLaunchMode] = useState<LaunchModePreset>('recommended');
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleTrigger = (trig: string) => {
     haptics.tick(900);
@@ -143,7 +140,7 @@ export function OnboardingWizard({
       calibratedAt: Date.now(),
     };
 
-    // Construct recommended routines strictly with enabled: false (OFF)
+    // Construct recommended routines strictly with isEnabled: false (OFF)
     const windowDef = VULNERABILITY_WINDOWS.find((w) => w.id === vulnerabilityWindow) || VULNERABILITY_WINDOWS[0];
     const recommendedSchedules: RecurringSchedule[] = [
       {
@@ -152,9 +149,9 @@ export function OnboardingWizard({
         startTime: windowDef.start,
         endTime: windowDef.end,
         days: [0, 1, 2, 3, 4, 5, 6],
-        bagId: 'bag-work',
-        enabled: false, // CRITICAL: strictly OFF by default
+        isEnabled: false, // CRITICAL: strictly OFF by default
         tag: 'Deep Work',
+        preLockWarningMinutes: 5,
       },
       {
         id: 'rec_sleep_shield',
@@ -162,9 +159,9 @@ export function OnboardingWizard({
         startTime: '23:00',
         endTime: '07:00',
         days: [0, 1, 2, 3, 4, 5, 6],
-        bagId: 'bag-family',
-        enabled: false, // CRITICAL: strictly OFF by default
+        isEnabled: false, // CRITICAL: strictly OFF by default
         tag: 'Sleep',
+        preLockWarningMinutes: 5,
       },
     ];
 
@@ -178,14 +175,14 @@ export function OnboardingWizard({
           return {
             packageName: pkg,
             appName: matched ? matched.name : pkg.split('.').pop() || pkg,
-            category: 'custom',
+            category: 'custom' as const,
             ruleConfig: {
-              mode: frictionLevel === 'ironclad' ? 'hard_block' : 'controlled',
+              ...createDefaultAppRuleConfig(frictionLevel === 'ironclad' ? 'hard_block' : 'controlled'),
               quotaSeconds: frictionLevel === 'gentle' ? 1800 : 900,
               frictionEnabled: true,
               frictionDelaySeconds: frictionLevel === 'ironclad' ? 15 : 10,
               blockShortVideos: true,
-              shortVideoAction: 'back_action',
+              shortVideoAction: 'back_action' as const,
             },
           };
         }),
