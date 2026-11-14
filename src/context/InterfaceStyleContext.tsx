@@ -25,6 +25,7 @@ export { AVAILABLE_THEMES, normalizeThemeId };
 const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
 const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
 const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
+const STORAGE_KEY_GLASS_STRENGTH = 'zero_fluent_glass_strength_v1';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -61,10 +62,47 @@ const LEGACY_CLASSES = [
   'material',
 ];
 
+export function applyGlassTokens(root: HTMLElement, strength: number): void {
+  const clamped = Math.max(0.05, Math.min(1, Math.round(strength * 100) / 100));
+  // Background alpha: from 0.08 at 0.05 up to 0.72 at 1.0 (clear transparent to deep acrylic)
+  const bgAlpha = (0.05 + clamped * 0.67).toFixed(3);
+  // Blur: from 2px up to 24px
+  const blurPx = Math.round(2 + clamped * 22);
+  // Saturation: 125% to 185%
+  const satPct = Math.round(125 + clamped * 60);
+  // Specular border opacity: 0.06 to 0.38
+  const specularAlpha = (0.06 + clamped * 0.32).toFixed(3);
+  // Top specular optical highlight line: 0.12 to 0.80
+  const specularRim = (0.12 + clamped * 0.68).toFixed(3);
+  // Sub-elements & Insets
+  const insetAlpha = (0.08 + clamped * 0.57).toFixed(3);
+  const rowAlpha = (0.06 + clamped * 0.49).toFixed(3);
+  const dockAlpha = (0.25 + clamped * 0.60).toFixed(3);
+  const dialAlpha = (0.12 + clamped * 0.48).toFixed(3);
+  const glowMult = (0.20 + clamped * 0.70).toFixed(3);
+
+  root.style.setProperty('--glass-opacity', clamped.toString());
+  root.style.setProperty('--glass-surface-bg', `rgba(16, 26, 44, ${bgAlpha})`);
+  root.style.setProperty('--bg-surface', `rgba(16, 26, 44, ${bgAlpha})`);
+  root.style.setProperty('--bg-surface-hover', `rgba(24, 38, 64, ${(0.08 + clamped * 0.66).toFixed(3)})`);
+  root.style.setProperty('--bg-elevated', `rgba(20, 32, 54, ${(0.10 + clamped * 0.68).toFixed(3)})`);
+  root.style.setProperty('--surface-blur', `blur(${blurPx}px) saturate(${satPct}%)`);
+  root.style.setProperty('--glass-blur', `${blurPx}px`);
+  root.style.setProperty('--border-specular', `rgba(255, 255, 255, ${specularAlpha})`);
+  root.style.setProperty('--border-subtle', `rgba(255, 255, 255, ${(0.03 + clamped * 0.11).toFixed(3)})`);
+  root.style.setProperty('--glass-specular-opacity', specularRim);
+  root.style.setProperty('--glass-inset-bg', `rgba(20, 30, 48, ${insetAlpha})`);
+  root.style.setProperty('--glass-row-bg', `rgba(14, 22, 38, ${rowAlpha})`);
+  root.style.setProperty('--glass-dock-bg', `rgba(10, 16, 28, ${dockAlpha})`);
+  root.style.setProperty('--glass-dial-bg', `rgba(14, 20, 32, ${dialAlpha})`);
+  root.style.setProperty('--glass-glow-mult', glowMult);
+}
+
 function mountIsolatedThemeEngine(
   themeId: CanonicalThemeId,
   accent: AccentColorId,
-  glowIntensity = 0.35
+  glowIntensity = 0.35,
+  glassStrength = 0.50
 ): void {
   if (typeof document === 'undefined') return;
 
@@ -93,6 +131,9 @@ function mountIsolatedThemeEngine(
   // Set real-time ambient glow parameters
   root.style.setProperty('--ambient-glow-opacity', glowIntensity.toString());
   root.style.setProperty('--ambient-glow-scale', (0.75 + glowIntensity * 0.45).toString());
+
+  // Set real-time fluent glass parameters
+  applyGlassTokens(root, glassStrength);
 
   // 3. Destroy previous theme engine CSS and mount ONLY the active theme engine file's CSS
   let styleTag = document.getElementById(STYLE_TAG_ID) as HTMLStyleElement | null;
@@ -147,6 +188,8 @@ export interface InterfaceStyleContextValue {
   setMaterialYouAmoled: (a: boolean) => void;
   fluentOrbIntensity: number;
   setFluentOrbIntensity: (i: number) => void;
+  fluentGlassStrength: number;
+  setFluentGlassStrength: (s: number) => void;
   fluentBlurStrength: number;
   setFluentBlurStrength: (b: number) => void;
   fluentSpecularHighlight: number;
@@ -219,6 +262,20 @@ export function InterfaceStyleProvider({
     }
   });
 
+  const [fluentGlassStrength, setFluentGlassStrengthState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.50;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_GLASS_STRENGTH);
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 1) return parsed;
+      }
+      return 0.50;
+    } catch {
+      return 0.50;
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
     if (typeof window === 'undefined') return 'fluent';
     try {
@@ -253,18 +310,33 @@ export function InterfaceStyleProvider({
     }
   }, []);
 
+  const setFluentGlassStrength = useCallback((strength: number) => {
+    const clamped = Math.max(0.05, Math.min(1, Math.round(strength * 100) / 100));
+    setFluentGlassStrengthState(clamped);
+    if (typeof document !== 'undefined') {
+      applyGlassTokens(document.documentElement, clamped);
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_GLASS_STRENGTH, clamped.toString());
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     const currentGlow = isBespokeActive ? 0 : fluentOrbIntensity;
-    mountIsolatedThemeEngine('fluent', accent, currentGlow);
+    const currentGlass = isBespokeActive ? 0.05 : fluentGlassStrength;
+    mountIsolatedThemeEngine('fluent', accent, currentGlow, currentGlass);
     initActiveThemeMod();
     try {
       window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
       window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
       window.localStorage.setItem(STORAGE_KEY_GLOW, fluentOrbIntensity.toString());
+      window.localStorage.setItem(STORAGE_KEY_GLASS_STRENGTH, fluentGlassStrength.toString());
     } catch {
       // Ignore storage errors
     }
-  }, [accent, fluentOrbIntensity, isBespokeActive]);
+  }, [accent, fluentOrbIntensity, fluentGlassStrength, isBespokeActive]);
 
   const setInterfaceStyle = useCallback((next: InterfaceStyle) => {
     const isNextBespoke = next === 'bespoke' || next === 'minimalist';
@@ -272,11 +344,11 @@ export function InterfaceStyleProvider({
     setInterfaceStyleProp?.(targetStyle);
     setThemeState('fluent');
     if (isNextBespoke) {
-      mountIsolatedThemeEngine('fluent', accent, 0);
+      mountIsolatedThemeEngine('fluent', accent, 0, 0.05);
     } else {
-      mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity > 0 ? fluentOrbIntensity : 0.35);
+      mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity > 0 ? fluentOrbIntensity : 0.35, fluentGlassStrength);
     }
-  }, [setInterfaceStyleProp, accent, fluentOrbIntensity]);
+  }, [setInterfaceStyleProp, accent, fluentOrbIntensity, fluentGlassStrength]);
 
   const restartWithTheme = useCallback((nextTheme: InterfaceStyle) => {
     if (typeof window === 'undefined') return;
@@ -346,10 +418,18 @@ export function InterfaceStyleProvider({
       setMaterialYouAmoled: () => {},
       fluentOrbIntensity,
       setFluentOrbIntensity,
-      fluentBlurStrength: 16,
-      setFluentBlurStrength: () => {},
-      fluentSpecularHighlight: 0.32,
-      setFluentSpecularHighlight: () => {},
+      fluentGlassStrength,
+      setFluentGlassStrength,
+      fluentBlurStrength: Math.round(2 + fluentGlassStrength * 22),
+      setFluentBlurStrength: (b: number) => {
+        const normalized = Math.max(0.05, Math.min(1, (b - 2) / 22));
+        setFluentGlassStrength(normalized);
+      },
+      fluentSpecularHighlight: Math.round((0.12 + fluentGlassStrength * 0.68) * 100) / 100,
+      setFluentSpecularHighlight: (s: number) => {
+        const normalized = Math.max(0.05, Math.min(1, (s - 0.12) / 0.68));
+        setFluentGlassStrength(normalized);
+      },
       minimalistBorderWidth: '1px',
       setMinimalistBorderWidth: () => {},
       minimalistTypography: 'sans',
@@ -365,7 +445,17 @@ export function InterfaceStyleProvider({
       trantorAccent: accent === 'cyan' ? '#67d4ff' : '#d0bcff',
       setTrantorAccent: () => {},
     }),
-    [theme, isBespokeActive, setInterfaceStyle, accent, setAccent, fluentOrbIntensity, setFluentOrbIntensity]
+    [
+      theme,
+      isBespokeActive,
+      setInterfaceStyle,
+      accent,
+      setAccent,
+      fluentOrbIntensity,
+      setFluentOrbIntensity,
+      fluentGlassStrength,
+      setFluentGlassStrength,
+    ]
   );
 
   return (

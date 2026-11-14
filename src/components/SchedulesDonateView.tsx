@@ -223,6 +223,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setMaterialYouSeed: _ctxSetMaterialYouSeed,
     fluentOrbIntensity,
     setFluentOrbIntensity,
+    fluentGlassStrength,
+    setFluentGlassStrength,
     accent,
     setAccent,
   } = useInterfaceStyle();
@@ -647,6 +649,75 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       onClick={() => {
                         haptics.tick(850);
                         setFluentOrbIntensity(preset.value);
+                      }}
+                      className={`py-1.5 px-2 text-[10px] font-medium rounded-lg border transition-all text-center ${
+                        isActive
+                          ? 'theme-pill-active font-semibold'
+                          : 'theme-pill text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Glass Strength & Transparency Slider */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold theme-text-primary block">
+                  Glass Strength &amp; Transparency
+                </label>
+                <span className="text-[10px] font-mono tabular-nums text-zinc-400">
+                  {Math.round(fluentGlassStrength * 100)}%
+                  <span className="text-zinc-500 ml-1.5">
+                    {fluentGlassStrength <= 0.15
+                      ? '• Ultra-Clear'
+                      : fluentGlassStrength < 0.35
+                      ? '• High Transparency'
+                      : fluentGlassStrength < 0.65
+                      ? '• Balanced Glass'
+                      : fluentGlassStrength < 0.85
+                      ? '• Frosted Acrylic'
+                      : '• Deep Frost'}
+                  </span>
+                </span>
+              </div>
+
+              {/* Slider Track */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="5"
+                  max="100"
+                  step="5"
+                  value={Math.round(fluentGlassStrength * 100)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) / 100;
+                    setFluentGlassStrength(val);
+                    haptics.tick(600 + val * 600);
+                  }}
+                  className="w-full accent-cyan-400 cursor-pointer h-1.5 rounded-lg bg-zinc-800"
+                  aria-label="Glass Strength &amp; Transparency"
+                />
+              </div>
+
+              {/* 3 Quick Presets */}
+              <div className="grid grid-cols-3 gap-2 pt-0.5">
+                {[
+                  { label: 'Clear (20%)', value: 0.20 },
+                  { label: 'Balanced (50%)', value: 0.50 },
+                  { label: 'Frosted (80%)', value: 0.80 },
+                ].map((preset) => {
+                  const isActive = Math.abs(fluentGlassStrength - preset.value) < 0.05;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(850);
+                        setFluentGlassStrength(preset.value);
                       }}
                       className={`py-1.5 px-2 text-[10px] font-medium rounded-lg border transition-all text-center ${
                         isActive

@@ -13,12 +13,21 @@ export const fluentEngine: ThemeEngineDefinition = {
     :root, html[data-theme="fluent"] {
       --bg-primary: #070b14;
       --bg-secondary: #0c1322;
-      --bg-surface: rgba(22, 34, 56, 0.62);
-      --bg-surface-hover: rgba(30, 45, 74, 0.74);
-      --bg-elevated: rgba(28, 42, 68, 0.78);
+      --bg-surface: rgba(16, 26, 44, 0.39);
+      --bg-surface-hover: rgba(24, 38, 64, 0.41);
+      --bg-elevated: rgba(20, 32, 54, 0.44);
       --bg-modal: rgba(13, 20, 36, 0.90);
       --bg-nav: rgba(8, 13, 24, 0.78);
       --bg-input: rgba(15, 23, 42, 0.72);
+
+      --glass-opacity: 0.50;
+      --glass-surface-bg: rgba(16, 26, 44, 0.39);
+      --glass-specular-opacity: 0.46;
+      --glass-inset-bg: rgba(20, 30, 48, 0.37);
+      --glass-row-bg: rgba(14, 22, 38, 0.31);
+      --glass-dock-bg: rgba(10, 16, 28, 0.55);
+      --glass-dial-bg: rgba(14, 20, 32, 0.375);
+      --glass-glow-mult: 0.55;
 
       --text-primary: #f0f9ff;
       --text-secondary: #bae6fd;

@@ -945,24 +945,25 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchStart={startHold}
             onTouchEnd={cancelHold}
             onTouchCancel={cancelHold}
-            className={`relative w-full h-14 py-4 rounded-2xl liquid-glass border border-white/30 font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
+            className={`relative w-full h-14 py-4 rounded-2xl liquid-glass font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
               isHolding ? 'scale-[0.98]' : 'active:scale-[0.98]'
             }`}
             style={{
               touchAction: 'none',
               backgroundColor: 'var(--accent-soft)',
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)',
+              backdropFilter: 'var(--surface-blur, blur(14px))',
+              WebkitBackdropFilter: 'var(--surface-blur, blur(14px))',
               border: '1px solid var(--accent-border)',
               boxShadow: isHolding
                 ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 28px var(--liquid-accent-glow)'
-                : 'inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 20px -4px var(--liquid-accent-soft-glow)',
+                : 'inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.30)), 0 8px 20px -4px var(--liquid-accent-soft-glow)',
             }}
           >
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px] opacity-80"
+              className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px]"
               style={{
+                opacity: 'var(--glass-specular-opacity, 0.60)',
                 background:
                   'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.48) 50%, transparent 100%)',
               }}

@@ -88,15 +88,15 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .settings-card,
   [data-frosted-card="true"],
   [data-obsidian-card="true"] {
-    background-color: var(--bg-surface, rgba(12, 18, 30, 0.72)) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.015) 35%, rgba(255, 255, 255, 0.02) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.11) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.36) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.18) !important;
+    background-color: var(--glass-surface-bg, var(--bg-surface, rgba(16, 26, 44, 0.45))) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.10)) 0%, rgba(255, 255, 255, 0.012) 35%, rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.025)) 100%) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.25)) !important;
+    border-left: 1px solid rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.18)) !important;
     border-radius: 20px !important;
-    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 0 18px -4px var(--liquid-accent-soft-glow) !important;
-    backdrop-filter: blur(18px) saturate(185%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(185%) !important;
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.24)), 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 0 18px -4px var(--liquid-accent-soft-glow) !important;
+    backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
+    -webkit-backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
     color: var(--text-primary, #f0f9ff) !important;
   }
 
@@ -179,16 +179,16 @@ export const BASE_ENGINE_BRIDGE_CSS = `
 
   .obsidian-inset,
   .liquid-inset {
-    background-color: rgba(22, 32, 50, 0.65) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+    background-color: var(--glass-inset-bg, rgba(20, 30, 48, 0.40)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.10)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.18)) !important;
     border-radius: 14px !important;
   }
 
   .obsidian-inset-neutral,
   .liquid-row {
-    background-color: rgba(15, 23, 42, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: var(--glass-row-bg, rgba(14, 22, 38, 0.32)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07)) !important;
     border-radius: 14px !important;
   }
 
@@ -222,13 +222,13 @@ export const BASE_ENGINE_BRIDGE_CSS = `
      Radial Dial Glass Surface & Zero-Lag Touch Dragging
      ------------------------------------------------------------- */
   .zero-dial-surface {
-    background-color: rgba(14, 20, 32, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+    background-color: var(--glass-dial-bg, rgba(14, 20, 32, 0.40)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.24)) !important;
     border-radius: 9999px !important;
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.20), 0 16px 40px -8px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
+    -webkit-backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.20)), 0 16px 40px -8px rgba(0, 0, 0, 0.6) !important;
     contain: layout style paint;
     touch-action: none !important;
   }
@@ -246,13 +246,13 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .zero-bottom-nav,
   nav[data-bottom-nav="true"],
   nav[data-frosted-chrome="true"] {
-    background-color: rgba(10, 16, 28, 0.82) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.32) !important;
+    background-color: var(--glass-dock-bg, rgba(10, 16, 28, 0.60)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.10)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.26)) !important;
     border-radius: 2rem !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 16px 44px -4px rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
+    -webkit-backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.22)), 0 16px 44px -4px rgba(0, 0, 0, 0.65) !important;
   }
 
   /* -------------------------------------------------------------
