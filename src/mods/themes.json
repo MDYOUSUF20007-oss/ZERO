@@ -100,27 +100,5 @@
       "--zero-accent": "#bd93f9",
       "--zero-accent-rgb": "189, 147, 249"
     }
-  },
-  {
-    "id": "mod_aetherial_focus",
-    "name": "Aetherial Focus",
-    "description": "Celestial deep-space obsidian with radiant ethereal cyan and aurora mint highlights, inspired by Stitch's Aetherial Focus design.",
-    "author": "Stitch AI × Zero",
-    "version": "1.0.0",
-    "family": "amoled",
-    "amoledGradient": "cobalt",
-    "accentColor": "#38BDF8",
-    "cssVars": {
-      "--zero-bg-primary": "#11131B",
-      "--zero-surface-card": "rgba(29, 31, 40, 0.85)",
-      "--zero-surface-subtle": "rgba(25, 27, 36, 0.70)",
-      "--zero-border": "rgba(56, 189, 248, 0.25)",
-      "--zero-border-strong": "rgba(56, 189, 248, 0.45)",
-      "--zero-accent": "#38BDF8",
-      "--zero-accent-rgb": "56, 189, 248",
-      "--zero-text-primary": "#E2E1ED",
-      "--zero-text-secondary": "#BDC8D1",
-      "--zero-text-muted": "#87929A"
-    }
   }
 ]

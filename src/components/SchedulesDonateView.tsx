@@ -217,6 +217,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onRecalibrateHabitProfile,
 }) => {
   const {
+    theme,
+    setTheme,
+    availableThemes,
     isBespoke,
     isFluentGlass,
     isMaterialYou,
@@ -530,7 +533,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     Interface Style
                   </h2>
                   <p className="text-[11px] theme-text-muted truncate">
-                    Fluent Glass Design System
+                    {theme === 'aetherial' ? 'Aetherial Focus Design System' : 'Fluent Glass Design System'}
                   </p>
                 </div>
               </div>
@@ -539,17 +542,74 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </span>
             </div>
 
-            {/* Fluent Glass Overview Card */}
-            <div className="w-full p-3.5 text-left rounded-2xl border theme-border theme-bg-secondary/40 space-y-1.5">
-              <div className="font-semibold text-xs theme-text-primary flex items-center gap-2 flex-wrap">
-                <span>Fluent Glass</span>
-                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border theme-border">
-                  Acrylic
-                </span>
-              </div>
-              <p className="text-[11px] theme-text-muted leading-relaxed">
-                Pitch-black #000000 AMOLED canvas with drifting sub-surface ambient orbs, specular Acrylic refraction cards, mercury gauges, and a floating pill dock.
-              </p>
+            {/* Interface Style Choice Grid (Fluent Glass vs Aetherial Focus) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {availableThemes.map((engineDef) => {
+                const isSelected = theme === engineDef.id;
+                return (
+                  <button
+                    key={engineDef.id}
+                    type="button"
+                    onClick={() => {
+                      haptics.tick(900);
+                      setTheme(engineDef.id);
+                      removeActiveModStyles();
+                      setActiveModId(null);
+                    }}
+                    className={`w-full p-3.5 text-left rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                      isSelected
+                        ? 'border-[var(--accent-primary,#38bdf8)] bg-[var(--accent-soft,rgba(56,189,248,0.12))] shadow-[0_0_16px_var(--liquid-accent-soft-glow)]'
+                        : 'theme-border theme-bg-secondary/40 hover:theme-bg-secondary/70'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <div className="font-semibold text-xs theme-text-primary flex items-center gap-2">
+                        <span>{engineDef.name}</span>
+                        <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded-full font-mono border ${
+                          isSelected ? 'border-[var(--accent-primary,#38bdf8)] text-[var(--accent-primary,#38bdf8)]' : 'theme-border theme-text-muted'
+                        }`}>
+                          {engineDef.badge}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-[var(--accent-primary,#38bdf8)] shadow-[0_0_8px_var(--accent-primary,#38bdf8)] animate-pulse shrink-0" />
+                      )}
+                    </div>
+
+                    <p className="text-[11px] theme-text-muted leading-relaxed">
+                      {engineDef.description}
+                    </p>
+
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <div
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                        style={{ backgroundColor: engineDef.swatchBg }}
+                        title="Background"
+                      />
+                      <div
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                        style={{ backgroundColor: engineDef.swatchSurface }}
+                        title="Surface"
+                      />
+                      <div
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                        style={{ backgroundColor: engineDef.swatchAccent }}
+                        title="Primary Accent"
+                      />
+                      {engineDef.swatchAccentSecondary && (
+                        <div
+                          className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                          style={{ backgroundColor: engineDef.swatchAccentSecondary }}
+                          title="Secondary Accent"
+                        />
+                      )}
+                      <span className="text-[9px] theme-text-muted ml-auto font-mono">
+                        {isSelected ? 'ACTIVE' : 'SELECT'}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* 2 Choosable Accent Colors Directly Underneath Interface Style */}

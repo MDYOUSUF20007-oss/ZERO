@@ -242,7 +242,7 @@ export function App() {
   };
 
   const isBespoke = store.interfaceStyle === 'bespoke' || store.interfaceStyle === 'minimalist' || store.interfaceStyle === 'minimal';
-  const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent';
+  const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent' || store.interfaceStyle === 'aetherial';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {

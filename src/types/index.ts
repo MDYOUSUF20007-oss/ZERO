@@ -357,6 +357,7 @@ export type InterfaceStyle =
   | 'minimalist'
   | 'bespoke'
   | 'fluent_glass'
+  | 'aetherial'
   | 'trantor'
   | 'onyx'
   | 'fintech'

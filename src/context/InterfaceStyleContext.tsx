@@ -192,6 +192,7 @@ export interface InterfaceStyleContextValue {
   isFluent: boolean;
   isFluentGlass: boolean;
   isLiquidGlass: boolean;
+  isAetherial: boolean;
   isMinimalist: boolean;
   isBespoke: boolean;
 
@@ -317,7 +318,8 @@ export function InterfaceStyleProvider({
       for (const oldKey of LEGACY_STORAGE_KEYS) {
         window.localStorage.removeItem(oldKey);
       }
-      return 'fluent';
+      const saved = window.localStorage.getItem(STORAGE_KEY_THEME);
+      return normalizeThemeId(saved);
     } catch {
       return 'fluent';
     }
@@ -387,28 +389,34 @@ export function InterfaceStyleProvider({
   useEffect(() => {
     const currentGlow = isBespokeActive ? 0 : fluentOrbIntensity;
     const currentGlass = isBespokeActive ? 0.05 : fluentGlassStrength;
-    mountIsolatedThemeEngine('fluent', accent, currentGlow, currentGlass);
+    mountIsolatedThemeEngine(theme, accent, currentGlow, currentGlass);
     initActiveThemeMod();
     try {
-      window.localStorage.setItem(STORAGE_KEY_THEME, 'fluent');
+      window.localStorage.setItem(STORAGE_KEY_THEME, theme);
       window.localStorage.setItem(STORAGE_KEY_ACCENT, accent);
       window.localStorage.setItem(STORAGE_KEY_GLOW, fluentOrbIntensity.toString());
       window.localStorage.setItem(STORAGE_KEY_GLASS_STRENGTH, fluentGlassStrength.toString());
     } catch {
       // Ignore storage errors
     }
-  }, [accent, fluentOrbIntensity, fluentGlassStrength, isBespokeActive]);
+  }, [theme, accent, fluentOrbIntensity, fluentGlassStrength, isBespokeActive]);
 
   const setInterfaceStyle = useCallback((next: InterfaceStyle) => {
     const isNextBespoke = next === 'bespoke' || next === 'minimalist';
-    const targetStyle = isNextBespoke ? 'bespoke' : 'fluent_glass';
-    setInterfaceStyleProp?.(targetStyle);
-    setThemeState('fluent');
-    if (isNextBespoke) {
-      mountIsolatedThemeEngine('fluent', accent, 0, 0.05);
-    } else {
-      mountIsolatedThemeEngine('fluent', accent, fluentOrbIntensity > 0 ? fluentOrbIntensity : 0.35, fluentGlassStrength);
+    const normalized = normalizeThemeId(next);
+    setInterfaceStyleProp?.(isNextBespoke ? 'bespoke' : normalized);
+    setThemeState(normalized);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_THEME, normalized);
+    } catch {
+      // ignore
     }
+    mountIsolatedThemeEngine(
+      normalized,
+      accent,
+      isNextBespoke ? 0 : (fluentOrbIntensity > 0 ? fluentOrbIntensity : 0.35),
+      isNextBespoke ? 0.05 : fluentGlassStrength
+    );
   }, [setInterfaceStyleProp, accent, fluentOrbIntensity, fluentGlassStrength]);
 
   const restartWithTheme = useCallback((nextTheme: InterfaceStyle) => {
@@ -427,7 +435,7 @@ export function InterfaceStyleProvider({
   const setAccent = useCallback((nextAccent: AccentColorId) => {
     const safeAccent = nextAccent === 'cyan' ? 'cyan' : 'purple';
     removeActiveModStyles();
-    mountIsolatedThemeEngine('fluent', safeAccent, isBespokeActive ? 0 : fluentOrbIntensity);
+    mountIsolatedThemeEngine(theme, safeAccent, isBespokeActive ? 0 : fluentOrbIntensity, fluentGlassStrength);
     setAccentState(safeAccent);
     setMaterialYouSeedProp?.(safeAccent);
     try {
@@ -435,23 +443,23 @@ export function InterfaceStyleProvider({
     } catch {
       // Ignore storage errors
     }
-  }, [fluentOrbIntensity, isBespokeActive, setMaterialYouSeedProp]);
+  }, [theme, fluentOrbIntensity, fluentGlassStrength, isBespokeActive, setMaterialYouSeedProp]);
 
   const value = useMemo<InterfaceStyleContextValue>(
     () => ({
-      theme: 'fluent',
+      theme,
       setTheme: setInterfaceStyle,
       restartWithTheme,
       accent,
       setAccent,
-      interfaceStyle: isBespokeActive ? 'bespoke' : 'fluent_glass',
+      interfaceStyle: isBespokeActive ? 'bespoke' : theme,
       setInterfaceStyle,
-      style: isBespokeActive ? 'bespoke' : 'fluent_glass',
+      style: isBespokeActive ? 'bespoke' : theme,
       setStyle: setInterfaceStyle,
-      activeEngine: THEME_ENGINES.fluent,
+      activeEngine: THEME_ENGINES[theme] ?? THEME_ENGINES.fluent,
       availableThemes: AVAILABLE_THEMES,
 
-      engine: isBespokeActive ? 'bespoke' : 'fluent',
+      engine: isBespokeActive ? 'bespoke' : theme,
       setEngine: setInterfaceStyle,
       isOnyx: false,
       isFintech: false,
@@ -459,9 +467,10 @@ export function InterfaceStyleProvider({
       isClassicV2: false,
       isTrantor: false,
       isMaterialYou: false,
-      isFluent: !isBespokeActive,
+      isFluent: theme === 'fluent' && !isBespokeActive,
       isFluentGlass: !isBespokeActive,
       isLiquidGlass: !isBespokeActive,
+      isAetherial: theme === 'aetherial' && !isBespokeActive,
       isMinimalist: isBespokeActive,
       isBespoke: isBespokeActive,
 
@@ -512,6 +521,7 @@ export function InterfaceStyleProvider({
       theme,
       isBespokeActive,
       setInterfaceStyle,
+      restartWithTheme,
       accent,
       setAccent,
       fluentOrbIntensity,
