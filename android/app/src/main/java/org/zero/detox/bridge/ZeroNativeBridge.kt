@@ -32,6 +32,7 @@ import org.zero.detox.data.ParachuteStore
 import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
 import org.zero.detox.security.AppSecurityGuard
+import org.zero.detox.ui.TheVoidActivity
 import org.zero.detox.ui.VoidThemeStore
 import java.io.File
 
