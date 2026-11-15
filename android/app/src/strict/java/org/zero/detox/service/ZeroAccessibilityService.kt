@@ -82,6 +82,7 @@ class ZeroAccessibilityService : AccessibilityService() {
     private var cachedImePackages: Set<String> = emptySet()
     private var cachedLauncherPackages: Set<String> = emptySet()
     private var cachedDialerPackages: Set<String> = emptySet()
+    private var cachedPaymentPackages: Set<String> = emptySet()
     private var lastPackageCacheElapsed: Long = -PACKAGE_CACHE_TTL_MS
     private val appLabelCache = HashMap<String, String>()
 
@@ -243,8 +244,10 @@ class ZeroAccessibilityService : AccessibilityService() {
         }
 
         val compulsory = HashSet<String>(cachedDialerPackages)
+        compulsory.addAll(cachedPaymentPackages)
         if (compulsory.isEmpty()) {
             compulsory.addAll(bagStore.getAllowedDialerPackages())
+            compulsory.addAll(bagStore.getAllowedPaymentPackages())
         }
         if (allowSms) {
             compulsory.addAll(bagStore.getAllowedSmsPackages())
@@ -317,6 +320,7 @@ class ZeroAccessibilityService : AccessibilityService() {
 
         try {
             cachedDialerPackages = bagStore.getAllowedDialerPackages()
+            cachedPaymentPackages = bagStore.getAllowedPaymentPackages()
         } catch (_: Exception) {}
     }
 
@@ -394,9 +398,10 @@ class ZeroAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 4. Temporary Emergency Dialer grace (911/112) triggered from TheVoidActivity
-        if (nowElapsed <= TheVoidActivity.dialerGraceUntilElapsed && cachedDialerPackages.contains(eventPkg)) {
+        // 4. Dialers and Payment/Wallet apps (Samsung Wallet, Navi, Paytm, PhonePe, GPay, etc.): always permitted without blocking overlays
+        if (cachedDialerPackages.contains(eventPkg) || cachedPaymentPackages.contains(eventPkg)) {
             overlayController.hideBlockingOverlay()
+            overlayController.hideNudgeBanner()
             return
         }
 

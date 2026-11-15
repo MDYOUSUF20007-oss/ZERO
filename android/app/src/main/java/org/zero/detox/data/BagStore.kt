@@ -63,7 +63,60 @@ class BagStore(private val context: Context) {
             "com.oplus.dialer",
             "com.coloros.dialer",
             "com.miui.phone",
-            "com.asus.dialer"
+            "com.asus.dialer",
+            "com.vivo.dialer",
+            "com.bbk.dialer",
+            "com.android.contacts",
+            "com.motorola.dialer",
+            "com.sh.smart.caller",
+            "com.transsion.phonemaster",
+            "com.hihonor.contacts",
+            "com.huawei.contacts"
+        )
+
+        val CORE_PAYMENT_PACKAGES = setOf(
+            // Samsung Wallet & Pay
+            "com.samsung.android.spay",
+            "com.samsung.android.spaymini",
+            "com.samsung.android.rajaampat",
+            // Navi
+            "com.navi.finance",
+            "com.navi.upi",
+            // Paytm
+            "net.one97.paytm",
+            // Google Pay & Wallet
+            "com.google.android.apps.nbu.paisa.user",
+            "com.google.android.apps.walletnfcrel",
+            // PhonePe
+            "com.phonepe.app",
+            "com.phonepe.app.business",
+            // BHIM
+            "in.org.npci.upiapp",
+            // CRED
+            "com.dreamplug.androidapp",
+            // Amazon Pay
+            "in.amazon.mShop.android.shopping",
+            // Major Banking & UPI
+            "com.sbi.lotusintouch",
+            "com.sbi.upi",
+            "com.snapwork.hdfc",
+            "com.csam.icici.bank.imobile",
+            "com.axis.mobile",
+            "com.msf.kbank.mobile",
+            "com.bankofbaroda.mconnect",
+            "com.canarabank.mobility",
+            "com.unionbank.ecommerce.mobile.android",
+            "com.pnb.pnbone",
+            "com.fimmoney.android",
+            "money.jupiter",
+            "com.slicepay",
+            "com.freecharge.android",
+            "com.mobikwik_new",
+            "com.supermoney.app",
+            "com.tatadigital.tcp",
+            "com.famcash",
+            "com.popclub.app",
+            "com.kiwi.credit"
         )
 
         val COMPULSORY_AI_ASSISTANT_PACKAGES = setOf(
@@ -241,6 +294,19 @@ class BagStore(private val context: Context) {
         return pkgs
     }
 
+    fun getAllowedPaymentPackages(): Set<String> {
+        val pkgs = CORE_PAYMENT_PACKAGES.toMutableSet()
+        try {
+            val upiPayIntent = Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay"))
+            pkgs.addAll(queryIntentPackages(upiPayIntent))
+        } catch (_: Exception) {}
+        try {
+            val upiRawIntent = Intent(Intent.ACTION_VIEW, Uri.parse("upi:"))
+            pkgs.addAll(queryIntentPackages(upiRawIntent))
+        } catch (_: Exception) {}
+        return pkgs
+    }
+
     fun getPrimaryDialerPackage(): String? {
         try {
             val telecom = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
@@ -267,6 +333,9 @@ class BagStore(private val context: Context) {
 
         // Phone Calls are compulsory and always permitted during locks
         if (getAllowedDialerPackages().contains(pkg)) return true
+
+        // Payment & UPI apps (Samsung Wallet, Navi, Paytm, PhonePe, GPay, etc.) are compulsory and always permitted
+        if (getAllowedPaymentPackages().contains(pkg)) return true
 
         // AI & System Assistants are compulsory and always permitted during locks
         if (COMPULSORY_AI_ASSISTANT_PACKAGES.contains(pkg)) return true

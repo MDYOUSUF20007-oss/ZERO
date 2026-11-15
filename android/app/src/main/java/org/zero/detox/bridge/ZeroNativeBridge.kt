@@ -851,4 +851,81 @@ class ZeroNativeBridge(
             false
         }
     }
+
+    @JavascriptInterface
+    fun launchDialerApp(): Boolean {
+        TheVoidActivity.dialerGraceUntilElapsed = SystemClock.elapsedRealtime() + 15000L
+        return try {
+            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(dialIntent)
+            true
+        } catch (_: Exception) {
+            try {
+                val primary = bagStore.getPrimaryDialerPackage()
+                if (primary != null) {
+                    val launchIntent = activity.packageManager.getLaunchIntentForPackage(primary)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        activity.startActivity(launchIntent)
+                        return true
+                    }
+                }
+            } catch (_: Exception) {}
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun launchPaymentApp(packageName: String): Boolean {
+        TheVoidActivity.bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 5000L
+        return try {
+            if (packageName == "upi" || packageName.isBlank()) {
+                val upiIntent = Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                activity.startActivity(Intent.createChooser(upiIntent, "Pay with UPI"))
+                true
+            } else {
+                val launchIntent = activity.packageManager.getLaunchIntentForPackage(packageName)
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    activity.startActivity(launchIntent)
+                    true
+                } else {
+                    false
+                }
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun getInstalledPaymentAppsJson(): String {
+        val pm = activity.packageManager
+        val allowedPkgs = bagStore.getAllowedPaymentPackages()
+        val json = JSONArray()
+        val seen = HashSet<String>()
+
+        for (pkg in allowedPkgs) {
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                if (!appInfo.enabled) continue
+                if (!seen.add(pkg)) continue
+                val label = pm.getApplicationLabel(appInfo).toString()
+                json.put(
+                    JSONObject().apply {
+                        put("packageName", pkg)
+                        put("appName", label)
+                        put("isInstalled", true)
+                    }
+                )
+            } catch (_: PackageManager.NameNotFoundException) {
+                // Not installed on device
+            }
+        }
+        return json.toString()
+    }
 }

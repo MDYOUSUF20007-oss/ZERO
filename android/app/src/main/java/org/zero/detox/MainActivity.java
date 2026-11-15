@@ -123,6 +123,30 @@ public class MainActivity extends BridgeActivity {
                         return super.shouldOverrideUrlLoading(view, request);
                     }
 
+                    // Allow phone calls / dialer directly without blocking
+                    if ("tel".equals(scheme)) {
+                        try {
+                            Intent dialIntent = new Intent(Intent.ACTION_DIAL, target);
+                            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(dialIntent);
+                        } catch (Throwable t) {
+                            Log.e("ZeroMainActivity", "Failed to launch dialer", t);
+                        }
+                        return true;
+                    }
+
+                    // Allow SMS messaging directly without blocking
+                    if ("sms".equals(scheme) || "smsto".equals(scheme)) {
+                        try {
+                            Intent smsIntent = new Intent(Intent.ACTION_SENDTO, target);
+                            smsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(smsIntent);
+                        } catch (Throwable t) {
+                            Log.e("ZeroMainActivity", "Failed to launch SMS", t);
+                        }
+                        return true;
+                    }
+
                     EndpointSecurityPolicy.ValidatedExternalTarget validated =
                         EndpointSecurityPolicy.parseAndValidateExternalUrl(target.toString());
                     if (validated == null) {

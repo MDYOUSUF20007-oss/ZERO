@@ -473,6 +473,10 @@ export interface ZeroNativeBridgeInterface {
   stopEngageSession?(): void;
   getEngageSessionStateJson?(): string;
   deployParachute(): boolean;
+  launchBagApp?(packageName: string): boolean;
+  launchDialerApp?(): boolean;
+  launchPaymentApp?(packageName: string): boolean;
+  getInstalledPaymentAppsJson?(): string;
   getBatteryPercentage(): number;
   getNativeStateJson(): string;
   acknowledgeVerifiedCompletions?(eventIdsJson: string): void;

@@ -52,6 +52,14 @@ const BRAND_HEX_BY_PACKAGE: Record<string, string> = {
   'com.google.android.apps.messaging': '#0284C7',
   'com.samsung.android.messaging': '#0284C7',
   'com.android.mms': '#0284C7',
+  'com.samsung.android.spay': '#1428A0',
+  'com.samsung.android.rajaampat': '#1428A0',
+  'com.navi.finance': '#00D09C',
+  'net.one97.paytm': '#00B9F1',
+  'com.google.android.apps.nbu.paisa.user': '#1A73E8',
+  'com.phonepe.app': '#5F259F',
+  'in.org.npci.upiapp': '#007B5E',
+  'com.dreamplug.androidapp': '#18181B',
 };
 
 const FALLBACK_PALETTE = [
@@ -92,6 +100,14 @@ function getBrandHexByKeywords(lowerPkg: string, lowerName: string): string | nu
   if (lowerPkg.includes('calc') || lowerName.includes('calculator')) return '#0D9488';
   if (lowerPkg.includes('clock') || lowerName.includes('clock')) return '#0284C7';
   if (lowerPkg.includes('camera') || lowerName.includes('camera')) return '#3F3F46';
+  if (lowerPkg.includes('spay') || (lowerPkg.includes('samsung') && lowerName.includes('wallet'))) return '#1428A0';
+  if (lowerPkg.includes('navi') || lowerName.includes('navi')) return '#00D09C';
+  if (lowerPkg.includes('paytm') || lowerName.includes('paytm')) return '#00B9F1';
+  if (lowerPkg.includes('phonepe') || lowerName.includes('phonepe')) return '#5F259F';
+  if (lowerPkg.includes('paisa') || lowerName.includes('gpay') || lowerName.includes('google pay')) return '#1A73E8';
+  if (lowerPkg.includes('cred') || lowerName.includes('cred')) return '#18181B';
+  if (lowerPkg.includes('bhim') || lowerName.includes('bhim')) return '#007B5E';
+  if (lowerPkg.includes('wallet') || lowerPkg.includes('upi') || lowerName.includes('wallet') || lowerName.includes('pay')) return '#10B981';
   return null;
 }
 

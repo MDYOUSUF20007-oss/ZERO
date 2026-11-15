@@ -23,7 +23,6 @@ import {
   MessageSquare,
   Battery,
   Wifi,
-  Shield,
   Sparkles,
   Lock,
   Volume2,
@@ -41,7 +40,26 @@ import {
   Plus,
   BellOff,
   Bell,
+  CreditCard,
+  QrCode,
+  ExternalLink,
 } from 'lucide-react';
+
+interface PaymentAppOption {
+  packageName: string;
+  appName: string;
+  isInstalled?: boolean;
+}
+
+const DEFAULT_PAYMENT_APPS: PaymentAppOption[] = [
+  { packageName: 'com.samsung.android.spay', appName: 'Samsung Wallet' },
+  { packageName: 'com.navi.finance', appName: 'Navi UPI' },
+  { packageName: 'net.one97.paytm', appName: 'Paytm' },
+  { packageName: 'com.google.android.apps.nbu.paisa.user', appName: 'Google Pay' },
+  { packageName: 'com.phonepe.app', appName: 'PhonePe' },
+  { packageName: 'com.dreamplug.androidapp', appName: 'CRED' },
+  { packageName: 'in.org.npci.upiapp', appName: 'BHIM UPI' },
+];
 
 interface TheVoidViewProps {
   activeLock: ActiveLockSession;
@@ -150,6 +168,26 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   // Silence Mode / Optional DND state (Phone is silent, Calls & WhatsApp unblocked)
   const [isDndEnabled, setIsDndEnabled] = useState<boolean>(false);
 
+  // Payment and Wallet Launch Modal & Detected Packages
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.ZeroNative?.getInstalledPaymentAppsJson) {
+      try {
+        const raw = window.ZeroNative.getInstalledPaymentAppsJson();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setInstalledPaymentApps(parsed);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to parse installed payment apps', err);
+      }
+    }
+  }, []);
+
   // AOD Burn-in Protection Pixel Drift (+/- 2-4px periodically)
   const [aodDrift, setAodDrift] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -202,6 +240,20 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       ),
     [activeBag]
   );
+
+  const paymentOptions = useMemo(() => {
+    if (installedPaymentApps.length > 0) {
+      const seen = new Set(installedPaymentApps.map((a) => a.packageName));
+      const combined = [...installedPaymentApps];
+      for (const def of DEFAULT_PAYMENT_APPS) {
+        if (!seen.has(def.packageName) && combined.length < 8) {
+          combined.push(def);
+        }
+      }
+      return combined;
+    }
+    return DEFAULT_PAYMENT_APPS;
+  }, [installedPaymentApps]);
 
   const formatCountdown = (totalSec: number) => {
     const safeSec = Math.max(0, Math.floor(totalSec));
@@ -388,6 +440,30 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const handleNextQuote = () => {
     haptics.tick(850);
     setCurrentQuote(getRandomVoidQuote(profile?.motto));
+  };
+
+  const handleOpenDialer = () => {
+    haptics.tick(700);
+    if (typeof window !== 'undefined' && window.ZeroNative?.launchDialerApp) {
+      const launched = window.ZeroNative.launchDialerApp();
+      if (launched) return;
+    }
+    window.location.href = 'tel:';
+  };
+
+  const handleOpenPaymentApp = (packageName?: string, _appName?: string) => {
+    haptics.thud();
+    setShowPaymentModal(false);
+    if (typeof window !== 'undefined' && window.ZeroNative?.launchPaymentApp) {
+      const targetPkg = packageName || '';
+      const launched = window.ZeroNative.launchPaymentApp(targetPkg);
+      if (launched) return;
+    }
+    if (packageName && !packageName.startsWith('upi:')) {
+      window.location.href = `intent:#Intent;package=${packageName};end`;
+    } else {
+      window.location.href = 'upi://pay';
+    }
   };
 
   const handleRequestAppOpen = (appName: string, packageName: string, visual: AppBrandVisual) => {
@@ -1039,81 +1115,88 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               : undefined
           }
         >
-          {visibleBagApps.length === 0 ? (
-            <div className="flex items-center justify-center gap-4 py-1">
-              {/* Compulsory Phone Icon */}
+          <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3 w-full overflow-x-auto no-scrollbar py-0.5 px-1">
+            {/* Compulsory Phone Dialer */}
+            <button
+              type="button"
+              onClick={handleOpenDialer}
+              title="Open Phone Dialer"
+              className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            >
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md bg-emerald-600 text-white border border-emerald-400/40">
+                <Phone size={20} strokeWidth={2.2} />
+              </div>
+              <span className="text-[10px] font-sans font-medium text-zinc-300 max-w-[54px] truncate text-center">
+                Phone
+              </span>
+            </button>
+
+            {/* Allowed Bag Apps (up to 3 apps) */}
+            {visibleBagApps.map((app) => {
+              const brand = resolveAppBrandVisual(app);
+              return (
+                <button
+                  key={app.packageName}
+                  type="button"
+                  onClick={() => handleRequestAppOpen(app.appName, app.packageName, brand)}
+                  className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                >
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold shadow-md select-none transition-transform"
+                    style={{
+                      backgroundColor: brand.bgColor,
+                      color: brand.textColor,
+                      border: `1px solid ${brand.borderColor}`,
+                    }}
+                  >
+                    {brand.initial}
+                  </div>
+                  <span className="text-[10px] font-sans font-medium text-zinc-300 max-w-[54px] truncate text-center">
+                    {app.appName}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* SMS Messaging if enabled */}
+            {activeBag.allowSms && (
               <button
                 type="button"
                 onClick={() =>
-                  handleRequestAppOpen('Phone Calls', 'tel:', {
-                    bgColor: '#16A34A',
+                  handleRequestAppOpen('SMS Messaging', 'sms:', {
+                    bgColor: '#0284C7',
                     textColor: '#FFFFFF',
                     borderColor: 'rgba(255,255,255,0.2)',
-                    initial: 'P',
+                    initial: 'S',
                   })
                 }
-                className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer"
+                className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <div className="w-12 h-12 rounded-2xl liquid-inset flex items-center justify-center text-cyan-300 shadow-md">
-                  <Phone size={18} strokeWidth={2} />
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-sky-600 text-white border border-sky-400/30 shadow-md">
+                  <MessageSquare size={18} strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-sans font-medium text-zinc-300">Dialer</span>
+                <span className="text-[10px] font-sans font-medium text-zinc-300">SMS</span>
               </button>
+            )}
 
-              {activeBag.allowSms && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleRequestAppOpen('SMS Messaging', 'sms:', {
-                      bgColor: '#0284C7',
-                      textColor: '#FFFFFF',
-                      borderColor: 'rgba(255,255,255,0.2)',
-                      initial: 'S',
-                    })
-                  }
-                  className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-2xl liquid-inset flex items-center justify-center text-cyan-300 shadow-md">
-                    <MessageSquare size={18} strokeWidth={2} />
-                  </div>
-                  <span className="text-[10px] font-sans font-medium text-zinc-300">SMS</span>
-                </button>
-              )}
-
-              <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-sans px-2">
-                <Shield size={12} className="text-cyan-400/60" />
-                <span>Monk Mode</span>
+            {/* Compulsory Payment / UPI Launcher */}
+            <button
+              type="button"
+              onClick={() => {
+                haptics.tick(700);
+                setShowPaymentModal(true);
+              }}
+              title="Open Payment / UPI Apps"
+              className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            >
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br from-emerald-500/90 to-teal-700/90 text-white border border-emerald-300/40">
+                <CreditCard size={20} strokeWidth={2.2} />
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-start sm:justify-center gap-3 w-full overflow-x-auto no-scrollbar py-0.5 px-1">
-              {visibleBagApps.map((app) => {
-                const brand = resolveAppBrandVisual(app);
-                return (
-                  <button
-                    key={app.packageName}
-                    type="button"
-                    onClick={() => handleRequestAppOpen(app.appName, app.packageName, brand)}
-                    className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-                  >
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold shadow-md select-none transition-transform"
-                      style={{
-                        backgroundColor: brand.bgColor,
-                        color: brand.textColor,
-                        border: `1px solid ${brand.borderColor}`,
-                      }}
-                    >
-                      {brand.initial}
-                    </div>
-                    <span className="text-[10px] font-sans font-medium text-zinc-300 max-w-[54px] truncate text-center">
-                      {app.appName}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+              <span className="text-[10px] font-sans font-medium text-emerald-300 max-w-[54px] truncate text-center">
+                Pay
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1426,6 +1509,103 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 Close &amp; Keep Flowing
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK PAYMENT & UPI MODAL */}
+      {showPaymentModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
+        >
+          <div className="relative w-full max-w-sm rounded-[28px] modal-glass p-5 shadow-2xl border border-white/10 space-y-4 font-sans select-none">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                  <CreditCard size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Quick Pay &amp; UPI
+                  </h3>
+                  <p className="text-[10px] text-zinc-400">Real-world transactions unlocked</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="w-7 h-7 rounded-full liquid-pill-inactive flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Pay at stores, scan merchant QR codes, or access Samsung Wallet &amp; UPI apps without breaking your focus lock.
+            </p>
+
+            {/* Universal Scan & Pay Button */}
+            <button
+              type="button"
+              onClick={() => handleOpenPaymentApp('', 'Scan & Pay')}
+              className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs shadow-lg transition-transform active:scale-95 cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                  <QrCode size={18} />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-sm">Scan &amp; Pay (Any UPI)</div>
+                  <div className="text-[10px] text-emerald-100">Launches universal UPI scanner</div>
+                </div>
+              </div>
+              <ExternalLink size={16} className="text-emerald-200" />
+            </button>
+
+            {/* Specific Payment & Wallet Apps */}
+            <div className="space-y-1.5 pt-1">
+              <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                Direct App Launch
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-0.5 no-scrollbar">
+                {paymentOptions.map((opt) => {
+                  const brand = resolveAppBrandVisual({ appName: opt.appName, packageName: opt.packageName });
+                  return (
+                    <button
+                      key={opt.packageName}
+                      type="button"
+                      onClick={() => handleOpenPaymentApp(opt.packageName, opt.appName)}
+                      className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-left transition-colors cursor-pointer active:scale-95"
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 shadow-sm"
+                        style={{
+                          backgroundColor: brand.bgColor,
+                          color: brand.textColor,
+                          border: `1px solid ${brand.borderColor}`,
+                        }}
+                      >
+                        {brand.initial}
+                      </div>
+                      <div className="truncate">
+                        <div className="text-xs font-medium text-zinc-200 truncate">{opt.appName}</div>
+                        <div className="text-[9px] text-zinc-400">Open App</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(false)}
+              className="w-full py-2.5 liquid-pill text-zinc-300 font-medium text-xs rounded-xl hover:text-white cursor-pointer"
+            >
+              Back to Void
+            </button>
           </div>
         </div>
       )}
