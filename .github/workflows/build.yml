@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   contents: read
 
@@ -19,14 +23,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
-        run: node scripts/verify-integrity.mjs
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
+        run: node scripts/verify-integrity.mjs
 
       - name: Install Dependencies
         run: npm ci
@@ -60,4 +64,14 @@ jobs:
       - name: Run Android Unit Tests (Standard & Strict)
         run: |
           cd android
-          ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest --no-daemon --stacktrace
+          set -o pipefail
+          if ! ./gradlew testStandardReleaseUnitTest testStrictReleaseUnitTest --no-daemon --stacktrace 2>&1 | tee gradle-test.log; then
+            echo "### Android Unit Test / Compile Failure Log" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 gradle-test.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "error:|e: |FAILED|AssertionError|Exception|What went wrong" gradle-test.log | head -n 20 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done || true
+            exit 1
+          fi

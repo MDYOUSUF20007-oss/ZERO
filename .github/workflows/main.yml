@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pages: write
@@ -22,14 +26,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
-        run: node scripts/verify-integrity.mjs
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
+        run: node scripts/verify-integrity.mjs
 
       - name: Install Dependencies
         run: npm ci
@@ -87,18 +91,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
       - name: Verify Core Productivity Integrity (Anti-Cheat Gate)
         run: node scripts/verify-integrity.mjs
 
       - name: Compute Monotonic Android Version Code
         run: |
           echo "ZERO_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
@@ -174,7 +178,7 @@ jobs:
         run: |
           cd android
           ./gradlew assembleStandardDebug assembleStrictDebug --no-daemon --stacktrace
-          mkdir -p ../release-assets
+          rm -rf ../release-assets && mkdir -p ../release-assets
           cp app/build/outputs/apk/strict/debug/app-strict-debug.apk "../release-assets/ZERO-requires-adb-v${ZERO_VERSION_NAME}-preview.apk"
           cp app/build/outputs/apk/standard/debug/app-standard-debug.apk "../release-assets/ZERO-v${ZERO_VERSION_NAME}-preview.apk"
           (cd ../release-assets && sha256sum *.apk > SHA256SUMS.txt)
@@ -183,10 +187,22 @@ jobs:
       - name: Verify APK Signing Certificate & Stage Release Assets
         if: steps.keystore.outputs.signed == 'true'
         run: |
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
-          mkdir -p release-assets
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name "apksigner" | sort -V | tail -n 1)
+          if [ -z "$APKSIGNER" ] || [ ! -f "$APKSIGNER" ]; then
+            echo "::error::apksigner tool not found in $ANDROID_HOME/build-tools"
+            exit 1
+          fi
+          chmod +x "$APKSIGNER" || true
+
+          rm -rf release-assets && mkdir -p release-assets
           cp android/app/build/outputs/apk/strict/release/app-strict-release.apk "release-assets/ZERO-requires-adb-v${ZERO_VERSION_NAME}.apk"
           cp android/app/build/outputs/apk/standard/release/app-standard-release.apk "release-assets/ZERO-v${ZERO_VERSION_NAME}.apk"
+
+          apk_count=$(ls -1 release-assets/*.apk 2>/dev/null | wc -l)
+          if [ "$apk_count" -eq 0 ]; then
+            echo "::error::No release APKs found in release-assets/ to verify"
+            exit 1
+          fi
 
           EXPECTED_CLEAN=$(echo "$EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
           for apk in release-assets/*.apk; do
