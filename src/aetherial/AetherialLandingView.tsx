@@ -68,11 +68,8 @@ export const AetherialLandingView: React.FC<AetherialLandingViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col relative w-full px-4 sm:px-6 pt-4 pb-28 select-none font-sans text-[#e2e1ed]">
-      {/* Subtle Dynamic Ambient Field Glow */}
+      {/* Current Mission Tag Pill */}
       <div className="relative flex flex-col items-center w-full">
-        <div className="absolute -top-10 w-72 h-72 bg-[#38bdf8]/15 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse" />
-
-        {/* Current Mission Tag Pill */}
         <button
           type="button"
           onClick={() => {

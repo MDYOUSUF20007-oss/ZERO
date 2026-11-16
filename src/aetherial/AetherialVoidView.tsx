@@ -3,6 +3,7 @@ import type { ActiveLockSession, ParachuteMetrics, OccasionBag, ZeroProfile } fr
 import { resolveAppBrandVisual } from '../utils/appBrandColors';
 import { voidAudio } from '../utils/voidAudio';
 import { haptics } from '../utils/haptics';
+import { AmbientBackground } from '../components/AmbientBackground';
 import {
   Phone,
   CreditCard,
@@ -175,11 +176,8 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
         paddingBottom: 'calc(0.75rem + var(--zero-safe-bottom))',
       }}
     >
-      {/* Dynamic Ambient Field Glow */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#38bdf8]/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-24 w-80 h-80 bg-[#a7a9ff]/10 rounded-full blur-3xl" />
-      </div>
+      {/* Minimal Living 2-Corner Ambient Mesh Background */}
+      <AmbientBackground />
 
       {/* Header */}
       <header className="relative z-10 w-full flex items-center justify-between pb-2">

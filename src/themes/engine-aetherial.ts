@@ -1,4 +1,5 @@
 import { type ThemeEngineDefinition } from './types';
+import { BASE_ENGINE_BRIDGE_CSS } from './base-bridge';
 
 export const aetherialEngine: ThemeEngineDefinition = {
   id: 'aetherial',
@@ -276,5 +277,6 @@ export const aetherialEngine: ThemeEngineDefinition = {
     .theme-text-muted { color: #87929a !important; }
     .theme-text-accent { color: var(--accent-primary, #38bdf8) !important; }
     .theme-border { border-color: rgba(62, 72, 79, 0.45) !important; }
+    ${BASE_ENGINE_BRIDGE_CSS}
   `,
 };

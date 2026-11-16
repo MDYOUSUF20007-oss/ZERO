@@ -110,10 +110,6 @@ export const AetherialDashboardView: React.FC<AetherialDashboardViewProps> = ({
 
       {/* Screen Time Dial & Cognitive Load Hero Card */}
       <div className="relative w-full rounded-2xl bg-[#191b24]/90 backdrop-blur-xl p-5 shadow-xl border border-white/5 overflow-hidden">
-        {/* Atmospheric auras */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#38bdf8]/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-[#4edea3]/10 rounded-full blur-2xl pointer-events-none" />
-
         <div className="relative z-10 flex flex-col">
           {/* Card Top Meta */}
           <div className="flex items-center justify-between">

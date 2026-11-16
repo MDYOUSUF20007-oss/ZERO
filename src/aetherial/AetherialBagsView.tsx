@@ -44,8 +44,6 @@ export const AetherialBagsView: React.FC<AetherialBagsViewProps> = ({
     <div className="flex-1 flex flex-col relative w-full px-4 sm:px-6 pt-4 pb-28 select-none font-sans text-[#e2e1ed] space-y-4">
       {/* Header Section with Zen Halo Visual Motif */}
       <div className="relative overflow-hidden rounded-2xl bg-[#191b24]/90 backdrop-blur-xl p-5 shadow-xl border border-white/5">
-        <div className="absolute -right-8 -top-8 w-44 h-44 bg-[#38bdf8]/10 rounded-full blur-2xl pointer-events-none" />
-
         <div className="flex items-start justify-between relative z-10">
           <div className="space-y-1.5 max-w-[82%]">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#38bdf8]/15 text-[#38bdf8]">
@@ -117,8 +115,6 @@ export const AetherialBagsView: React.FC<AetherialBagsViewProps> = ({
         {/* Active Bag Card */}
         {activeBag && (
           <div className="relative overflow-hidden rounded-2xl bg-[#1d1f28]/90 backdrop-blur-2xl p-5 shadow-2xl border border-[#38bdf8]/40 transition-all">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#38bdf8]/10 via-transparent to-transparent pointer-events-none" />
-
             <div className="relative z-10 flex flex-col space-y-4">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">

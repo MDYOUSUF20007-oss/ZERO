@@ -114,8 +114,6 @@ export const AetherialAnalyticsView: React.FC<AetherialAnalyticsViewProps> = ({
 
       {/* Screen Time Today Overview Analytical Card */}
       <div className="rounded-2xl bg-[#191b24]/90 backdrop-blur-xl p-5 shadow-xl border border-white/5 relative overflow-hidden">
-        <div className="absolute -top-12 -left-10 w-36 h-36 bg-[#38bdf8]/10 rounded-full blur-2xl pointer-events-none" />
-
         <div className="flex items-start justify-between relative z-10">
           <div>
             <div className="flex items-center gap-1.5">

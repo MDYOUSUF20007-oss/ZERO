@@ -6,6 +6,7 @@ import { AetherialDashboardView } from './AetherialDashboardView';
 import { AetherialBagsView } from './AetherialBagsView';
 import { AetherialAnalyticsView } from './AetherialAnalyticsView';
 import { SchedulesDonateView } from '../components/SchedulesDonateView';
+import { AmbientBackground } from '../components/AmbientBackground';
 import { User, Settings, ArrowLeft } from 'lucide-react';
 
 interface AetherialControllerProps {
@@ -108,6 +109,8 @@ export const AetherialController: React.FC<AetherialControllerProps> = ({
 
   return (
     <div className="min-h-screen bg-[#11131b] text-[#e2e1ed] flex flex-col justify-between relative selection:bg-[#38bdf8] selection:text-[#001e2c] font-sans">
+      <AmbientBackground />
+
       {/* Top Status Bar Scrim */}
       <div
         aria-hidden="true"
