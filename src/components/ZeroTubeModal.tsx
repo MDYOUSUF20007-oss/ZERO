@@ -10,12 +10,16 @@ import {
   Sparkles,
   Settings,
   Plus,
+  GraduationCap,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 import {
   extractYouTubeVideoId,
+  extractYouTubeChannelHandle,
   evaluateVideoForStudy,
   getCustomZeroTubeVideos,
+  saveCustomZeroTubeVideo,
+  saveUserTrustedChannel,
   type ZeroTubeCustomVideo,
 } from '../utils/aiStudyVerifier';
 
@@ -95,6 +99,8 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const [searchUrlInput, setSearchUrlInput] = useState('');
   const [activeTab, setActiveTab] = useState<'catalog' | 'notes'>('catalog');
   const [customVideos, setCustomVideos] = useState<ZeroTubeCustomVideo[]>([]);
+  const customChannels = customVideos.filter((v) => v.isChannel);
+  const customLectures = customVideos.filter((v) => !v.isChannel);
   const [studyNotes, setStudyNotes] = useState<string>(() => {
     try {
       return localStorage.getItem('zero_tube_study_notes_v1') || '';
@@ -159,11 +165,26 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     window.location.href = 'https://www.youtube.com';
   };
 
+  const handleLaunchExternalUrl = (url: string) => {
+    haptics.tick(700);
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.openYouTubeUrl) {
+      (window.ZeroNative as any).openYouTubeUrl(url);
+      return;
+    }
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchYouTubeOrMorphApp) {
+      const launched = (window.ZeroNative as any).launchYouTubeOrMorphApp();
+      if (launched) return;
+    }
+    window.open(url, '_blank');
+  };
+
   const handleSubmitUrlOrSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchUrlInput.trim()) return;
 
     const extractedId = extractYouTubeVideoId(searchUrlInput);
+    const channelHandle = extractYouTubeChannelHandle(searchUrlInput);
+
     if (extractedId) {
       const aiEval = evaluateVideoForStudy({ urlOrId: searchUrlInput });
       if (aiEval.verdict === 'verified_productive') {
@@ -185,9 +206,45 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
         setFrictionError(false);
         haptics.thud();
       }
+    } else if (channelHandle) {
+      const aiEval = evaluateVideoForStudy({ urlOrId: searchUrlInput });
+      if (aiEval.verdict === 'verified_productive') {
+        // Educational channel verified! Auto-whitelist channel and trust creator (Regain style)
+        saveUserTrustedChannel(channelHandle);
+        if (aiEval.channelName) saveUserTrustedChannel(aiEval.channelName);
+
+        const newChan: ZeroTubeCustomVideo = {
+          id: channelHandle,
+          url: searchUrlInput.trim().startsWith('http')
+            ? searchUrlInput.trim()
+            : `https://youtube.com/${channelHandle}`,
+          title: aiEval.channelName || channelHandle,
+          channel: channelHandle,
+          category: aiEval.domainCategory,
+          isChannel: true,
+          channelHandle,
+          tags: aiEval.recommendedTags,
+          aiStudyScore: aiEval.studyScore,
+          aiVerdict: aiEval.verdict,
+          domainCategory: aiEval.domainCategory,
+          detectedExam: aiEval.detectedExam,
+          aiRationale: aiEval.rationale,
+          addedAt: Date.now(),
+        };
+
+        saveCustomZeroTubeVideo(newChan);
+        setCustomVideos(getCustomZeroTubeVideos());
+        haptics.tick(900);
+        setSearchUrlInput('');
+        handleLaunchExternalUrl(newChan.url);
+      } else {
+        alert(
+          `Distraction Risk: ${channelHandle} carries leisure or entertainment markers (${aiEval.studyScore}/100) and cannot be whitelisted.`
+        );
+      }
     } else {
       alert(
-        'Productive Mode: Direct URL pasting is verified with AI study evaluation. Searching uncurated algorithmic feeds is blocked to prevent dopamine traps.'
+        'Productive Mode: Direct video or educational channel URL pasting is verified with AI study evaluation. Searching uncurated algorithmic feeds is blocked to prevent dopamine traps.'
       );
     }
   };
@@ -350,13 +407,57 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                 </button>
               </form>
 
-              {/* Custom Whitelisted Videos (if any) */}
-              {customVideos.length > 0 && (
+              {/* Custom Whitelisted Channels (Regain-Style) */}
+              {customChannels.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 flex items-center justify-between px-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <GraduationCap size={12} />
+                      <span>Whitelisted Study Channels ({customChannels.length})</span>
+                    </div>
+                    <span className="text-[9px] text-zinc-400 font-mono">Regain-Style Whitelist</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {customChannels.map((vid) => (
+                      <button
+                        key={vid.id}
+                        type="button"
+                        onClick={() => handleLaunchExternalUrl(vid.url)}
+                        className="text-left p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col justify-between"
+                      >
+                        <div className="flex items-start justify-between gap-1 mb-1">
+                          <div className="text-xs font-semibold text-white line-clamp-1 leading-snug">
+                            {vid.title}
+                          </div>
+                          <ExternalLink size={11} className="text-emerald-400 shrink-0 mt-0.5" />
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                          <span className="text-emerald-300 font-bold">{vid.channel}</span>
+                          <div className="flex items-center gap-1">
+                            {vid.detectedExam && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">
+                                {vid.detectedExam}
+                              </span>
+                            )}
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                              AI: {vid.aiStudyScore}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Whitelisted Lectures (if any) */}
+              {customLectures.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-cyan-300 flex items-center justify-between px-0.5">
                     <div className="flex items-center gap-1.5">
                       <Sparkles size={11} />
-                      <span>My Whitelisted Lectures ({customVideos.length})</span>
+                      <span>My Whitelisted Lectures ({customLectures.length})</span>
                     </div>
                     {onOpenSettingsStudio && (
                       <button
@@ -371,7 +472,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {customVideos.map((vid) => {
+                    {customLectures.map((vid) => {
                       const isPlaying = vid.id === activeVideoId;
                       return (
                         <button

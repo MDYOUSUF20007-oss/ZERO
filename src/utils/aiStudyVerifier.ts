@@ -21,6 +21,8 @@ export interface ZeroTubeCustomVideo {
   title: string;
   channel: string;
   category: string;
+  isChannel?: boolean;
+  channelHandle?: string;
   duration?: string;
   tags: string[];
   description?: string;
@@ -35,6 +37,9 @@ export interface ZeroTubeCustomVideo {
 export interface AiStudyVerificationResult {
   isValidId: boolean;
   videoId: string;
+  isChannelOnly: boolean;
+  channelHandle?: string;
+  channelName?: string;
   isShort: boolean;
   studyScore: number; // 0 to 100
   verdict: 'verified_productive' | 'caution_entertainment' | 'high_distraction_risk';
@@ -324,6 +329,60 @@ const DISTRACTION_PATTERNS = [
 ];
 
 /**
+ * Normalizes text for robust fuzzy matching (removes symbols, spaces, and punctuation)
+ */
+export function normalizeForMatching(text: string): string {
+  return (text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Extracts a YouTube Channel Handle or identifier from a channel URL or user input
+ * Supports:
+ * - https://youtube.com/@paramountmerchantnavy
+ * - youtube.com/@physicswallah
+ * - @paramountmerchantnavy
+ * - youtube.com/c/ChannelName
+ * - youtube.com/channel/UC...
+ */
+export function extractYouTubeChannelHandle(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // Direct @handle input
+  if (/^@[a-zA-Z0-9_.-]{3,}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const urlString = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(urlString);
+    if (parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtu.be')) {
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+      // Look for /@handle segment
+      const atSegment = pathSegments.find((s) => s.startsWith('@'));
+      if (atSegment) return atSegment;
+
+      // Look for /c/name or /user/name or /channel/id
+      const cIdx = pathSegments.findIndex((s) => s === 'c' || s === 'user' || s === 'channel');
+      if (cIdx !== -1 && pathSegments[cIdx + 1]) {
+        return `@${pathSegments[cIdx + 1]}`;
+      }
+
+      // If single path segment and not a 11-char video ID (e.g. youtube.com/paramountmerchantnavy)
+      if (pathSegments.length === 1 && !/^[a-zA-Z0-9_-]{11}$/.test(pathSegments[0])) {
+        return `@${pathSegments[0]}`;
+      }
+    }
+  } catch {}
+
+  // Regex fallback for @handle in string
+  const handleMatch = /(?:@)([a-zA-Z0-9_.-]{3,})/i.exec(trimmed);
+  if (handleMatch?.[1]) return `@${handleMatch[1]}`;
+
+  return null;
+}
+
+/**
  * Extracts a valid YouTube 11-char video ID from various URLs or inputs
  */
 export function extractYouTubeVideoId(input: string): string | null {
@@ -377,12 +436,18 @@ export function extractYouTubeVideoId(input: string): string | null {
  */
 export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerificationResult {
   const extractedId = extractYouTubeVideoId(input.urlOrId) || '';
+  const channelHandle =
+    extractYouTubeChannelHandle(input.urlOrId) ||
+    (input.channel && extractYouTubeChannelHandle(input.channel)) ||
+    null;
+  const isChannelOnly = !extractedId && Boolean(channelHandle);
   const isShort = input.urlOrId.toLowerCase().includes('/shorts/');
 
   // Combine title, channel, description, and tags for text analysis
   const corpus = [
     input.title || '',
     input.channel || '',
+    channelHandle || '',
     input.description || '',
     ...(input.tags || []),
     input.urlOrId,
@@ -390,20 +455,32 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
     .join(' ')
     .toLowerCase();
 
+  const normCorpus = normalizeForMatching(corpus);
+  const normChannel = normalizeForMatching(input.channel || '');
+  const normHandle = channelHandle ? normalizeForMatching(channelHandle) : '';
+
   let score = 52; // Neutral baseline
   const academicMarkersFound: string[] = [];
   const distractionFlags: string[] = [];
   const domainHits: Record<string, number> = {};
+  let matchedCreatorName: string | undefined = undefined;
 
   // 1. Channel Reputation Check (User-Trusted + Known Institutional Channels)
-  const channelClean = (input.channel || '').trim().toLowerCase();
   let channelTrusted = false;
 
+  // Check user-whitelisted trusted channels first
   const userTrustedList = getUserTrustedChannels();
   for (const userChannel of userTrustedList) {
-    if (userChannel && (channelClean.includes(userChannel) || corpus.includes(userChannel))) {
-      score += 28;
+    const normUser = normalizeForMatching(userChannel);
+    if (
+      normUser &&
+      (normChannel.includes(normUser) ||
+        normCorpus.includes(normUser) ||
+        (normHandle && (normHandle.includes(normUser) || normUser.includes(normHandle))))
+    ) {
+      score += 38;
       channelTrusted = true;
+      matchedCreatorName = userChannel;
       academicMarkersFound.push(`User-Trusted Channel (${userChannel})`);
       break;
     }
@@ -411,10 +488,16 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
 
   if (!channelTrusted) {
     for (const trusted of TRUSTED_ACADEMIC_CHANNELS) {
-      if (channelClean.includes(trusted) || corpus.includes(trusted)) {
-        score += 28;
+      const normTrusted = normalizeForMatching(trusted);
+      if (
+        normChannel.includes(normTrusted) ||
+        normCorpus.includes(normTrusted) ||
+        (normHandle && (normHandle.includes(normTrusted) || normTrusted.includes(normHandle)))
+      ) {
+        score += 38;
         channelTrusted = true;
-        academicMarkersFound.push(`Trusted Academic Channel (${trusted})`);
+        matchedCreatorName = trusted.toUpperCase();
+        academicMarkersFound.push(`Verified Educational Creator (${trusted})`);
         break;
       }
     }
@@ -426,7 +509,7 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
   let detectedExam: string | undefined = undefined;
   for (const exam of STANDARDIZED_EXAMS) {
     for (const pat of exam.patterns) {
-      if (pat.test(corpus)) {
+      if (pat.test(corpus) || pat.test(normCorpus) || (normHandle && pat.test(normHandle))) {
         detectedExam = exam.badge;
         score += 18; // High-intent curriculum bonus
         academicMarkersFound.push(`Target Exam: ${exam.badge}`);
@@ -441,7 +524,11 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
   for (const [domain, keywords] of Object.entries(ACADEMIC_DOMAINS)) {
     for (const kw of keywords) {
       const regex = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (regex.test(corpus)) {
+      const normKw = normalizeForMatching(kw);
+      if (
+        regex.test(corpus) ||
+        (normKw.length >= 4 && (normCorpus.includes(normKw) || (normHandle && normHandle.includes(normKw))))
+      ) {
         domainHits[domain] = (domainHits[domain] || 0) + 1;
         if (!academicMarkersFound.includes(kw)) {
           academicMarkersFound.push(kw);
@@ -449,6 +536,13 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
         }
       }
     }
+  }
+
+  // Special heuristic: if creator matches Paramount Merchant Navy, auto-assign domain and exam
+  if (normHandle.includes('paramountmerchantnavy') || normCorpus.includes('paramountmerchantnavy')) {
+    topDomain = 'Maritime, Nautical Science & Merchant Navy';
+    if (!detectedExam) detectedExam = 'IMU-CET';
+    if (!matchedCreatorName) matchedCreatorName = 'Paramount Merchant Navy';
   }
 
   // Determine top domain if not overridden by explicit exam
@@ -502,7 +596,9 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
   // Rationale Formulation
   let rationale = '';
   if (verdict === 'verified_productive') {
-    if (detectedExam) {
+    if (isChannelOnly) {
+      rationale = `Certified Educational Creator: ${matchedCreatorName || channelHandle} (${channelHandle || ''}). AI study score: ${finalScore}/100 in ${topDomain}. Entire channel whitelisted for distraction-free study.`;
+    } else if (detectedExam) {
       rationale = `Verified as high-intent curriculum for ${detectedExam}. AI study score: ${finalScore}/100 in ${topDomain}. Certified safe for Void focus blocks.`;
     } else {
       rationale = `AI Analysis passed with a high study index of ${finalScore}/100 in ${topDomain}. Content exhibits rigorous educational vocabulary and is certified safe for distraction-free Void study.`;
@@ -515,17 +611,29 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
 
   // Recommended Tags (Prefixed by exam badge if detected)
   const examTag = detectedExam ? [detectedExam.toLowerCase().replace(/[^a-z0-9]/g, '')] : [];
+  const cleanDomainTag = topDomain.split(/[\s,]+/)[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanMarkers = academicMarkersFound
+    .filter((m) => !m.includes('(') && !m.includes(':'))
+    .slice(0, 3)
+    .map((m) => m.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+    .filter(Boolean);
+
   const recommendedTags = Array.from(
     new Set([
       ...examTag,
-      topDomain.split(' ')[0].toLowerCase(),
-      ...academicMarkersFound.slice(0, 3).map((m) => m.toLowerCase().replace(/\s+/g, '-')),
+      cleanDomainTag,
+      ...cleanMarkers,
     ])
   ).slice(0, 4);
 
+  const isValidId = Boolean(extractedId || (isChannelOnly && (channelTrusted || finalScore >= 68)));
+
   return {
-    isValidId: Boolean(extractedId),
-    videoId: extractedId,
+    isValidId,
+    videoId: extractedId || (channelHandle || ''),
+    isChannelOnly,
+    channelHandle: channelHandle || undefined,
+    channelName: matchedCreatorName || channelHandle || undefined,
     isShort,
     studyScore: finalScore,
     verdict,
@@ -605,12 +713,15 @@ export function removeUserTrustedChannel(channel: string): void {
 }
 
 export function isChannelTrusted(channel: string): boolean {
-  const clean = channel.trim().toLowerCase();
-  if (!clean) return false;
-  if (TRUSTED_ACADEMIC_CHANNELS.has(clean)) return true;
+  const normClean = normalizeForMatching(channel);
+  if (!normClean) return false;
   for (const t of TRUSTED_ACADEMIC_CHANNELS) {
-    if (clean.includes(t) || t.includes(clean)) return true;
+    const normT = normalizeForMatching(t);
+    if (normClean.includes(normT) || normT.includes(normClean)) return true;
   }
   const userList = getUserTrustedChannels();
-  return userList.some((c) => clean.includes(c) || c.includes(clean));
+  return userList.some((c) => {
+    const normUser = normalizeForMatching(c);
+    return normClean.includes(normUser) || normUser.includes(normClean);
+  });
 }

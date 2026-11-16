@@ -97,6 +97,12 @@ import {
   sanitizeOccasionBag,
 } from '../src/utils/bagAppConfig.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
+import {
+  evaluateVideoForStudy,
+  normalizeForMatching,
+  extractYouTubeChannelHandle,
+  extractYouTubeVideoId,
+} from '../src/utils/aiStudyVerifier.ts';
 import type {
   NativeEnvironmentSecurity,
   NativePermissionStatus,
@@ -1653,5 +1659,83 @@ failIf(
   'IntegrityEngine restore must preserve >4 Bags, >3 Bag apps, isCustom flags & Phase 2 ruleConfigs'
 );
 console.log('PASS: Phase 2 Unlimited Bags, Granular App Rules & Dynamic Engage Payload Verified');
+
+// =========================================================================
+// TEST 23: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection
+// =========================================================================
+console.log('\n=== TEST 23: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection ===');
+
+// 1. YouTube Handle extraction & normalization
+failIf(
+  extractYouTubeChannelHandle('https://youtube.com/@paramountmerchantnavy') === '@paramountmerchantnavy' &&
+    extractYouTubeChannelHandle('https://www.youtube.com/@physicswallah') === '@physicswallah' &&
+    extractYouTubeChannelHandle('@codewithharry') === '@codewithharry' &&
+    normalizeForMatching('Paramount Merchant Navy') === 'paramountmerchantnavy' &&
+    normalizeForMatching('@paramountmerchantnavy') === 'paramountmerchantnavy' &&
+    normalizeForMatching('IIT-JEE (Mains & Advanced)!') === 'iitjeemainsadvanced',
+  'YouTube handle parsing and fuzzy despaced normalization must match accurately'
+);
+
+// 2. Video ID vs Channel handling
+failIf(
+  extractYouTubeVideoId('https://youtube.com/@paramountmerchantnavy') === null &&
+    extractYouTubeVideoId('https://www.youtube.com/watch?v=kqtD5dpn9C8') === 'kqtD5dpn9C8' &&
+    extractYouTubeVideoId('https://youtu.be/aircAruvnKk') === 'aircAruvnKk',
+  'Video ID extraction must distinguish between 11-char video IDs and channel handles'
+);
+
+// 3. User channel evaluation: Paramount Merchant Navy
+const pmnEval = evaluateVideoForStudy({
+  urlOrId: 'https://youtube.com/@paramountmerchantnavy',
+});
+failIf(
+  pmnEval.studyScore === 100 &&
+    pmnEval.verdict === 'verified_productive' &&
+    pmnEval.isValidId === true &&
+    pmnEval.isChannelOnly === true &&
+    pmnEval.channelHandle === '@paramountmerchantnavy' &&
+    pmnEval.domainCategory === 'Maritime, Nautical Science & Merchant Navy' &&
+    pmnEval.detectedExam === 'IMU-CET' &&
+    pmnEval.distractionFlags.length === 0,
+  'Paramount Merchant Navy channel must score 100/100, verified_productive, IMU-CET, Maritime category'
+);
+
+// 4. Standardized Exam Detection: JEE, NEET, SAT
+const jeeEval = evaluateVideoForStudy({
+  urlOrId: 'dQw4w9WgXcQ',
+  title: 'IIT JEE Mains 2025 Complete Physics Electromagnetism Marathon Lecture',
+  channel: 'Physics Wallah',
+});
+failIf(
+  jeeEval.verdict === 'verified_productive' &&
+    jeeEval.studyScore >= 90 &&
+    jeeEval.detectedExam === 'JEE (Main & Adv)',
+  'JEE curriculum lecture must be detected with JEE exam badge and verified productive'
+);
+
+const neetEval = evaluateVideoForStudy({
+  urlOrId: 'dQw4w9WgXcQ',
+  title: 'NEET UG 2025 Human Physiology Biology Revision Marathon',
+});
+failIf(
+  neetEval.verdict === 'verified_productive' &&
+    neetEval.detectedExam === 'NEET' &&
+    neetEval.domainCategory === 'Medicine, Biology & Chemistry',
+  'NEET curriculum lecture must be detected with NEET exam badge and Medicine category'
+);
+
+// 5. Entertainment/Distraction risk rejection
+const brainrotEval = evaluateVideoForStudy({
+  urlOrId: 'dQw4w9WgXcQ',
+  title: 'I Spent 24 Hours in a Prank Challenge ($1 vs $1,000,000)',
+});
+failIf(
+  brainrotEval.verdict === 'high_distraction_risk' &&
+    brainrotEval.studyScore < 50 &&
+    brainrotEval.distractionFlags.length >= 2,
+  'Clickbait entertainment video must be flagged with distraction risk and failed study score'
+);
+
+console.log('PASS: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

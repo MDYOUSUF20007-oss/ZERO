@@ -146,12 +146,21 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
 
     const mergedTags = Array.from(new Set([...tagsArray, ...analysisResult.recommendedTags]));
 
+    const defaultTitle = analysisResult.isChannelOnly
+      ? (analysisResult.channelName || analysisResult.channelHandle || 'Verified Educational Channel')
+      : `Study Lecture (${analysisResult.videoId})`;
+
+    const defaultChannel =
+      analysisResult.channelHandle || analysisResult.channelName || 'Verified Channel';
+
     const newVideo: ZeroTubeCustomVideo = {
-      id: analysisResult.videoId,
+      id: analysisResult.videoId || analysisResult.channelHandle || '@channel',
       url: urlInput.trim(),
-      title: titleInput.trim() || `Study Lecture (${analysisResult.videoId})`,
-      channel: channelInput.trim() || 'Verified Channel',
+      title: titleInput.trim() || defaultTitle,
+      channel: channelInput.trim() || defaultChannel,
       category: analysisResult.domainCategory,
+      isChannel: analysisResult.isChannelOnly,
+      channelHandle: analysisResult.channelHandle,
       tags: mergedTags,
       description: descriptionInput.trim(),
       aiStudyScore: analysisResult.studyScore,
@@ -163,6 +172,16 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
     };
 
     saveCustomZeroTubeVideo(newVideo);
+
+    // Regain-Style: Auto-whitelist this creator so ANY lecture from them is trusted!
+    if (analysisResult.channelHandle) {
+      saveUserTrustedChannel(analysisResult.channelHandle);
+    }
+    if (analysisResult.channelName) {
+      saveUserTrustedChannel(analysisResult.channelName);
+    }
+    setUserTrustedChannels(getUserTrustedChannels());
+
     reloadVideos();
     haptics.tick(950);
 
@@ -182,6 +201,19 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
     haptics.thud();
     removeCustomZeroTubeVideo(id);
     reloadVideos();
+  };
+
+  const handleOpenChannel = (url: string) => {
+    haptics.tick(600);
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.openYouTubeUrl) {
+      (window.ZeroNative as any).openYouTubeUrl(url);
+      return;
+    }
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchYouTubeOrMorphApp) {
+      (window.ZeroNative as any).launchYouTubeOrMorphApp();
+      return;
+    }
+    window.open(url, '_blank');
   };
 
   return (
@@ -302,7 +334,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
               <div className="space-y-2">
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                    YouTube or Morphe URL / Video ID *
+                    YouTube Video URL, Channel Link (@creator), or Video ID *
                   </label>
                   <input
                     type="text"
@@ -311,7 +343,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       setUrlInput(e.target.value);
                       setAnalysisResult(null);
                     }}
-                    placeholder="https://youtu.be/... or youtube.com/watch?v=..."
+                    placeholder="https://youtube.com/@channel or video URL / ID..."
                     className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                   />
                 </div>
@@ -439,6 +471,16 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                     </div>
                   </div>
 
+                  {analysisResult.isChannelOnly && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 font-mono text-[11px] font-bold">
+                      <span>🎓 Regain-Style Whitelist:</span>
+                      <span className="text-white underline">
+                        Entire Channel ({analysisResult.channelHandle || analysisResult.channelName})
+                      </span>
+                      <span className="text-[10px] text-emerald-300 font-normal">All channel lectures auto-authorized</span>
+                    </div>
+                  )}
+
                   {analysisResult.detectedExam && (
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 font-mono text-[11px] font-bold">
                       <span>🎯 Target Curriculum:</span>
@@ -454,7 +496,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                   <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono">
                     <span>Category: <strong className="text-cyan-300">{analysisResult.domainCategory}</strong></span>
                     <span>•</span>
-                    <span>Video ID: <strong className="text-white">{analysisResult.videoId || 'Invalid'}</strong></span>
+                    <span>{analysisResult.isChannelOnly ? 'Channel Handle:' : 'Video ID:'} <strong className="text-white">{analysisResult.videoId || analysisResult.channelHandle || 'Invalid'}</strong></span>
                   </div>
 
                   {analysisResult.distractionFlags.length > 0 && (
@@ -471,7 +513,11 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       className="w-full mt-2 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md"
                     >
                       <Check size={14} strokeWidth={2.5} />
-                      <span>Add to My ZeroTube Whitelist</span>
+                      <span>
+                        {analysisResult.isChannelOnly
+                          ? `Whitelist Entire Channel (${analysisResult.channelHandle || '@creator'})`
+                          : 'Add to My ZeroTube Whitelist'}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -512,6 +558,11 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {vid.isChannel && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            🎓 Channel
+                          </span>
+                        )}
                         {vid.detectedExam && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-200 border border-amber-400/40">
                             🎯 {vid.detectedExam}
@@ -526,17 +577,28 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        haptics.tick(600);
-                        onOpenZeroTubePlayer(vid.id);
-                      }}
-                      className="w-full py-1.5 rounded-lg bg-white/10 hover:bg-cyan-500/20 text-white hover:text-cyan-300 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <Play size={11} fill="currentColor" />
-                      <span>Play in ZeroTube</span>
-                    </button>
+                    {vid.isChannel ? (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenChannel(vid.url)}
+                        className="w-full py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <ExternalLink size={12} />
+                        <span>Browse Channel in YouTube</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          haptics.tick(600);
+                          onOpenZeroTubePlayer(vid.id);
+                        }}
+                        className="w-full py-1.5 rounded-lg bg-white/10 hover:bg-cyan-500/20 text-white hover:text-cyan-300 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Play size={11} fill="currentColor" />
+                        <span>Play in ZeroTube</span>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
