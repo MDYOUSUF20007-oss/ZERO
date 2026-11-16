@@ -102,80 +102,136 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     Living Ambient Fluid Mesh Keyframes (100% GPU Compositor)
+     Living Ambient Fluid Mesh Keyframes (Organic Lissajous & Morphology)
+     100% GPU Composited with Liquid Blob Morphing & Closed-Loop Orbits
      ------------------------------------------------------------- */
-  @keyframes ambientMeshDriftA {
+  @keyframes ambientMeshOrbitA {
     0% {
-      transform: translate3d(0, 0, 0) scale(1);
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+      border-radius: 54% 46% 42% 58% / 58% 44% 56% 42%;
     }
-    33% {
-      transform: translate3d(55px, 40px, 0) scale(1.08);
-    }
-    66% {
-      transform: translate3d(-35px, 60px, 0) scale(0.94);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-  }
-
-  @keyframes ambientMeshDriftB {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    33% {
-      transform: translate3d(-50px, -35px, 0) scale(0.93);
-    }
-    66% {
-      transform: translate3d(40px, -55px, 0) scale(1.07);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-  }
-
-  @keyframes ambientMeshDriftC {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    33% {
-      transform: translate3d(38px, -45px, 0) scale(1.06);
-    }
-    66% {
-      transform: translate3d(-38px, -25px, 0) scale(0.95);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-  }
-
-  @keyframes ambientMeshDriftD {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
+    25% {
+      transform: translate3d(52px, 38px, 0) rotate(90deg) scale(1.08);
+      border-radius: 46% 54% 63% 37% / 41% 59% 41% 59%;
     }
     50% {
-      transform: translate3d(-40px, 45px, 0) scale(1.09);
+      transform: translate3d(-32px, 64px, 0) rotate(180deg) scale(0.95);
+      border-radius: 62% 38% 49% 51% / 52% 38% 62% 48%;
+    }
+    75% {
+      transform: translate3d(-48px, 18px, 0) rotate(270deg) scale(1.05);
+      border-radius: 44% 56% 38% 62% / 64% 48% 52% 36%;
     }
     100% {
-      transform: translate3d(0, 0, 0) scale(1);
+      transform: translate3d(0, 0, 0) rotate(360deg) scale(1);
+      border-radius: 54% 46% 42% 58% / 58% 44% 56% 42%;
+    }
+  }
+
+  @keyframes ambientMeshOrbitB {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+      border-radius: 48% 52% 58% 42% / 45% 55% 45% 55%;
+    }
+    25% {
+      transform: translate3d(-58px, -42px, 0) rotate(-90deg) scale(0.92);
+      border-radius: 63% 37% 41% 59% / 58% 42% 58% 42%;
+    }
+    50% {
+      transform: translate3d(44px, -62px, 0) rotate(-180deg) scale(1.09);
+      border-radius: 42% 58% 65% 35% / 40% 60% 40% 60%;
+    }
+    75% {
+      transform: translate3d(28px, 32px, 0) rotate(-270deg) scale(0.98);
+      border-radius: 56% 44% 48% 52% / 62% 38% 62% 38%;
+    }
+    100% {
+      transform: translate3d(0, 0, 0) rotate(-360deg) scale(1);
+      border-radius: 48% 52% 58% 42% / 45% 55% 45% 55%;
+    }
+  }
+
+  @keyframes ambientMeshOrbitC {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+      border-radius: 60% 40% 45% 55% / 55% 45% 55% 45%;
+    }
+    33% {
+      transform: translate3d(45px, -52px, 0) rotate(120deg) scale(1.07);
+      border-radius: 45% 55% 60% 40% / 42% 58% 42% 58%;
+    }
+    66% {
+      transform: translate3d(-42px, -28px, 0) rotate(240deg) scale(0.94);
+      border-radius: 58% 42% 40% 60% / 60% 40% 60% 40%;
+    }
+    100% {
+      transform: translate3d(0, 0, 0) rotate(360deg) scale(1);
+      border-radius: 60% 40% 45% 55% / 55% 45% 55% 45%;
+    }
+  }
+
+  @keyframes ambientMeshOrbitD {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+      border-radius: 50% 50% 60% 40% / 48% 52% 48% 52%;
+    }
+    33% {
+      transform: translate3d(-46px, 52px, 0) rotate(-120deg) scale(1.10);
+      border-radius: 65% 35% 42% 58% / 58% 42% 58% 42%;
+    }
+    66% {
+      transform: translate3d(36px, 32px, 0) rotate(-240deg) scale(0.93);
+      border-radius: 40% 60% 55% 45% / 45% 55% 45% 55%;
+    }
+    100% {
+      transform: translate3d(0, 0, 0) rotate(-360deg) scale(1);
+      border-radius: 50% 50% 60% 40% / 48% 52% 48% 52%;
+    }
+  }
+
+  /* Rhythmic 7.5-Second Respiration Luminescence Pulse */
+  @keyframes ambientMeshBreathe {
+    0%, 100% {
+      filter: blur(28px) brightness(1);
+    }
+    50% {
+      filter: blur(34px) brightness(1.12);
     }
   }
 
   .ambient-mesh-node-1 {
-    animation: ambientMeshDriftA 26s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-    will-change: transform;
+    animation: ambientMeshOrbitA 37s cubic-bezier(0.42, 0, 0.58, 1) infinite,
+               ambientMeshBreathe 8s ease-in-out infinite;
+    will-change: transform, border-radius;
+    mix-blend-mode: screen;
   }
   .ambient-mesh-node-2 {
-    animation: ambientMeshDriftB 32s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-    will-change: transform;
+    animation: ambientMeshOrbitB 43s cubic-bezier(0.42, 0, 0.58, 1) infinite,
+               ambientMeshBreathe 9s ease-in-out infinite 2s;
+    will-change: transform, border-radius;
+    mix-blend-mode: screen;
   }
   .ambient-mesh-node-3 {
-    animation: ambientMeshDriftC 22s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-    will-change: transform;
+    animation: ambientMeshOrbitC 31s cubic-bezier(0.42, 0, 0.58, 1) infinite,
+               ambientMeshBreathe 7s ease-in-out infinite 1s;
+    will-change: transform, border-radius;
+    mix-blend-mode: screen;
   }
   .ambient-mesh-node-4 {
-    animation: ambientMeshDriftD 29s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-    will-change: transform;
+    animation: ambientMeshOrbitD 29s cubic-bezier(0.42, 0, 0.58, 1) infinite,
+               ambientMeshBreathe 10s ease-in-out infinite 3s;
+    will-change: transform, border-radius;
+    mix-blend-mode: screen;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ambient-mesh-node-1,
+    .ambient-mesh-node-2,
+    .ambient-mesh-node-3,
+    .ambient-mesh-node-4 {
+      animation-duration: 160s !important;
+      animation-play-state: paused !important;
+    }
   }
 
   .obsidian-inset,
