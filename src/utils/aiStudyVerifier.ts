@@ -27,6 +27,7 @@ export interface ZeroTubeCustomVideo {
   aiStudyScore: number; // 0 to 100
   aiVerdict: 'verified_productive' | 'caution_entertainment' | 'high_distraction_risk';
   domainCategory: string;
+  detectedExam?: string;
   aiRationale: string;
   addedAt: number;
 }
@@ -38,6 +39,7 @@ export interface AiStudyVerificationResult {
   studyScore: number; // 0 to 100
   verdict: 'verified_productive' | 'caution_entertainment' | 'high_distraction_risk';
   domainCategory: string;
+  detectedExam?: string;
   confidenceLevel: 'High' | 'Medium' | 'Estimated';
   recommendedTags: string[];
   rationale: string;
@@ -47,6 +49,94 @@ export interface AiStudyVerificationResult {
 
 export const STORAGE_KEY_CUSTOM_ZEROTUBE = 'zero_tube_custom_videos_v1';
 export const STORAGE_KEY_USER_TRUSTED_CHANNELS = 'zero_tube_trusted_channels_v1';
+
+export interface StandardizedExamDef {
+  badge: string;
+  examName: string;
+  category: string;
+  patterns: RegExp[];
+}
+
+export const STANDARDIZED_EXAMS: StandardizedExamDef[] = [
+  {
+    badge: 'IMU-CET',
+    examName: 'IMU CET (Indian Maritime University / Merchant Navy)',
+    category: 'Maritime, Nautical Science & Merchant Navy',
+    patterns: [/\bimu[- ]?cet\b/i, /\bimucet\b/i, /\bmerchant navy entrance\b/i, /\bdns sponsorship\b/i],
+  },
+  {
+    badge: 'JEE (Main & Adv)',
+    examName: 'IIT JEE (Mains & Advanced)',
+    category: 'Competitive & Civil Services Exams',
+    patterns: [/\bjee\b/i, /\biit[- ]?jee\b/i, /\bjee[- ]?mains?\b/i, /\bjee[- ]?adv(?:anced)?\b/i],
+  },
+  {
+    badge: 'NEET',
+    examName: 'NEET (National Eligibility Entrance Test - Medical)',
+    category: 'Medicine, Biology & Chemistry',
+    patterns: [/\bneet\b/i, /\bneet[- ]?ug\b/i, /\bneet[- ]?pg\b/i, /\baiims\b/i],
+  },
+  {
+    badge: 'SAT',
+    examName: 'SAT (Scholastic Assessment Test / College Board)',
+    category: 'Mathematics & Physics',
+    patterns: [/\bsat\b/i, /\bsat math\b/i, /\bsat digital\b/i, /\bdigital sat\b/i, /\bsat reading\b/i],
+  },
+  {
+    badge: 'ACT / AP',
+    examName: 'ACT / Advanced Placement Exams',
+    category: 'Mathematics & Physics',
+    patterns: [/\bact test\b/i, /\bap calculus\b/i, /\bap physics\b/i, /\bap chemistry\b/i, /\bap computer science\b/i],
+  },
+  {
+    badge: 'UPSC CSE',
+    examName: 'UPSC Civil Services (IAS / IPS / IFS)',
+    category: 'Competitive & Civil Services Exams',
+    patterns: [/\bupsc\b/i, /\bias\b/i, /\bips\b/i, /\bcivil services\b/i, /\bprelims\b/i, /\bmains\b/i, /\bcsat\b/i],
+  },
+  {
+    badge: 'GATE',
+    examName: 'GATE (Graduate Aptitude Test in Engineering)',
+    category: 'Computer Science & Software',
+    patterns: [/\bgate\b/i, /\bgate cse\b/i, /\bgate ece\b/i, /\bgate mechanical\b/i],
+  },
+  {
+    badge: 'NDA / CDS',
+    examName: 'National Defence Academy / Combined Defence Services',
+    category: 'Competitive & Civil Services Exams',
+    patterns: [/\bnda\b/i, /\bcds\b/i, /\bafcat\b/i, /\bssb interview\b/i],
+  },
+  {
+    badge: 'CAT / MBA',
+    examName: 'CAT / MBA Entrance (IIMs)',
+    category: 'Philosophy, History & Economics',
+    patterns: [/\bcat exam\b/i, /\biim cat\b/i, /\bquant for cat\b/i, /\bdilr\b/i],
+  },
+  {
+    badge: 'GRE / GMAT',
+    examName: 'GRE / GMAT Graduate Examinations',
+    category: 'Mathematics & Physics',
+    patterns: [/\bgre\b/i, /\bgmat\b/i, /\bgre quant\b/i, /\bgre verbal\b/i],
+  },
+  {
+    badge: 'IELTS / TOEFL',
+    examName: 'IELTS / TOEFL English Proficiency',
+    category: 'Languages & Communication',
+    patterns: [/\bielts\b/i, /\btoefl\b/i, /\bielts listening\b/i, /\bielts speaking\b/i, /\bielts band\b/i],
+  },
+  {
+    badge: 'SSC / Banking',
+    examName: 'SSC CGL / Banking PO Exams',
+    category: 'Competitive & Civil Services Exams',
+    patterns: [/\bssc cgl\b/i, /\bssc chsl\b/i, /\bibps\b/i, /\bsbi po\b/i, /\brrb ntpc\b/i],
+  },
+  {
+    badge: 'CUET / CLAT',
+    examName: 'CUET / CLAT Entrance Exams',
+    category: 'Competitive & Civil Services Exams',
+    patterns: [/\bcuet\b/i, /\bcuet ug\b/i, /\bclat\b/i],
+  },
+];
 
 // Academic / Educational keywords mapped to Domain Categories
 const ACADEMIC_DOMAINS: Record<string, string[]> = {
@@ -330,6 +420,23 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
     }
   }
 
+  let topDomain = 'General Skills & Self-Education';
+
+  // 1b. Specific Standardized Exam Detection (JEE, NEET, IMU-CET, SAT, UPSC, etc.)
+  let detectedExam: string | undefined = undefined;
+  for (const exam of STANDARDIZED_EXAMS) {
+    for (const pat of exam.patterns) {
+      if (pat.test(corpus)) {
+        detectedExam = exam.badge;
+        score += 18; // High-intent curriculum bonus
+        academicMarkersFound.push(`Target Exam: ${exam.badge}`);
+        topDomain = exam.category;
+        break;
+      }
+    }
+    if (detectedExam) break;
+  }
+
   // 2. Domain Categorization & Academic Keyword Matching
   for (const [domain, keywords] of Object.entries(ACADEMIC_DOMAINS)) {
     for (const kw of keywords) {
@@ -344,13 +451,14 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
     }
   }
 
-  // Determine top domain
-  let topDomain = 'General Skills & Self-Education';
+  // Determine top domain if not overridden by explicit exam
   let maxHits = 0;
   for (const [domain, hits] of Object.entries(domainHits)) {
     if (hits > maxHits) {
       maxHits = hits;
-      topDomain = domain;
+      if (!detectedExam) {
+        topDomain = domain;
+      }
     }
   }
 
@@ -394,16 +502,22 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
   // Rationale Formulation
   let rationale = '';
   if (verdict === 'verified_productive') {
-    rationale = `AI Analysis passed with a high study index of ${finalScore}/100 in ${topDomain}. Content exhibits rigorous educational vocabulary and is certified safe for distraction-free Void study.`;
+    if (detectedExam) {
+      rationale = `Verified as high-intent curriculum for ${detectedExam}. AI study score: ${finalScore}/100 in ${topDomain}. Certified safe for Void focus blocks.`;
+    } else {
+      rationale = `AI Analysis passed with a high study index of ${finalScore}/100 in ${topDomain}. Content exhibits rigorous educational vocabulary and is certified safe for distraction-free Void study.`;
+    }
   } else if (verdict === 'high_distraction_risk') {
     rationale = `Flagged for potential algorithmic distraction (${distractionFlags.join(', ')}). Video contains entertainment/clickbait markers that may disrupt deep work concentration.`;
   } else {
     rationale = `Moderate focus score (${finalScore}/100). Content appears neutral or mixed. Manual intentional verification ("I am productive.") will be required upon playback.`;
   }
 
-  // Recommended Tags
+  // Recommended Tags (Prefixed by exam badge if detected)
+  const examTag = detectedExam ? [detectedExam.toLowerCase().replace(/[^a-z0-9]/g, '')] : [];
   const recommendedTags = Array.from(
     new Set([
+      ...examTag,
       topDomain.split(' ')[0].toLowerCase(),
       ...academicMarkersFound.slice(0, 3).map((m) => m.toLowerCase().replace(/\s+/g, '-')),
     ])
@@ -416,7 +530,8 @@ export function evaluateVideoForStudy(input: VideoAnalysisInput): AiStudyVerific
     studyScore: finalScore,
     verdict,
     domainCategory: topDomain,
-    confidenceLevel: channelTrusted || maxHits >= 3 ? 'High' : maxHits >= 1 ? 'Medium' : 'Estimated',
+    detectedExam,
+    confidenceLevel: channelTrusted || detectedExam || maxHits >= 3 ? 'High' : maxHits >= 1 ? 'Medium' : 'Estimated',
     recommendedTags,
     rationale,
     academicMarkersFound,

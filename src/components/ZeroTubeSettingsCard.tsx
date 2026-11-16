@@ -157,6 +157,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
       aiStudyScore: analysisResult.studyScore,
       aiVerdict: analysisResult.verdict,
       domainCategory: analysisResult.domainCategory,
+      detectedExam: analysisResult.detectedExam,
       aiRationale: analysisResult.rationale,
       addedAt: Date.now(),
     };
@@ -438,6 +439,14 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                     </div>
                   </div>
 
+                  {analysisResult.detectedExam && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 font-mono text-[11px] font-bold">
+                      <span>🎯 Target Curriculum:</span>
+                      <span className="text-white underline">{analysisResult.detectedExam}</span>
+                      <span className="text-[10px] text-cyan-300 font-normal">(+18 pt Exam Bonus)</span>
+                    </div>
+                  )}
+
                   <p className="text-[11px] leading-relaxed text-zinc-300">
                     {analysisResult.rationale}
                   </p>
@@ -503,6 +512,11 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {vid.detectedExam && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-200 border border-amber-400/40">
+                            🎯 {vid.detectedExam}
+                          </span>
+                        )}
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">
                           {vid.category}
                         </span>
