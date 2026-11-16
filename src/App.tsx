@@ -233,7 +233,7 @@ export function App() {
   const handleCloudRestoreSuccess = () => {
     setShowProfileModal(false);
     setActiveTab('dashboard');
-    setRestoreToast('Cloud Backup Restored — Welcome back to Zero App!');
+    setRestoreToast('Cloud Backup Restored — Welcome back to Zero-Noise!');
     setTimeout(() => setRestoreToast(''), 4200);
   };
 
@@ -411,7 +411,7 @@ export function App() {
         {exitToast && (
           <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
             <div className="px-4 py-2 rounded-full bg-zinc-900/95 border border-zinc-700 text-xs font-medium text-white shadow-xl flex items-center gap-2">
-              <span>Swipe back again to exit Zero</span>
+              <span>Swipe back again to exit Zero-Noise</span>
             </div>
           </div>
         )}
@@ -847,7 +847,7 @@ export function App() {
       {exitToast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <div className="px-4 py-2 rounded-full bg-zinc-900/95 border border-zinc-700 text-xs font-medium text-white shadow-xl flex items-center gap-2">
-            <span>Swipe back again to exit Zero</span>
+            <span>Swipe back again to exit Zero-Noise</span>
           </div>
         </div>
       )}

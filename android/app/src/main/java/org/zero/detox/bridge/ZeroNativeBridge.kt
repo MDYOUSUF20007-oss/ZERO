@@ -293,7 +293,7 @@ class ZeroNativeBridge(
                 activity.runOnUiThread {
                     Toast.makeText(
                         activity,
-                        "Find Zero-Distractions in Accessibility Services (if greyed out: App Info -> Allow restricted settings)",
+                        "Find Zero-Noise in Accessibility Services (if greyed out: App Info -> Allow restricted settings)",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -303,7 +303,7 @@ class ZeroNativeBridge(
                 activity.runOnUiThread {
                     Toast.makeText(
                         activity,
-                        "Find Zero-Distractions -> Enable Usage Access (if blocked: tap Open Zero App Info -> Allow restricted settings)",
+                        "Find Zero-Noise -> Enable Usage Access (if blocked: tap Open Zero App Info -> Allow restricted settings)",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -311,7 +311,7 @@ class ZeroNativeBridge(
             }
             PermissionStatusHelper.NextPermissionAction.GRANT_OVERLAY -> {
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "Allow Display Over Other Apps for Zero-Distractions", Toast.LENGTH_LONG).show()
+                    Toast.makeText(activity, "Allow Display Over Other Apps for Zero-Noise", Toast.LENGTH_LONG).show()
                 }
                 requestOverlayPermission()
             }
@@ -663,7 +663,7 @@ class ZeroNativeBridge(
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Zero-Distractions Backup ($safeFileName)")
+                putExtra(Intent.EXTRA_SUBJECT, "Zero-Noise Backup ($safeFileName)")
                 clipData = android.content.ClipData.newUri(activity.contentResolver, safeFileName, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

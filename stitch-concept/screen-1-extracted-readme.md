@@ -242,7 +242,7 @@ View all files
 
 More items
 
-# Zero-Distractions (Zero App)
+# Zero-Noise (Zero App)
 
 > **"Your attention is the only asset you cannot buy back. Lock the phone. Do the work."**
 
@@ -250,7 +250,7 @@ More items
 
 Most screen-time apps are designed to fail you. They give you a polite reminder or a 15-minute nudge that you dismiss in half a second without thinking. When a craving hits, you tap "Ignore Limit" or uninstall the app in ten seconds. Nothing changes.
 
-**Zero-Distractions is built for people who are done lying to themselves.**
+**Zero-Noise is built for people who are done lying to themselves.**
 
 It doesn't ask you nicely. When you start a lock, your phone is locked. No bypassing via Quick Settings. No navigating to Settings to force-stop. No cheating by restarting your device—Zero monitors hardware monotonic time and re-arms instantly on reboot.
 
@@ -448,7 +448,7 @@ See [CONTRIBUTING.md](/MDYOUSUF20007-oss/ZERO/blob/main/CONTRIBUTING.md) for the
 
 ## Support Development
 
-Zero-Distractions is 100% free and open-source with zero paywalls. If Zero has helped you reclaim your attention and you want to support independent development:
+Zero-Noise is 100% free and open-source with zero paywalls. If Zero-Noise has helped you reclaim your attention and you want to support independent development:
 
   * **Ko-fi:** <https://ko-fi.com/mdyousuf2620>
   * **UPI:** `md.y2007@ptaxis`
@@ -461,7 +461,7 @@ Zero-Distractions is 100% free and open-source with zero paywalls. If Zero has h
 
 ## License
 
-Zero-Distractions (Zero App) is licensed under the **[MIT License](/MDYOUSUF20007-oss/ZERO/blob/main/LICENSE)**.  
+Zero-Noise (Zero App) is licensed under the **[MIT License](/MDYOUSUF20007-oss/ZERO/blob/main/LICENSE)**.  
 Built with zero trackers, zero subscriptions, and 100% respect for your focus.
 
 ## About

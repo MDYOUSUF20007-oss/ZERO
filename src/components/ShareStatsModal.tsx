@@ -682,7 +682,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
     badgeSummary.unlockedBadges.length > 0
       ? ` Badges: ${badgeSummary.unlockedBadges.map((b) => b.title).join(', ')}.`
       : '';
-  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${FOCUS_RECEIPT_PERIOD_LABELS[period].title}) using Zero-Distractions (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
+  const caption = `I stayed distraction-free for ${periodStats.formattedTime} (${FOCUS_RECEIPT_PERIOD_LABELS[period].title}) using Zero-Noise (${currentStreak}d streak, ${periodStats.completedCount} completed locks).${badgeCaptionSuffix}`;
 
   const handleNativeOrWebShare = async () => {
     let dataUrl = receiptExport.dataUrl;
@@ -710,7 +710,7 @@ export const ShareStatsModal: React.FC<ShareStatsModalProps> = ({
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: 'Zero-Distractions Focus Receipt',
+          title: 'Zero-Noise Focus Receipt',
           text: caption,
           files: [file],
         });

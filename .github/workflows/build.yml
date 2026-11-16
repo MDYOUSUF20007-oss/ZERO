@@ -1,4 +1,4 @@
-name: Zero-Distractions — Integrity & PR Verification Build
+name: Zero-Noise — Integrity & PR Verification Build
 
 on:
   pull_request:

@@ -234,12 +234,12 @@ public class MainActivity extends BridgeActivity {
             new AlertDialog.Builder(this)
                 .setTitle("Security Tamper Alert")
                 .setMessage(
-                    "Zero-Distractions detected an unauthorized APK signature modification or cloned package.\n\n"
+                    "Zero-Noise detected an unauthorized APK signature modification or cloned package.\n\n"
                         + "For your safety and integrity protection, modified or re-signed APKs cannot run. "
                         + "Install the official release only from GitHub Releases (MDYOUSUF20007-oss/ZERO)."
                 )
                 .setCancelable(false)
-                .setPositiveButton("Exit Zero App", (dialog, which) -> terminateApplication())
+                .setPositiveButton("Exit Zero-Noise", (dialog, which) -> terminateApplication())
                 .setOnDismissListener(dialog -> terminateApplication())
                 .show();
         } catch (Throwable t) {

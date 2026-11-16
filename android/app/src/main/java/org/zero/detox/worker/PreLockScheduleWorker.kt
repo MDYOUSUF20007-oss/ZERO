@@ -63,7 +63,7 @@ class PreLockScheduleWorker(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_SCHEDULE,
-                "Zero-Distractions Schedules & Warnings",
+                "Zero-Noise Schedules & Warnings",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for upcoming automated digital detox blocks"

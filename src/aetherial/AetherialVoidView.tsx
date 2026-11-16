@@ -182,7 +182,7 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
       {/* Header */}
       <header className="relative z-10 w-full flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold tracking-tight text-[#c4e7ff]">ZERO</span>
+          <span className="text-sm font-bold tracking-tight text-[#c4e7ff]">ZERO-NOISE</span>
           <span className="text-[10px] text-[#bdc8d1] uppercase px-2 py-0.5 rounded-full bg-[#282a32]/60 font-semibold tracking-wide">
             FOCUS SESSION
           </span>

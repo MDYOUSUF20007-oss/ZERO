@@ -1,4 +1,4 @@
-# Zero-Distractions Screenshots
+# Zero-Noise Screenshots
 
 Drop your real Android or PWA screenshots in this folder using the suggested filenames below, then link them inside the root [`README.md`](../../README.md#screenshots) gallery table.
 

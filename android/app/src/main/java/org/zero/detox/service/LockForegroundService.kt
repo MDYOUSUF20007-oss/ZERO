@@ -354,7 +354,7 @@ class LockForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Zero-Distractions — The Void is Active")
+            .setContentTitle("Zero-Noise — The Void is Active")
             .setContentText("Locked in #$tag. Non-Bag apps & distractions are blocked.")
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setOngoing(true)
@@ -369,7 +369,7 @@ class LockForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Zero-Distractions Active Lock",
+                "Zero-Noise Active Lock",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Enforces persistent lock state during digital detox"

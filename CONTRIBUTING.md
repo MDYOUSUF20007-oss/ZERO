@@ -1,6 +1,6 @@
-# Contributing to Zero-Distractions
+# Contributing to Zero-Noise
 
-Thank you for helping improve Zero App (**Zero-Distractions**) — a minimalist screen-time and app blocker, 100% free and open-source, built to protect human focus and agency without paywalls, ads, or trackers.
+Thank you for helping improve Zero-Noise (**Zero-Noise**) — a minimalist screen-time and app blocker, 100% free and open-source, built to protect human focus and agency without paywalls, ads, or trackers.
 
 Contributors are warmly welcome to propose improvements in:
 - UI polish, layouts, animations, and responsive design

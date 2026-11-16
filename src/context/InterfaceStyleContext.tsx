@@ -180,7 +180,7 @@ export interface InterfaceStyleContextValue {
   activeEngine: ThemeEngineDefinition;
   availableThemes: readonly ThemeEngineDefinition[];
 
-  // Compatibility properties for zero-distractions components
+  // Compatibility properties for zero-noise components
   engine: string;
   setEngine: (next: string) => void;
   isOnyx: boolean;

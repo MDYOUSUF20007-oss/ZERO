@@ -135,7 +135,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                       <p className="text-xs text-zinc-300 leading-relaxed">
                         {needsAccessibility
                           ? 'Blocks Recents, Settings, Notification shade & apps outside Bag.'
-                          : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                          : 'Select Zero-Noise in Usage Access so The Void enforces your Bag.'}
                       </p>
 
                       <button
@@ -392,7 +392,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                       <p className="text-xs text-neutral-400 leading-relaxed">
                         {needsAccessibility
                           ? 'Blocks Recents, Settings, Notification shade & apps outside Bag.'
-                          : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                          : 'Select Zero-Noise in Usage Access so The Void enforces your Bag.'}
                       </p>
 
                       <button
@@ -667,7 +667,7 @@ export const PermissionGateModal: React.FC<PermissionGateModalProps> = ({
                     <p className="text-[11px] text-zinc-400 leading-snug">
                       {needsAccessibility
                         ? 'Blocks Recents, Settings, Notification shade & apps outside Bag.'
-                        : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                        : 'Select Zero-Noise in Usage Access so The Void enforces your Bag.'}
                     </p>
 
                     <button

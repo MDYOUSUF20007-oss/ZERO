@@ -171,7 +171,7 @@ class CloudUploadReminderWorker(
             .setContentText("Upload zero-backup.zbak to your cloud app to keep stats, tickets & donor perks safe.")
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
-                    "Open Zero-Distractions -> Settings -> Upload Stats to Cloud to save your stats, Escape Tickets, donor perks & Bags."
+                    "Open Zero-Noise -> Settings -> Upload Stats to Cloud to save your stats, Escape Tickets, donor perks & Bags."
                 )
             )
             .setSmallIcon(android.R.drawable.ic_menu_upload)

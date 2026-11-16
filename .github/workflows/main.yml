@@ -1,4 +1,4 @@
-name: Zero-Distractions — Web, Pages & Android APK
+name: Zero-Noise — Web, Pages & Android APK
 
 on:
   push:
@@ -239,7 +239,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
-          name: Zero-Distractions v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          name: Zero-Noise v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -247,7 +247,7 @@ jobs:
             release-assets/*.apk
             release-assets/SHA256SUMS.txt
           body: |
-            ### Zero-Distractions (Zero App) v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+            ### Zero-Noise (Zero App) v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
 
             > **Google Play Protect Note ("App scan recommended — Play Protect hasn't seen this app before"):**
             > This standard Android prompt appears whenever you install a newly compiled APK directly from GitHub instead of the Google Play Store. Because each release binary has a fresh SHA-256 hash not yet indexed in Play Protect's cloud, Android asks to scan it once before installing — it does **not** mean Zero is unsafe.
@@ -274,7 +274,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.ZERO_VERSION_NAME }}
-          name: Zero-Distractions v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
+          name: Zero-Noise v${{ env.ZERO_VERSION_NAME }} (code ${{ env.ZERO_VERSION_CODE }})
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -282,7 +282,7 @@ jobs:
             release-assets/*.apk
             release-assets/SHA256SUMS.txt
           body: |
-            ### Zero-Distractions (Zero App) v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
+            ### Zero-Noise (Zero App) v${{ env.ZERO_VERSION_NAME }} (`versionCode ${{ env.ZERO_VERSION_CODE }}`)
 
             > **Build Signing Note:** These preview APKs use CI debug signing because persistent release signing secrets (`ZERO_KEYSTORE_BASE64`, `ZERO_KEYSTORE_PASS`, `ZERO_KEYSTORE_ALIAS`) are not configured yet in Repository Secrets. Open **Settings & OS → Backup & Restore Everything** before replacing a differently signed build.
 

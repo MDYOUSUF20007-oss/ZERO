@@ -125,7 +125,7 @@ export const AetherialController: React.FC<AetherialControllerProps> = ({
       >
         <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="font-extrabold text-lg tracking-tight text-[#38bdf8]">ZERO</span>
+            <span className="font-extrabold text-lg tracking-tight text-[#38bdf8]">ZERO-NOISE</span>
             <span className="text-[10px] font-bold text-[#bdc8d1] uppercase px-2 py-0.5 rounded-full bg-[#282a32]/80 tracking-wider">
               AETHERIAL FOCUS
             </span>

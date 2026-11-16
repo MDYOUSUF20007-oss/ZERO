@@ -83,7 +83,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">Credits & Contributors</h2>
-              <p className="text-xs text-zinc-400">The minds behind Zero-Distractions</p>
+              <p className="text-xs text-zinc-400">The minds behind Zero-Noise</p>
             </div>
           </div>
           <button

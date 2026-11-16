@@ -2175,7 +2175,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <p className="text-[11px] text-zinc-400 leading-snug">
                           {isStrictBuild
                             ? 'Blocks Notification pull-down, Quick Settings, Recents, Settings, and unbagged apps.'
-                            : 'Select Zero-Distractions in Usage Access so The Void enforces your Bag.'}
+                            : 'Select Zero-Noise in Usage Access so The Void enforces your Bag.'}
                         </p>
                       )}
 
@@ -2714,7 +2714,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     >
                       <Heart size={15} strokeWidth={1.75} className="text-red-400 fill-red-400" />
                     </div>
-                    <span>THE ZERO-DISTRACTIONS PROMISE</span>
+                    <span>THE ZERO-NOISE PROMISE</span>
                   </div>
 
                   <button
@@ -2730,7 +2730,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   </button>
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed">
-                  Zero App (Zero-Distractions) is 100% free, libre, and open-source software (FOSS). There are no paywalls,
+                  Zero-Noise is 100% free, libre, and open-source software (FOSS). There are no paywalls,
                   no subscriptions, no analytics trackers, and no advertisements.
                 </p>
                 <p className="text-xs text-zinc-400 leading-relaxed">
