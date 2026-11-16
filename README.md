@@ -39,7 +39,7 @@ It doesn't ask you nicely. When you start a lock, your phone is locked. No bypas
 - **Zen Bowl Auto-Re-Arm:** A live countdown header and Zen bowl chime alert you when break time ends, smoothly re-locking the device back into The Void.
 
 ### 4. Phase 2 Unlimited Bags & Granular App Quotas
-- **Unlimited Custom Bags:** Create dedicated bags for `Work`, `Study`, `Coding`, `Merchant Navy / IMU-CET`, `Family`, or `Night`.
+- **Unlimited Custom Bags:** Create dedicated bags for `Work`, `Study`, `Coding`, `Exams`, `Family`, or `Night`.
 - **Granular Per-App Quotas:** Configure specific daily limits (`15m`, `30m`, `1h`) per application.
 - **Short-Video Intercepts:** Neutralize dopamine loops with configurable short-form video intercept actions (`back_action`, `overlay`, `hard_block`) and scroll velocity throttling.
 
