@@ -28,6 +28,10 @@ class TheVoidActivity : AppCompatActivity() {
 
         @JvmField
         @Volatile
+        var pomodoroBreakUntilElapsed: Long = 0L
+
+        @JvmField
+        @Volatile
         var activeBagPackage: String? = null
     }
 

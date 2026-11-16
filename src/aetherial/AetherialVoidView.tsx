@@ -16,6 +16,7 @@ import {
   Pause,
   Headphones,
   MessageSquare,
+  Coffee,
 } from 'lucide-react';
 
 interface AetherialVoidViewProps {
@@ -56,6 +57,61 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   const [breakReason, setBreakReason] = useState('');
   const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
   const hasPlayedZenChimeRef = useRef(false);
+
+  // Flexible Hourly Pomodoro Break Engine
+  const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
+  const [pomodoroBreakSecondsLeft, setPomodoroBreakSecondsLeft] = useState<number>(0);
+  const [breakTakenHourBlocks, setBreakTakenHourBlocks] = useState<Set<number>>(new Set());
+  const [showPomodoroBreakModal, setShowPomodoroBreakModal] = useState<boolean>(false);
+
+  const currentHourBlock = Math.floor(activeLock.elapsedSeconds / 3600);
+  const isBreakAvailableThisHour = !breakTakenHourBlocks.has(currentHourBlock);
+
+  const handleStartPomodoroBreak = (durationSeconds: number = 600) => {
+    haptics.tick(900);
+    setPomodoroIsBreak(true);
+    setPomodoroBreakSecondsLeft(durationSeconds);
+    setShowPomodoroBreakModal(true);
+    setBreakTakenHourBlocks((prev) => new Set([...prev, currentHourBlock]));
+
+    if (typeof window !== 'undefined' && window.ZeroNative?.startPomodoroBreak) {
+      window.ZeroNative.startPomodoroBreak(durationSeconds);
+    }
+  };
+
+  const handleEndPomodoroBreak = () => {
+    haptics.tick(600);
+    setPomodoroIsBreak(false);
+    setPomodoroBreakSecondsLeft(0);
+    setShowPomodoroBreakModal(false);
+
+    if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+      window.ZeroNative.endPomodoroBreak();
+    }
+  };
+
+  useEffect(() => {
+    if (!pomodoroIsBreak) return;
+
+    const interval = setInterval(() => {
+      setPomodoroBreakSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setPomodoroIsBreak(false);
+          setShowPomodoroBreakModal(false);
+          if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+            window.ZeroNative.endPomodoroBreak();
+          }
+          haptics.tick(950);
+          voidAudio.playZenBowl();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [pomodoroIsBreak]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ZeroNative?.getInstalledPaymentAppsJson) {
@@ -197,14 +253,37 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
 
       {/* Main Focus Core */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center space-y-4 my-auto">
-        {/* Mission Tag */}
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#282a32]/60 backdrop-blur-xl border border-white/5 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-[#38bdf8] shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
-          <span className="text-[11px] font-semibold text-[#e2e1ed] tracking-wider uppercase">
-            #{activeLock.tag || activeBag.name || 'DEEP FOCUS'}
-          </span>
-          <span className="text-[#3e484f] text-[11px]">·</span>
-          <span className="text-[11px] text-[#c4e7ff]">Shielded Perimeter</span>
+        {/* Mission Tag & Pomodoro Freedom Break Button */}
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#282a32]/60 backdrop-blur-xl border border-white/5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#38bdf8] shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
+            <span className="text-[11px] font-semibold text-[#e2e1ed] tracking-wider uppercase">
+              #{activeLock.tag || activeBag.name || 'DEEP FOCUS'}
+            </span>
+            <span className="text-[#3e484f] text-[11px]">·</span>
+            <span className="text-[11px] text-[#c4e7ff]">Shielded Perimeter</span>
+          </div>
+
+          {pomodoroIsBreak ? (
+            <button
+              type="button"
+              onClick={() => setShowPomodoroBreakModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/50 text-xs font-mono font-bold animate-pulse cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+            >
+              <Coffee size={13} />
+              <span>Break: {Math.floor(pomodoroBreakSecondsLeft / 60)}:{String(pomodoroBreakSecondsLeft % 60).padStart(2, '0')}</span>
+            </button>
+          ) : isBreakAvailableThisHour ? (
+            <button
+              type="button"
+              onClick={() => handleStartPomodoroBreak(600)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30 hover:bg-amber-500/25 text-xs font-semibold cursor-pointer active:scale-95 transition-all shadow-sm"
+              title="Take your 10-minute freedom break anytime this hour"
+            >
+              <Coffee size={13} />
+              <span>Take 10m Break</span>
+            </button>
+          ) : null}
         </div>
 
         {/* Giant Circular Arc Progress Hub */}
@@ -634,6 +713,62 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
                 className="w-full py-2.5 rounded-xl bg-[#282a32] text-[#bdc8d1] text-xs font-semibold hover:text-white cursor-pointer"
               >
                 Cancel &amp; Stay Focused
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POMODORO FREEDOM BREAK MODAL (PAUSES BLOCKADE - ALLOWS ANY APP) */}
+      {showPomodoroBreakModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
+        >
+          <div className="relative w-full max-w-sm rounded-[24px] bg-[#191b24] p-6 shadow-2xl border border-amber-500/30 space-y-4 font-sans select-none text-center">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-300">
+              <Coffee size={24} />
+            </div>
+
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
+                10-Minute Freedom Window
+              </span>
+              <h3 className="text-3xl font-black font-mono text-white tracking-wider tabular-nums">
+                {Math.floor(pomodoroBreakSecondsLeft / 60)}:{String(pomodoroBreakSecondsLeft % 60).padStart(2, '0')}
+              </h3>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Blockade is <strong className="text-amber-200">temporarily paused</strong>. You can use <strong>any app</strong> you want freely — social media, browser, games, chat, whatever you need.
+            </p>
+
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 text-left">
+              <span>⏱️ The Void will automatically re-arm lockdown when this 10-minute break expires.</span>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.tick(700);
+                  if (typeof window !== 'undefined' && window.ZeroNative?.launchHomeScreen) {
+                    window.ZeroNative.launchHomeScreen();
+                  }
+                }}
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg active:scale-95"
+              >
+                <ExternalLink size={14} />
+                <span>Open Any App / Home Screen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleEndPomodoroBreak}
+                className="w-full py-2.5 rounded-xl bg-[#282a32] text-zinc-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
+              >
+                <span>End Break Early &amp; Resume Focus</span>
               </button>
             </div>
           </div>

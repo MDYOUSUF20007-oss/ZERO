@@ -87,11 +87,12 @@ class LockForegroundService : Service() {
 
             refreshPackageCachesIfNeeded(nowElapsed)
 
-            // Skip enforcement while in emergency 911/112 grace or active Bag launch grace (monotonic clock)
+            // Skip enforcement while in emergency 911/112 grace, active Bag launch grace, or Pomodoro break (monotonic clock)
             val inEmergencyGrace = nowElapsed <= TheVoidActivity.dialerGraceUntilElapsed
             val inBagTransitionGrace = nowElapsed <= TheVoidActivity.bagLaunchGraceUntilElapsed
+            val inPomodoroBreak = nowElapsed <= TheVoidActivity.pomodoroBreakUntilElapsed
 
-            if (!TheVoidActivity.isInForeground && !inEmergencyGrace && !inBagTransitionGrace) {
+            if (!TheVoidActivity.isInForeground && !inEmergencyGrace && !inBagTransitionGrace && !inPomodoroBreak) {
                 val fgPkg = detectForegroundPackage(nowWall)
                 val accessibilityActive = isZeroAccessibilityServiceEnabled()
 

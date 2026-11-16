@@ -977,4 +977,42 @@ class ZeroNativeBridge(
         }
         return json.toString()
     }
+
+    @JavascriptInterface
+    fun startPomodoroBreak(durationSeconds: Long): Boolean {
+        val safeSeconds = durationSeconds.coerceIn(30L, 1800L) // up to 30 mins max
+        TheVoidActivity.pomodoroBreakUntilElapsed = SystemClock.elapsedRealtime() + (safeSeconds * 1000L)
+        return true
+    }
+
+    @JavascriptInterface
+    fun endPomodoroBreak(): Boolean {
+        TheVoidActivity.pomodoroBreakUntilElapsed = 0L
+        return true
+    }
+
+    @JavascriptInterface
+    fun isPomodoroBreakActive(): Boolean {
+        return SystemClock.elapsedRealtime() <= TheVoidActivity.pomodoroBreakUntilElapsed
+    }
+
+    @JavascriptInterface
+    fun getPomodoroBreakSecondsLeft(): Long {
+        val remainingMs = TheVoidActivity.pomodoroBreakUntilElapsed - SystemClock.elapsedRealtime()
+        return if (remainingMs > 0) remainingMs / 1000L else 0L
+    }
+
+    @JavascriptInterface
+    fun launchHomeScreen(): Boolean {
+        return try {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            activity.startActivity(homeIntent)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

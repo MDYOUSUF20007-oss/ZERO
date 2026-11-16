@@ -484,6 +484,11 @@ export interface ZeroNativeBridgeInterface {
   setInterfaceStyle?(style: InterfaceStyle): void;
   setRoutinesJson?(routinesJson: string): void;
   syncRoutinesToNative?(routinesJson: string): void;
+  startPomodoroBreak?(durationSeconds: number): boolean;
+  endPomodoroBreak?(): boolean;
+  isPomodoroBreakActive?(): boolean;
+  getPomodoroBreakSecondsLeft?(): number;
+  launchHomeScreen?(): boolean;
   verifyAuthorIntegrity?(): boolean;
   exitApp?(): void;
 }

@@ -70,7 +70,7 @@ interface TheVoidViewProps {
   onDeployParachute: () => boolean;
 }
 
-export type PomodoroMode = 'off' | '25_5' | '50_10';
+export type PomodoroMode = 'off' | 'flexible_hourly' | '50_10' | '25_5';
 
 function format12HourClock(date: Date): string {
   const rawHours = date.getHours();
@@ -126,10 +126,12 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [soundVolume, setSoundVolume] = useState<number>(0.5);
   const [showAudioDrawer, setShowAudioDrawer] = useState<boolean>(false);
 
-  // Feature 3: Optional Pomodoro Mode ('off' | '25_5' | '50_10')
-  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('off');
+  // Feature 3: Optional Pomodoro Mode ('off' | 'flexible_hourly' | '50_10' | '25_5')
+  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('flexible_hourly');
   const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
   const [pomodoroBreakSecondsLeft, setPomodoroBreakSecondsLeft] = useState<number>(0);
+  const [breakTakenHourBlocks, setBreakTakenHourBlocks] = useState<Set<number>>(new Set());
+  const [showPomodoroBreakModal, setShowPomodoroBreakModal] = useState<boolean>(false);
 
   // Feature 4: Flip-to-Focus AMOLED Blackout Sensor
   const [flipToFocusEnabled, setFlipToFocusEnabled] = useState<boolean>(true);
@@ -366,13 +368,60 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     };
   }, [flipToFocusEnabled]);
 
-  // Feature 3: Pomodoro Interval Engine
-  useEffect(() => {
-    if (pomodoroMode === 'off') {
-      setPomodoroIsBreak(false);
-      setPomodoroBreakSecondsLeft(0);
-      return;
+  // Feature 3: Pomodoro & Flexible Hourly Break Engine
+  const currentHourBlock = Math.floor(activeLock.elapsedSeconds / 3600);
+  const isBreakAvailableThisHour = !breakTakenHourBlocks.has(currentHourBlock);
+
+  const handleStartPomodoroBreak = (durationSeconds: number = 600) => {
+    haptics.tick(900);
+    setPomodoroIsBreak(true);
+    setPomodoroBreakSecondsLeft(durationSeconds);
+    setShowPomodoroBreakModal(true);
+    setBreakTakenHourBlocks((prev) => new Set([...prev, currentHourBlock]));
+
+    if (typeof window !== 'undefined' && window.ZeroNative?.startPomodoroBreak) {
+      window.ZeroNative.startPomodoroBreak(durationSeconds);
     }
+  };
+
+  const handleEndPomodoroBreak = () => {
+    haptics.tick(600);
+    setPomodoroIsBreak(false);
+    setPomodoroBreakSecondsLeft(0);
+    setShowPomodoroBreakModal(false);
+
+    if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+      window.ZeroNative.endPomodoroBreak();
+    }
+  };
+
+  // Timer countdown while break is active
+  useEffect(() => {
+    if (!pomodoroIsBreak) return;
+
+    const interval = setInterval(() => {
+      setPomodoroBreakSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setPomodoroIsBreak(false);
+          setShowPomodoroBreakModal(false);
+          if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+            window.ZeroNative.endPomodoroBreak();
+          }
+          haptics.tick(950);
+          voidAudio.playZenBowl();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [pomodoroIsBreak]);
+
+  // Automatic break trigger for fixed presets (50_10 or 25_5)
+  useEffect(() => {
+    if (pomodoroMode === 'off' || pomodoroMode === 'flexible_hourly' || pomodoroIsBreak) return;
 
     const focusSpan = pomodoroMode === '25_5' ? 25 * 60 : 50 * 60;
     const breakSpan = pomodoroMode === '25_5' ? 5 * 60 : 10 * 60;
@@ -380,15 +429,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
     const cyclePos = activeLock.elapsedSeconds % cycleSpan;
 
-    if (cyclePos >= focusSpan) {
-      const remainingBreak = cycleSpan - cyclePos;
-      setPomodoroIsBreak(true);
-      setPomodoroBreakSecondsLeft(remainingBreak);
-    } else {
-      setPomodoroIsBreak(false);
-      setPomodoroBreakSecondsLeft(0);
+    if (cyclePos >= focusSpan && isBreakAvailableThisHour) {
+      handleStartPomodoroBreak(breakSpan);
     }
-  }, [pomodoroMode, activeLock.elapsedSeconds]);
+  }, [pomodoroMode, activeLock.elapsedSeconds, isBreakAvailableThisHour, pomodoroIsBreak]);
 
   // Sound player helpers
   const handleSelectSound = (trackId: FocusSoundTrack) => {
@@ -428,10 +472,16 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   const handleTogglePomodoro = () => {
     haptics.thud();
+    if (pomodoroIsBreak) {
+      setShowPomodoroBreakModal(true);
+      return;
+    }
     if (pomodoroMode === 'off') {
-      setPomodoroMode('25_5');
-    } else if (pomodoroMode === '25_5') {
+      setPomodoroMode('flexible_hourly');
+    } else if (pomodoroMode === 'flexible_hourly') {
       setPomodoroMode('50_10');
+    } else if (pomodoroMode === '50_10') {
+      setPomodoroMode('25_5');
     } else {
       setPomodoroMode('off');
     }
@@ -836,35 +886,59 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </span>
 
             {/* Pomodoro Mode Trigger / Break Indicator */}
-            <button
-              type="button"
-              onClick={handleTogglePomodoro}
-              className={`flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
-                pomodoroIsBreak
-                  ? 'bg-amber-500/20 text-amber-200 border-amber-400/40 animate-pulse'
-                  : pomodoroMode !== 'off'
-                  ? 'border-cyan-400/30'
-                  : isLightMode
-                  ? 'text-stone-600 bg-black/[0.04] border-stone-300'
-                  : 'text-zinc-400 bg-white/[0.05] border-white/10 hover:text-white'
-              }`}
-              style={
-                pomodoroMode !== 'off' && !pomodoroIsBreak
-                  ? { color: activeAccent, borderColor: `${activeAccent}50`, backgroundColor: `${activeAccent}15` }
-                  : undefined
-              }
-            >
-              <Coffee size={10} />
-              <span>
-                {pomodoroIsBreak
-                  ? `Break: ${formatCountdown(pomodoroBreakSecondsLeft)}`
-                  : pomodoroMode === 'off'
-                  ? 'Continuous'
-                  : pomodoroMode === '25_5'
-                  ? 'Pomo 25/5'
-                  : 'Pomo 50/10'}
-              </span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {pomodoroIsBreak ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPomodoroBreakModal(true)}
+                  className="flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border bg-amber-500/25 text-amber-200 border-amber-400/50 animate-pulse cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+                >
+                  <Coffee size={10} />
+                  <span>Break: {formatCountdown(pomodoroBreakSecondsLeft)}</span>
+                </button>
+              ) : (
+                <>
+                  {pomodoroMode !== 'off' && isBreakAvailableThisHour && (
+                    <button
+                      type="button"
+                      onClick={() => handleStartPomodoroBreak(600)}
+                      className="flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-400/40 hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+                      title="Take your 10-minute freedom break anytime this hour"
+                    >
+                      <Coffee size={10} />
+                      <span>Take 10m Break</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleTogglePomodoro}
+                    className={`flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                      pomodoroMode !== 'off'
+                        ? 'border-cyan-400/30'
+                        : isLightMode
+                        ? 'text-stone-600 bg-black/[0.04] border-stone-300'
+                        : 'text-zinc-400 bg-white/[0.05] border-white/10 hover:text-white'
+                    }`}
+                    style={
+                      pomodoroMode !== 'off'
+                        ? { color: activeAccent, borderColor: `${activeAccent}50`, backgroundColor: `${activeAccent}15` }
+                        : undefined
+                    }
+                  >
+                    <Coffee size={10} />
+                    <span>
+                      {pomodoroMode === 'off'
+                        ? 'Continuous'
+                        : pomodoroMode === 'flexible_hourly'
+                        ? 'Hourly 10m'
+                        : pomodoroMode === '25_5'
+                        ? 'Pomo 25/5'
+                        : 'Pomo 50/10'}
+                    </span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* UNIQUE 5x7 DOT-MATRIX PIXELATED TIME DISPLAY */}
@@ -1606,6 +1680,62 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             >
               Back to Void
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* POMODORO FREEDOM BREAK MODAL (PAUSES BLOCKADE - ALLOWS ANY APP) */}
+      {showPomodoroBreakModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
+        >
+          <div className="relative w-full max-w-sm rounded-[24px] modal-glass p-6 shadow-2xl border border-amber-500/30 space-y-4 font-sans select-none text-center">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-300">
+              <Coffee size={24} />
+            </div>
+
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
+                10-Minute Freedom Window
+              </span>
+              <h3 className="text-3xl font-black font-mono text-white tracking-wider tabular-nums">
+                {formatCountdown(pomodoroBreakSecondsLeft)}
+              </h3>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Blockade is <strong className="text-amber-200">temporarily paused</strong>. You can use <strong>any app</strong> you want freely — social media, browser, games, chat, whatever you need.
+            </p>
+
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 text-left">
+              <span>⏱️ The Void will automatically re-arm lockdown when this 10-minute break expires.</span>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.tick(700);
+                  if (typeof window !== 'undefined' && window.ZeroNative?.launchHomeScreen) {
+                    window.ZeroNative.launchHomeScreen();
+                  }
+                }}
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg active:scale-95"
+              >
+                <ExternalLink size={14} />
+                <span>Open Any App / Home Screen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleEndPomodoroBreak}
+                className="w-full py-2.5 rounded-xl liquid-pill text-zinc-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
+              >
+                <span>End Break Early &amp; Resume Focus</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
