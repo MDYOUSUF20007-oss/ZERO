@@ -53,7 +53,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AiStudyVerificationResult | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [, setUserTrustedChannels] = useState<string[]>(() =>
     getUserTrustedChannels()
   );
@@ -102,15 +102,16 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
     window.location.href = 'https://www.youtube.com';
   };
 
-  const handleRunAiEvaluation = (e?: React.FormEvent) => {
+  // 1-Tap Quick Whitelist: Zero Forms! Just paste the link and done.
+  const handleQuickWhitelistLink = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!urlInput.trim()) return;
+    const rawUrl = urlInput.trim();
+    if (!rawUrl) return;
 
     haptics.tick(600);
     setIsAnalyzing(true);
     setSaveSuccessMsg('');
 
-    // Fast AI cognitive evaluation
     setTimeout(() => {
       const tagsArray = tagsInput
         .split(/[,# ]+/)
@@ -118,22 +119,81 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
         .filter(Boolean);
 
       const result = evaluateVideoForStudy({
-        urlOrId: urlInput,
-        title: titleInput,
-        channel: channelInput,
-        tags: tagsArray,
-        description: descriptionInput,
+        urlOrId: rawUrl,
+        title: titleInput.trim() || undefined,
+        channel: channelInput.trim() || undefined,
+        tags: tagsArray.length > 0 ? tagsArray : undefined,
+        description: descriptionInput.trim() || undefined,
       });
 
       setAnalysisResult(result);
       setIsAnalyzing(false);
 
-      if (result.isValidId) {
-        haptics.tick(900);
+      if (result.isValidId && result.verdict === 'verified_productive') {
+        const mergedTags = Array.from(new Set([...tagsArray, ...result.recommendedTags]));
+
+        const defaultTitle = result.isChannelOnly
+          ? (result.channelName || result.channelHandle || 'Verified Educational Channel')
+          : (result.detectedExam
+              ? `${result.detectedExam} Lecture (${result.videoId})`
+              : `Study Lecture (${result.videoId})`);
+
+        const defaultChannel =
+          result.channelHandle || result.channelName || result.domainCategory || 'Verified Creator';
+
+        const newVideo: ZeroTubeCustomVideo = {
+          id: result.videoId || result.channelHandle || '@channel',
+          url: rawUrl.startsWith('http')
+            ? rawUrl
+            : (result.isChannelOnly ? `https://youtube.com/${result.channelHandle}` : `https://youtube.com/watch?v=${result.videoId}`),
+          title: titleInput.trim() || defaultTitle,
+          channel: channelInput.trim() || defaultChannel,
+          category: result.domainCategory,
+          isChannel: result.isChannelOnly,
+          channelHandle: result.channelHandle,
+          tags: mergedTags,
+          description: descriptionInput.trim(),
+          aiStudyScore: result.studyScore,
+          aiVerdict: result.verdict,
+          domainCategory: result.domainCategory,
+          detectedExam: result.detectedExam,
+          aiRationale: result.rationale,
+          addedAt: Date.now(),
+        };
+
+        saveCustomZeroTubeVideo(newVideo);
+
+        // Regain-Style: Auto-whitelist this creator so ANY lecture from them is trusted!
+        if (result.channelHandle) {
+          saveUserTrustedChannel(result.channelHandle);
+        }
+        if (result.channelName) {
+          saveUserTrustedChannel(result.channelName);
+        }
+        setUserTrustedChannels(getUserTrustedChannels());
+
+        reloadVideos();
+        haptics.tick(950);
+
+        setSaveSuccessMsg(
+          result.isChannelOnly
+            ? `🎉 Whitelisted Channel "${newVideo.title}"! All creator lectures auto-authorized.`
+            : `🎉 Added "${newVideo.title}" to Whitelist (${result.studyScore}/100 - ${result.domainCategory})!`
+        );
+        setUrlInput('');
+        setTitleInput('');
+        setChannelInput('');
+        setTagsInput('');
+        setDescriptionInput('');
+        setShowAdvanced(false);
+
+        setTimeout(() => setSaveSuccessMsg(''), 5000);
+      } else if (result.isValidId) {
+        haptics.tick(700);
       } else {
         haptics.thud();
       }
-    }, 280);
+    }, 220);
   };
 
   const handleAddVideo = () => {
@@ -192,7 +252,7 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
     setTagsInput('');
     setDescriptionInput('');
     setAnalysisResult(null);
-    setShowAddForm(false);
+    setShowAdvanced(false);
 
     setTimeout(() => setSaveSuccessMsg(''), 4500);
   };
@@ -306,230 +366,212 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
             </div>
           )}
 
-          {/* Toggle Add Link Form */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
-              Whitelisted Study Catalog ({customVideos.length} Custom Links)
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                haptics.tick(500);
-                setShowAddForm(!showAddForm);
-              }}
-              className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              {showAddForm ? <span>Close</span> : <><Plus size={13} /><span>Add Study Link</span></>}
-            </button>
-          </div>
-
-          {/* ADD STUDY LINK & AI VERIFIER FORM */}
-          {showAddForm && (
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 animate-fadeIn">
-              <div className="flex items-center gap-2 text-white font-semibold text-xs">
+          {/* QUICK WHITELIST LINK (ZERO FORMS - JUST PASTE & WHITELIST) */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-white font-semibold text-xs">
                 <Sparkles size={14} className="text-cyan-400" />
-                <span>AI Cognitive Study Verifier</span>
+                <span>Quick Whitelist (Just Give The Link)</span>
               </div>
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                Zero Forms • 1-Tap AI
+              </span>
+            </div>
 
-              <div className="space-y-2">
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                    YouTube Video URL, Channel Link (@creator), or Video ID *
-                  </label>
-                  <input
-                    type="text"
-                    value={urlInput}
-                    onChange={(e) => {
-                      setUrlInput(e.target.value);
-                      setAnalysisResult(null);
-                    }}
-                    placeholder="https://youtube.com/@channel or video URL / ID..."
-                    className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                  />
-                </div>
+            <form onSubmit={handleQuickWhitelistLink} className="flex gap-2">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => {
+                  setUrlInput(e.target.value);
+                  setAnalysisResult(null);
+                }}
+                placeholder="Paste YouTube video or @channel link (e.g. https://youtube.com/@paramountmerchantnavy)..."
+                className="flex-1 px-3.5 py-2.5 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+              />
+              <button
+                type="submit"
+                disabled={!urlInput.trim() || isAnalyzing}
+                className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-40 active:scale-95 shrink-0"
+              >
+                <Sparkles size={13} className={isAnalyzing ? 'animate-spin' : ''} />
+                <span>{isAnalyzing ? 'Verifying...' : 'Whitelist Link'}</span>
+              </button>
+            </form>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Optional Manual Overrides (hidden by default) */}
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer font-mono"
+              >
+                <span>{showAdvanced ? '▾ Hide manual details' : '▸ Optional custom title or tags (not required)'}</span>
+              </button>
+
+              {showAdvanced && (
+                <div className="mt-2.5 pt-2.5 border-t border-white/5 space-y-2 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
+                        Custom Title (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={titleInput}
+                        onChange={(e) => setTitleInput(e.target.value)}
+                        placeholder="Custom lecture name..."
+                        className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
+                        Channel / Creator (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={channelInput}
+                        onChange={(e) => setChannelInput(e.target.value)}
+                        placeholder="Creator name..."
+                        className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      />
+                      {channelInput.trim() && (
+                        <div className="mt-1 flex items-center justify-between text-[10px]">
+                          {isChannelTrusted(channelInput) ? (
+                            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                              <CheckCircle2 size={12} /> Trusted Creator
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleTrustChannel(channelInput)}
+                              className="text-cyan-300 hover:text-cyan-200 underline font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Plus size={11} /> Trust Creator (+28 pts)
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                      Video / Lecture Title (Optional)
+                      Tags (Optional)
                     </label>
                     <input
                       type="text"
-                      value={titleInput}
-                      onChange={(e) => setTitleInput(e.target.value)}
-                      placeholder="e.g. Linear Algebra Chapter 1"
+                      value={tagsInput}
+                      onChange={(e) => setTagsInput(e.target.value)}
+                      placeholder="e.g. math, deep learning, python"
                       className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                     />
                   </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                      Channel / Creator (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={channelInput}
-                      onChange={(e) => setChannelInput(e.target.value)}
-                      placeholder="e.g. Paramount Merchant Navy, Physics Wallah, 3Blue1Brown"
-                      className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                    />
-                    {channelInput.trim() && (
-                      <div className="mt-1 flex items-center justify-between text-[10px]">
-                        {isChannelTrusted(channelInput) ? (
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                            <CheckCircle2 size={12} /> Trusted Creator
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleTrustChannel(channelInput)}
-                            className="text-cyan-300 hover:text-cyan-200 underline font-semibold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Plus size={11} /> Trust Creator (+28 pts)
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                    Tags or Keywords (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={tagsInput}
-                    onChange={(e) => setTagsInput(e.target.value)}
-                    placeholder="e.g. math, deep learning, python"
-                    className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 tracking-wider block mb-1">
-                    Study Goal or Description (Optional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={descriptionInput}
-                    onChange={(e) => setDescriptionInput(e.target.value)}
-                    placeholder="What specific skill or concept are you mastering from this video?"
-                    className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400 resize-none leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Evaluation Trigger Button */}
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  disabled={!urlInput.trim() || isAnalyzing}
-                  onClick={() => handleRunAiEvaluation()}
-                  className="flex-1 py-2 px-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors"
-                >
-                  <Sparkles size={14} className={isAnalyzing ? 'animate-spin' : ''} />
-                  <span>{isAnalyzing ? 'Analyzing with AI...' : 'Verify with AI'}</span>
-                </button>
-              </div>
-
-              {/* AI Verification Analysis Card */}
-              {analysisResult && (
-                <div
-                  className={`p-3.5 rounded-xl border space-y-2 text-xs transition-all ${
-                    analysisResult.verdict === 'verified_productive'
-                      ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
-                      : analysisResult.verdict === 'caution_entertainment'
-                      ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
-                      : 'bg-rose-950/30 border-rose-500/40 text-rose-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px]">
-                      {analysisResult.verdict === 'verified_productive' && (
-                        <>
-                          <CheckCircle2 size={15} className="text-emerald-400" />
-                          <span className="text-emerald-300">Verified Productive</span>
-                        </>
-                      )}
-                      {analysisResult.verdict === 'caution_entertainment' && (
-                        <>
-                          <AlertTriangle size={15} className="text-amber-400" />
-                          <span className="text-amber-300">Caution: Leisure Risk</span>
-                        </>
-                      )}
-                      {analysisResult.verdict === 'high_distraction_risk' && (
-                        <>
-                          <ShieldAlert size={15} className="text-rose-400" />
-                          <span className="text-rose-300">High Distraction Risk</span>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-white/10 text-white border border-white/10">
-                      Study Score: {analysisResult.studyScore}/100
-                    </div>
-                  </div>
-
-                  {analysisResult.isChannelOnly && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 font-mono text-[11px] font-bold">
-                      <span>🎓 Regain-Style Whitelist:</span>
-                      <span className="text-white underline">
-                        Entire Channel ({analysisResult.channelHandle || analysisResult.channelName})
-                      </span>
-                      <span className="text-[10px] text-emerald-300 font-normal">All channel lectures auto-authorized</span>
-                    </div>
-                  )}
-
-                  {analysisResult.detectedExam && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 font-mono text-[11px] font-bold">
-                      <span>🎯 Target Curriculum:</span>
-                      <span className="text-white underline">{analysisResult.detectedExam}</span>
-                      <span className="text-[10px] text-cyan-300 font-normal">(+18 pt Exam Bonus)</span>
-                    </div>
-                  )}
-
-                  <p className="text-[11px] leading-relaxed text-zinc-300">
-                    {analysisResult.rationale}
-                  </p>
-
-                  <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono">
-                    <span>Category: <strong className="text-cyan-300">{analysisResult.domainCategory}</strong></span>
-                    <span>•</span>
-                    <span>{analysisResult.isChannelOnly ? 'Channel Handle:' : 'Video ID:'} <strong className="text-white">{analysisResult.videoId || analysisResult.channelHandle || 'Invalid'}</strong></span>
-                  </div>
-
-                  {analysisResult.distractionFlags.length > 0 && (
-                    <div className="text-[10px] text-rose-400 font-mono">
-                      Flags: {analysisResult.distractionFlags.join(', ')}
-                    </div>
-                  )}
-
-                  {/* Add Whitelist Action */}
-                  {analysisResult.isValidId && (
-                    <button
-                      type="button"
-                      onClick={handleAddVideo}
-                      className="w-full mt-2 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md"
-                    >
-                      <Check size={14} strokeWidth={2.5} />
-                      <span>
-                        {analysisResult.isChannelOnly
-                          ? `Whitelist Entire Channel (${analysisResult.channelHandle || '@creator'})`
-                          : 'Add to My ZeroTube Whitelist'}
-                      </span>
-                    </button>
-                  )}
                 </div>
               )}
             </div>
-          )}
+
+            {/* AI Verification Analysis Card */}
+            {analysisResult && (
+              <div
+                className={`p-3.5 rounded-xl border space-y-2 text-xs transition-all ${
+                  analysisResult.verdict === 'verified_productive'
+                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                    : analysisResult.verdict === 'caution_entertainment'
+                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                    : 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px]">
+                    {analysisResult.verdict === 'verified_productive' && (
+                      <>
+                        <CheckCircle2 size={15} className="text-emerald-400" />
+                        <span className="text-emerald-300">Verified Productive</span>
+                      </>
+                    )}
+                    {analysisResult.verdict === 'caution_entertainment' && (
+                      <>
+                        <AlertTriangle size={15} className="text-amber-400" />
+                        <span className="text-amber-300">Caution: Leisure Risk</span>
+                      </>
+                    )}
+                    {analysisResult.verdict === 'high_distraction_risk' && (
+                      <>
+                        <ShieldAlert size={15} className="text-rose-400" />
+                        <span className="text-rose-300">High Distraction Risk</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-white/10 text-white border border-white/10">
+                    Study Score: {analysisResult.studyScore}/100
+                  </div>
+                </div>
+
+                {analysisResult.isChannelOnly && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 font-mono text-[11px] font-bold">
+                    <span>🎓 Regain-Style Whitelist:</span>
+                    <span className="text-white underline">
+                      Entire Channel ({analysisResult.channelHandle || analysisResult.channelName})
+                    </span>
+                    <span className="text-[10px] text-emerald-300 font-normal">All channel lectures auto-authorized</span>
+                  </div>
+                )}
+
+                {analysisResult.detectedExam && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 font-mono text-[11px] font-bold">
+                    <span>🎯 Target Curriculum:</span>
+                    <span className="text-white underline">{analysisResult.detectedExam}</span>
+                    <span className="text-[10px] text-cyan-300 font-normal">(+18 pt Exam Bonus)</span>
+                  </div>
+                )}
+
+                <p className="text-[11px] leading-relaxed text-zinc-300">
+                  {analysisResult.rationale}
+                </p>
+
+                <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono">
+                  <span>Category: <strong className="text-cyan-300">{analysisResult.domainCategory}</strong></span>
+                  <span>•</span>
+                  <span>{analysisResult.isChannelOnly ? 'Channel Handle:' : 'Video ID:'} <strong className="text-white">{analysisResult.videoId || analysisResult.channelHandle || 'Invalid'}</strong></span>
+                </div>
+
+                {analysisResult.distractionFlags.length > 0 && (
+                  <div className="text-[10px] text-rose-400 font-mono">
+                    Flags: {analysisResult.distractionFlags.join(', ')}
+                  </div>
+                )}
+
+                {/* Add Whitelist Action (for caution or manual confirmation) */}
+                {analysisResult.isValidId && (
+                  <button
+                    type="button"
+                    onClick={handleAddVideo}
+                    className="w-full mt-2 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                  >
+                    <Check size={14} strokeWidth={2.5} />
+                    <span>
+                      {analysisResult.isChannelOnly
+                        ? `Whitelist Entire Channel (${analysisResult.channelHandle || '@creator'})`
+                        : 'Add to My ZeroTube Whitelist'}
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* CUSTOM WHITELISTED VIDEOS LIST */}
           <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
+                Whitelisted Study Catalog ({customVideos.length} Saved)
+              </span>
+            </div>
             {customVideos.length === 0 ? (
               <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01] text-center text-zinc-500 text-xs">
-                No custom study videos added yet. Tap <strong>&quot;Add Study Link&quot;</strong> above to whitelist any YouTube tutorial or lecture!
+                No custom study links added yet. Paste any YouTube video or channel link above to whitelist instantly!
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

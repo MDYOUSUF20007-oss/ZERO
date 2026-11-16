@@ -13,7 +13,8 @@ import { ShareStatsModal } from './components/ShareStatsModal';
 import { EscapeTicketModal } from './components/EscapeTicketModal';
 import { ObsidianCard } from './components/ObsidianCard';
 import { AmbientBackground } from './components/AmbientBackground';
-import { LiquidDock } from './components/LiquidDock';
+import { LiquidDock, type ZeroNavTab } from './components/LiquidDock';
+import { ZeroTubeModal } from './components/ZeroTubeModal';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { InteractiveTour } from './components/InteractiveTour';
 import { SessionVictoryModal } from './components/SessionVictoryModal';
@@ -27,7 +28,8 @@ import { BellRing, X, AlertTriangle, Download, Upload } from 'lucide-react';
 
 export function App() {
   const store = useZeroStore();
-  const [activeTab, setActiveTab] = useState<'dial' | 'dashboard' | 'schedules' | 'support'>('dial');
+  const [activeTab, setActiveTab] = useState<ZeroNavTab>('dial');
+  const [showZeroTubeModal, setShowZeroTubeModal] = useState(false);
   const [rulesSectionOverride, setRulesSectionOverride] = useState<{
     section: 'schedules' | 'themes' | 'settings' | 'os_security' | 'support';
     key: number;
@@ -117,6 +119,13 @@ export function App() {
       }
       if (showUpdateModal) {
         setShowUpdateModal(false);
+        return;
+      }
+      if (showZeroTubeModal || activeTab === 'zerotube') {
+        setShowZeroTubeModal(false);
+        if (activeTab === 'zerotube') {
+          setActiveTab('dial');
+        }
         return;
       }
       if (showInteractiveTour) {
@@ -792,6 +801,21 @@ export function App() {
         onOpenInsights={() => {
           setShowTicketModal(false);
           setActiveTab('dashboard');
+        }}
+      />
+
+      {/* ZeroTube Study Player Modal (Accessible directly from Bottom Dock) */}
+      <ZeroTubeModal
+        isOpen={showZeroTubeModal || activeTab === 'zerotube'}
+        onClose={() => {
+          setShowZeroTubeModal(false);
+          if (activeTab === 'zerotube') {
+            setActiveTab('dial');
+          }
+        }}
+        onOpenSettingsStudio={() => {
+          setShowZeroTubeModal(false);
+          setActiveTab('schedules');
         }}
       />
 

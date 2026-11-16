@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { haptics } from '../utils/haptics';
 import { ArrowRight, X, Clock, BarChart3, Settings, Heart, Sparkles } from 'lucide-react';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
+import type { ZeroNavTab } from './LiquidDock';
 
 interface InteractiveTourProps {
   onComplete: () => void;
-  onNavigateTab: (tab: 'dial' | 'dashboard' | 'schedules' | 'support') => void;
+  onNavigateTab: (tab: ZeroNavTab) => void;
 }
 
 const TOUR_STEPS = [

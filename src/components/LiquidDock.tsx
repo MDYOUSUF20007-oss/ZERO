@@ -1,8 +1,8 @@
 ﻿import React from 'react';
-import { Clock, Heart, Settings, BarChart3 } from 'lucide-react';
+import { Clock, Heart, Settings, BarChart3, Play } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 
-export type ZeroNavTab = 'dial' | 'dashboard' | 'schedules' | 'support';
+export type ZeroNavTab = 'dial' | 'dashboard' | 'zerotube' | 'schedules' | 'support';
 
 interface LiquidDockProps {
   activeTab: ZeroNavTab;
@@ -13,6 +13,7 @@ interface LiquidDockProps {
 const TABS: Array<{ id: ZeroNavTab; label: string }> = [
   { id: 'dial', label: 'Focus' },
   { id: 'dashboard', label: 'Insights' },
+  { id: 'zerotube', label: 'ZeroTube' },
   { id: 'schedules', label: 'Settings & OS' },
   { id: 'support', label: 'Support' },
 ];
@@ -45,11 +46,11 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
           }}
         />
 
-        <div className="grid grid-cols-4 relative">
+        <div className="grid grid-cols-5 relative">
           {/* Smooth 60FPS spring sliding glass pill indicator */}
           <div
             aria-hidden="true"
-            className="absolute top-0 bottom-0 left-0 w-1/4 p-1 pointer-events-none will-change-transform"
+            className="absolute top-0 bottom-0 left-0 w-1/5 p-1 pointer-events-none will-change-transform"
             style={{
               transform: `translateX(${activeIdx * 100}%)`,
               transition: 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -94,6 +95,14 @@ export const LiquidDock: React.FC<LiquidDockProps> = ({
                       size={17}
                       strokeWidth={1.8}
                       className={active ? 'text-white' : undefined}
+                    />
+                  )}
+                  {tab.id === 'zerotube' && (
+                    <Play
+                      size={17}
+                      strokeWidth={1.8}
+                      fill={active ? 'currentColor' : 'none'}
+                      className={active ? 'text-cyan-300' : undefined}
                     />
                   )}
                   {tab.id === 'schedules' && (
