@@ -22,38 +22,23 @@ Official binaries are hosted directly on **[GitHub Releases](https://github.com/
 
 ### 🌟 Headline Highlights
 
-#### 1. ZeroTube // Distraction-Free Study Player on the Bottom Dock
-- **Pinned to the Floating Bottom Dock:** ZeroTube is now accessible in 1 tap from anywhere in the app via the bottom glass dock (`[Focus]`, `[Insights]`, `[ZeroTube]`, `[Settings & OS]`, `[Support]`), as well as directly inside The Void.
-- **1-Tap Link Whitelisting (Zero Forms):** Eliminated the multi-field form. Users simply paste any YouTube video or channel link (`https://youtube.com/@channel` or `@channel`) and tap **Whitelist Link** (or hit Enter). Zero-Noise automatically extracts creator, category, target exam, and tags with 0 manual typing.
-- **Regain-Style Educational Channel Whitelisting:** Whitelisting an educational channel (e.g. `@paramountmerchantnavy`, `@physicswallah`, `@freecodecamp`, `@codewithharry`) automatically authorizes and whitelists every lecture from that creator across all focus sessions.
-- **AI Cognitive Study Verifier:** 100% offline, zero-telemetry semantic classifier that evaluates video and channel URLs. Automatically detects competitive exams and assigns curriculum badges:
-  - `🎯 IMU-CET` (Merchant Navy & Nautical Science)
-  - `🎯 JEE (Main & Adv)` (IIT Engineering Entrance)
-  - `🎯 NEET` (Medical Entrance)
-  - `🎯 SAT` / `🎯 ACT / AP` (College Board)
-  - `🎯 UPSC CSE` (Civil Services)
-  - `🎯 GATE` (Graduate Aptitude in Engineering)
-  - `🎯 CAT / MBA` (IIM Management Entrance)
-  - `🎯 GRE / GMAT` & `🎯 IELTS / TOEFL`
-- **Distraction & Dopamine Shield:** Automatically detects and rejects clickbait, prank videos, vlogs, and YouTube Shorts format.
-
-#### 2. Flexible 10-Minute Hourly Pomodoro Break
+#### 1. Flexible 10-Minute Hourly Pomodoro Break
 - **Freedom on Your Schedule:** Take a 10-minute break every hour on your own timing during long focus blocks.
 - **Total Device Freedom:** During the 10-minute window, the phone blockade is temporarily suspended—open and use any app freely.
 - **Auto-Re-Arm with Zen Chime:** A live countdown header and soothing Zen bowl chime notify you when break time ends, smoothly locking the phone back into The Void.
 
-#### 3. Aetherial Focus Minimal Mesh
-- **Minimal Living Canvas:** Stripped unnecessary mesh clutter in Aetherial Focus. Tuned to a clean, organic fluid mesh drift that provides subtle depth without visual mess.
-
-#### 4. Phase 2 Unlimited Occasion Bags & Granular App Quotas
-- **Unlimited Custom Bags:** Create unlimited dedicated bags (`Work`, `Study`, `Merchant Navy`, `Coding`, `Commute`, `Family`).
+#### 2. Phase 2 Unlimited Occasion Bags & Granular App Quotas
+- **Unlimited Custom Bags:** Create dedicated bags (`Work`, `Study`, `Coding`, `Exams`, `Family`, `Night`).
 - **Granular Per-App Quotas:** Configure specific daily limits (`15m`, `30m`, `1h`) per application.
 - **Short-Video Intercept Actions:** Intercept doomscrolling with configurable actions (`back_action`, `overlay`, `hard_block`) and scroll velocity throttling.
 
-#### 5. Rebranding & Visual Polish
+#### 3. Aetherial Focus Minimal Mesh
+- **Minimal Living Canvas:** Stripped unnecessary mesh clutter in Aetherial Focus. Tuned to a clean, organic fluid mesh drift that provides subtle depth without visual mess.
+
+#### 4. Rebranding & Visual Polish
 - Official rebrand to **Zero-Noise (Zero App)**.
 - Enhanced Liquid Glass squircle pill navigation.
-- WCAG AAA contrast ratio compliance across all 34 Theme Studio presets.
+- High-contrast accessibility across all system views.
 
 ---
 
