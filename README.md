@@ -75,9 +75,9 @@ For complete version changelogs, architecture notes, and checksums, see **[RELEA
 
 ## Screenshots
 
-| The Home | The Dial | The Void | The Insights Page |
+| The Home Dial | The Void (Lock Screen) | Discipline Heatmap (Insights) | Auto-Pilot Schedules (Settings) |
 | :---: | :---: | :---: | :---: |
-| 📸 *Paste screenshot here* <!-- PASTE HOME SCREENSHOT HERE --> | 📸 *Paste screenshot here* <!-- PASTE DIAL SCREENSHOT HERE --> | 📸 *Paste screenshot here* <!-- PASTE VOID SCREENSHOT HERE --> | 📸 *Paste screenshot here* <!-- PASTE INSIGHTS SCREENSHOT HERE --> |
+| <img src="./docs/screenshots/home-dial.jpg" width="220" alt="The Home Dial" /> | <img src="./docs/screenshots/the-void.jpg" width="220" alt="The Void Lock Screen" /> | <img src="./docs/screenshots/discipline-heatmap.jpg" width="220" alt="Discipline Heatmap Insights" /> | <img src="./docs/screenshots/schedules-settings.jpg" width="220" alt="Auto-Pilot Schedules in Settings" /> |
 
 ---
 
