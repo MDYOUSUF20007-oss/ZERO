@@ -18,6 +18,9 @@ import {
   getCustomZeroTubeVideos,
   saveCustomZeroTubeVideo,
   removeCustomZeroTubeVideo,
+  getUserTrustedChannels,
+  saveUserTrustedChannel,
+  isChannelTrusted,
   type ZeroTubeCustomVideo,
   type AiStudyVerificationResult,
 } from '../utils/aiStudyVerifier';
@@ -51,6 +54,30 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
   const [analysisResult, setAnalysisResult] = useState<AiStudyVerificationResult | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [, setUserTrustedChannels] = useState<string[]>(() =>
+    getUserTrustedChannels()
+  );
+
+  const handleTrustChannel = (channel: string) => {
+    saveUserTrustedChannel(channel);
+    setUserTrustedChannels(getUserTrustedChannels());
+    haptics.tick(900);
+    if (urlInput.trim()) {
+      const tagsArray = tagsInput
+        .split(/[,# ]+/)
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      const result = evaluateVideoForStudy({
+        urlOrId: urlInput,
+        title: titleInput,
+        channel: channel,
+        tags: tagsArray,
+        description: descriptionInput,
+      });
+      setAnalysisResult(result);
+    }
+  };
 
   // Refresh custom videos on mount or save
   const reloadVideos = () => {
@@ -310,9 +337,26 @@ export const ZeroTubeSettingsCard: React.FC<ZeroTubeSettingsCardProps> = ({
                       type="text"
                       value={channelInput}
                       onChange={(e) => setChannelInput(e.target.value)}
-                      placeholder="e.g. 3Blue1Brown, MIT OCW"
+                      placeholder="e.g. Paramount Merchant Navy, Physics Wallah, 3Blue1Brown"
                       className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 border border-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                     />
+                    {channelInput.trim() && (
+                      <div className="mt-1 flex items-center justify-between text-[10px]">
+                        {isChannelTrusted(channelInput) ? (
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCircle2 size={12} /> Trusted Creator
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleTrustChannel(channelInput)}
+                            className="text-cyan-300 hover:text-cyan-200 underline font-semibold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus size={11} /> Trust Creator (+28 pts)
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
