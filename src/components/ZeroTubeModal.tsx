@@ -3,7 +3,6 @@ import {
   X,
   Play,
   Search,
-  BookOpen,
   FileText,
   ExternalLink,
   Lock,
@@ -11,6 +10,8 @@ import {
   Settings,
   Plus,
   GraduationCap,
+  Trash2,
+  ShieldCheck,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 import {
@@ -19,6 +20,7 @@ import {
   evaluateVideoForStudy,
   getCustomZeroTubeVideos,
   saveCustomZeroTubeVideo,
+  removeCustomZeroTubeVideo,
   saveUserTrustedChannel,
   type ZeroTubeCustomVideo,
 } from '../utils/aiStudyVerifier';
@@ -31,58 +33,18 @@ interface ZeroTubeModalProps {
   onOpenSettingsStudio?: () => void;
 }
 
-interface ProductiveVideo {
+interface PendingItem {
   id: string;
+  url?: string;
   title: string;
   channel: string;
-  category: string;
-  duration?: string;
+  category?: string;
+  isChannel?: boolean;
+  channelHandle?: string;
+  tags?: string[];
+  aiStudyScore?: number;
+  detectedExam?: string;
 }
-
-const VERIFIED_STUDY_VIDEOS: ProductiveVideo[] = [
-  {
-    id: 'kqtD5dpn9C8',
-    title: 'Python for Beginners – Full Course [Programming Tutorial]',
-    channel: 'freeCodeCamp.org',
-    category: 'Computer Science',
-    duration: '4h 26m',
-  },
-  {
-    id: 'aircAruvnKk',
-    title: 'Neural Networks: But what is a neural network? | Deep learning Chapter 1',
-    channel: '3Blue1Brown',
-    category: 'Mathematics & AI',
-    duration: '19m 13s',
-  },
-  {
-    id: 'zNMMpP8xTzE',
-    title: 'Harvard CS50 – Full Computer Science University Course',
-    channel: 'CS50',
-    category: 'Computer Science',
-    duration: '11h 55m',
-  },
-  {
-    id: 'VMj-3S1tku0',
-    title: 'Building micrograd: A neural network from scratch in Python',
-    channel: 'Andrej Karpathy',
-    category: 'AI & Engineering',
-    duration: '2h 25m',
-  },
-  {
-    id: 'vA5TTLM5U1g',
-    title: 'How to Focus & Master Attention | Huberman Lab Podcast',
-    channel: 'Andrew Huberman',
-    category: 'Neuroscience & Deep Work',
-    duration: '1h 35m',
-  },
-  {
-    id: '7eh4d6sabA0',
-    title: 'Linear Algebra – Full College Course',
-    channel: 'MIT OpenCourseWare',
-    category: 'Mathematics',
-    duration: '45m 12s',
-  },
-];
 
 export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   isOpen,
@@ -91,11 +53,9 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   initialVideoId,
   onOpenSettingsStudio,
 }) => {
-  const [activeVideoId, setActiveVideoId] = useState<string>('aircAruvnKk');
-  const [activeVideoTitle, setActiveVideoTitle] = useState<string>(
-    'Neural Networks: But what is a neural network? | Deep learning Chapter 1'
-  );
-  const [activeChannel, setActiveChannel] = useState<string>('3Blue1Brown');
+  const [activeVideoId, setActiveVideoId] = useState<string>('');
+  const [activeVideoTitle, setActiveVideoTitle] = useState<string>('');
+  const [activeChannel, setActiveChannel] = useState<string>('');
   const [searchUrlInput, setSearchUrlInput] = useState('');
   const [activeTab, setActiveTab] = useState<'catalog' | 'notes'>('catalog');
   const [customVideos, setCustomVideos] = useState<ZeroTubeCustomVideo[]>([]);
@@ -111,9 +71,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   // Intent friction check state
   const [showFrictionGate, setShowFrictionGate] = useState(false);
-  const [pendingVideo, setPendingVideo] = useState<{ id: string; title: string; channel: string } | null>(
-    null
-  );
+  const [pendingVideo, setPendingVideo] = useState<PendingItem | null>(null);
   const [frictionPhrase, setFrictionPhrase] = useState('');
   const [frictionError, setFrictionError] = useState(false);
 
@@ -124,9 +82,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
       setCustomVideos(vids);
 
       if (initialVideoId) {
-        const found =
-          vids.find((v) => v.id === initialVideoId) ||
-          VERIFIED_STUDY_VIDEOS.find((v) => v.id === initialVideoId);
+        const found = vids.find((v) => v.id === initialVideoId);
         if (found) {
           setActiveVideoId(found.id);
           setActiveVideoTitle(found.title);
@@ -136,15 +92,42 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
           setActiveVideoTitle(`Lecture (${initialVideoId})`);
           setActiveChannel('Custom Source');
         }
+      } else {
+        const firstLecture = vids.find((v) => !v.isChannel);
+        if (firstLecture) {
+          setActiveVideoId(firstLecture.id);
+          setActiveVideoTitle(firstLecture.title);
+          setActiveChannel(firstLecture.channel);
+        }
       }
     }
   }, [isOpen, initialVideoId]);
 
-  const handleSelectVideo = (video: ProductiveVideo | ZeroTubeCustomVideo) => {
+  const handleSelectVideo = (video: ZeroTubeCustomVideo) => {
     haptics.tick(600);
     setActiveVideoId(video.id);
     setActiveVideoTitle(video.title);
     setActiveChannel(video.channel);
+  };
+
+  const handleDeleteVideo = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    haptics.tick(800);
+    removeCustomZeroTubeVideo(id);
+    const updated = getCustomZeroTubeVideos();
+    setCustomVideos(updated);
+    if (activeVideoId === id) {
+      const next = updated.find((v) => !v.isChannel);
+      if (next) {
+        setActiveVideoId(next.id);
+        setActiveVideoTitle(next.title);
+        setActiveChannel(next.channel);
+      } else {
+        setActiveVideoId('');
+        setActiveVideoTitle('');
+        setActiveChannel('');
+      }
+    }
   };
 
   const handleLaunchExternalApp = () => {
@@ -180,26 +163,58 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   const handleSubmitUrlOrSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchUrlInput.trim()) return;
+    const rawInput = searchUrlInput.trim();
+    if (!rawInput) return;
 
-    const extractedId = extractYouTubeVideoId(searchUrlInput);
-    const channelHandle = extractYouTubeChannelHandle(searchUrlInput);
+    const extractedId = extractYouTubeVideoId(rawInput);
+    const channelHandle = extractYouTubeChannelHandle(rawInput);
 
     if (extractedId) {
-      const aiEval = evaluateVideoForStudy({ urlOrId: searchUrlInput });
+      const aiEval = evaluateVideoForStudy({ urlOrId: rawInput });
       if (aiEval.verdict === 'verified_productive') {
-        // High AI score: auto-whitelist immediately
+        // High AI score: auto-whitelist and save immediately
+        const title = aiEval.channelName || `Study Lecture (${extractedId})`;
+        const channel = aiEval.domainCategory || 'Verified Study';
+
+        const newVideo: ZeroTubeCustomVideo = {
+          id: extractedId,
+          url: rawInput.startsWith('http')
+            ? rawInput
+            : `https://www.youtube.com/watch?v=${extractedId}`,
+          title,
+          channel,
+          category: aiEval.domainCategory || 'Academic',
+          isChannel: false,
+          tags: aiEval.recommendedTags,
+          aiStudyScore: aiEval.studyScore,
+          aiVerdict: aiEval.verdict,
+          domainCategory: aiEval.domainCategory,
+          detectedExam: aiEval.detectedExam,
+          aiRationale: aiEval.rationale,
+          addedAt: Date.now(),
+        };
+
+        saveCustomZeroTubeVideo(newVideo);
+        setCustomVideos(getCustomZeroTubeVideos());
         setActiveVideoId(extractedId);
-        setActiveVideoTitle(`AI Verified Lecture (${extractedId})`);
-        setActiveChannel(aiEval.domainCategory);
+        setActiveVideoTitle(title);
+        setActiveChannel(channel);
         setSearchUrlInput('');
         haptics.tick(900);
       } else {
-        // Moderate or high distraction risk: trigger intentional cognitive friction
+        // Potential distraction risk or unrecognized lecture: trigger intentional cognitive friction
         setPendingVideo({
           id: extractedId,
-          title: `Custom Video (${extractedId})`,
-          channel: aiEval.domainCategory || 'External Source',
+          url: rawInput.startsWith('http')
+            ? rawInput
+            : `https://www.youtube.com/watch?v=${extractedId}`,
+          title: `Study Lecture (${extractedId})`,
+          channel: aiEval.domainCategory || 'Personal Study',
+          category: aiEval.domainCategory || 'Academic',
+          isChannel: false,
+          tags: aiEval.recommendedTags,
+          aiStudyScore: aiEval.studyScore,
+          detectedExam: aiEval.detectedExam,
         });
         setShowFrictionGate(true);
         setFrictionPhrase('');
@@ -207,7 +222,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
         haptics.thud();
       }
     } else if (channelHandle) {
-      const aiEval = evaluateVideoForStudy({ urlOrId: searchUrlInput });
+      const aiEval = evaluateVideoForStudy({ urlOrId: rawInput });
       if (aiEval.verdict === 'verified_productive') {
         // Educational channel verified! Auto-whitelist channel and trust creator (Regain style)
         saveUserTrustedChannel(channelHandle);
@@ -215,8 +230,8 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
         const newChan: ZeroTubeCustomVideo = {
           id: channelHandle,
-          url: searchUrlInput.trim().startsWith('http')
-            ? searchUrlInput.trim()
+          url: rawInput.startsWith('http')
+            ? rawInput
             : `https://youtube.com/${channelHandle}`,
           title: aiEval.channelName || channelHandle,
           channel: channelHandle,
@@ -238,13 +253,29 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
         setSearchUrlInput('');
         handleLaunchExternalUrl(newChan.url);
       } else {
-        alert(
-          `Distraction Risk: ${channelHandle} carries leisure or entertainment markers (${aiEval.studyScore}/100) and cannot be whitelisted.`
-        );
+        // Educational channel with moderate score: let the student pledge intent via friction gate
+        setPendingVideo({
+          id: channelHandle,
+          url: rawInput.startsWith('http')
+            ? rawInput
+            : `https://youtube.com/${channelHandle}`,
+          title: channelHandle,
+          channel: channelHandle,
+          category: 'Study Channel',
+          isChannel: true,
+          channelHandle,
+          tags: aiEval.recommendedTags,
+          aiStudyScore: aiEval.studyScore,
+          detectedExam: aiEval.detectedExam,
+        });
+        setShowFrictionGate(true);
+        setFrictionPhrase('');
+        setFrictionError(false);
+        haptics.thud();
       }
     } else {
       alert(
-        'Productive Mode: Direct video or educational channel URL pasting is verified with AI study evaluation. Searching uncurated algorithmic feeds is blocked to prevent dopamine traps.'
+        'Productive Mode: Direct video or educational channel URL pasting is verified with AI study evaluation. Paste a YouTube link or handle.'
       );
     }
   };
@@ -255,9 +286,44 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     if (clean === 'i am productive.' || clean === 'i am productive') {
       haptics.tick(900);
       if (pendingVideo) {
-        setActiveVideoId(pendingVideo.id);
-        setActiveVideoTitle(pendingVideo.title);
-        setActiveChannel(pendingVideo.channel);
+        if (pendingVideo.isChannel) {
+          saveUserTrustedChannel(pendingVideo.id);
+          if (pendingVideo.channelHandle) saveUserTrustedChannel(pendingVideo.channelHandle);
+        }
+
+        const newVideo: ZeroTubeCustomVideo = {
+          id: pendingVideo.id,
+          url:
+            pendingVideo.url ||
+            (pendingVideo.isChannel
+              ? `https://youtube.com/${pendingVideo.id}`
+              : `https://www.youtube.com/watch?v=${pendingVideo.id}`),
+          title: pendingVideo.title,
+          channel: pendingVideo.channel,
+          category: pendingVideo.category || (pendingVideo.isChannel ? 'Study Channel' : 'Personal Study'),
+          isChannel: pendingVideo.isChannel || false,
+          channelHandle: pendingVideo.channelHandle,
+          tags: pendingVideo.tags || ['study', 'user-whitelisted'],
+          aiStudyScore: pendingVideo.aiStudyScore ?? 85,
+          aiVerdict: 'verified_productive',
+          domainCategory: pendingVideo.category || 'Study Video',
+          detectedExam: pendingVideo.detectedExam,
+          aiRationale: 'Authorized by student under productive friction pledge: "I am productive."',
+          addedAt: Date.now(),
+        };
+
+        // Persist to custom ZeroTube list
+        saveCustomZeroTubeVideo(newVideo);
+        const updated = getCustomZeroTubeVideos();
+        setCustomVideos(updated);
+
+        if (!pendingVideo.isChannel) {
+          setActiveVideoId(pendingVideo.id);
+          setActiveVideoTitle(pendingVideo.title);
+          setActiveChannel(pendingVideo.channel);
+        } else {
+          handleLaunchExternalUrl(newVideo.url);
+        }
       }
       setShowFrictionGate(false);
       setPendingVideo(null);
@@ -296,12 +362,13 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                 <span className="text-xs font-bold tracking-wider text-white uppercase">
                   ZeroTube // Study Player
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wide uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wide uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                  <ShieldCheck size={10} />
                   Productive Only
                 </span>
               </div>
               <p className="text-[10px] text-zinc-400 font-mono tracking-widest mt-0.5">
-                NO SHORTS • NO ALGORITHMIC FEEDS • NO COMMENTS
+                NO ADS • NO SHORTS • NO ALGORITHMIC FEEDS
               </p>
             </div>
           </div>
@@ -318,23 +385,37 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
           </button>
         </div>
 
-        {/* Video Screen Container */}
+        {/* Video Screen Container - Ad-free & Distraction-free */}
         <div className="w-full bg-black relative aspect-video shrink-0 border-b border-white/[0.08]">
-          <iframe
-            title={activeVideoTitle}
-            src={`https://www.youtube-nocookie.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&controls=1`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full border-0"
-          />
+          {activeVideoId ? (
+            <iframe
+              title={activeVideoTitle || 'Study Video'}
+              src={`https://www.youtube-nocookie.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&controls=1&playsinline=1`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-zinc-400 bg-zinc-950/60">
+              <div className="w-12 h-12 rounded-2xl liquid-inset flex items-center justify-center text-cyan-400 mb-3 border border-white/5 shadow-inner">
+                <Play size={22} fill="currentColor" />
+              </div>
+              <h3 className="text-xs font-bold text-white tracking-wide">No Lecture Loaded</h3>
+              <p className="text-[11px] text-zinc-400 mt-1 max-w-xs leading-relaxed">
+                Paste any YouTube video or channel link below to stream ad-free without distraction traps.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Video Metadata & Controls */}
         <div className="px-5 py-2.5 border-b border-white/[0.08] flex items-center justify-between shrink-0 bg-white/[0.01]">
           <div className="min-w-0 flex-1 pr-3">
-            <h4 className="text-xs font-semibold text-white truncate">{activeVideoTitle}</h4>
+            <h4 className="text-xs font-semibold text-white truncate">
+              {activeVideoTitle || 'Select a lecture to play'}
+            </h4>
             <span className="text-[10px] font-mono text-cyan-300 uppercase tracking-wider">
-              {activeChannel}
+              {activeChannel || 'Zero-Distraction Mode'}
             </span>
           </div>
 
@@ -342,11 +423,11 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
             <button
               type="button"
               onClick={handleLaunchExternalApp}
-              title="Launch YouTube or YouTube Morph"
+              title="Launch YouTube or Ad-Free Morph App"
               className="px-2.5 py-1.5 rounded-xl liquid-pill-inactive text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
             >
               <ExternalLink size={12} />
-              <span>Morph App</span>
+              <span>Morph App (Ad-Free)</span>
             </button>
 
             {onOpenSettingsStudio && (
@@ -395,7 +476,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                     type="text"
                     value={searchUrlInput}
                     onChange={(e) => setSearchUrlInput(e.target.value)}
-                    placeholder="Paste YouTube or Morph URL to play (AI Evaluated)..."
+                    placeholder="Paste YouTube video or channel link (@handle or URL)..."
                     className="w-full pl-9 pr-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 border border-white/10"
                   />
                 </div>
@@ -420,19 +501,31 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {customChannels.map((vid) => (
-                      <button
+                      <div
                         key={vid.id}
-                        type="button"
-                        onClick={() => handleLaunchExternalUrl(vid.url)}
-                        className="text-left p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col justify-between"
+                        className="p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between group"
                       >
                         <div className="flex items-start justify-between gap-1 mb-1">
-                          <div className="text-xs font-semibold text-white line-clamp-1 leading-snug">
+                          <button
+                            type="button"
+                            onClick={() => handleLaunchExternalUrl(vid.url)}
+                            className="text-xs font-semibold text-white line-clamp-1 leading-snug text-left hover:text-emerald-300 cursor-pointer flex-1"
+                          >
                             {vid.title}
+                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteVideo(e, vid.id)}
+                              title="Remove from Whitelist"
+                              className="text-zinc-500 hover:text-rose-400 p-0.5 cursor-pointer"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                            <ExternalLink size={11} className="text-emerald-400 shrink-0" />
                           </div>
-                          <ExternalLink size={11} className="text-emerald-400 shrink-0 mt-0.5" />
                         </div>
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono mt-1">
                           <span className="text-emerald-300 font-bold">{vid.channel}</span>
                           <div className="flex items-center gap-1">
                             {vid.detectedExam && (
@@ -445,7 +538,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                             </span>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -475,65 +568,65 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                     {customLectures.map((vid) => {
                       const isPlaying = vid.id === activeVideoId;
                       return (
-                        <button
+                        <div
                           key={vid.id}
-                          type="button"
-                          onClick={() => handleSelectVideo(vid)}
-                          className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between group ${
                             isPlaying
                               ? 'bg-cyan-500/10 border-cyan-400/40 text-white'
                               : 'liquid-inset border-white/5 text-zinc-300 hover:border-white/20'
                           }`}
                         >
-                          <div className="text-xs font-semibold line-clamp-2 mb-1.5 leading-snug">
-                            {vid.title}
+                          <div className="flex items-start justify-between gap-1 mb-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectVideo(vid)}
+                              className="text-xs font-semibold line-clamp-2 leading-snug text-left hover:text-cyan-300 cursor-pointer flex-1"
+                            >
+                              {vid.title}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteVideo(e, vid.id)}
+                              title="Remove lecture"
+                              className="text-zinc-500 hover:text-rose-400 p-0.5 shrink-0 cursor-pointer"
+                            >
+                              <Trash2 size={12} />
+                            </button>
                           </div>
                           <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
-                            <span className="text-cyan-300">{vid.channel}</span>
-                            <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300">
-                              AI: {vid.aiStudyScore}
-                            </span>
+                            <span className="text-cyan-300 truncate max-w-[140px]">{vid.channel}</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {vid.detectedExam && (
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">
+                                  {vid.detectedExam}
+                                </span>
+                              )}
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300">
+                                AI: {vid.aiStudyScore}
+                              </span>
+                            </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               )}
 
-              {/* Verified Productive Lectures */}
-              <div className="space-y-1.5 pt-1">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-1.5 px-0.5">
-                  <BookOpen size={11} className="text-cyan-400" />
-                  <span>Curated Study Catalog (Built-in)</span>
+              {/* Zero Custom Videos Empty State */}
+              {customChannels.length === 0 && customLectures.length === 0 && (
+                <div className="py-10 px-4 text-center rounded-2xl liquid-inset border border-white/5 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mx-auto">
+                    <GraduationCap size={24} />
+                  </div>
+                  <h3 className="text-xs font-bold text-white tracking-wide">
+                    Your Study Whitelist Is Clean &amp; Empty
+                  </h3>
+                  <p className="text-[11px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                    ZeroTube is dedicated solely to your own curriculum. Paste any YouTube lecture or exam channel link above to study ad-free without algorithm traps.
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {VERIFIED_STUDY_VIDEOS.map((vid) => {
-                    const isPlaying = vid.id === activeVideoId;
-                    return (
-                      <button
-                        key={vid.id}
-                        type="button"
-                        onClick={() => handleSelectVideo(vid)}
-                        className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                          isPlaying
-                            ? 'bg-cyan-500/10 border-cyan-400/40 text-white'
-                            : 'liquid-inset border-white/5 text-zinc-300 hover:border-white/20'
-                        }`}
-                      >
-                        <div className="text-xs font-semibold line-clamp-2 mb-1.5 leading-snug">
-                          {vid.title}
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
-                          <span className="text-cyan-300">{vid.channel}</span>
-                          <span>{vid.duration}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              )}
             </>
           ) : (
             /* Study Notes Tab */
@@ -565,8 +658,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                   Productive Intent Check
                 </h3>
                 <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                  This video carries potential distraction flags. If this content is strictly required for
-                  your studies, confirm by typing:
+                  To confirm this content is strictly required for your studies, verify your intent by typing:
                 </p>
                 <div className="my-2 py-1.5 px-3 rounded-lg bg-white/5 border border-white/10 text-cyan-300 font-mono text-xs font-bold select-all">
                   I am productive.
