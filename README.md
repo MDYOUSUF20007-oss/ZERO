@@ -1,4 +1,4 @@
-# Zero-Distractions (Zero App)
+# Zero-Noise (Zero App)
 
 > **"Your attention is the only asset you cannot buy back. Lock the phone. Do the work."**
 
