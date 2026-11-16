@@ -837,8 +837,17 @@ class ZeroNativeBridge(
         TheVoidActivity.bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 3500L
         return try {
             val launchIntent = activity.packageManager.getLaunchIntentForPackage(packageName)
-                ?: if (packageName.contains("morphe")) {
-                    activity.packageManager.getLaunchIntentForPackage("com.google.android.youtube")
+                ?: if (packageName.contains("morphe") || packageName.contains("youtube")) {
+                    val candidates = listOf(
+                        "app.morphe.android.youtube",
+                        "app.morphe.youtube",
+                        "app.revanced.android.youtube",
+                        "app.rvx.android.youtube",
+                        "com.google.android.youtube",
+                        "org.schabi.newpipe",
+                        "com.github.libretube"
+                    )
+                    candidates.firstNotNullOfOrNull { activity.packageManager.getLaunchIntentForPackage(it) }
                 } else null
             if (launchIntent != null) {
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -847,6 +856,46 @@ class ZeroNativeBridge(
             } else {
                 false
             }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun launchYouTubeOrMorphApp(): Boolean {
+        TheVoidActivity.activeBagPackage = "com.google.android.youtube"
+        TheVoidActivity.bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 5000L
+        val candidates = listOf(
+            "app.morphe.android.youtube",
+            "app.morphe.youtube",
+            "app.revanced.android.youtube",
+            "app.rvx.android.youtube",
+            "com.google.android.youtube",
+            "org.schabi.newpipe",
+            "com.github.libretube"
+        )
+        for (pkg in candidates) {
+            try {
+                val intent = activity.packageManager.getLaunchIntentForPackage(pkg)
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    activity.startActivity(intent)
+                    return true
+                }
+            } catch (_: Exception) {}
+        }
+        return false
+    }
+
+    @JavascriptInterface
+    fun openYouTubeUrl(url: String): Boolean {
+        TheVoidActivity.bagLaunchGraceUntilElapsed = SystemClock.elapsedRealtime() + 5000L
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(intent)
+            true
         } catch (_: Exception) {
             false
         }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Play,
@@ -7,13 +7,24 @@ import {
   FileText,
   ExternalLink,
   Lock,
+  Sparkles,
+  Settings,
+  Plus,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
+import {
+  extractYouTubeVideoId,
+  evaluateVideoForStudy,
+  getCustomZeroTubeVideos,
+  type ZeroTubeCustomVideo,
+} from '../utils/aiStudyVerifier';
 
 interface ZeroTubeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLaunchMorphApp?: () => void;
+  initialVideoId?: string;
+  onOpenSettingsStudio?: () => void;
 }
 
 interface ProductiveVideo {
@@ -21,7 +32,7 @@ interface ProductiveVideo {
   title: string;
   channel: string;
   category: string;
-  duration: string;
+  duration?: string;
 }
 
 const VERIFIED_STUDY_VIDEOS: ProductiveVideo[] = [
@@ -73,6 +84,8 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   isOpen,
   onClose,
   onLaunchMorphApp,
+  initialVideoId,
+  onOpenSettingsStudio,
 }) => {
   const [activeVideoId, setActiveVideoId] = useState<string>('aircAruvnKk');
   const [activeVideoTitle, setActiveVideoTitle] = useState<string>(
@@ -81,6 +94,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const [activeChannel, setActiveChannel] = useState<string>('3Blue1Brown');
   const [searchUrlInput, setSearchUrlInput] = useState('');
   const [activeTab, setActiveTab] = useState<'catalog' | 'notes'>('catalog');
+  const [customVideos, setCustomVideos] = useState<ZeroTubeCustomVideo[]>([]);
   const [studyNotes, setStudyNotes] = useState<string>(() => {
     try {
       return localStorage.getItem('zero_tube_study_notes_v1') || '';
@@ -97,52 +111,83 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const [frictionPhrase, setFrictionPhrase] = useState('');
   const [frictionError, setFrictionError] = useState(false);
 
-  // Extract YouTube ID from various URL patterns
-  const extractVideoId = (input: string): string | null => {
-    const trimmed = input.trim();
-    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  // Sync custom videos and initial video ID on modal open
+  useEffect(() => {
+    if (isOpen) {
+      const vids = getCustomZeroTubeVideos();
+      setCustomVideos(vids);
 
-    try {
-      const parsedUrl = new URL(trimmed);
-      if (parsedUrl.hostname.includes('youtube.com')) {
-        return parsedUrl.searchParams.get('v');
+      if (initialVideoId) {
+        const found =
+          vids.find((v) => v.id === initialVideoId) ||
+          VERIFIED_STUDY_VIDEOS.find((v) => v.id === initialVideoId);
+        if (found) {
+          setActiveVideoId(found.id);
+          setActiveVideoTitle(found.title);
+          setActiveChannel(found.channel);
+        } else {
+          setActiveVideoId(initialVideoId);
+          setActiveVideoTitle(`Lecture (${initialVideoId})`);
+          setActiveChannel('Custom Source');
+        }
       }
-      if (parsedUrl.hostname.includes('youtu.be')) {
-        return parsedUrl.pathname.slice(1).split('?')[0];
-      }
-    } catch {
-      // Not a valid URL
     }
-    return null;
-  };
+  }, [isOpen, initialVideoId]);
 
-  const handleSelectVideo = (video: ProductiveVideo) => {
+  const handleSelectVideo = (video: ProductiveVideo | ZeroTubeCustomVideo) => {
     haptics.tick(600);
     setActiveVideoId(video.id);
     setActiveVideoTitle(video.title);
     setActiveChannel(video.channel);
   };
 
+  const handleLaunchExternalApp = () => {
+    haptics.tick(700);
+    if (onLaunchMorphApp) {
+      onLaunchMorphApp();
+      return;
+    }
+    const pkg = 'app.morphe.android.youtube';
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchYouTubeOrMorphApp) {
+      const launched = (window.ZeroNative as any).launchYouTubeOrMorphApp();
+      if (launched) return;
+    }
+    if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchBagApp) {
+      const launched = (window.ZeroNative as any).launchBagApp(pkg);
+      if (launched) return;
+    }
+    window.location.href = 'https://www.youtube.com';
+  };
+
   const handleSubmitUrlOrSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchUrlInput.trim()) return;
 
-    const extractedId = extractVideoId(searchUrlInput);
+    const extractedId = extractYouTubeVideoId(searchUrlInput);
     if (extractedId) {
-      // Trigger intentional friction test for custom external video
-      setPendingVideo({
-        id: extractedId,
-        title: `Custom Video (${extractedId})`,
-        channel: 'External Source',
-      });
-      setShowFrictionGate(true);
-      setFrictionPhrase('');
-      setFrictionError(false);
-      haptics.thud();
+      const aiEval = evaluateVideoForStudy({ urlOrId: searchUrlInput });
+      if (aiEval.verdict === 'verified_productive') {
+        // High AI score: auto-whitelist immediately
+        setActiveVideoId(extractedId);
+        setActiveVideoTitle(`AI Verified Lecture (${extractedId})`);
+        setActiveChannel(aiEval.domainCategory);
+        setSearchUrlInput('');
+        haptics.tick(900);
+      } else {
+        // Moderate or high distraction risk: trigger intentional cognitive friction
+        setPendingVideo({
+          id: extractedId,
+          title: `Custom Video (${extractedId})`,
+          channel: aiEval.domainCategory || 'External Source',
+        });
+        setShowFrictionGate(true);
+        setFrictionPhrase('');
+        setFrictionError(false);
+        haptics.thud();
+      }
     } else {
-      // Search intent on verified channel
       alert(
-        'Productive Mode: Direct URL pasting is verified with "I am productive." confirmation. Searching uncurated feeds is blocked to prevent algorithmic distractions.'
+        'Productive Mode: Direct URL pasting is verified with AI study evaluation. Searching uncurated algorithmic feeds is blocked to prevent dopamine traps.'
       );
     }
   };
@@ -237,18 +282,28 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {onLaunchMorphApp && (
+            <button
+              type="button"
+              onClick={handleLaunchExternalApp}
+              title="Launch YouTube or YouTube Morph"
+              className="px-2.5 py-1.5 rounded-xl liquid-pill-inactive text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
+            >
+              <ExternalLink size={12} />
+              <span>Morph App</span>
+            </button>
+
+            {onOpenSettingsStudio && (
               <button
                 type="button"
                 onClick={() => {
-                  haptics.tick(700);
-                  onLaunchMorphApp();
+                  haptics.tick(600);
+                  onOpenSettingsStudio();
                 }}
-                title="Launch in YouTube Morph"
-                className="px-2.5 py-1.5 rounded-xl liquid-pill-inactive text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                title="Manage Whitelist in Settings"
+                className="px-2.5 py-1.5 rounded-xl liquid-pill-inactive text-[10px] font-bold uppercase tracking-wider text-cyan-300 hover:text-white flex items-center gap-1 cursor-pointer"
               >
-                <ExternalLink size={12} />
-                <span>Morph App</span>
+                <Settings size={12} />
+                <span>Studio</span>
               </button>
             )}
 
@@ -283,7 +338,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                     type="text"
                     value={searchUrlInput}
                     onChange={(e) => setSearchUrlInput(e.target.value)}
-                    placeholder="Paste YouTube or Morph URL to play..."
+                    placeholder="Paste YouTube or Morph URL to play (AI Evaluated)..."
                     className="w-full pl-9 pr-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 border border-white/10"
                   />
                 </div>
@@ -295,11 +350,61 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                 </button>
               </form>
 
+              {/* Custom Whitelisted Videos (if any) */}
+              {customVideos.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-cyan-300 flex items-center justify-between px-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles size={11} />
+                      <span>My Whitelisted Lectures ({customVideos.length})</span>
+                    </div>
+                    {onOpenSettingsStudio && (
+                      <button
+                        type="button"
+                        onClick={onOpenSettingsStudio}
+                        className="text-[9px] uppercase tracking-wider text-zinc-400 hover:text-white flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus size={10} />
+                        <span>Add More</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {customVideos.map((vid) => {
+                      const isPlaying = vid.id === activeVideoId;
+                      return (
+                        <button
+                          key={vid.id}
+                          type="button"
+                          onClick={() => handleSelectVideo(vid)}
+                          className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                            isPlaying
+                              ? 'bg-cyan-500/10 border-cyan-400/40 text-white'
+                              : 'liquid-inset border-white/5 text-zinc-300 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="text-xs font-semibold line-clamp-2 mb-1.5 leading-snug">
+                            {vid.title}
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                            <span className="text-cyan-300">{vid.channel}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300">
+                              AI: {vid.aiStudyScore}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Verified Productive Lectures */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 pt-1">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-1.5 px-0.5">
                   <BookOpen size={11} className="text-cyan-400" />
-                  <span>Curated Study Catalog (Whitelisted)</span>
+                  <span>Curated Study Catalog (Built-in)</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -333,7 +438,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
             /* Study Notes Tab */
             <div className="h-full flex flex-col space-y-2">
               <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 uppercase tracking-widest px-0.5">
-                <span>Lecture & Study Scratchpad</span>
+                <span>Lecture &amp; Study Scratchpad</span>
                 <span className="text-cyan-400">Auto-Saved Locally</span>
               </div>
               <textarea
@@ -359,7 +464,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                   Productive Intent Check
                 </h3>
                 <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                  This video is from an unverified source. If this content is directly required for
+                  This video carries potential distraction flags. If this content is strictly required for
                   your studies, confirm by typing:
                 </p>
                 <div className="my-2 py-1.5 px-3 rounded-lg bg-white/5 border border-white/10 text-cyan-300 font-mono text-xs font-bold select-all">

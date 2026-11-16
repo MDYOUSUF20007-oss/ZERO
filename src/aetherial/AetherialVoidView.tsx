@@ -4,6 +4,7 @@ import { resolveAppBrandVisual } from '../utils/appBrandColors';
 import { voidAudio } from '../utils/voidAudio';
 import { haptics } from '../utils/haptics';
 import { AmbientBackground } from '../components/AmbientBackground';
+import { ZeroTubeModal } from '../components/ZeroTubeModal';
 import {
   Phone,
   CreditCard,
@@ -51,6 +52,7 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showBreakConfirm, setShowBreakConfirm] = useState(false);
+  const [showZeroTube, setShowZeroTube] = useState(false);
   const [breakReason, setBreakReason] = useState('');
   const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
   const hasPlayedZenChimeRef = useRef(false);
@@ -369,6 +371,22 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
             </div>
             <span className="text-[10px] font-medium text-[#4edea3]">Pay</span>
           </button>
+
+          {/* 5. ZeroTube Study Player */}
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(600);
+              setShowZeroTube(true);
+            }}
+            aria-label="Open ZeroTube Distraction-Free Study Player"
+            className="flex flex-col items-center gap-1 p-1 rounded-xl hover:scale-105 active:scale-95 cursor-pointer shrink-0 transition-transform"
+          >
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br from-[#0284c7] to-[#0369a1] text-white border border-[#38bdf8]/40">
+              <Play size={18} fill="currentColor" />
+            </div>
+            <span className="text-[10px] font-medium text-[#38bdf8]">ZeroTube</span>
+          </button>
         </div>
 
         {/* Action Controls: Emergency Dial & Escape */}
@@ -621,6 +639,32 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ZEROTUBE DISTRACTION-FREE STUDY PLAYER MODAL */}
+      <ZeroTubeModal
+        isOpen={showZeroTube}
+        onClose={() => setShowZeroTube(false)}
+        onLaunchMorphApp={() => {
+          setShowZeroTube(false);
+          const pkg = 'app.morphe.android.youtube';
+          if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchYouTubeOrMorphApp) {
+            const launched = (window.ZeroNative as any).launchYouTubeOrMorphApp();
+            if (launched) {
+              haptics.thud();
+              return;
+            }
+          }
+          if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchBagApp) {
+            const launched = (window.ZeroNative as any).launchBagApp(pkg);
+            if (launched) {
+              haptics.thud();
+              return;
+            }
+          }
+          window.location.href = `intent:#Intent;package=${pkg};end`;
+          haptics.thud();
+        }}
+      />
     </div>
   );
 };

@@ -34,6 +34,8 @@ import { ZeroSupporterGoldenBadge } from './AchievementBadgeChip';
 import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import { ObsidianCard } from './ObsidianCard';
 import { CreditsModal } from './CreditsModal';
+import { ZeroTubeSettingsCard } from './ZeroTubeSettingsCard';
+import { ZeroTubeModal } from './ZeroTubeModal';
 import {
   getAllThemeMods,
   applyThemeModStyles,
@@ -245,6 +247,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   );
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [showZeroTubeModal, setShowZeroTubeModal] = useState(false);
+  const [selectedZeroTubeVideoId, setSelectedZeroTubeVideoId] = useState<string | undefined>(undefined);
   const [themeModsList, setThemeModsList] = useState(() => getAllThemeMods());
   const [activeModId, setActiveModId] = useState<string | null>(() => getActiveThemeModId());
   const [showImportModModal, setShowImportModModal] = useState(false);
@@ -2053,6 +2057,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             }
           />
 
+          {/* CARD #6.5: ZEROTUBE STUDY PLAYER & AI LINK WHITELIST STUDIO */}
+          <ZeroTubeSettingsCard
+            isBespoke={isBespoke}
+            isFluentGlass={isFluentGlass}
+            isModernFont={isModernFont}
+            onOpenZeroTubePlayer={(videoId) => {
+              setSelectedZeroTubeVideoId(videoId);
+              setShowZeroTubeModal(true);
+            }}
+          />
+
           {/* CARD #7: DONOR PERKS & BADGES */}
           <DonorPerksBadgesCard
             isZeroSupporter={supporterBadgeUnlocked}
@@ -3330,6 +3345,16 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       <CreditsModal
         isOpen={showCreditsModal}
         onClose={() => setShowCreditsModal(false)}
+      />
+
+      {/* ZeroTube Study Player Modal */}
+      <ZeroTubeModal
+        isOpen={showZeroTubeModal}
+        onClose={() => {
+          setShowZeroTubeModal(false);
+          setSelectedZeroTubeVideoId(undefined);
+        }}
+        initialVideoId={selectedZeroTubeVideoId}
       />
 
       {/* Import Theme Mod JSON Modal */}

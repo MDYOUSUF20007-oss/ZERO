@@ -1617,11 +1617,21 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         onLaunchMorphApp={() => {
           setShowZeroTube(false);
           const pkg = 'app.morphe.android.youtube';
-          if (typeof window !== 'undefined' && window.ZeroNative?.openExternalUrl) {
-            window.ZeroNative.openExternalUrl(`intent:#Intent;package=${pkg};end`);
-          } else {
-            window.location.href = `intent:#Intent;package=${pkg};end`;
+          if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchYouTubeOrMorphApp) {
+            const launched = (window.ZeroNative as any).launchYouTubeOrMorphApp();
+            if (launched) {
+              haptics.thud();
+              return;
+            }
           }
+          if (typeof window !== 'undefined' && (window.ZeroNative as any)?.launchBagApp) {
+            const launched = (window.ZeroNative as any).launchBagApp(pkg);
+            if (launched) {
+              haptics.thud();
+              return;
+            }
+          }
+          window.location.href = `intent:#Intent;package=${pkg};end`;
           haptics.thud();
         }}
       />
