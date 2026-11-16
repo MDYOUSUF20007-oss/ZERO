@@ -17,6 +17,7 @@ import { LiquidDock } from './components/LiquidDock';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { InteractiveTour } from './components/InteractiveTour';
 import { SessionVictoryModal } from './components/SessionVictoryModal';
+import { AetherialController, AetherialVoidView } from './aetherial';
 import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
 import { IntegrityEngine } from './core/integrity/IntegrityEngine';
 import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from './utils/autoUpdater';
@@ -242,10 +243,22 @@ export function App() {
   };
 
   const isBespoke = store.interfaceStyle === 'bespoke' || store.interfaceStyle === 'minimalist' || store.interfaceStyle === 'minimal';
-  const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent' || store.interfaceStyle === 'aetherial';
+  const isFluentGlass = store.interfaceStyle === 'fluent_glass' || store.interfaceStyle === 'fluent';
+  const isAetherial = store.interfaceStyle === 'aetherial';
 
   // If Lock is active, THE VOID takes over everything
   if (store.activeLock.isLocked) {
+    if (isAetherial) {
+      return (
+        <AetherialVoidView
+          activeLock={store.activeLock}
+          parachuteMetrics={store.parachuteMetrics}
+          activeBag={store.activeBag}
+          profile={store.profile}
+          onDeployParachute={store.deployParachute}
+        />
+      );
+    }
     return (
       <InterfaceStyleProvider
         interfaceStyle={store.interfaceStyle}
@@ -265,6 +278,157 @@ export function App() {
           themeConfig={store.themeConfig}
           onDeployParachute={store.deployParachute}
         />
+      </InterfaceStyleProvider>
+    );
+  }
+
+  // If Aetherial Focus is selected, render isolated Stitch controller & views
+  if (isAetherial) {
+    return (
+      <InterfaceStyleProvider
+        interfaceStyle={store.interfaceStyle}
+        setInterfaceStyle={store.setInterfaceStyle}
+        materialYouSeed={store.materialYouSeed}
+        setMaterialYouSeed={store.setMaterialYouSeed}
+        materialYouAmoled={store.materialYouAmoled}
+        setMaterialYouAmoled={store.setMaterialYouAmoled}
+        themeConfig={store.themeConfig}
+        setThemeConfig={store.setThemeConfig}
+      >
+        <AetherialController
+          onOpenProfileModal={openInteractiveProfile}
+          onOpenBagDrawer={() => {
+            store.refreshInstalledApps();
+            setShowBagModal(true);
+          }}
+          onOpenThemes={() => {
+            setRulesSectionOverride({ section: 'themes', key: Date.now() });
+            setActiveTab('schedules');
+          }}
+        />
+
+        {/* Modals */}
+        <BagDrawerModal
+          isOpen={showBagModal}
+          bags={store.bags}
+          activeBagId={store.activeBagId}
+          installedApps={store.installedApps}
+          environmentSecurity={store.environmentSecurity}
+          onClose={() => setShowBagModal(false)}
+          onSelectActiveBag={store.setActiveBagId}
+          onUpdateBag={store.updateBag}
+          onToggleBagApp={store.toggleBagApp}
+          onUpdateBagAppRule={store.updateBagAppRule}
+          onCreateCustomBag={store.createCustomBag}
+          onDeleteCustomBag={store.deleteCustomBag}
+          onRefreshInstalledApps={store.refreshInstalledApps}
+        />
+
+        <PermissionGateModal
+          isOpen={showPermissionModal}
+          permissions={store.permissions}
+          onClose={() => setShowPermissionModal(false)}
+          onRefresh={store.refreshPermissions}
+          onProceedReady={() => setShowPermissionModal(false)}
+        />
+
+        <TipAfterSessionModal
+          completedSession={store.postSessionTipPrompt}
+          hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
+          onClaimFirstDonationBonus={store.claimFirstDonationBonus}
+          onShareResults={() => {
+            store.dismissPostSessionTipPrompt();
+            setShowSessionFlexModal(true);
+          }}
+          onDismiss={store.dismissPostSessionTipPrompt}
+          onBlockFiveSessions={store.blockTipPromptForFiveSessions}
+        />
+
+        <ShareStatsModal
+          isOpen={showSessionFlexModal}
+          sessions={store.sessions}
+          parachuteMetrics={store.parachuteMetrics}
+          currentStreak={store.currentStreak}
+          profile={store.profile}
+          themeConfig={store.themeConfig}
+          isZeroSupporter={store.isZeroSupporter}
+          onClose={() => setShowSessionFlexModal(false)}
+        />
+
+        <ProfileModal
+          isOpen={showProfileModal}
+          mode={profileModalMode}
+          initialProfile={store.profile}
+          hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+          isZeroSupporter={store.isZeroSupporter}
+          sessions={store.sessions}
+          totalReclaimedHours={store.parachuteMetrics.totalReclaimedHours}
+          themeConfig={store.themeConfig}
+          onThemeConfigChange={store.setThemeConfig}
+          customHashtags={store.customHashtags}
+          onAddCustomHashtag={store.addCustomHashtag}
+          isCloudBusy={store.isCloudBusy}
+          environmentSecurity={store.environmentSecurity}
+          onRestoreFromCloud={store.restoreBackupFromCloudPicker}
+          onRestoreSuccess={handleCloudRestoreSuccess}
+          onSaveProfile={store.saveProfileAndClaimGift}
+          onClose={() => {
+            setShowProfileModal(false);
+            if (profileModalMode === 'welcome') {
+              store.dismissWelcomePrompt();
+            }
+          }}
+        />
+
+        <ParachuteRewardAnimation
+          reward={store.parachuteRewardEvent}
+          onDismiss={store.dismissParachuteRewardAnimation}
+        />
+
+        <EscapeTicketModal
+          isOpen={showTicketModal}
+          parachuteMetrics={store.parachuteMetrics}
+          profile={store.profile}
+          isZeroSupporter={store.isZeroSupporter}
+          hasClaimedFirstTimeParachute={store.hasClaimedFirstTimeParachute}
+          hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
+          onClose={() => setShowTicketModal(false)}
+          onOpenProfile={() => {
+            setShowTicketModal(false);
+            openInteractiveProfile();
+          }}
+          onOpenSupport={() => {
+            setShowTicketModal(false);
+            setActiveTab('support');
+          }}
+          onOpenInsights={() => {
+            setShowTicketModal(false);
+            setActiveTab('dashboard');
+          }}
+        />
+
+        {/* 2-Second Swipe Again to Exit Toast */}
+        {exitToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+            <div className="px-4 py-2 rounded-full bg-zinc-900/95 border border-zinc-700 text-xs font-medium text-white shadow-xl flex items-center gap-2">
+              <span>Swipe back again to exit Zero</span>
+            </div>
+          </div>
+        )}
+
+        {/* Mindful Closure: What Did You Build? Victory Card */}
+        {store.victorySession && (
+          <SessionVictoryModal
+            durationSeconds={store.victorySession.durationSeconds}
+            sessionTag={store.victorySession.tag}
+            onSave={(note, rating) => {
+              store.saveSessionReflection(store.victorySession!.id, note, rating);
+            }}
+            onDismiss={() => {
+              store.dismissVictoryModal();
+            }}
+          />
+        )}
       </InterfaceStyleProvider>
     );
   }
