@@ -21,8 +21,6 @@ import {
   Phone,
   AlertTriangle,
   MessageSquare,
-  Battery,
-  Wifi,
   Sparkles,
   Lock,
   Volume2,
@@ -288,6 +286,26 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return format12HourClock(finishDate);
   }, [activeLock.remainingSeconds]);
 
+  // Hide Android top notification/status bar while inside The Void (Immersive Fullscreen)
+  useEffect(() => {
+    try {
+      window.ZeroNative?.setImmersiveVoidMode?.(true);
+    } catch {}
+    return () => {
+      try {
+        window.ZeroNative?.setImmersiveVoidMode?.(false);
+      } catch {}
+    };
+  }, []);
+
+  // Auto-cycle time-saving & productivity quote every 3 minutes
+  useEffect(() => {
+    const quoteTimer = setInterval(() => {
+      setCurrentQuote((prev) => getRandomVoidQuote(profile?.motto, prev.quote));
+    }, 180_000);
+    return () => clearInterval(quoteTimer);
+  }, [profile?.motto]);
+
   // Real-time 12-hour clock updater & battery monitor
   useEffect(() => {
     const timer = setInterval(() => {
@@ -489,7 +507,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   const handleNextQuote = () => {
     haptics.tick(850);
-    setCurrentQuote(getRandomVoidQuote(profile?.motto));
+    setCurrentQuote((prev) => getRandomVoidQuote(profile?.motto, prev.quote));
   };
 
   const handleOpenDialer = () => {
@@ -766,14 +784,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
               </>
             )}
           </button>
-
-          <div className="flex items-center gap-1 text-zinc-300">
-            <Wifi size={12} className="text-zinc-400" />
-            <div className="flex items-center gap-0.5">
-              <Battery size={13} className="text-zinc-300" />
-              <span className="text-[11px] font-mono">{batteryPct}%</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1092,18 +1102,18 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             <Quote size={13} style={{ color: activeAccent }} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className={`text-xs italic font-serif leading-relaxed line-clamp-2 ${isLightMode ? 'text-stone-800' : 'text-zinc-200'}`}>
+            <p className={`text-[13px] font-medium leading-relaxed line-clamp-3 ${isLightMode ? 'text-stone-800' : 'text-zinc-100'}`}>
               &ldquo;{currentQuote.quote}&rdquo;
             </p>
-            <div className="flex items-center justify-between gap-2 mt-1">
+            <div className="flex items-center justify-between gap-2 mt-1.5">
               <span
-                className="text-[10px] font-sans font-semibold uppercase tracking-wider"
+                className="text-[10px] font-mono font-semibold uppercase tracking-wider"
                 style={{ color: activeAccent }}
               >
                 — {currentQuote.author}
               </span>
               <span className={`text-[9px] font-mono uppercase tracking-widest ${isLightMode ? 'text-stone-500' : 'text-zinc-500'}`}>
-                Tap to cycle
+                Tap for next
               </span>
             </div>
           </div>

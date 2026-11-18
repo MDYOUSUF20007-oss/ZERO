@@ -1,6 +1,7 @@
 /**
- * Curated Stoic & Mindful Wisdom Quotes for The Void
- * Designed to anchor mental stillness and unwavering discipline during deep focus.
+ * Curated Time-Saving, Deep Focus & High-Output Productivity Quotes for The Void.
+ * Strictly centered on protecting time, eliminating distractions, and shipping real work —
+ * zero generic lifestyle or "love life" fluff.
  */
 
 export interface VoidQuote {
@@ -9,74 +10,301 @@ export interface VoidQuote {
 }
 
 export const VOID_QUOTES: readonly VoidQuote[] = [
-  {
-    quote: 'You have power over your mind - not outside events. Realize this, and you will find strength.',
-    author: 'Marcus Aurelius',
-  },
-  {
-    quote: 'We suffer more often in imagination than in reality.',
-    author: 'Seneca',
-  },
-  {
-    quote: 'No person has the power to have everything they want, but it is in their power not to want what they have not.',
-    author: 'Seneca',
-  },
-  {
-    quote: 'First say to yourself what you would be; and then do what you have to do.',
-    author: 'Epictetus',
-  },
-  {
-    quote: 'Silence is a source of great strength.',
-    author: 'Lao Tzu',
-  },
-  {
-    quote: 'There is nothing outside of yourself that can enable you to get better, stronger, richer, quicker, or smarter. Everything is within.',
-    author: 'Miyamoto Musashi',
-  },
-  {
-    quote: 'Deciding what not to do is as important as deciding what to do.',
-    author: 'Steve Jobs',
-  },
-  {
-    quote: 'The successful warrior is the average man, with laser-like focus.',
-    author: 'Bruce Lee',
-  },
-  {
-    quote: 'He who has a why to live can bear almost any how.',
-    author: 'Friedrich Nietzsche',
-  },
-  {
-    quote: 'Between stimulus and response there is a space. In that space is our power to choose our response.',
-    author: 'Viktor Frankl',
-  },
-  {
-    quote: 'It is not a daily increase, but a daily decrease. Hack away at the unessential.',
-    author: 'Bruce Lee',
-  },
-  {
-    quote: 'Do not seek for things to happen the way you want them to; rather, wish that what now happens happens the way it happens: then you will be happy.',
-    author: 'Epictetus',
-  },
-  {
-    quote: 'Very little is needed to make a happy life; it is all within yourself, in your way of thinking.',
-    author: 'Marcus Aurelius',
-  },
-  {
-    quote: 'Concentrate every minute like a Roman—like a man—on doing what’s in front of you with precise and genuine seriousness.',
-    author: 'Marcus Aurelius',
-  },
+  // ── Protecting Time & Urgency ──────────────────────────────────────────────
+  { quote: 'Lost time is never found again.', author: 'Benjamin Franklin' },
+  { quote: 'Guard your hours like cash. You can always earn more money, never more time.', author: 'Zero-Noise' },
+  { quote: 'It is not that we have a short time, but that we waste much of it.', author: 'Seneca' },
+  { quote: 'Time is what we want most, but what we use worst.', author: 'William Penn' },
+  { quote: 'The cost of a thing is the amount of time you have to exchange for it.', author: 'Henry David Thoreau' },
+  { quote: 'Every minute spent scrolling is a minute stolen from your future self.', author: 'Zero-Noise' },
+  { quote: 'Do not squander time, for that is the stuff progress is made of.', author: 'Benjamin Franklin' },
+  { quote: 'You may delay, but time will not.', author: 'Benjamin Franklin' },
+  { quote: 'Until we can manage time, we can manage nothing else.', author: 'Peter Drucker' },
+  { quote: 'Time stays long enough for anyone who will use it.', author: 'Leonardo da Vinci' },
+  { quote: 'A man who dares to waste one hour of time has not discovered the value of time.', author: 'Charles Darwin' },
+  { quote: 'Your calendar reveals your real priorities, not your wish list.', author: 'Zero-Noise' },
+  { quote: 'The bad news is time flies. The good news is you are the pilot.', author: 'Michael Altshuler' },
+  { quote: 'Take care of the minutes, and the hours will take care of themselves.', author: 'Lord Chesterfield' },
+  { quote: 'Regret is the invoice for wasted afternoons.', author: 'Zero-Noise' },
+  { quote: 'One focused hour beats four distracted ones.', author: 'Zero-Noise' },
+  { quote: 'Stop donating your best morning hours to someone else’s algorithm.', author: 'Zero-Noise' },
+  { quote: 'The clock is running. Make the next 30 minutes count.', author: 'Zero-Noise' },
+  { quote: 'Time wasted in fragments never adds up to anything worth keeping.', author: 'Zero-Noise' },
+  { quote: 'Protect the block. Everything else can wait until the timer hits zero.', author: 'Zero-Noise' },
+  { quote: 'Two hours of uninterrupted execution can save two weeks of stress.', author: 'Zero-Noise' },
+  { quote: 'What gets scheduled gets finished.', author: 'Michael Hyatt' },
+  { quote: 'If you do not plan your time, someone else’s feed will spend it for you.', author: 'Zero-Noise' },
+  { quote: 'Every unread notification is an interruption you successfully dodged.', author: 'Zero-Noise' },
+  { quote: 'Efficiency is doing things right; effectiveness is doing the right things.', author: 'Peter Drucker' },
+  { quote: 'Never confuse motion with progress.', author: 'Benjamin Franklin' },
+  { quote: 'Busyness is often laziness in disguise: avoiding the one hard task that matters.', author: 'Tim Ferriss' },
+  { quote: 'Start the hard task first. The rest of the day gets lighter immediately.', author: 'Zero-Noise' },
+  { quote: 'A year from now you will wish you had protected this hour.', author: 'Zero-Noise' },
+  { quote: 'Ordinary time, used with ruthless consistency, produces extraordinary output.', author: 'Zero-Noise' },
+
+  // ── Deep Work & Monotasking ────────────────────────────────────────────────
+  { quote: 'Deciding what not to do is as important as deciding what to do.', author: 'Steve Jobs' },
+  { quote: 'It is not a daily increase, but a daily decrease. Hack away at the unessential.', author: 'Bruce Lee' },
+  { quote: 'The successful warrior is the average person with laser-like focus.', author: 'Bruce Lee' },
+  { quote: 'Clarity about what matters provides clarity about what does not.', author: 'Cal Newport' },
+  { quote: 'High-quality work produced equals time spent multiplied by intensity of focus.', author: 'Cal Newport' },
+  { quote: 'Multitasking is merely the opportunity to screw up more than one thing at a time.', author: 'Steve Uzzell' },
+  { quote: 'To do two things at once is to do neither.', author: 'Publilius Syrus' },
+  { quote: 'Concentrate all your thoughts upon the work in hand. The sun’s rays do not burn until brought to a focus.', author: 'Alexander Graham Bell' },
+  { quote: 'If you chase two rabbits, you will not catch either one.', author: 'Russian Proverb' },
+  { quote: 'Starve your distractions. Feed your focus.', author: 'Zero-Noise' },
+  { quote: 'Context switching is a silent tax on your IQ. Stay on one task.', author: 'Zero-Noise' },
+  { quote: 'Deep focus is a superpower in an economy built on fractured attention.', author: 'Cal Newport' },
+  { quote: 'One tab. One task. One timer. Zero noise.', author: 'Zero-Noise' },
+  { quote: 'The shorter way to do many things is to do only one thing at a time.', author: 'Wolfgang Amadeus Mozart' },
+  { quote: 'Where focus goes, output compounds.', author: 'Zero-Noise' },
+  { quote: 'A 10-second phone check can cost 20 minutes of deep concentration.', author: 'Zero-Noise' },
+  { quote: 'Protect your cognitive momentum — rebuilding it is expensive.', author: 'Zero-Noise' },
+  { quote: 'Real mastery happens in quiet, unglamorous, uninterrupted stretches.', author: 'Zero-Noise' },
+  { quote: 'The ability to sit still and finish one difficult problem is rare and priceless.', author: 'Zero-Noise' },
+  { quote: 'Simplify until only the essential work remains on the table.', author: 'Zero-Noise' },
+  { quote: 'Your attention is the raw material of everything you will ever build.', author: 'Zero-Noise' },
+  { quote: 'When you say yes to a distraction, you silently say no to your target.', author: 'Zero-Noise' },
+  { quote: 'Silence is not empty; it is the workspace of clear thinking.', author: 'Zero-Noise' },
+  { quote: 'Single-tasking looks slow until you see how fast finished work piles up.', author: 'Zero-Noise' },
+  { quote: 'Focus is a matter of deciding what things you are not going to do.', author: 'John Carmack' },
+  { quote: 'Attention is the rarest and purest form of leverage.', author: 'Zero-Noise' },
+  { quote: 'Eliminate the noise and the work practically does itself.', author: 'Zero-Noise' },
+  { quote: 'The mind performs best when it has nowhere else to run.', author: 'Zero-Noise' },
+  { quote: 'Lock the exits. Do the work.', author: 'Zero-Noise' },
+  { quote: 'Every distraction you refuse strengthens your ability to refuse the next one.', author: 'Zero-Noise' },
+
+  // ── Anti-Procrastination & Action Bias ─────────────────────────────────────
+  { quote: 'Action cures procrastination faster than planning ever will.', author: 'Zero-Noise' },
+  { quote: 'Amateurs sit and wait for inspiration; the rest of us just get up and go to work.', author: 'Stephen King' },
+  { quote: 'You do not need to feel ready. You need to start the first five minutes.', author: 'Zero-Noise' },
+  { quote: 'Done and shipped beats perfect and stuck in your head.', author: 'Zero-Noise' },
+  { quote: 'Procrastination is borrowing five minutes of comfort at a brutal interest rate.', author: 'Zero-Noise' },
+  { quote: 'The hardest part of any study session is closing the other apps and starting line one.', author: 'Zero-Noise' },
+  { quote: 'Do it now. Sometimes "later" becomes "never".', author: 'Zero-Noise' },
+  { quote: 'Small steps executed daily demolish huge goals effortlessly.', author: 'Zero-Noise' },
+  { quote: 'Stop rehearsing the work and actually do the work.', author: 'Zero-Noise' },
+  { quote: 'Momentum is created by action, never by overthinking.', author: 'Zero-Noise' },
+  { quote: 'You can’t edit a blank page. Put down the first rough draft now.', author: 'Zero-Noise' },
+  { quote: 'Waiting for motivation is just organized procrastination.', author: 'Zero-Noise' },
+  { quote: 'Discipline is doing the task when the timer starts, not when the mood strikes.', author: 'Zero-Noise' },
+  { quote: 'If a task takes less than two minutes, kill it immediately; if it takes an hour, lock in.', author: 'Zero-Noise' },
+  { quote: 'A mediocre plan executed relentlessly beats a brilliant plan left in a notebook.', author: 'George S. Patton' },
+  { quote: 'Well done is better than well said.', author: 'Benjamin Franklin' },
+  { quote: 'Start where you are. Use what you have. Finish what is in front of you.', author: 'Arthur Ashe' },
+  { quote: 'Your future self is watching what you do with this exact block of time.', author: 'Zero-Noise' },
+  { quote: 'Do the thing you are avoiding and the anxiety vanishes.', author: 'Zero-Noise' },
+  { quote: 'Five minutes of real execution reveals more than five hours of worrying.', author: 'Zero-Noise' },
+  { quote: 'Stop consuming advice on how to work and start working.', author: 'Zero-Noise' },
+  { quote: 'A half-finished task still drains mental RAM. Close the loop.', author: 'Zero-Noise' },
+  { quote: 'The gap between intention and result is closed by uninterrupted reps.', author: 'Zero-Noise' },
+  { quote: 'Do not negotiate with the urge to check your phone. Let it pass.', author: 'Zero-Noise' },
+  { quote: 'Boredom is the doorway to deep work. Stay with it for three more minutes.', author: 'Zero-Noise' },
+  { quote: 'Every time you resist an impulse check, you rewire your brain for control.', author: 'Zero-Noise' },
+  { quote: 'Resistance is loudest right before you enter flow state.', author: 'Zero-Noise' },
+  { quote: 'Ignore the urge to switch tasks. Finish this paragraph, this problem, this module.', author: 'Zero-Noise' },
+  { quote: 'No zero days. Even one locked hour moves the needle.', author: 'Zero-Noise' },
+  { quote: 'The work you skip today shows up as panic next week.', author: 'Zero-Noise' },
+
+  // ── Anti-Doomscrolling & Digital Discipline ────────────────────────────────
+  { quote: 'Nobody ever looked back on an hour of short videos and felt sharper.', author: 'Zero-Noise' },
+  { quote: 'Infinite scroll was engineered to steal your finite hours.', author: 'Zero-Noise' },
+  { quote: 'Your phone is a tool, not a slot machine. Put it to work or put it down.', author: 'Zero-Noise' },
+  { quote: 'Close the feed. Open the textbook. Own your output.', author: 'Zero-Noise' },
+  { quote: 'An algorithm gets paid when you stay distracted. You get paid when you finish.', author: 'Zero-Noise' },
+  { quote: 'Checking your phone "just once" is how two hours evaporate.', author: 'Zero-Noise' },
+  { quote: 'Trade cheap dopamine now for real competence later.', author: 'Zero-Noise' },
+  { quote: 'Notifications are other people’s priorities knocking on your focus.', author: 'Zero-Noise' },
+  { quote: 'If it is truly urgent, they will call. Everything else waits.', author: 'Zero-Noise' },
+  { quote: 'You will not remember a single reel you watched today, but you will keep what you study.', author: 'Zero-Noise' },
+  { quote: 'Entertainment is best earned after the work is done, never stolen before it starts.', author: 'Zero-Noise' },
+  { quote: 'Silence the pings. Hear yourself think.', author: 'Zero-Noise' },
+  { quote: 'Every swipe up is a vote against your own goals.', author: 'Zero-Noise' },
+  { quote: 'The feed will still be full of noise tomorrow. Your deadline will not wait.', author: 'Zero-Noise' },
+  { quote: 'Be a producer during work hours, not a passive consumer.', author: 'Zero-Noise' },
+  { quote: 'Out of sight, out of mind. Keep the phone face-down and locked.', author: 'Zero-Noise' },
+  { quote: 'Digital minimalism is simply refusing to rent out your brain for free.', author: 'Zero-Noise' },
+  { quote: 'A clean desk and a locked screen double your reading speed.', author: 'Zero-Noise' },
+  { quote: 'Do not trade three hours of deep study for thirty seconds of novelty.', author: 'Zero-Noise' },
+  { quote: 'Friction against bad habits beats willpower every single day.', author: 'Zero-Noise' },
+  { quote: 'Design your environment so focus is the default and distraction is blocked.', author: 'James Clear' },
+  { quote: 'You do not rise to the level of your goals; you fall to the level of your systems.', author: 'James Clear' },
+  { quote: 'Locking the phone removes 100 tiny willpower decisions in one move.', author: 'Zero-Noise' },
+  { quote: 'The best productivity hack is deleting the escape routes.', author: 'Zero-Noise' },
+  { quote: 'Your screen time report is either a receipt of growth or a receipt of leakage.', author: 'Zero-Noise' },
+  { quote: 'Zero notifications means zero micro-interruptions.', author: 'Zero-Noise' },
+  { quote: 'Every unlocked glance breaks the chain of thought.', author: 'Zero-Noise' },
+  { quote: 'Keep your eyes on the problem, not the status bar.', author: 'Zero-Noise' },
+  { quote: 'Short-form feeds shrink your patience for long-form mastery.', author: 'Zero-Noise' },
+  { quote: 'Reclaim two hours a day and you reclaim 730 hours a year.', author: 'Zero-Noise' },
+
+  // ── Study, Exams, Mastery & Deliberate Practice ────────────────────────────
+  { quote: 'Active recall beats passive re-reading every time. Test yourself.', author: 'Zero-Noise' },
+  { quote: 'Solve the hard problems without peeking at the solution first.', author: 'Zero-Noise' },
+  { quote: 'Understanding one concept deeply beats skimming ten chapters.', author: 'Zero-Noise' },
+  { quote: 'Write it down from memory. What you cannot explain simply, you do not own yet.', author: 'Richard Feynman' },
+  { quote: 'Practice does not make perfect. Focused, deliberate practice makes permanent.', author: 'Zero-Noise' },
+  { quote: 'Review your mistakes immediately — that is where all the score gains hide.', author: 'Zero-Noise' },
+  { quote: 'One uninterrupted problem set is worth five distracted lectures.', author: 'Zero-Noise' },
+  { quote: 'Close the notes and rebuild the proof from scratch.', author: 'Zero-Noise' },
+  { quote: 'Exams reward calm recall built over quiet, unhurried hours.', author: 'Zero-Noise' },
+  { quote: 'Study until you cannot get it wrong, not just until you get it right once.', author: 'Zero-Noise' },
+  { quote: 'Every mock test you analyze saves ten silly mistakes on exam day.', author: 'Zero-Noise' },
+  { quote: 'Do the difficult chapter while your brain is fresh.', author: 'Zero-Noise' },
+  { quote: 'Knowledge compounds like interest, but only when you show up daily.', author: 'Zero-Noise' },
+  { quote: 'Sweat in practice so execution under pressure feels automatic.', author: 'Zero-Noise' },
+  { quote: 'Turn off autoplay. Pause the lecture. Solve the example yourself.', author: 'Zero-Noise' },
+  { quote: 'A 45-minute distraction-free study sprint leaves hours of half-attention in the dust.', author: 'Zero-Noise' },
+  { quote: 'Memorize the fundamentals until they are muscle memory.', author: 'Zero-Noise' },
+  { quote: 'Confusion is not failure — it is the exact moment your brain starts adapting.', author: 'Zero-Noise' },
+  { quote: 'Take concise notes in your own words; copy-pasting teaches nothing.', author: 'Zero-Noise' },
+  { quote: 'Track hours of genuine output, never hours spent staring at a screen.', author: 'Zero-Noise' },
+  { quote: 'Consistency over 90 days beats a desperate all-nighter every single time.', author: 'Zero-Noise' },
+  { quote: 'Master the basics; advanced problems are just basics stacked together.', author: 'Zero-Noise' },
+  { quote: 'One chapter finished cleanly beats three chapters half-skimmed.', author: 'Zero-Noise' },
+  { quote: 'Stay with the problem ten minutes longer than everyone else.', author: 'Albert Einstein' },
+  { quote: 'If you want top-1% results, protect your study hours like a top-1% performer.', author: 'Zero-Noise' },
+
+  // ── Stoic Execution & Mental Control (Strict Discipline Only) ──────────────
+  { quote: 'Concentrate every minute on doing what is in front of you with precise seriousness.', author: 'Marcus Aurelius' },
+  { quote: 'First say to yourself what you would be; and then do what you have to do.', author: 'Epictetus' },
+  { quote: 'Waste no more time arguing what good work looks like. Produce it.', author: 'Marcus Aurelius' },
+  { quote: 'How much time he gains who does not look to see what others say or do.', author: 'Marcus Aurelius' },
+  { quote: 'Ask yourself at every moment: is this task necessary?', author: 'Marcus Aurelius' },
+  { quote: 'If it is not right, do not do it; if it is not essential, cut it.', author: 'Marcus Aurelius' },
+  { quote: 'No great thing is created suddenly.', author: 'Epictetus' },
+  { quote: 'Putting things off is the biggest waste of time.', author: 'Seneca' },
+  { quote: 'While we wait to begin, the hour passes.', author: 'Seneca' },
+  { quote: 'Discipline weighs ounces; regret weighs tons.', author: 'Jim Rohn' },
+  { quote: 'Self-command is the foundation of every high-output day.', author: 'Zero-Noise' },
+  { quote: 'Master your impulses and you master your schedule.', author: 'Zero-Noise' },
+  { quote: 'Between impulse and action there is a pause. Use it to stay on task.', author: 'Viktor Frankl' },
+  { quote: 'Do less, better, and finish what you start.', author: 'Zero-Noise' },
+  { quote: 'Calm mind. Clear desk. Sharp execution.', author: 'Zero-Noise' },
+  { quote: 'Treat your focus timer like a contract with yourself.', author: 'Zero-Noise' },
+  { quote: 'Keep your word to yourself for the next hour. That is how self-trust is built.', author: 'Zero-Noise' },
+  { quote: 'Never break a lock early for something trivial.', author: 'Zero-Noise' },
+  { quote: 'Every completed session proves you are in charge of your attention.', author: 'Zero-Noise' },
+  { quote: 'Do not count the minutes — make the minutes produce.', author: 'Zero-Noise' },
+
+  // ── High-Output Builders, Engineering & Craft ──────────────────────────────
+  { quote: 'Plans are nothing; executing the next milestone is everything.', author: 'Dwight D. Eisenhower' },
+  { quote: 'What is important is seldom urgent, and what is urgent is seldom important.', author: 'Dwight D. Eisenhower' },
+  { quote: 'Work expands so as to fill the time available for its completion. Set tight blocks.', author: 'Parkinson’s Law' },
+  { quote: 'Twenty percent of your tasks drive eighty percent of your results. Do those first.', author: 'Pareto Principle' },
+  { quote: 'Simplicity is prerequisite for reliability and speed.', author: 'Edsger W. Dijkstra' },
+  { quote: 'Measuring progress by finished deliverables eliminates fake productivity.', author: 'Zero-Noise' },
+  { quote: 'Cut scope, raise quality, ship on time.', author: 'Zero-Noise' },
+  { quote: 'The best code, writing, and thinking happen in unbroken 90-minute blocks.', author: 'Zero-Noise' },
+  { quote: 'Debug one variable at a time. Solve one bottleneck at a time.', author: 'Zero-Noise' },
+  { quote: 'Slow is smooth, and smooth is fast.', author: 'Navy SEAL Maxim' },
+  { quote: 'Measure twice, execute once, waste zero hours redoing sloppy work.', author: 'Zero-Noise' },
+  { quote: 'Batch shallow tasks into one short window so your prime hours stay untouched.', author: 'Zero-Noise' },
+  { quote: 'Say no to low-leverage busywork so you have energy for high-leverage output.', author: 'Zero-Noise' },
+  { quote: 'An hour of clear thinking saves ten hours of frantic rework.', author: 'Zero-Noise' },
+  { quote: 'Finish the core 80% before polishing the last 20%.', author: 'Zero-Noise' },
+  { quote: 'Clarity precedes speed. Define the exact deliverable for this session.', author: 'Zero-Noise' },
+  { quote: 'Ship daily. Small completed increments outrun perfectionism every time.', author: 'Zero-Noise' },
+  { quote: 'Your output is capped by the longest uninterrupted block you can protect.', author: 'Zero-Noise' },
+  { quote: 'Eliminate meetings, messages, and tabs that do not move the main objective.', author: 'Zero-Noise' },
+  { quote: 'Good systems save time every single day on autopilot.', author: 'Zero-Noise' },
+
+  // ── Daily Compounding & Consistency ────────────────────────────────────────
+  { quote: 'One percent sharper each day compounds into an unrecognizable edge.', author: 'James Clear' },
+  { quote: 'Win the first two hours of the day and you win the day.', author: 'Zero-Noise' },
+  { quote: 'Your habits decide your trajectory long before your deadlines arrive.', author: 'Zero-Noise' },
+  { quote: 'Stack clean focus hours quietly and let the results speak.', author: 'Zero-Noise' },
+  { quote: 'Consistency beats intensity when intensity only lasts two days.', author: 'Zero-Noise' },
+  { quote: 'Every completed block adds another brick to the wall.', author: 'Zero-Noise' },
+  { quote: 'Do the boring reps. That is what separates finishers from talkers.', author: 'Zero-Noise' },
+  { quote: 'Today’s focus hours are tomorrow’s freedom.', author: 'Zero-Noise' },
+  { quote: 'Save time now so you can spend time deliberately later.', author: 'Zero-Noise' },
+  { quote: 'Do not break the streak for a five-minute distraction.', author: 'Zero-Noise' },
+  { quote: 'A strict morning creates a stress-free evening.', author: 'Zero-Noise' },
+  { quote: 'Finish your hardest work before noon and the rest of the day belongs to you.', author: 'Zero-Noise' },
+  { quote: 'Routine removes friction. Friction removed saves hours every week.', author: 'Zero-Noise' },
+  { quote: 'Small leaks sink great ships. Patch the time leaks.', author: 'Benjamin Franklin' },
+  { quote: 'Track your reclaimed hours — what gets measured gets protected.', author: 'Peter Drucker' },
+  { quote: 'A disciplined hour produces calm; a wasted hour produces guilt.', author: 'Zero-Noise' },
+  { quote: 'You never regret finishing a focus block.', author: 'Zero-Noise' },
+  { quote: 'Keep your promises to your schedule.', author: 'Zero-Noise' },
+  { quote: 'Stay locked in until the timer clears. Not one minute early.', author: 'Zero-Noise' },
+  { quote: 'Speed comes from removing waste, not from rushing.', author: 'Zero-Noise' },
+
+  // ── Razor-Short Time & Focus Mantras ───────────────────────────────────────
+  { quote: 'Less noise. More output.', author: 'Zero-Noise' },
+  { quote: 'Protect the hour.', author: 'Zero-Noise' },
+  { quote: 'Finish what you started.', author: 'Zero-Noise' },
+  { quote: 'Zero tabs. Pure execution.', author: 'Zero-Noise' },
+  { quote: 'Time saved is freedom earned.', author: 'Zero-Noise' },
+  { quote: 'Work deeply now, rest guilt-free later.', author: 'Zero-Noise' },
+  { quote: 'Attention is non-renewable. Spend it deliberately.', author: 'Zero-Noise' },
+  { quote: 'Cut the trivial. Execute the vital.', author: 'Zero-Noise' },
+  { quote: 'Silence beats distraction.', author: 'Zero-Noise' },
+  { quote: 'Stay on target until the block ends.', author: 'Zero-Noise' },
+  { quote: 'No scrolling until the milestone is shipped.', author: 'Zero-Noise' },
+  { quote: 'One task at a time, all the way to done.', author: 'Zero-Noise' },
+  { quote: 'Every distraction has a price tag measured in hours.', author: 'Zero-Noise' },
+  { quote: 'Earn your downtime with deep work first.', author: 'Zero-Noise' },
+  { quote: 'Focus is saying no to a hundred decent distractions.', author: 'Steve Jobs' },
+  { quote: 'Do the high-value work first; low-value work expands endlessly.', author: 'Zero-Noise' },
+  { quote: 'Protect your peak energy hours for your hardest problems.', author: 'Zero-Noise' },
+  { quote: 'Uninterrupted time is the ultimate competitive advantage.', author: 'Zero-Noise' },
+  { quote: 'Stop switching gears. Let the engine reach full speed.', author: 'Zero-Noise' },
+  { quote: 'Output is what remains after distractions are subtracted.', author: 'Zero-Noise' },
+  { quote: 'A locked phone is an unlocked mind.', author: 'Zero-Noise' },
+  { quote: 'Time is the currency you can only spend once.', author: 'Zero-Noise' },
+  { quote: 'Do not confuse checking messages with getting work done.', author: 'Zero-Noise' },
+  { quote: 'Leave the phone alone. The work in front of you deserves 100%.', author: 'Zero-Noise' },
+  { quote: 'Every completed session buys back your future.', author: 'Zero-Noise' },
+  { quote: 'Cut the friction to start; raise the friction to get distracted.', author: 'Zero-Noise' },
+  { quote: 'Focus on the next 15 minutes. Stack four of them and you own the hour.', author: 'Zero-Noise' },
+  { quote: 'Deep work turns 2 hours into a full day’s progress.', author: 'Zero-Noise' },
+  { quote: 'Eliminate half-work. Either work all-in or rest all-in.', author: 'Zero-Noise' },
+  { quote: 'If you guard your minutes, nobody can steal your years.', author: 'Zero-Noise' },
+  { quote: 'Preparation saves time; panic wastes it.', author: 'Zero-Noise' },
+  { quote: 'Clutter slows the eye and fragments the mind. Keep it minimal.', author: 'Zero-Noise' },
+  { quote: 'The best time to finish was an hour ago. The second best time is right now.', author: 'Zero-Noise' },
+  { quote: 'Treat distractions like spam — block on sight, never engage.', author: 'Zero-Noise' },
+  { quote: 'Great results are simply hundreds of protected focus blocks in a row.', author: 'Zero-Noise' },
+  { quote: 'Your timer is active. Honor the work.', author: 'Zero-Noise' },
+  { quote: 'Real speed is doing the right thing once without interruption.', author: 'Zero-Noise' },
+  { quote: 'Every urge to quit fades in 90 seconds if you stay seated.', author: 'Zero-Noise' },
+  { quote: 'Keep your attention where your hands are.', author: 'Zero-Noise' },
+  { quote: 'Close the gap between what you plan and what you finish.', author: 'Zero-Noise' },
+  { quote: 'Nothing boosts confidence faster than finishing the hard task on schedule.', author: 'Zero-Noise' },
+  { quote: 'Your focus is worth more than any notification.', author: 'Zero-Noise' },
+  { quote: 'Work quietly. Finish completely. Move to the next objective.', author: 'Zero-Noise' },
+  { quote: 'Time respects those who respect their schedule.', author: 'Zero-Noise' },
+  { quote: 'Turn off the noise and watch your speed double.', author: 'Zero-Noise' },
+  { quote: 'Never let a 10-second curiosity derail a 60-minute flow state.', author: 'Zero-Noise' },
+  { quote: 'Park random thoughts on paper; stay locked on the mission.', author: 'Zero-Noise' },
+  { quote: 'You can scroll any time after the lock ends. Right now, build.', author: 'Zero-Noise' },
+  { quote: 'One clean session today saves three frantic hours tomorrow.', author: 'Zero-Noise' },
+  { quote: 'Stay ruthless with your time so your goals actually happen.', author: 'Zero-Noise' },
 ];
 
-export function getRandomVoidQuote(motto?: string | null): VoidQuote {
-  if (motto && motto.trim().length > 3) {
-    // 40% chance to show user's custom personal motto, 60% curated masters
-    if (Math.random() < 0.4) {
+export function getRandomVoidQuote(
+  motto?: string | null,
+  previousQuoteText?: string | null
+): VoidQuote {
+  if (motto && motto.trim().length > 3 && motto.trim() !== previousQuoteText) {
+    // 15% chance to surface the user's custom personal motto, 85% curated library
+    if (Math.random() < 0.15) {
       return {
         quote: motto.trim(),
         author: 'Personal Motto',
       };
     }
   }
-  const index = Math.floor(Math.random() * VOID_QUOTES.length);
-  return VOID_QUOTES[index];
+  if (VOID_QUOTES.length <= 1) {
+    return VOID_QUOTES[0];
+  }
+  let candidate = VOID_QUOTES[Math.floor(Math.random() * VOID_QUOTES.length)];
+  let attempts = 0;
+  while (previousQuoteText && candidate.quote === previousQuoteText && attempts < 6) {
+    candidate = VOID_QUOTES[Math.floor(Math.random() * VOID_QUOTES.length)];
+    attempts++;
+  }
+  return candidate;
 }

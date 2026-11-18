@@ -25,6 +25,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import org.zero.detox.MainActivity
 import org.zero.detox.core.EndpointSecurityPolicy
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.BagStore
@@ -747,6 +748,11 @@ class ZeroNativeBridge(
      * Starts OS LockTaskMode strictly when Zero is provisioned as Device Owner.
      * Never invokes manual Screen Pinning fallback.
      */
+    @JavascriptInterface
+    fun setImmersiveVoidMode(enabled: Boolean) {
+        (activity as? MainActivity)?.setVoidImmersiveMode(enabled)
+    }
+
     @JavascriptInterface
     fun startLockTaskMode() {
         activity.runOnUiThread {

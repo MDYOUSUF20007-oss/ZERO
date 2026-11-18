@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { ActiveLockSession, ParachuteMetrics, OccasionBag, ZeroProfile } from '../types';
 import { resolveAppBrandVisual } from '../utils/appBrandColors';
 import { voidAudio } from '../utils/voidAudio';
+import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
 import { haptics } from '../utils/haptics';
 import { AmbientBackground } from '../components/AmbientBackground';
 import { ZeroTubeModal } from '../components/ZeroTubeModal';
@@ -17,6 +18,7 @@ import {
   Headphones,
   MessageSquare,
   Coffee,
+  Quote,
 } from 'lucide-react';
 
 interface AetherialVoidViewProps {
@@ -46,7 +48,7 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   activeLock,
   parachuteMetrics,
   activeBag,
-  profile: _profile,
+  profile,
   onDeployParachute,
 }) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -56,7 +58,35 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   const [showZeroTube, setShowZeroTube] = useState(false);
   const [breakReason, setBreakReason] = useState('');
   const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
+  const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
+    getRandomVoidQuote(profile?.motto)
+  );
   const hasPlayedZenChimeRef = useRef(false);
+
+  // Hide Android top notification/status bar while inside The Void (Immersive Fullscreen)
+  useEffect(() => {
+    try {
+      window.ZeroNative?.setImmersiveVoidMode?.(true);
+    } catch {}
+    return () => {
+      try {
+        window.ZeroNative?.setImmersiveVoidMode?.(false);
+      } catch {}
+    };
+  }, []);
+
+  // Auto-cycle time-saving & productivity quote every 3 minutes
+  useEffect(() => {
+    const quoteTimer = setInterval(() => {
+      setCurrentQuote((prev) => getRandomVoidQuote(profile?.motto, prev.quote));
+    }, 180_000);
+    return () => clearInterval(quoteTimer);
+  }, [profile?.motto]);
+
+  const handleNextQuote = () => {
+    haptics.tick(850);
+    setCurrentQuote((prev) => getRandomVoidQuote(profile?.motto, prev.quote));
+  };
 
   // Flexible Hourly Pomodoro Break Engine
   const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
@@ -356,6 +386,28 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Time-Saving & Productivity Quote Card */}
+        <button
+          type="button"
+          onClick={handleNextQuote}
+          className="w-full max-w-sm text-left p-3.5 rounded-2xl bg-[#191b24]/75 backdrop-blur-xl border border-white/10 shadow-sm flex items-start gap-2.5 cursor-pointer active:scale-[0.99] transition-transform"
+        >
+          <div className="w-7 h-7 rounded-xl bg-[#38bdf8]/15 border border-[#38bdf8]/30 flex items-center justify-center text-[#38bdf8] shrink-0 mt-0.5">
+            <Quote size={13} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-[#e2e1ed] leading-relaxed line-clamp-3">
+              &ldquo;{currentQuote.quote}&rdquo;
+            </p>
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              <span className="text-[10px] font-mono font-semibold text-[#38bdf8]">
+                — {currentQuote.author}
+              </span>
+              <span className="text-[9px] font-mono text-[#87929a]">Tap for next</span>
+            </div>
+          </div>
+        </button>
 
         {/* Ambient Sound Card */}
         <div className="w-full max-w-sm flex items-center justify-between p-3 rounded-2xl bg-[#191b24]/70 backdrop-blur-xl border border-white/5 shadow-sm">
