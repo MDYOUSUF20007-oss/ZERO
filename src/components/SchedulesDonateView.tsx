@@ -2057,7 +2057,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             }
           />
 
-          {/* CARD #6.5: ZEROTUBE STUDY PLAYER & AI LINK WHITELIST STUDIO */}
+          {/* CARD #6.5: ZEROTUBE STUDY PLAYER & DETERMINISTIC CHANNEL WHITELIST STUDIO */}
           <ZeroTubeSettingsCard
             isBespoke={isBespoke}
             isFluentGlass={isFluentGlass}

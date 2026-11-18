@@ -73,6 +73,7 @@ class ZeroAccessibilityService : AccessibilityService() {
     private lateinit var engageConfigStore: EngageConfigStore
     private lateinit var engageEngine: EngageRuntimeEngine
     private lateinit var overlayController: AccessibilityOverlayController
+    private lateinit var youTubeGuard: YouTubeAccessibilityGuard
 
     private var isReceiverRegistered = false
     private var isTickerRunning = false
@@ -178,6 +179,7 @@ class ZeroAccessibilityService : AccessibilityService() {
         engageConfigStore = EngageConfigStore(this)
         engageEngine = EngageRuntimeEngine(packageName)
         overlayController = AccessibilityOverlayController(this)
+        youTubeGuard = YouTubeAccessibilityGuard(this)
         registerConfigReceiverIfNeeded()
     }
 
@@ -329,13 +331,27 @@ class ZeroAccessibilityService : AccessibilityService() {
 
         val nowWall = System.currentTimeMillis()
         val nowElapsed = SystemClock.elapsedRealtime()
+        val eventPkg = event.packageName?.toString() ?: ""
+
+        if (eventPkg.isNotBlank()) {
+            refreshPackageCachesIfNeeded(nowElapsed)
+            if (!cachedImePackages.contains(eventPkg) && eventPkg != "com.android.systemui") {
+                youTubeGuard.onPackageChanged(eventPkg)
+            }
+        }
+
         val timing = readActiveTiming(nowWall, nowElapsed)
         if (!timing.isLocked || timing.isExpired) {
-            stopActiveEnforcement(resetEngine = true)
+            if (isTickerRunning || overlayController.isBlockingOverlayVisible()) {
+                stopActiveEnforcement(resetEngine = true)
+            }
+            // Regain-style Official YouTube App Guard runs even when Zero Noise is closed / unlocked
+            if (eventPkg == YouTubeAccessibilityGuard.YOUTUBE_PACKAGE) {
+                youTubeGuard.onYouTubeEvent(this, event, nowElapsed)
+            }
             return
         }
 
-        val eventPkg = event.packageName?.toString() ?: ""
         if (eventPkg.isBlank()) return
 
         refreshPackageCachesIfNeeded(nowElapsed)
@@ -425,12 +441,22 @@ class ZeroAccessibilityService : AccessibilityService() {
         ) {
             lastObservedAppPackage = eventPkg
             evaluateDecisionAndUpdateUi(eventPkg, nowElapsed)
+            if (eventPkg == YouTubeAccessibilityGuard.YOUTUBE_PACKAGE && !overlayController.isBlockingOverlayVisible()) {
+                youTubeGuard.onYouTubeEvent(this, event, nowElapsed)
+            }
             return
         }
 
-        // 7. Debounced Short-Video View Sniffing (max 1 inspection per 400ms via elapsedRealtime)
+        // 7. Official YouTube App Guard & Debounced Short-Video View Sniffing
         if (eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             if (overlayController.isBlockingOverlayVisible()) return
+
+            if (eventPkg == YouTubeAccessibilityGuard.YOUTUBE_PACKAGE &&
+                youTubeGuard.onYouTubeEvent(this, event, nowElapsed)
+            ) {
+                return
+            }
+
             if (nowElapsed <= shortVideoGraceUntilElapsed) return
             if (nowElapsed - lastShortVideoActionElapsed < SHORT_VIDEO_BACK_COOLDOWN_MS) return
 

@@ -98,11 +98,13 @@ import {
 } from '../src/utils/bagAppConfig.ts';
 import { IntegrityEngine } from '../src/core/integrity/IntegrityEngine.ts';
 import {
-  evaluateVideoForStudy,
-  normalizeForMatching,
+  buildNativeGuardWhitelistStrings,
   extractYouTubeChannelHandle,
+  extractYouTubeChannelId,
   extractYouTubeVideoId,
-} from '../src/utils/aiStudyVerifier.ts';
+  isYouTubeShortsUrl,
+  matchWhitelistedChannel,
+} from '../src/utils/zeroTubeWhitelist.ts';
 import type {
   NativeEnvironmentSecurity,
   NativePermissionStatus,
@@ -1661,81 +1663,97 @@ failIf(
 console.log('PASS: Phase 2 Unlimited Bags, Granular App Rules & Dynamic Engage Payload Verified');
 
 // =========================================================================
-// TEST 23: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection
+// TEST 23: ZeroTube Deterministic Whitelist Locking & URL Normalization
 // =========================================================================
-console.log('\n=== TEST 23: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection ===');
+console.log('\n=== TEST 23: ZeroTube Deterministic Whitelist Locking & URL Normalization ===');
 
-// 1. YouTube Handle extraction & normalization
+// 1. YouTube Handle & UC... Channel ID extraction
 failIf(
   extractYouTubeChannelHandle('https://youtube.com/@paramountmerchantnavy') === '@paramountmerchantnavy' &&
     extractYouTubeChannelHandle('https://www.youtube.com/@physicswallah') === '@physicswallah' &&
     extractYouTubeChannelHandle('@codewithharry') === '@codewithharry' &&
-    normalizeForMatching('Paramount Merchant Navy') === 'paramountmerchantnavy' &&
-    normalizeForMatching('@paramountmerchantnavy') === 'paramountmerchantnavy' &&
-    normalizeForMatching('IIT-JEE (Mains & Advanced)!') === 'iitjeemainsadvanced',
-  'YouTube handle parsing and fuzzy despaced normalization must match accurately'
+    extractYouTubeChannelId('https://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw') === 'UCYO_jab_esuFRV4b17AJtAw' &&
+    extractYouTubeChannelId('UCYO_jab_esuFRV4b17AJtAw') === 'UCYO_jab_esuFRV4b17AJtAw',
+  'YouTube @handle and UC... channel ID extraction must parse deterministically'
 );
 
-// 2. Video ID vs Channel handling
+// 2. Video ID vs Channel handling & Shorts detection
 failIf(
   extractYouTubeVideoId('https://youtube.com/@paramountmerchantnavy') === null &&
     extractYouTubeVideoId('https://www.youtube.com/watch?v=kqtD5dpn9C8') === 'kqtD5dpn9C8' &&
-    extractYouTubeVideoId('https://youtu.be/aircAruvnKk') === 'aircAruvnKk',
-  'Video ID extraction must distinguish between 11-char video IDs and channel handles'
+    extractYouTubeVideoId('https://youtu.be/aircAruvnKk') === 'aircAruvnKk' &&
+    extractYouTubeVideoId('https://www.youtube.com/shorts/dQw4w9WgXcQ') === 'dQw4w9WgXcQ' &&
+    isYouTubeShortsUrl('https://www.youtube.com/shorts/dQw4w9WgXcQ') === true &&
+    isYouTubeShortsUrl('https://www.youtube.com/watch?v=aircAruvnKk') === false,
+  'Video ID and Shorts URL detection must distinguish full-length videos, Shorts, and channels'
 );
 
-// 3. User channel evaluation: Paramount Merchant Navy
-const pmnEval = evaluateVideoForStudy({
-  urlOrId: 'https://youtube.com/@paramountmerchantnavy',
-});
+// 3. Deterministic Whitelist Matching (UC... ID, @handle, normalized name; everything else blocked)
+const sampleWhitelist = [
+  {
+    id: 'UCYO_jab_esuFRV4b17AJtAw',
+    handle: '@3blue1brown',
+    name: '3Blue1Brown',
+    url: 'https://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw',
+    addedAt: 1794000000000,
+  },
+  {
+    id: 'UCeVMnSShP_Iviwkknt83cww',
+    handle: '@codewithharry',
+    name: 'CodeWithHarry',
+    url: 'https://www.youtube.com/channel/UCeVMnSShP_Iviwkknt83cww',
+    addedAt: 1794000000000,
+  },
+];
+
 failIf(
-  pmnEval.studyScore === 100 &&
-    pmnEval.verdict === 'verified_productive' &&
-    pmnEval.isValidId === true &&
-    pmnEval.isChannelOnly === true &&
-    pmnEval.channelHandle === '@paramountmerchantnavy' &&
-    pmnEval.domainCategory === 'Maritime, Nautical Science & Merchant Navy' &&
-    pmnEval.detectedExam === 'IMU-CET' &&
-    pmnEval.distractionFlags.length === 0,
-  'Paramount Merchant Navy channel must score 100/100, verified_productive, IMU-CET, Maritime category'
+  matchWhitelistedChannel(
+    { uploaderUrl: 'https://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw' },
+    sampleWhitelist
+  )?.id === 'UCYO_jab_esuFRV4b17AJtAw',
+  'Exact UC... channel ID must match deterministic whitelist'
 );
 
-// 4. Standardized Exam Detection: JEE, NEET, SAT
-const jeeEval = evaluateVideoForStudy({
-  urlOrId: 'dQw4w9WgXcQ',
-  title: 'IIT JEE Mains 2025 Complete Physics Electromagnetism Marathon Lecture',
-  channel: 'Physics Wallah',
-});
 failIf(
-  jeeEval.verdict === 'verified_productive' &&
-    jeeEval.studyScore >= 90 &&
-    jeeEval.detectedExam === 'JEE (Main & Adv)',
-  'JEE curriculum lecture must be detected with JEE exam badge and verified productive'
+  matchWhitelistedChannel(
+    { uploaderUrl: 'https://www.youtube.com/@CodeWithHarry' },
+    sampleWhitelist
+  )?.handle === '@codewithharry',
+  'Exact @handle must match case-insensitively'
 );
 
-const neetEval = evaluateVideoForStudy({
-  urlOrId: 'dQw4w9WgXcQ',
-  title: 'NEET UG 2025 Human Physiology Biology Revision Marathon',
-});
 failIf(
-  neetEval.verdict === 'verified_productive' &&
-    neetEval.detectedExam === 'NEET' &&
-    neetEval.domainCategory === 'Medicine, Biology & Chemistry',
-  'NEET curriculum lecture must be detected with NEET exam badge and Medicine category'
+  matchWhitelistedChannel(
+    { uploaderName: '  3blue1brown  ' },
+    sampleWhitelist
+  )?.id === 'UCYO_jab_esuFRV4b17AJtAw',
+  'Exact normalized uploaderName must match deterministic whitelist'
 );
 
-// 5. Entertainment/Distraction risk rejection
-const brainrotEval = evaluateVideoForStudy({
-  urlOrId: 'dQw4w9WgXcQ',
-  title: 'I Spent 24 Hours in a Prank Challenge ($1 vs $1,000,000)',
-});
+// Non-whitelisted channels MUST be strictly blocked (zero AI/keyword fallback!)
 failIf(
-  brainrotEval.verdict === 'high_distraction_risk' &&
-    brainrotEval.studyScore < 50 &&
-    brainrotEval.distractionFlags.length >= 2,
-  'Clickbait entertainment video must be flagged with distraction risk and failed study score'
+  matchWhitelistedChannel(
+    {
+      channelId: 'UCxxxxxxxxxxxxxxxxxxxxxx',
+      handle: '@randomedu',
+      uploaderName: '3Blue1Brown Clips & Pranks',
+    },
+    sampleWhitelist
+  ) === null,
+  'Non-whitelisted channels and partial-name lookalikes must be strictly blocked'
 );
 
-console.log('PASS: ZeroTube AI Study Verifier, Regain-Style Channel Whitelist & Exam Detection Verified');
+// Native Official YouTube Guard whitelist payload flattening (normalized names + @handles)
+const guardStrings = buildNativeGuardWhitelistStrings(sampleWhitelist);
+failIf(
+  guardStrings.includes('3blue1brown') &&
+    guardStrings.includes('@3blue1brown') &&
+    guardStrings.includes('codewithharry') &&
+    guardStrings.includes('@codewithharry') &&
+    guardStrings.length === 4,
+  'buildNativeGuardWhitelistStrings must flatten normalized channel names and @handles'
+);
+
+console.log('PASS: ZeroTube Deterministic Whitelist Locking & URL Normalization Verified');
 
 console.log('\n>>> ALL SPECIFICATION AND ANTI-EXPLOIT TESTS PASSED WITH 100% SUCCESS! <<<');

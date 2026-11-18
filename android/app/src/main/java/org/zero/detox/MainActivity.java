@@ -31,6 +31,7 @@ import org.zero.detox.data.BagStore;
 import org.zero.detox.data.ParachuteStore;
 import org.zero.detox.plugin.CloudAutoBackupPlugin;
 import org.zero.detox.plugin.ZeroEngagePlugin;
+import org.zero.detox.plugin.ZeroTubePlugin;
 import org.zero.detox.security.AppSecurityGuard;
 import org.zero.detox.ui.TheVoidActivity;
 
@@ -123,6 +124,13 @@ public class MainActivity extends BridgeActivity {
                         return super.shouldOverrideUrlLoading(view, request);
                     }
 
+                    // Allow ZeroTube youtube-nocookie.com fallback iframe subframe loads
+                    if (!request.isForMainFrame()
+                            && "https".equals(scheme)
+                            && ("www.youtube-nocookie.com".equals(host) || "youtube-nocookie.com".equals(host))) {
+                        return false;
+                    }
+
                     // Allow phone calls / dialer directly without blocking
                     if ("tel".equals(scheme)) {
                         try {
@@ -207,6 +215,7 @@ public class MainActivity extends BridgeActivity {
         if (signatureVerified) {
             registerPlugin(CloudAutoBackupPlugin.class);
             registerPlugin(ZeroEngagePlugin.class);
+            registerPlugin(ZeroTubePlugin.class);
             registerPlugin(ZeroBridgePlugin.class);
         }
         super.onCreate(savedInstanceState);

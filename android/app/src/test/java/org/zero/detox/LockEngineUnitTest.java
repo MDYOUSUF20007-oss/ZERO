@@ -27,6 +27,7 @@ import org.zero.detox.engage.EngageConfig;
 import org.zero.detox.engage.EngageConfigStore;
 import org.zero.detox.engage.EngageRuntimeEngine;
 import org.zero.detox.security.AppSecurityGuard;
+import org.zero.detox.service.YouTubeAccessibilityGuard;
 import org.zero.detox.ui.PixelFont5x7;
 import org.zero.detox.ui.VoidBrandPalette;
 import org.zero.detox.ui.VoidThemeStore;
@@ -1098,5 +1099,38 @@ public class LockEngineUnitTest {
         assertEquals(10L, nudge.getContinuousSeconds());
         // Consumed once -> null until next 10s interval (20s)
         assertNull(engine.consumePendingNudge("com.google.android.youtube"));
+    }
+
+    @Test
+    public void youTubeAccessibilityGuard_matchesWhitelistedAndTruncatedNamesDeterministically() {
+        List<String> whitelist = Arrays.asList(
+            "3Blue1Brown",
+            "@3blue1brown",
+            "Paramount Merchant Navy",
+            "@paramountmerchantnavy"
+        );
+
+        assertTrue(YouTubeAccessibilityGuard.isChannelWhitelisted("3Blue1Brown", whitelist));
+        assertTrue(YouTubeAccessibilityGuard.isChannelWhitelisted("  3blue1brown  ", whitelist));
+        assertTrue(YouTubeAccessibilityGuard.isChannelWhitelisted("@3Blue1Brown", whitelist));
+        assertTrue(YouTubeAccessibilityGuard.isChannelWhitelisted("Paramount Merchant...", whitelist));
+        assertTrue(YouTubeAccessibilityGuard.isChannelWhitelisted("Paramount…", whitelist));
+
+        // Short truncated prefix (< 8 chars) must NOT fuzzily match
+        assertFalse(YouTubeAccessibilityGuard.isChannelWhitelisted("Param...", whitelist));
+        assertFalse(YouTubeAccessibilityGuard.isChannelWhitelisted("MrBeast", whitelist));
+        assertFalse(YouTubeAccessibilityGuard.isChannelWhitelisted("3Blue1Brown Clips", whitelist));
+
+        // Subscribe description fallback & sanitization
+        assertEquals(
+            "3Blue1Brown",
+            YouTubeAccessibilityGuard.extractChannelFromSubscribeDesc("Subscribe to 3Blue1Brown.")
+        );
+        assertEquals(
+            "3Blue1Brown",
+            YouTubeAccessibilityGuard.sanitizeExtractedChannelName("3Blue1Brown, 6.2M subscribers")
+        );
+        assertNull(YouTubeAccessibilityGuard.sanitizeExtractedChannelName("Subscribe"));
+        assertNull(YouTubeAccessibilityGuard.sanitizeExtractedChannelName("1.4M subscribers"));
     }
 }

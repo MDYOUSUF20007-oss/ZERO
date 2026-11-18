@@ -14,6 +14,7 @@ export const fluentEngine: ThemeEngineDefinition = {
       --bg-primary: #070b14;
       --bg-secondary: #0c1322;
       --bg-surface: rgba(16, 26, 44, 0.39);
+      --surface-tonal: rgba(20, 32, 54, 0.56);
       --bg-surface-hover: rgba(24, 38, 64, 0.41);
       --bg-elevated: rgba(20, 32, 54, 0.44);
       --bg-modal: rgba(13, 20, 36, 0.90);

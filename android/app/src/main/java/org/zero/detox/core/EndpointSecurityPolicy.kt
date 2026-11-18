@@ -261,13 +261,21 @@ object EndpointSecurityPolicy {
         if (uri.rawUserInfo != null || uri.port != -1) return false
         val host = uri.host?.lowercase() ?: return false
         val path = uri.path ?: ""
-        return when (host) {
-            CAPACITOR_LOCAL_ORIGIN_HOST -> true
-            "fonts.googleapis.com", "fonts.gstatic.com" -> true
-            OFFICIAL_PAGES_HOST -> path.isEmpty() ||
+        return when {
+            host == CAPACITOR_LOCAL_ORIGIN_HOST -> true
+            host == "fonts.googleapis.com" || host == "fonts.gstatic.com" -> true
+            host == OFFICIAL_PAGES_HOST -> path.isEmpty() ||
                 path == "/" ||
                 path.equals(OFFICIAL_PAGES_PATH_PREFIX, ignoreCase = true) ||
                 path.startsWith("$OFFICIAL_PAGES_PATH_PREFIX/", ignoreCase = true)
+            // ZeroTube native media playback (.googlevideo.com), thumbnails, and nocookie embed fallback
+            host == "googlevideo.com" || host.endsWith(".googlevideo.com") -> true
+            host == "youtube-nocookie.com" || host == "www.youtube-nocookie.com" -> true
+            host == "www.youtube.com" || host == "m.youtube.com" -> true
+            host == "ytimg.com" || host.endsWith(".ytimg.com") -> true
+            host == "ggpht.com" || host.endsWith(".ggpht.com") -> true
+            host == "yt3.googleusercontent.com" -> true
+            host == "www.gstatic.com" || host == "jnn-pa.googleapis.com" -> true
             else -> false
         }
     }

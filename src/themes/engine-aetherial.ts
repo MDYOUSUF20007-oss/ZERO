@@ -15,6 +15,7 @@ export const aetherialEngine: ThemeEngineDefinition = {
       --bg-primary: #11131b;
       --bg-secondary: #191b24;
       --bg-surface: rgba(29, 31, 40, 0.78);
+      --surface-tonal: rgba(25, 27, 36, 0.88);
       --bg-surface-hover: rgba(40, 42, 50, 0.88);
       --bg-elevated: rgba(25, 27, 36, 0.88);
       --bg-modal: rgba(17, 19, 27, 0.94);

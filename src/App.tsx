@@ -23,6 +23,7 @@ import { InterfaceStyleProvider } from './context/InterfaceStyleContext';
 import { IntegrityEngine } from './core/integrity/IntegrityEngine';
 import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from './utils/autoUpdater';
 import { checkAndEnforceRoutines } from './utils/routineEngine';
+import { syncYouTubeGuardToNative } from './utils/zeroTubeWhitelist';
 import type { AppUpdateReleaseInfo, HabitCalibrationProfile, RecurringSchedule, OccasionBag } from './types';
 import { BellRing, X, AlertTriangle, Download, Upload } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export function App() {
   const lastBackPressRef = useRef<number>(0);
   const hasAutoPromptedRef = useRef(false);
 
-  // Author integrity verification on startup
+  // Author integrity verification on startup & native YouTube guard whitelist sync
   useEffect(() => {
     const check = IntegrityEngine.verifyAuthorIntegrity();
     if (!check.ok || !check.signatureValid) {
@@ -58,6 +59,7 @@ export function App() {
         check.error || 'CRITICAL INTEGRITY VIOLATION: Author credits or support endpoints have been modified.'
       );
     }
+    void syncYouTubeGuardToNative();
   }, []);
 
   // Auto-updater check on launch (throttled to 24h)

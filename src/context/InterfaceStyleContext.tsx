@@ -91,6 +91,7 @@ export function applyGlassTokens(root: HTMLElement, strength: number): void {
   root.style.setProperty('--glass-opacity', clamped.toString());
   root.style.setProperty('--glass-surface-bg', `rgba(16, 26, 44, ${bgAlpha})`);
   root.style.setProperty('--bg-surface', `rgba(16, 26, 44, ${bgAlpha})`);
+  root.style.setProperty('--surface-tonal', `rgba(20, 32, 54, ${(0.10 + clamped * 0.68).toFixed(3)})`);
   root.style.setProperty('--bg-surface-hover', `rgba(24, 38, 64, ${(0.08 + clamped * 0.66).toFixed(3)})`);
   root.style.setProperty('--bg-elevated', `rgba(20, 32, 54, ${(0.10 + clamped * 0.68).toFixed(3)})`);
   root.style.setProperty('--surface-blur', `blur(${blurPx}px) saturate(${satPct}%)`);

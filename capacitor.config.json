@@ -2,6 +2,10 @@
   "appId": "org.zero.detox",
   "appName": "Zero-Noise",
   "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
   "plugins": {
     "SystemBars": {
       "insetsHandling": "css",

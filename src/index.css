@@ -13,6 +13,7 @@
   --bg-primary: #000000;
   --bg-secondary: #0b0b10;
   --bg-surface: #0b0b10;
+  --surface-tonal: #101018;
   --bg-surface-hover: #13131c;
   --bg-elevated: #101018;
   --bg-modal: #08080c;
@@ -27,6 +28,10 @@
   --accent-primary: #00f0ff;
   --accent-soft: rgba(0, 240, 255, 0.12);
   --accent-border: rgba(0, 240, 255, 0.48);
+
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
 
   --border-subtle: #18181f;
   --border-strong: #272733;

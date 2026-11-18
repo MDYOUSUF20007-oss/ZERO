@@ -40,6 +40,15 @@
         <domain includeSubdomains="false">jiodrive.jio.com</domain>
         <domain includeSubdomains="false">dropbox.com</domain>
         <domain includeSubdomains="true">dropboxapi.com</domain>
+        <!-- ZeroTube Ad-Free Media Streams, Thumbnails & No-Cookie Embed Fallback -->
+        <domain includeSubdomains="true">googlevideo.com</domain>
+        <domain includeSubdomains="true">youtube.com</domain>
+        <domain includeSubdomains="true">youtube-nocookie.com</domain>
+        <domain includeSubdomains="true">ytimg.com</domain>
+        <domain includeSubdomains="true">ggpht.com</domain>
+        <domain includeSubdomains="false">yt3.googleusercontent.com</domain>
+        <domain includeSubdomains="false">www.gstatic.com</domain>
+
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
