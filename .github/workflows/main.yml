@@ -171,7 +171,17 @@ jobs:
           ZERO_KEYSTORE_ALIAS: ${{ secrets.ZERO_KEYSTORE_ALIAS }}
         run: |
           cd android
-          ./gradlew assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace
+          set -o pipefail
+          if ! ./gradlew assembleStandardRelease assembleStrictRelease --no-daemon --stacktrace 2>&1 | tee gradle-release.log; then
+            echo "### Android Release APK Compile Failure Log" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 100 gradle-release.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "Missing class|ERROR:|error:|e: |FAILURE:|Caused by:|What went wrong" gradle-release.log | head -n 30 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done || true
+            exit 1
+          fi
 
       - name: Compile Preview Test APKs (Debug-Signed Fallback)
         if: steps.keystore.outputs.signed != 'true'
