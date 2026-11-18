@@ -2,9 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
-        <!-- Strict Accessibility Edition: intercepts status bar pulldown and unauthorized app switching -->
+        <!-- Strict Accessibility Edition: intercepts status bar pulldown, unauthorized app switching, and Official YouTube Shorts/Study Mode -->
         <service
             android:name="org.zero.detox.service.ZeroAccessibilityService"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>

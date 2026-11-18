@@ -4,5 +4,5 @@
     <string name="title_activity_main">Zero-Noise</string>
     <string name="package_name">org.zero.detox</string>
     <string name="custom_url_scheme">org.zero.detox</string>
-    <string name="accessibility_description">Zero-Noise anti-tamper blocker service to intercept notification drawer and app switching during focus sessions.</string>
+    <string name="accessibility_description">Zero-Noise focus guard service: blocks YouTube Shorts, enforces Official YouTube Study Mode channel whitelist, and protects active focus sessions.</string>
 </resources>
