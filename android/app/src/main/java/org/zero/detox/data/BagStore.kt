@@ -35,7 +35,10 @@ class BagStore(private val context: Context) {
         const val KEY_ALLOW_SMS = "allow_sms"
         const val KEY_BAG_APPS_JSON = "bag_apps_json"
         const val KEY_BAG_APPS_COMPACT = "bag_apps_compact"
+        const val KEY_STUDY_APPS_ENABLED = "compulsory_study_apps_enabled"
+        const val KEY_STUDY_APPS_JSON = "compulsory_study_apps_json"
         const val MAX_BAG_APPS = 500
+        const val MAX_COMPULSORY_STUDY_APPS = 2
 
         @JvmStatic
         fun isWorkBag(bagId: String?, bagName: String?): Boolean {
@@ -264,6 +267,43 @@ class BagStore(private val context: Context) {
         return parseIncomingApps(raw)
     }
 
+    @Synchronized
+    fun saveCompulsoryStudyApps(enabled: Boolean, appsJson: String) {
+        val parsed = parseIncomingApps(appsJson).take(MAX_COMPULSORY_STUDY_APPS)
+        val sanitizedJson = try {
+            val arr = JSONArray()
+            for (app in parsed) {
+                arr.put(
+                    JSONObject().apply {
+                        put("packageName", app.packageName)
+                        put("appName", app.appName)
+                    }
+                )
+            }
+            arr.toString() ?: "[]"
+        } catch (_: Exception) {
+            "[]"
+        }
+        prefs.edit()
+            .putBoolean(KEY_STUDY_APPS_ENABLED, enabled)
+            .putString(KEY_STUDY_APPS_JSON, sanitizedJson)
+            .commit()
+    }
+
+    fun isCompulsoryStudyAppsEnabled(): Boolean {
+        return prefs.getBoolean(KEY_STUDY_APPS_ENABLED, true)
+    }
+
+    fun getCompulsoryStudyApps(): List<BagApp> {
+        val raw = prefs.getString(KEY_STUDY_APPS_JSON, "[]") ?: "[]"
+        return parseIncomingApps(raw).take(MAX_COMPULSORY_STUDY_APPS)
+    }
+
+    fun getCompulsoryStudyPackages(): Set<String> {
+        if (!isCompulsoryStudyAppsEnabled()) return emptySet()
+        return getCompulsoryStudyApps().map { it.packageName }.toSet()
+    }
+
     fun getAllowedDialerPackages(): Set<String> {
         val pkgs = CORE_CALL_PACKAGES.toMutableSet()
         try {
@@ -339,6 +379,9 @@ class BagStore(private val context: Context) {
 
         // AI & System Assistants are compulsory and always permitted during locks
         if (COMPULSORY_AI_ASSISTANT_PACKAGES.contains(pkg)) return true
+
+        // Toggleable Verified Compulsory Study / Online Class Apps (max 2 lean slots)
+        if (getCompulsoryStudyPackages().contains(pkg)) return true
 
         // Phase 2 Engage rule check: explicit hard_block overrides BagStore allow list
         if (EngageConfigStore(context).isPackageExplicitlyHardBlocked(pkg)) {

@@ -460,6 +460,8 @@ export interface ZeroNativeBridgeInterface {
   getInstalledAppsJson(): string;
   setBagStateJson(bagName: StringOrStr, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
   setBagStateWithIdJson?(bagId: string, bagName: string, appsJson: string, allowCalls: boolean, allowSms: boolean): void;
+  syncCompulsoryStudyAppsJson?(enabled: boolean, appsJson: string): void;
+  launchStudyApp?(packageName: string): boolean;
   getBagStateJson(): string;
   shareImageBase64(base64Png: string, fileName: string, caption: string): void;
   saveImageToGallery?(base64Png: string, fileName: string): void;

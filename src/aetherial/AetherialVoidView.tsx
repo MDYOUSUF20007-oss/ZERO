@@ -7,6 +7,11 @@ import { haptics } from '../utils/haptics';
 import { AmbientBackground } from '../components/AmbientBackground';
 import { ZeroTubeModal } from '../components/ZeroTubeModal';
 import {
+  COMPULSORY_STUDY_APPS_EVENT,
+  getCompulsoryStudyAppsConfig,
+  type CompulsoryStudyAppsConfig,
+} from '../utils/compulsoryStudyApps';
+import {
   Phone,
   CreditCard,
   QrCode,
@@ -19,6 +24,7 @@ import {
   MessageSquare,
   Coffee,
   Quote,
+  GraduationCap,
 } from 'lucide-react';
 
 interface AetherialVoidViewProps {
@@ -56,6 +62,15 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showBreakConfirm, setShowBreakConfirm] = useState(false);
   const [showZeroTube, setShowZeroTube] = useState(false);
+  const [studyAppsConfig, setStudyAppsConfig] = useState<CompulsoryStudyAppsConfig>(() =>
+    getCompulsoryStudyAppsConfig()
+  );
+
+  useEffect(() => {
+    const syncStudy = () => setStudyAppsConfig(getCompulsoryStudyAppsConfig());
+    window.addEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
+    return () => window.removeEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
+  }, []);
   const [breakReason, setBreakReason] = useState('');
   const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
   const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
@@ -518,6 +533,49 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
             </div>
             <span className="text-[10px] font-medium text-[#38bdf8]">ZeroTube</span>
           </button>
+
+          {/* 6. Compulsory Verified Study Apps (Toggleable — no Bag required) */}
+          {studyAppsConfig.enabled &&
+            studyAppsConfig.apps
+              .filter((sa) => !activeBag.apps.some((b) => b.packageName === sa.packageName))
+              .map((studyApp) => {
+                const brand = resolveAppBrandVisual({
+                  packageName: studyApp.packageName,
+                  appName: studyApp.appName,
+                  category: 'custom',
+                });
+                return (
+                  <button
+                    key={`aeth_study_${studyApp.packageName}`}
+                    type="button"
+                    onClick={() => {
+                      haptics.tick(700);
+                      try {
+                        if (window.ZeroNative?.launchStudyApp?.(studyApp.packageName)) return;
+                        window.ZeroNative?.launchBagApp?.(studyApp.packageName);
+                      } catch {}
+                    }}
+                    className="flex flex-col items-center gap-1 p-1 rounded-xl hover:scale-105 active:scale-95 cursor-pointer shrink-0 transition-transform"
+                  >
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-md select-none relative"
+                      style={{
+                        backgroundColor: brand.bgColor,
+                        color: brand.textColor,
+                        border: '1.5px solid #38bdf8',
+                      }}
+                    >
+                      {brand.initial}
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#38bdf8] text-[#041220] flex items-center justify-center">
+                        <GraduationCap size={10} />
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-medium text-[#7dd3fc] max-w-[54px] truncate text-center">
+                      {studyApp.appName}
+                    </span>
+                  </button>
+                );
+              })}
         </div>
 
         {/* Action Controls: Emergency Dial & Escape */}

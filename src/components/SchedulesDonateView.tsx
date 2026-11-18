@@ -35,6 +35,7 @@ import { DonorPerksBadgesCard } from './DonorPerksBadgesCard';
 import { ObsidianCard } from './ObsidianCard';
 import { CreditsModal } from './CreditsModal';
 import { ZeroTubeSettingsCard } from './ZeroTubeSettingsCard';
+import { CompulsoryStudyAppsCard } from './CompulsoryStudyAppsCard';
 import { ZeroTubeModal } from './ZeroTubeModal';
 import {
   getAllThemeMods,
@@ -2056,6 +2057,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </>
             }
           />
+
+          {/* CARD #6.4: COMPULSORY STUDY & ONLINE CLASS APPS (TOGGLEABLE, AUTO-SCAN + MANUAL VERIFY) */}
+          <CompulsoryStudyAppsCard />
 
           {/* CARD #6.5: ZEROTUBE STUDY PLAYER & DETERMINISTIC CHANNEL WHITELIST STUDIO */}
           <ZeroTubeSettingsCard

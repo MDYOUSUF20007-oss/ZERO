@@ -49,6 +49,7 @@ import {
   isScheduleWarningActive,
   getScheduleRemainingSeconds,
 } from '../utils/routineEngine';
+import { syncCompulsoryStudyAppsToNative } from '../utils/compulsoryStudyApps';
 import {
   DEFAULT_THEME_CONFIG,
   computeDynamicAccentTokens,
@@ -1256,6 +1257,10 @@ export function useZeroStore() {
     localStorage.setItem(UI_STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
     syncRoutinesToNative(schedules);
   }, [schedules]);
+
+  useEffect(() => {
+    void syncCompulsoryStudyAppsToNative();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.BAGS, JSON.stringify(bags));

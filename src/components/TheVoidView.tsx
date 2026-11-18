@@ -18,6 +18,11 @@ import { computeThemeRuntime, DEFAULT_THEME_CONFIG } from '../utils/themes';
 import { AppFrictionModal } from './AppFrictionModal';
 import { ZeroTubeModal } from './ZeroTubeModal';
 import {
+  COMPULSORY_STUDY_APPS_EVENT,
+  getCompulsoryStudyAppsConfig,
+  type CompulsoryStudyAppsConfig,
+} from '../utils/compulsoryStudyApps';
+import {
   Phone,
   AlertTriangle,
   MessageSquare,
@@ -41,6 +46,7 @@ import {
   CreditCard,
   QrCode,
   ExternalLink,
+  GraduationCap,
 } from 'lucide-react';
 
 interface PaymentAppOption {
@@ -145,6 +151,15 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   // ZeroTube Productive Study Player state
   const [showZeroTube, setShowZeroTube] = useState<boolean>(false);
+  const [studyAppsConfig, setStudyAppsConfig] = useState<CompulsoryStudyAppsConfig>(() =>
+    getCompulsoryStudyAppsConfig()
+  );
+
+  useEffect(() => {
+    const syncStudy = () => setStudyAppsConfig(getCompulsoryStudyAppsConfig());
+    window.addEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
+    return () => window.removeEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
+  }, []);
 
   // Parachute reflection reason
   const [parachuteReason, setParachuteReason] = useState<string>('');
@@ -1214,6 +1229,58 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                 Phone
               </span>
             </button>
+
+            {/* Compulsory Verified Study / Online Class Apps (Toggleable — no Bag required) */}
+            {studyAppsConfig.enabled &&
+              studyAppsConfig.apps
+                .filter((sa) => !visibleBagApps.some((b) => b.packageName === sa.packageName))
+                .map((studyApp) => {
+                  const brand = resolveAppBrandVisual({
+                    packageName: studyApp.packageName,
+                    appName: studyApp.appName,
+                    category: 'custom',
+                  });
+                  return (
+                    <button
+                      key={`study_${studyApp.packageName}`}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(700);
+                        try {
+                          if (window.ZeroNative?.launchStudyApp?.(studyApp.packageName)) return;
+                          window.ZeroNative?.launchBagApp?.(studyApp.packageName);
+                        } catch {
+                          // Web preview
+                        }
+                      }}
+                      title={`${studyApp.appName} (${studyApp.categoryLabel})`}
+                      className="flex flex-col items-center gap-1 p-1 rounded-xl liquid-spring hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold shadow-md select-none relative"
+                        style={{
+                          backgroundColor: brand.bgColor,
+                          color: brand.textColor,
+                          border: '1.5px solid var(--accent-primary, #38bdf8)',
+                        }}
+                      >
+                        {brand.initial}
+                        <span
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{
+                            backgroundColor: 'var(--accent-primary, #38bdf8)',
+                            color: 'var(--text-on-accent, #000000)',
+                          }}
+                        >
+                          <GraduationCap size={10} />
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-sans font-medium text-cyan-200 max-w-[54px] truncate text-center">
+                        {studyApp.appName}
+                      </span>
+                    </button>
+                  );
+                })}
 
             {/* Allowed Bag Apps (up to 3 apps) */}
             {visibleBagApps.map((app) => {

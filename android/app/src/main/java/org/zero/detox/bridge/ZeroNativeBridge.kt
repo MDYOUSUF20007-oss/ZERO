@@ -486,6 +486,25 @@ class ZeroNativeBridge(
     }
 
     @JavascriptInterface
+    fun syncCompulsoryStudyAppsJson(enabled: Boolean, appsJson: String) {
+        val security = AppSecurityGuard.evaluateEnvironment(activity)
+        if (security.presetBagEditingDisabled) {
+            return
+        }
+        bagStore.saveCompulsoryStudyApps(enabled, appsJson)
+    }
+
+    @JavascriptInterface
+    fun launchStudyApp(packageName: String): Boolean {
+        if (!bagStore.isCompulsoryStudyAppsEnabled() ||
+            !bagStore.getCompulsoryStudyPackages().contains(packageName)
+        ) {
+            return false
+        }
+        return launchBagApp(packageName)
+    }
+
+    @JavascriptInterface
     fun setBagStateJson(bagName: String, appsJson: String, allowCalls: Boolean, allowSms: Boolean) {
         val security = AppSecurityGuard.evaluateEnvironment(activity)
         if (security.presetBagEditingDisabled) {
