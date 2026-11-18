@@ -1,9 +1,11 @@
 ﻿import React, { memo } from 'react';
 
 /**
- * Living Ambient Background Mesh (Fluent Glass Core)
- * Optimized 2-corner minimal layout (Upper Left & Lower Right).
- * 100% GPU compositor execution via translate3d — 0ms main-thread CPU overhead, zero flicker.
+ * Ambient Background Mesh (Zero-Heat Optical Glass Core)
+ * Optimized 2-corner radial glow layout (Upper Left & Lower Right).
+ * Static by default for 0% idle GPU heat; optional drift animation controlled
+ * via html[data-ambient-drift="true"].
+ * Full-screen SVG feTurbulence + mix-blend-overlay removed to eliminate per-frame GPU bandwidth drain.
  */
 export const AmbientBackground: React.FC = memo(() => {
   return (
@@ -29,15 +31,6 @@ export const AmbientBackground: React.FC = memo(() => {
           background:
             'radial-gradient(circle at 50% 50%, var(--accent-shift-1, var(--accent-secondary)) 0%, var(--liquid-accent-soft-glow) 30%, transparent 68%)',
           opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.80)',
-        }}
-      />
-
-      {/* Tactile Micro-Mesh Texture & Anti-Banding Dither Overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none mix-blend-overlay"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.75'/%3E%3C/svg%3E")`,
-          opacity: 'calc(0.02 + var(--ambient-glow-opacity, 0.35) * 0.04)',
         }}
       />
     </div>

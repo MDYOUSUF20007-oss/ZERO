@@ -206,9 +206,7 @@ export function OnboardingWizard({
       className="fixed inset-0 z-50 overflow-y-auto text-white flex flex-col justify-between p-4 sm:p-6 selection:bg-white selection:text-black"
       style={{
         background:
-          'radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.22) 0%, transparent 46%), radial-gradient(circle at 84% 82%, rgba(129, 140, 248, 0.20) 0%, transparent 48%), rgba(6, 10, 18, 0.86)',
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+          'radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.22) 0%, transparent 46%), radial-gradient(circle at 84% 82%, rgba(129, 140, 248, 0.20) 0%, transparent 48%), rgba(5, 9, 17, 0.96)',
         paddingTop: 'max(1rem, var(--zero-safe-top, 0px))',
         paddingBottom: 'max(1rem, var(--zero-safe-bottom, 0px))',
       }}
@@ -255,12 +253,10 @@ export function OnboardingWizard({
           className="liquid-card rounded-3xl p-5 sm:p-6"
           style={{
             background:
-              'linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(15,24,42,0.52) 48%, rgba(10,16,30,0.68) 100%)',
+              'linear-gradient(155deg, rgba(255,255,255,0.11) 0%, rgba(15,24,42,0.78) 42%, rgba(10,16,30,0.88) 100%)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
             boxShadow:
-              'inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.06), 0 24px 60px -12px rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+              'inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.06), 0 20px 44px -12px rgba(0,0,0,0.65)',
           }}
         >
           {/* STEP 1: PRIMARY GOAL */}

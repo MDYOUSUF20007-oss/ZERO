@@ -27,6 +27,7 @@ const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
 const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
 const STORAGE_KEY_GLASS_STRENGTH = 'zero_fluent_glass_strength_v1';
 const STORAGE_KEY_GPU_SAFEGUARD = 'zero_gpu_thermal_safeguard_v1';
+const STORAGE_KEY_AMBIENT_DRIFT = 'zero_ambient_drift_enabled_v1';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -146,10 +147,15 @@ function mountIsolatedThemeEngine(
   // Set real-time fluent glass parameters
   applyGlassTokens(root, glassStrength);
 
-  // Restore GPU Battery & Thermal Safeguard attribute
+  // Restore GPU Battery & Thermal Safeguard & optional Ambient Drift attributes
   try {
     if (window.localStorage.getItem(STORAGE_KEY_GPU_SAFEGUARD) === 'true') {
       root.setAttribute('data-gpu-safeguard', 'true');
+    }
+    if (window.localStorage.getItem(STORAGE_KEY_AMBIENT_DRIFT) === 'true') {
+      root.setAttribute('data-ambient-drift', 'true');
+    } else {
+      root.removeAttribute('data-ambient-drift');
     }
   } catch {
     // ignore
@@ -213,6 +219,8 @@ export interface InterfaceStyleContextValue {
   setFluentGlassStrength: (s: number) => void;
   gpuThermalSafeguard: boolean;
   setGpuThermalSafeguard: (enabled: boolean) => void;
+  ambientDriftEnabled: boolean;
+  setAmbientDriftEnabled: (enabled: boolean) => void;
   fluentBlurStrength: number;
   setFluentBlurStrength: (b: number) => void;
   fluentSpecularHighlight: number;
@@ -313,6 +321,15 @@ export function InterfaceStyleProvider({
     }
   });
 
+  const [ambientDriftEnabled, setAmbientDriftEnabledState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(STORAGE_KEY_AMBIENT_DRIFT) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
     if (typeof window === 'undefined') return 'fluent';
     try {
@@ -376,6 +393,32 @@ export function InterfaceStyleProvider({
       // ignore
     }
   }, []);
+
+  const setAmbientDriftEnabled = useCallback((enabled: boolean) => {
+    setAmbientDriftEnabledState(enabled);
+    if (typeof document !== 'undefined') {
+      if (enabled) {
+        document.documentElement.setAttribute('data-ambient-drift', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-ambient-drift');
+      }
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_AMBIENT_DRIFT, enabled.toString());
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (ambientDriftEnabled) {
+        document.documentElement.setAttribute('data-ambient-drift', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-ambient-drift');
+      }
+    }
+  }, [ambientDriftEnabled]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -493,6 +536,8 @@ export function InterfaceStyleProvider({
       setFluentGlassStrength,
       gpuThermalSafeguard,
       setGpuThermalSafeguard,
+      ambientDriftEnabled,
+      setAmbientDriftEnabled,
       fluentBlurStrength: Math.round(2 + fluentGlassStrength * 22),
       setFluentBlurStrength: (b: number) => {
         const normalized = Math.max(0.05, Math.min(1, (b - 2) / 22));
@@ -531,6 +576,8 @@ export function InterfaceStyleProvider({
       setFluentGlassStrength,
       gpuThermalSafeguard,
       setGpuThermalSafeguard,
+      ambientDriftEnabled,
+      setAmbientDriftEnabled,
     ]
   );
 

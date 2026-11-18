@@ -234,6 +234,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setFluentGlassStrength,
     gpuThermalSafeguard,
     setGpuThermalSafeguard,
+    ambientDriftEnabled,
+    setAmbientDriftEnabled,
     accent,
     setAccent,
   } = useInterfaceStyle();
@@ -855,6 +857,56 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Optional Ambient Drift Animation Toggle (OFF by default for cool GPU) */}
+            <div className="pt-3 border-t theme-border space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl theme-bg-secondary flex items-center justify-center shrink-0 border theme-border">
+                    <Sparkles
+                      size={15}
+                      strokeWidth={1.75}
+                      className={ambientDriftEnabled ? 'text-cyan-400' : 'theme-text-muted'}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="text-xs font-semibold theme-text-primary block truncate">
+                      Ambient Drift Animation (Optional)
+                    </label>
+                    <p className="text-[11px] theme-text-muted leading-tight">
+                      Off by default for a cool phone. Enable for slow floating background orbs.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={ambientDriftEnabled}
+                  onClick={() => {
+                    haptics.tick(ambientDriftEnabled ? 600 : 900);
+                    setAmbientDriftEnabled(!ambientDriftEnabled);
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    ambientDriftEnabled ? 'bg-cyan-500' : 'bg-zinc-800'
+                  }`}
+                  aria-label="Toggle Optional Ambient Drift Animation"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      ambientDriftEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-[10px] theme-text-muted pt-0.5">
+                <span>
+                  {ambientDriftEnabled ? 'Drifting Orbs Active' : 'Static Ambient Glow (Zero Idle GPU Heat)'}
+                </span>
+                <span className="font-mono">{ambientDriftEnabled ? 'Animated' : 'Static • Ice-Cold'}</span>
               </div>
             </div>
 

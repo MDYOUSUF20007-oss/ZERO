@@ -78,7 +78,8 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     Fluent Glass Acrylic Surface Cards (True 4-Layer Physical Glass)
+     Fluent Optical Glass Surface Cards (Zero-Shader Specular Glass)
+     Renders crisp translucent specular glass with 0ms GPU blur passes
      ------------------------------------------------------------- */
   .glass-card,
   .obsidian-card,
@@ -88,22 +89,36 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .settings-card,
   [data-frosted-card="true"],
   [data-obsidian-card="true"] {
-    background-color: var(--glass-surface-bg, var(--bg-surface, rgba(16, 26, 44, 0.45))) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.10)) 0%, rgba(255, 255, 255, 0.012) 35%, rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.025)) 100%) !important;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09)) !important;
-    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.25)) !important;
-    border-left: 1px solid rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.18)) !important;
+    background-color: rgba(13, 21, 36, 0.80) !important;
+    background-image:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.14)) 0%,
+        rgba(255, 255, 255, 0.03) 26%,
+        rgba(14, 24, 42, 0.12) 55%,
+        rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.04)) 100%
+      ),
+      radial-gradient(
+        120% 80% at 0% 0%,
+        var(--liquid-accent-soft-glow) 0%,
+        transparent 58%
+      ) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.10)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.28)) !important;
+    border-left: 1px solid rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.20)) !important;
     border-radius: 20px !important;
-    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.24)), 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 0 18px -4px var(--liquid-accent-soft-glow) !important;
-    backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
-    -webkit-backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
+    box-shadow:
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.28)),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.35),
+      0 12px 28px -6px rgba(0, 0, 0, 0.62) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     text-shadow: var(--glass-text-shadow, none) !important;
     color: var(--text-primary, #f0f9ff) !important;
   }
 
   /* -------------------------------------------------------------
-     Living Ambient Fluid Mesh (Optimized 2-Corner Minimal Drift)
-     100% GPU Compositor with Zero Raster Invalidation & Zero Flicker
+     Ambient Mesh Orbs (Static by Default — Optional Drift Toggle)
      ------------------------------------------------------------- */
   @keyframes ambientMeshGlideA {
     0% {
@@ -135,24 +150,27 @@ export const BASE_ENGINE_BRIDGE_CSS = `
     }
   }
 
-  .ambient-mesh-node-1 {
+  .ambient-mesh-node-1,
+  .ambient-mesh-node-2 {
+    animation: none;
+  }
+
+  html[data-ambient-drift="true"]:not([data-gpu-safeguard="true"]) .ambient-mesh-node-1 {
     animation: ambientMeshGlideA 42s ease-in-out infinite;
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
   }
-  .ambient-mesh-node-2 {
+  html[data-ambient-drift="true"]:not([data-gpu-safeguard="true"]) .ambient-mesh-node-2 {
     animation: ambientMeshGlideB 48s ease-in-out infinite;
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ambient-mesh-node-1,
-    .ambient-mesh-node-2 {
+    html[data-ambient-drift="true"] .ambient-mesh-node-1,
+    html[data-ambient-drift="true"] .ambient-mesh-node-2 {
       animation: none !important;
     }
   }
@@ -199,16 +217,23 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     Radial Dial Glass Surface & Zero-Lag Touch Dragging
+     Radial Dial Optical Glass Surface & Zero-Heat Touch Dragging
      ------------------------------------------------------------- */
   .zero-dial-surface {
-    background-color: var(--glass-dial-bg, rgba(14, 20, 32, 0.40)) !important;
+    background-color: rgba(12, 18, 30, 0.86) !important;
+    background-image:
+      radial-gradient(
+        circle at 30% 20%,
+        rgba(255, 255, 255, 0.10) 0%,
+        rgba(255, 255, 255, 0.02) 45%,
+        transparent 75%
+      ) !important;
     border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
-    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.24)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.26)) !important;
     border-radius: 9999px !important;
-    backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
-    -webkit-backdrop-filter: var(--surface-blur, blur(14px) saturate(160%)) !important;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.20)), 0 16px 40px -8px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 14px 32px -8px rgba(0, 0, 0, 0.65) !important;
     contain: layout style paint;
     touch-action: none !important;
   }
@@ -220,19 +245,19 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     Floating Frosted Dock Navigation
+     Floating Frosted Dock Navigation (Lightweight 8px Blur Only Where Content Scrolls)
      ------------------------------------------------------------- */
   .liquid-dock,
   .zero-bottom-nav,
   nav[data-bottom-nav="true"],
   nav[data-frosted-chrome="true"] {
-    background-color: var(--glass-dock-bg, rgba(10, 16, 28, 0.60)) !important;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.10)) !important;
+    background-color: rgba(10, 16, 28, 0.78) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
     border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.26)) !important;
     border-radius: 2rem !important;
-    backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
-    -webkit-backdrop-filter: var(--surface-blur, blur(16px) saturate(160%)) !important;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.22)), 0 16px 44px -4px rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: blur(8px) saturate(130%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(130%) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.20), 0 12px 32px -4px rgba(0, 0, 0, 0.65) !important;
   }
 
   /* -------------------------------------------------------------
@@ -241,10 +266,11 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .modal-glass,
   [data-modal-glass="true"],
   .zero-modal-card {
-    background-color: var(--glass-modal-bg, rgba(12, 18, 30, 0.88)) !important;
-    backdrop-filter: var(--glass-modal-blur, blur(20px) saturate(180%)) !important;
-    -webkit-backdrop-filter: var(--glass-modal-blur, blur(20px) saturate(180%)) !important;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+    background-color: rgba(11, 17, 30, 0.94) !important;
+    background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, transparent 45%) !important;
+    backdrop-filter: blur(8px) saturate(125%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(125%) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14)) !important;
     border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.30)) !important;
   }
 

@@ -149,14 +149,14 @@ export const aetherialEngine: ThemeEngineDefinition = {
     .settings-card,
     [data-frosted-card="true"],
     [data-obsidian-card="true"] {
-      background-color: var(--glass-surface-bg, rgba(29, 31, 40, 0.78)) !important;
-      background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, rgba(255, 255, 255, 0.012) 40%, rgba(78, 222, 163, 0.025) 100%) !important;
+      background-color: rgba(25, 28, 38, 0.88) !important;
+      background-image: linear-gradient(145deg, rgba(56, 189, 248, 0.08) 0%, rgba(255, 255, 255, 0.03) 34%, rgba(78, 222, 163, 0.03) 100%) !important;
       border: 1px solid var(--border-subtle, rgba(62, 72, 79, 0.45)) !important;
-      border-top: 1px solid var(--border-strong, rgba(56, 189, 248, 0.35)) !important;
+      border-top: 1px solid var(--border-strong, rgba(56, 189, 248, 0.38)) !important;
       border-radius: 20px !important;
-      box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.70), 0 0 20px -4px rgba(56, 189, 248, 0.18) !important;
-      backdrop-filter: var(--surface-blur, blur(24px) saturate(180%)) !important;
-      -webkit-backdrop-filter: var(--surface-blur, blur(24px) saturate(180%)) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 28px -6px rgba(0, 0, 0, 0.65) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
       color: var(--text-primary, #e2e1ed) !important;
     }
 
@@ -205,13 +205,14 @@ export const aetherialEngine: ThemeEngineDefinition = {
        Aetherial Radial Arc Dial Surface
        ------------------------------------------------------------- */
     .zero-dial-surface {
-      background-color: var(--glass-dial-bg, rgba(17, 19, 27, 0.65)) !important;
+      background-color: rgba(17, 19, 27, 0.88) !important;
+      background-image: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.09) 0%, transparent 65%) !important;
       border: 1px solid var(--border-subtle, rgba(62, 72, 79, 0.45)) !important;
       border-top: 1px solid var(--border-strong, rgba(56, 189, 248, 0.35)) !important;
       border-radius: 9999px !important;
-      backdrop-filter: var(--surface-blur, blur(24px) saturate(180%)) !important;
-      -webkit-backdrop-filter: var(--surface-blur, blur(24px) saturate(180%)) !important;
-      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.75), 0 0 28px -4px rgba(56, 189, 248, 0.25) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 14px 32px -8px rgba(0, 0, 0, 0.72) !important;
       contain: layout style paint;
       touch-action: none !important;
     }
@@ -228,13 +229,13 @@ export const aetherialEngine: ThemeEngineDefinition = {
     .zero-bottom-nav,
     nav[data-bottom-nav="true"],
     nav[data-frosted-chrome="true"] {
-      background-color: var(--glass-dock-bg, rgba(12, 14, 22, 0.84)) !important;
+      background-color: rgba(12, 14, 22, 0.86) !important;
       border: 1px solid var(--border-subtle, rgba(62, 72, 79, 0.45)) !important;
       border-top: 1px solid rgba(56, 189, 248, 0.25) !important;
       border-radius: 2rem !important;
-      backdrop-filter: blur(20px) saturate(180%) !important;
-      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-      box-shadow: 0 16px 44px -4px rgba(0, 0, 0, 0.75), 0 0 20px -4px rgba(56, 189, 248, 0.15) !important;
+      backdrop-filter: blur(8px) saturate(130%) !important;
+      -webkit-backdrop-filter: blur(8px) saturate(130%) !important;
+      box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.72) !important;
     }
 
     /* -------------------------------------------------------------
@@ -243,12 +244,12 @@ export const aetherialEngine: ThemeEngineDefinition = {
     .modal-glass,
     [data-modal-glass="true"],
     .zero-modal-card {
-      background-color: var(--bg-modal, rgba(17, 19, 27, 0.94)) !important;
-      backdrop-filter: blur(24px) saturate(180%) !important;
-      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      background-color: rgba(17, 19, 27, 0.95) !important;
+      backdrop-filter: blur(8px) saturate(125%) !important;
+      -webkit-backdrop-filter: blur(8px) saturate(125%) !important;
       border: 1px solid rgba(62, 72, 79, 0.50) !important;
       border-top: 1px solid rgba(56, 189, 248, 0.40) !important;
-      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 30px -5px rgba(56, 189, 248, 0.20) !important;
+      box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.82) !important;
     }
 
     /* -------------------------------------------------------------

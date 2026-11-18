@@ -987,12 +987,12 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             style={{
               touchAction: 'none',
               backgroundColor: 'var(--accent-soft)',
-              backdropFilter: 'var(--surface-blur, blur(14px))',
-              WebkitBackdropFilter: 'var(--surface-blur, blur(14px))',
+              backgroundImage:
+                'linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%)',
               border: '1px solid var(--accent-border)',
               boxShadow: isHolding
-                ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 28px var(--liquid-accent-glow)'
-                : 'inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.30)), 0 8px 20px -4px var(--liquid-accent-soft-glow)',
+                ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 24px var(--liquid-accent-glow)'
+                : 'inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.30)), 0 8px 18px -4px var(--liquid-accent-soft-glow)',
             }}
           >
             <div
