@@ -5,7 +5,6 @@ import type {
   ProfileAvatarId,
   SessionRecord,
   ThemeConfig,
-  ThemeFamily,
   ZeroProfile,
 } from '../types';
 import {
@@ -19,12 +18,6 @@ import {
   getZeroRankFromHours,
   normalizeProfileHandle,
 } from '../utils/parachuteRewardsPolicy';
-import {
-  AMOLED_GRADIENTS,
-  DEFAULT_THEME_CONFIG,
-  KINDLE_PAPER_PRESETS,
-  MATTE_STUDIO_PRESETS,
-} from '../utils/themes';
 import { mergeHashtagList, normalizeCustomHashtag } from '../utils/bagLayout';
 import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { haptics } from '../utils/haptics';
@@ -37,9 +30,7 @@ import {
   CloudDownload,
   Loader2,
   Ticket,
-  Palette,
   Plus,
-  Check,
 } from 'lucide-react';
 
 interface ProfileModalProps {
@@ -99,8 +90,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isZeroSupporter,
   sessions: _sessions,
   totalReclaimedHours,
-  themeConfig,
-  onThemeConfigChange,
+  themeConfig: _themeConfig,
+  onThemeConfigChange: _onThemeConfigChange,
   customHashtags = [],
   onAddCustomHashtag,
   isCloudBusy = false,
@@ -152,7 +143,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  const activeThemeConfig = themeConfig ?? DEFAULT_THEME_CONFIG;
   const savedAccentColor: ProfileAccent = initialProfile?.accentColor || 'amber';
   const rank = getZeroRankFromHours(totalReclaimedHours);
   const previewName = displayName.trim() || 'Zero Monk';
@@ -571,299 +561,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 })}
               </div>
             </div>
-
-            {/* Theme Switcher (Replaces legacy Profile Accent) */}
-            {onThemeConfigChange && (
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    className={
-                      isFluentGlass
-                        ? 'text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5'
-                        : isBespoke
-                        ? 'text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5'
-                        : 'text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5'
-                    }
-                  >
-                    <Palette
-                      size={11}
-                      style={{
-                        color: isFluentGlass
-                          ? '#7DD3FC'
-                          : isBespoke
-                          ? '#3B82F6'
-                          : 'var(--accent-hex, #FFFFFF)',
-                      }}
-                    />
-                    <span>
-                      {isFluentGlass
-                        ? 'Theme Studio (Classic Mode Swatches)'
-                        : isBespoke
-                        ? 'Theme (Classic Mode)'
-                        : 'App Theme'}
-                    </span>
-                  </label>
-                  <span
-                    className={`text-[10px] text-zinc-400 uppercase ${
-                      isFluentGlass ? 'font-sans' : 'font-mono'
-                    }`}
-                  >
-                    {activeThemeConfig.family}
-                  </span>
-                </div>
-
-                {/* 3 Theme Families */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(['amoled', 'kindle', 'matte'] as ThemeFamily[]).map((family) => {
-                    const selected = activeThemeConfig.family === family;
-                    const label =
-                      family === 'amoled'
-                        ? 'AMOLED'
-                        : family === 'kindle'
-                        ? 'Paper Kindle'
-                        : 'Matte Studio';
-                    return (
-                      <button
-                        key={family}
-                        type="button"
-                        onClick={() => {
-                          haptics.tick(780);
-                          onThemeConfigChange({ ...activeThemeConfig, family });
-                        }}
-                        style={
-                          !isModernFont && selected
-                            ? {
-                                borderColor: 'var(--accent-hex, #FFFFFF)',
-                                boxShadow: '0 0 0 1px var(--accent-hex, #FFFFFF)',
-                              }
-                            : undefined
-                        }
-                        className={
-                          isFluentGlass
-                            ? `py-2 px-2 rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 liquid-spring ${
-                                selected
-                                  ? 'liquid-pill-active'
-                                  : 'liquid-pill text-zinc-400 hover:text-white'
-                              }`
-                            : isBespoke
-                            ? `py-2 px-2 rounded-md border text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors duration-75 ${
-                                selected
-                                  ? 'border-blue-500 bg-neutral-950 text-white'
-                                  : 'border-neutral-800 bg-black text-neutral-400 hover:border-neutral-600'
-                              }`
-                            : `py-1.5 px-2 rounded-xl border text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
-                                selected
-                                  ? 'obsidian-inset text-white'
-                                  : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                              }`
-                        }
-                      >
-                        {selected && (
-                          <Check
-                            size={10}
-                            style={
-                              isFluentGlass
-                                ? undefined
-                                : { color: isBespoke ? '#3B82F6' : 'var(--accent-hex, #FFFFFF)' }
-                            }
-                          />
-                        )}
-                        <span className="truncate">{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Theme Presets for Active Family */}
-                {activeThemeConfig.family === 'amoled' && (
-                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-0.5">
-                    {AMOLED_GRADIENTS.map((preset) => {
-                      const active = activeThemeConfig.amoledGradient === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            haptics.tick(820);
-                            onThemeConfigChange({
-                              ...activeThemeConfig,
-                              family: 'amoled',
-                              amoledGradient: preset.id,
-                            });
-                          }}
-                          style={
-                            !isModernFont && active
-                              ? { borderColor: 'var(--accent-hex, #FFFFFF)' }
-                              : undefined
-                          }
-                          className={
-                            isFluentGlass
-                              ? `p-2 rounded-xl text-left flex items-center gap-2 liquid-spring ${
-                                  active
-                                    ? 'liquid-inset text-white'
-                                    : 'liquid-row text-zinc-400 hover:text-white'
-                                }`
-                              : isBespoke
-                              ? `p-2 rounded-md border text-left flex items-center gap-2 transition-colors duration-75 ${
-                                  active
-                                    ? 'bg-neutral-950 border-blue-500 text-white'
-                                    : 'bg-black border-neutral-800 text-neutral-400 hover:border-neutral-600'
-                                }`
-                              : `p-2 rounded-xl border text-left flex items-center gap-2 transition-all ${
-                                  active
-                                    ? 'obsidian-inset text-white'
-                                    : 'obsidian-inset-neutral text-zinc-400 hover:border-white/25'
-                                }`
-                          }
-                        >
-                          <span
-                            className={`w-5 h-5 border shrink-0 ${
-                              isBespoke ? 'rounded-sm border-neutral-700' : 'rounded-lg border-white/20'
-                            }`}
-                            style={{ background: preset.previewCss }}
-                          />
-                          <span className="text-[10px] font-semibold truncate">{preset.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeThemeConfig.family === 'kindle' && (
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {KINDLE_PAPER_PRESETS.map((preset) => {
-                      const active =
-                        activeThemeConfig.kindlePreset === preset.id &&
-                        activeThemeConfig.kindlePaperColor.toUpperCase() ===
-                          preset.paperColor.toUpperCase();
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            haptics.tick(800);
-                            onThemeConfigChange({
-                              ...activeThemeConfig,
-                              family: 'kindle',
-                              kindlePreset: preset.id,
-                              kindlePaperColor: preset.paperColor,
-                              kindleInkAccent: preset.inkAccent,
-                            });
-                          }}
-                          style={
-                            !isModernFont && active
-                              ? {
-                                  borderColor: 'var(--accent-hex, #FFFFFF)',
-                                  boxShadow: '0 0 0 1px var(--accent-hex, #FFFFFF)',
-                                }
-                              : undefined
-                          }
-                          className={
-                            isFluentGlass
-                              ? `p-1.5 rounded-xl flex flex-col items-center gap-1 liquid-spring ${
-                                  active ? 'liquid-inset' : 'liquid-row hover:border-white/25'
-                                }`
-                              : isBespoke
-                              ? `p-1.5 rounded-md border flex flex-col items-center gap-1 transition-colors duration-75 ${
-                                  active
-                                    ? 'bg-neutral-950 border-blue-500'
-                                    : 'bg-black border-neutral-800 hover:border-neutral-600'
-                                }`
-                              : `p-1.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-                                  active
-                                    ? 'obsidian-inset'
-                                    : 'obsidian-inset-neutral hover:border-white/25'
-                                }`
-                          }
-                        >
-                          <span
-                            className={`w-5 h-5 border border-zinc-500 flex items-center justify-center ${
-                              isBespoke ? 'rounded-sm' : 'rounded-md'
-                            }`}
-                            style={{ backgroundColor: preset.paperColor }}
-                          >
-                            <span
-                              className={`w-2 h-2 ${isBespoke ? 'rounded-sm' : 'rounded-full'}`}
-                              style={{ backgroundColor: preset.inkAccent }}
-                            />
-                          </span>
-                          <span className="text-[8px] font-bold text-zinc-200 truncate w-full text-center">
-                            {preset.label.split(' ')[0]}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeThemeConfig.family === 'matte' && (
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {MATTE_STUDIO_PRESETS.map((preset) => {
-                      const active =
-                        activeThemeConfig.mattePreset === preset.id &&
-                        activeThemeConfig.matteBaseColor.toUpperCase() ===
-                          preset.baseColor.toUpperCase();
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            haptics.tick(800);
-                            onThemeConfigChange({
-                              ...activeThemeConfig,
-                              family: 'matte',
-                              mattePreset: preset.id,
-                              matteBaseColor: preset.baseColor,
-                              matteAccentColor: preset.accentColor,
-                            });
-                          }}
-                          style={
-                            !isModernFont && active
-                              ? {
-                                  borderColor: 'var(--accent-hex, #FFFFFF)',
-                                  boxShadow: '0 0 0 1px var(--accent-hex, #FFFFFF)',
-                                }
-                              : undefined
-                          }
-                          className={
-                            isFluentGlass
-                              ? `p-1.5 rounded-xl flex flex-col items-center gap-1 liquid-spring ${
-                                  active ? 'liquid-inset' : 'liquid-row hover:border-white/25'
-                                }`
-                              : isBespoke
-                              ? `p-1.5 rounded-md border flex flex-col items-center gap-1 transition-colors duration-75 ${
-                                  active
-                                    ? 'bg-neutral-950 border-blue-500'
-                                    : 'bg-black border-neutral-800 hover:border-neutral-600'
-                                }`
-                              : `p-1.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-                                  active
-                                    ? 'obsidian-inset'
-                                    : 'obsidian-inset-neutral hover:border-white/25'
-                                }`
-                          }
-                        >
-                          <span
-                            className={`w-5 h-5 border border-zinc-600 flex items-center justify-center ${
-                              isBespoke ? 'rounded-sm' : 'rounded-md'
-                            }`}
-                            style={{ backgroundColor: preset.baseColor }}
-                          >
-                            <span
-                              className={`w-2 h-2 ${isBespoke ? 'rounded-sm' : 'rounded-full'}`}
-                              style={{ backgroundColor: preset.accentColor }}
-                            />
-                          </span>
-                          <span className="text-[8px] font-bold text-zinc-200 truncate w-full text-center">
-                            {preset.label.split(' ')[0]}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Mission Pills + Custom Hashtag Creator */}
             <div className="space-y-2">
