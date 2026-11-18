@@ -11,6 +11,9 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+import org.zero.detox.schedule.ScheduleAlarmManager;
+import org.zero.detox.widget.ZeroWidgetUpdater;
+
 @CapacitorPlugin(name = "ZeroBridge")
 public class ZeroBridgePlugin extends Plugin {
     private static final String TAG = "ZeroBridgePlugin";
@@ -64,8 +67,8 @@ public class ZeroBridgePlugin extends Plugin {
         try {
             Context ctx = getContext();
             if (ctx != null) {
-                SharedPreferences prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putString(KEY_ROUTINES_JSON, routinesJson).apply();
+                ScheduleAlarmManager.saveAndReschedule(ctx, routinesJson);
+                ZeroWidgetUpdater.requestAllUpdates(ctx);
             }
             JSObject ret = new JSObject();
             ret.put("success", true);

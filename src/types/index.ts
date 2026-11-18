@@ -484,6 +484,8 @@ export interface ZeroNativeBridgeInterface {
   setActiveThemeAccent?(accentHex: string, accentRgb: string, badgeTextHex: string): void;
   setInterfaceStyle?(style: InterfaceStyle): void;
   setImmersiveVoidMode?(enabled: boolean): void;
+  setVideoFullscreenMode?(enabled: boolean): void;
+  syncWidgetStatsJson?(payloadJson: string): void;
   setRoutinesJson?(routinesJson: string): void;
   syncRoutinesToNative?(routinesJson: string): void;
   startPomodoroBreak?(durationSeconds: number): boolean;

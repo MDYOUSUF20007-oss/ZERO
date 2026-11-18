@@ -41,7 +41,10 @@
 -keep class org.zero.detox.ui.TheVoidActivity { *; }
 -keep class org.zero.detox.service.LockForegroundService { *; }
 -keep class org.zero.detox.receiver.BootReceiver { *; }
+-keep class org.zero.detox.receiver.ScheduleAlarmReceiver { *; }
 -keep class org.zero.detox.receiver.ZeroDeviceAdminReceiver { *; }
+-keep class org.zero.detox.widget.** { *; }
+-keep public class * extends android.appwidget.AppWidgetProvider { *; }
 -keep public class * extends androidx.core.content.FileProvider { *; }
 
 # Preserve WorkManager Coroutine/ListenableWorker constructors invoked by reflection

@@ -20,6 +20,7 @@ export const STORAGE_KEY_WHITELIST_CHANNELS = 'zero_tube_whitelist_channels_v2';
 export const STORAGE_KEY_SAVED_LECTURES = 'zero_tube_saved_lectures_v2';
 export const STORAGE_KEY_STUDY_NOTES = 'zero_tube_study_notes_v1';
 export const STORAGE_KEY_YT_GUARD_CONFIG = 'zero_tube_official_yt_guard_v1';
+export const STORAGE_KEY_VIDEO_PROGRESS = 'zero_tube_video_progress_v1';
 
 // Legacy storage keys (migrated once on read, never written back)
 const LEGACY_KEY_CUSTOM_VIDEOS = 'zero_tube_custom_videos_v1';
@@ -481,4 +482,104 @@ export function removeSavedZeroTubeLecture(videoId: string): SavedZeroTubeLectur
 
 export function getChannelKey(ch: Pick<WhitelistedChannel, 'id' | 'handle' | 'name'>): string {
   return ch.id || normalizeChannelHandle(ch.handle) || normalizeChannelName(ch.name);
+}
+
+export interface VideoWatchProgress {
+  currentTime: number;
+  duration: number;
+  updatedAt: number;
+}
+
+export function getAllVideoProgress(): Record<string, VideoWatchProgress> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_VIDEO_PROGRESS);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, VideoWatchProgress>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getVideoProgress(videoId: string): VideoWatchProgress | null {
+  if (!videoId) return null;
+  const all = getAllVideoProgress();
+  const entry = all[videoId];
+  if (!entry || typeof entry.currentTime !== 'number' || !Number.isFinite(entry.currentTime)) {
+    return null;
+  }
+  return entry;
+}
+
+export function saveVideoProgress(
+  videoId: string,
+  currentTime: number,
+  duration: number
+): Record<string, VideoWatchProgress> {
+  if (typeof localStorage === 'undefined' || !videoId) return {};
+  if (!Number.isFinite(currentTime) || currentTime < 0) return getAllVideoProgress();
+
+  const all = getAllVideoProgress();
+  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
+
+  // If completed (>95% watched or within 8 seconds of end on long videos), clear save-point
+  const isFinished =
+    safeDuration > 20 &&
+    (currentTime >= safeDuration - 8 || currentTime / safeDuration >= 0.96);
+
+  if (isFinished || currentTime < 3) {
+    if (all[videoId]) {
+      delete all[videoId];
+      try {
+        localStorage.setItem(STORAGE_KEY_VIDEO_PROGRESS, JSON.stringify(all));
+      } catch {
+        // Ignore storage errors
+      }
+    }
+    return all;
+  }
+
+  all[videoId] = {
+    currentTime: Math.floor(currentTime),
+    duration: Math.floor(safeDuration),
+    updatedAt: Date.now(),
+  };
+
+  // Prune to 200 most recently updated entries
+  const entries = Object.entries(all);
+  if (entries.length > 200) {
+    entries.sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
+    const pruned: Record<string, VideoWatchProgress> = {};
+    for (const [k, v] of entries.slice(0, 200)) {
+      pruned[k] = v;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_VIDEO_PROGRESS, JSON.stringify(pruned));
+    } catch {
+      // Ignore
+    }
+    return pruned;
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEY_VIDEO_PROGRESS, JSON.stringify(all));
+  } catch {
+    // Ignore storage errors
+  }
+  return all;
+}
+
+export function clearVideoProgress(videoId: string): Record<string, VideoWatchProgress> {
+  if (typeof localStorage === 'undefined' || !videoId) return {};
+  const all = getAllVideoProgress();
+  if (all[videoId]) {
+    delete all[videoId];
+    try {
+      localStorage.setItem(STORAGE_KEY_VIDEO_PROGRESS, JSON.stringify(all));
+    } catch {
+      // Ignore
+    }
+  }
+  return all;
 }

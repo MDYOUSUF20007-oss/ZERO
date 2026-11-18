@@ -15,6 +15,10 @@ import {
   Headphones,
   MonitorPlay,
   Maximize2,
+  Minimize2,
+  Lock,
+  Unlock,
+  Undo2,
   Loader2,
   Radio,
   CheckCircle2,
@@ -54,7 +58,12 @@ import {
   saveZeroTubeLecture,
   removeSavedZeroTubeLecture,
   getChannelKey,
+  getAllVideoProgress,
+  getVideoProgress,
+  saveVideoProgress,
+  clearVideoProgress,
   type SavedZeroTubeLecture,
+  type VideoWatchProgress,
 } from '../utils/zeroTubeWhitelist';
 
 interface ZeroTubeModalProps {
@@ -150,6 +159,22 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   // Dual-Engine Player state
   const [activeLecture, setActiveLecture] = useState<ActiveLectureState | null>(null);
+  const [previousLecture, setPreviousLecture] = useState<{
+    lecture: ActiveLectureState;
+    savedTime: number;
+  } | null>(null);
+  const [pendingSwitchLecture, setPendingSwitchLecture] = useState<ActiveLectureState | null>(null);
+  const [videoProgressMap, setVideoProgressMap] = useState<Record<string, VideoWatchProgress>>(() =>
+    getAllVideoProgress()
+  );
+  const [resumedAtSeconds, setResumedAtSeconds] = useState<number | null>(null);
+  const [iframeStartSeconds, setIframeStartSeconds] = useState<number>(0);
+
+  // Fullscreen & touch-lock state
+  const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
+  const [showFsControls, setShowFsControls] = useState(true);
+  const [isScreenTouchLocked, setIsScreenTouchLocked] = useState(false);
+
   const [engineMode, setEngineMode] = useState<PlayerEngineMode>('idle');
   const [streamData, setStreamData] = useState<ZeroTubeStreamResult | null>(null);
   const [selectedMuxedIndex, setSelectedMuxedIndex] = useState(0);
@@ -161,10 +186,124 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const [fallbackReason, setFallbackReason] = useState('');
 
   const mediaRef = useRef<HTMLVideoElement | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingSeekTimeRef = useRef<number | null>(null);
   const shouldResumeAfterSwapRef = useRef<boolean>(false);
+  const lastSavedSecRef = useRef<number>(-10);
+  const activeLectureRef = useRef<ActiveLectureState | null>(null);
+  const currentTimeRef = useRef<number>(0);
+  const mediaDurationRef = useRef<number>(0);
+  const fsControlsTimerRef = useRef<number | null>(null);
   const feedRequestSeqRef = useRef<number>(0);
   const channelVideosCacheRef = useRef<Record<string, ZeroTubeSearchVideo[]>>({});
+
+  activeLectureRef.current = activeLecture;
+  currentTimeRef.current = currentTime;
+  mediaDurationRef.current = mediaDuration;
+
+  const persistCurrentWatchProgress = useCallback((force = false) => {
+    const lec = activeLectureRef.current;
+    if (!lec || lec.isLive) return;
+    const el = mediaRef.current;
+    const t = el && Number.isFinite(el.currentTime) ? el.currentTime : currentTimeRef.current;
+    const d =
+      el && Number.isFinite(el.duration) && el.duration > 0
+        ? el.duration
+        : mediaDurationRef.current || lec.duration || 0;
+    if (!force && Math.abs(t - lastSavedSecRef.current) < 2) return;
+    lastSavedSecRef.current = t;
+    const nextMap = saveVideoProgress(lec.videoId, t, d);
+    setVideoProgressMap(nextMap);
+  }, []);
+
+  const exitVideoFullscreen = useCallback(() => {
+    setIsVideoFullscreen(false);
+    setIsScreenTouchLocked(false);
+    setShowFsControls(true);
+    try {
+      window.ZeroNative?.setVideoFullscreenMode?.(false);
+    } catch {
+      // Ignore on web preview
+    }
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        void document.exitFullscreen().catch(() => {});
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const enterVideoFullscreen = useCallback(() => {
+    setIsVideoFullscreen(true);
+    setShowFsControls(true);
+    setIsScreenTouchLocked(false);
+    try {
+      window.ZeroNative?.setVideoFullscreenMode?.(true);
+    } catch {
+      // Ignore on web preview
+    }
+    try {
+      const container = playerContainerRef.current;
+      if (container && container.requestFullscreen && !window.ZeroNative?.setVideoFullscreenMode) {
+        void container.requestFullscreen().catch(() => {});
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  // Ensure native landscape/immersive fullscreen always cleans up on close or unmount
+  useEffect(() => {
+    if (!isOpen && isVideoFullscreen) {
+      exitVideoFullscreen();
+    }
+  }, [isOpen, isVideoFullscreen, exitVideoFullscreen]);
+
+  useEffect(() => {
+    return () => {
+      persistCurrentWatchProgress(true);
+      try {
+        window.ZeroNative?.setVideoFullscreenMode?.(false);
+      } catch {
+        // Ignore
+      }
+    };
+  }, [persistCurrentWatchProgress]);
+
+  // Auto-hide fullscreen controls after 3.5s while playing
+  const scheduleHideFsControls = useCallback(() => {
+    if (fsControlsTimerRef.current !== null) {
+      window.clearTimeout(fsControlsTimerRef.current);
+      fsControlsTimerRef.current = null;
+    }
+    if (isVideoFullscreen && isPlaying && !isScreenTouchLocked) {
+      fsControlsTimerRef.current = window.setTimeout(() => {
+        setShowFsControls(false);
+      }, 3500);
+    }
+  }, [isVideoFullscreen, isPlaying, isScreenTouchLocked]);
+
+  useEffect(() => {
+    scheduleHideFsControls();
+    return () => {
+      if (fsControlsTimerRef.current !== null) {
+        window.clearTimeout(fsControlsTimerRef.current);
+      }
+    };
+  }, [scheduleHideFsControls, showFsControls]);
+
+  // Escape key exits fullscreen cleanly
+  useEffect(() => {
+    if (!isVideoFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        exitVideoFullscreen();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isVideoFullscreen, exitVideoFullscreen]);
 
   // Sync whitelist with Settings Studio
   useEffect(() => {
@@ -192,14 +331,53 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   }, []);
 
   const loadLectureIntoPlayer = useCallback(
-    async (lecture: ActiveLectureState, preloadedStream?: ZeroTubeStreamResult) => {
+    async (
+      lecture: ActiveLectureState,
+      preloadedStream?: ZeroTubeStreamResult,
+      options?: { skipSavePrevious?: boolean; overrideResumeSeconds?: number }
+    ) => {
+      // Save current video's exact timestamp BEFORE switching & push to previousLecture
+      const prevLec = activeLectureRef.current;
+      if (prevLec && prevLec.videoId !== lecture.videoId) {
+        const el = mediaRef.current;
+        const prevTime =
+          el && Number.isFinite(el.currentTime) ? el.currentTime : currentTimeRef.current;
+        const prevDur =
+          el && Number.isFinite(el.duration) && el.duration > 0
+            ? el.duration
+            : mediaDurationRef.current || prevLec.duration || 0;
+        if (!prevLec.isLive && prevTime >= 3) {
+          const nextMap = saveVideoProgress(prevLec.videoId, prevTime, prevDur);
+          setVideoProgressMap(nextMap);
+        }
+        if (!options?.skipSavePrevious) {
+          setPreviousLecture({
+            lecture: prevLec,
+            savedTime: Math.floor(Math.max(0, prevTime)),
+          });
+        }
+      }
+
+      // Check for saved watch progress on the incoming video
+      const savedEntry = !lecture.isLive ? getVideoProgress(lecture.videoId) : null;
+      const resumeSec =
+        typeof options?.overrideResumeSeconds === 'number'
+          ? Math.max(0, options.overrideResumeSeconds)
+          : savedEntry && savedEntry.currentTime >= 3
+          ? savedEntry.currentTime
+          : 0;
+
+      setPendingSwitchLecture(null);
       setBlockedNotice(null);
       setFallbackReason('');
       setActiveLecture(lecture);
-      setCurrentTime(0);
+      setCurrentTime(resumeSec);
+      setResumedAtSeconds(resumeSec >= 3 ? Math.floor(resumeSec) : null);
+      setIframeStartSeconds(Math.floor(resumeSec));
       setMediaDuration(lecture.duration > 0 ? lecture.duration : 0);
       setIsPlaying(false);
-      pendingSeekTimeRef.current = null;
+      lastSavedSecRef.current = resumeSec;
+      pendingSeekTimeRef.current = resumeSec >= 3 ? resumeSec : null;
       shouldResumeAfterSwapRef.current = true;
 
       const updatedLectures = saveZeroTubeLecture({
@@ -261,6 +439,37 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     },
     [pickPreferredMuxedIndex]
   );
+
+  /**
+   * Misclick guard: if a lecture is actively playing and the user taps a different video card,
+   * prompt briefly before switching so stray thumb taps never interrupt your current lecture.
+   */
+  const requestLectureSwitch = useCallback(
+    (candidate: ActiveLectureState) => {
+      if (activeLecture && activeLecture.videoId === candidate.videoId) {
+        // Already watching this video — keep playing!
+        setPendingSwitchLecture(null);
+        return;
+      }
+      if (activeLecture && engineMode !== 'idle' && isPlaying) {
+        haptics.tick(450);
+        setPendingSwitchLecture(candidate);
+        return;
+      }
+      haptics.tick(600);
+      void loadLectureIntoPlayer(candidate);
+    },
+    [activeLecture, engineMode, isPlaying, loadLectureIntoPlayer]
+  );
+
+  const handleSwitchBackToPrevious = useCallback(() => {
+    if (!previousLecture) return;
+    haptics.tick(650);
+    const target = previousLecture;
+    void loadLectureIntoPlayer(target.lecture, undefined, {
+      overrideResumeSeconds: target.savedTime,
+    });
+  }, [previousLecture, loadLectureIntoPlayer]);
 
   // Fetch uploaded full-length videos for one or all whitelisted channels
   const fetchChannelVideosFeed = useCallback(
@@ -443,7 +652,12 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
       setMediaDuration(el.duration);
     }
     if (pendingSeekTimeRef.current !== null && Number.isFinite(pendingSeekTimeRef.current)) {
-      el.currentTime = pendingSeekTimeRef.current;
+      const clampedSeek =
+        Number.isFinite(el.duration) && el.duration > 5
+          ? Math.min(pendingSeekTimeRef.current, Math.max(0, el.duration - 3))
+          : pendingSeekTimeRef.current;
+      el.currentTime = clampedSeek;
+      setCurrentTime(clampedSeek);
       pendingSeekTimeRef.current = null;
     }
     if (shouldResumeAfterSwapRef.current) {
@@ -456,6 +670,8 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   const handleMediaError = () => {
     if (engineMode === 'native' && activeLecture) {
+      persistCurrentWatchProgress(true);
+      setIframeStartSeconds(Math.floor(currentTimeRef.current));
       setFallbackReason('Stream playback error — switched to No-Cookie embed');
       setEngineMode('fallback_iframe');
       setIsPlaying(false);
@@ -464,10 +680,15 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   const handleClosePlayer = () => {
     haptics.tick(450);
+    persistCurrentWatchProgress(true);
+    if (isVideoFullscreen) {
+      exitVideoFullscreen();
+    }
     if (mediaRef.current) {
       mediaRef.current.pause();
     }
     setIsPlaying(false);
+    setPendingSwitchLecture(null);
     setActiveLecture(null);
     setStreamData(null);
     setEngineMode('idle');
@@ -481,6 +702,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
       void el.play().catch(() => {});
     } else {
       el.pause();
+      persistCurrentWatchProgress(true);
     }
   };
 
@@ -495,6 +717,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     );
     el.currentTime = next;
     setCurrentTime(next);
+    persistCurrentWatchProgress(true);
   };
 
   const handleCycleSpeed = () => {
@@ -533,15 +756,23 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     if (el && Number.isFinite(val)) {
       el.currentTime = val;
       setCurrentTime(val);
+      if (activeLecture && !activeLecture.isLive) {
+        const nextMap = saveVideoProgress(
+          activeLecture.videoId,
+          val,
+          mediaDuration || activeLecture.duration || 0
+        );
+        setVideoProgressMap(nextMap);
+      }
     }
   };
 
   const handleFullscreen = () => {
-    const el = mediaRef.current;
-    if (!el) return;
     haptics.tick(500);
-    if (el.requestFullscreen) {
-      void el.requestFullscreen().catch(() => {});
+    if (isVideoFullscreen) {
+      exitVideoFullscreen();
+    } else {
+      enterVideoFullscreen();
     }
   };
 
@@ -995,6 +1226,11 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
 
   const renderVideoCard = (vid: ZeroTubeSearchVideo) => {
     const isCurrent = activeLecture?.videoId === vid.videoId;
+    const savedProg = !vid.isLive ? videoProgressMap[vid.videoId] : undefined;
+    const progressPct =
+      savedProg && savedProg.currentTime >= 3 && (savedProg.duration || vid.duration) > 0
+        ? Math.min(100, Math.round((savedProg.currentTime / (savedProg.duration || vid.duration)) * 100))
+        : 0;
     const viewsText = formatCompactViews(vid.viewCount);
     const metaParts = [vid.uploaderName, viewsText, vid.textualUploadDate].filter(Boolean);
     const chInitial = (vid.uploaderName || 'Z').charAt(0).toUpperCase();
@@ -1012,8 +1248,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
         key={vid.videoId}
         type="button"
         onClick={() => {
-          haptics.tick(600);
-          void loadLectureIntoPlayer({
+          requestLectureSwitch({
             videoId: vid.videoId,
             url: vid.url,
             title: vid.title,
@@ -1047,7 +1282,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
             <Play size={28} style={{ color: 'var(--accent-primary)' }} />
           )}
 
-          {isCurrent && (
+          {isCurrent ? (
             <span
               className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold"
               style={{
@@ -1057,6 +1292,35 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
             >
               PLAYING
             </span>
+          ) : (
+            savedProg &&
+            savedProg.currentTime >= 3 && (
+              <span
+                className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  color: 'var(--accent-primary)',
+                  border: '1px solid var(--accent-border)',
+                }}
+              >
+                RESUME {formatDurationSeconds(savedProg.currentTime)}
+              </span>
+            )
+          )}
+
+          {progressPct > 0 && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-1"
+              style={{ backgroundColor: 'var(--border-subtle)' }}
+            >
+              <div
+                className="h-full"
+                style={{
+                  width: `${progressPct}%`,
+                  backgroundColor: 'var(--accent-primary)',
+                }}
+              />
+            </div>
           )}
 
           <span
@@ -1231,6 +1495,10 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
             aria-label="Close ZeroTube"
             onClick={() => {
               haptics.thud();
+              persistCurrentWatchProgress(true);
+              if (isVideoFullscreen) {
+                exitVideoFullscreen();
+              }
               onClose();
             }}
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer"
@@ -1245,17 +1513,36 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
         </div>
       </div>
 
-      {/* Collapsible Dual-Engine Video Player (opens when a lecture is tapped or pasted) */}
+      {/* Collapsible Dual-Engine Video Player (supports full landscape native fullscreen + touch lock) */}
       {isPlayerVisible && (
         <div
-          className="w-full shrink-0"
-          style={{
-            backgroundColor: 'var(--bg-primary)',
-            borderBottom: '1px solid var(--border-subtle)',
-          }}
+          ref={playerContainerRef}
+          className={
+            isVideoFullscreen
+              ? 'fixed inset-0 z-[200] flex flex-col justify-center bg-black'
+              : 'w-full shrink-0'
+          }
+          style={
+            isVideoFullscreen
+              ? undefined
+              : {
+                  backgroundColor: 'var(--bg-primary)',
+                  borderBottom: '1px solid var(--border-subtle)',
+                }
+          }
         >
-          <div className="w-full max-w-3xl mx-auto">
-            <div className="w-full aspect-video relative overflow-hidden flex items-center justify-center">
+          <div className={isVideoFullscreen ? 'w-full h-full flex flex-col relative' : 'w-full max-w-3xl mx-auto'}>
+            <div
+              className={
+                isVideoFullscreen
+                  ? 'w-full h-full relative overflow-hidden flex items-center justify-center bg-black'
+                  : 'w-full aspect-video relative overflow-hidden flex items-center justify-center'
+              }
+              onClick={() => {
+                if (!isVideoFullscreen || isScreenTouchLocked) return;
+                setShowFsControls((prev) => !prev);
+              }}
+            >
               {engineMode === 'loading' && (
                 <div
                   className="w-full h-full flex flex-col items-center justify-center gap-2.5 p-6 text-center"
@@ -1282,13 +1569,33 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                     preload="metadata"
                     onLoadedMetadata={handleMediaLoadedMetadata}
                     onTimeUpdate={() => {
-                      if (mediaRef.current) setCurrentTime(mediaRef.current.currentTime);
+                      if (mediaRef.current) {
+                        setCurrentTime(mediaRef.current.currentTime);
+                        persistCurrentWatchProgress(false);
+                      }
                     }}
                     onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                    onEnded={() => setIsPlaying(false)}
+                    onPause={() => {
+                      setIsPlaying(false);
+                      persistCurrentWatchProgress(true);
+                    }}
+                    onEnded={() => {
+                      setIsPlaying(false);
+                      if (activeLecture) {
+                        setVideoProgressMap(clearVideoProgress(activeLecture.videoId));
+                      }
+                    }}
                     onError={handleMediaError}
-                    onClick={handleTogglePlayPause}
+                    onClick={(e) => {
+                      if (isVideoFullscreen) {
+                        if (isScreenTouchLocked) {
+                          e.stopPropagation();
+                          return;
+                        }
+                        return;
+                      }
+                      handleTogglePlayPause();
+                    }}
                     className={
                       audioOnlyMode ? 'sr-only' : 'w-full h-full object-contain cursor-pointer'
                     }
@@ -1325,23 +1632,237 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* Fullscreen Landscape Overlay Controls (auto-hides after 3.5s, supports Touch Lock) */}
+                  {isVideoFullscreen && isScreenTouchLocked && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        haptics.tick(500);
+                        setIsScreenTouchLocked(false);
+                        setShowFsControls(true);
+                      }}
+                      className="absolute top-4 right-5 z-20 px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 cursor-pointer"
+                      style={{
+                        backgroundColor: 'rgba(10, 10, 14, 0.78)',
+                        border: '1px solid var(--accent-border)',
+                        color: 'var(--accent-primary)',
+                      }}
+                    >
+                      <Lock size={12} />
+                      <span>Tap to Unlock</span>
+                    </button>
+                  )}
+
+                  {isVideoFullscreen && !isScreenTouchLocked && showFsControls && (
+                    <div
+                      className="absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-5"
+                      style={{
+                        background:
+                          'linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.18) 62%, rgba(0,0,0,0.82) 100%)',
+                      }}
+                    >
+                      {/* Fullscreen Top Bar */}
+                      <div
+                        className="flex items-center justify-between gap-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-white truncate">
+                            {activeLecture.title}
+                          </p>
+                          <p
+                            className="text-[11px] font-mono truncate"
+                            style={{ color: 'var(--accent-primary)' }}
+                          >
+                            {activeLecture.uploaderName} • {activeResolutionLabel}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              haptics.tick(500);
+                              setIsScreenTouchLocked(true);
+                              setShowFsControls(false);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer text-white"
+                            style={{
+                              backgroundColor: 'rgba(24, 24, 30, 0.8)',
+                              border: '1px solid rgba(255,255,255,0.18)',
+                            }}
+                          >
+                            <Unlock size={12} />
+                            <span>Lock Screen</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFullscreen}
+                            aria-label="Exit Fullscreen"
+                            className="px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 cursor-pointer"
+                            style={{
+                              backgroundColor: 'var(--accent-primary)',
+                              color: 'var(--text-on-accent)',
+                            }}
+                          >
+                            <Minimize2 size={13} />
+                            <span>Exit</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Fullscreen Center Transport */}
+                      <div
+                        className="flex items-center justify-center gap-6"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {!activeLecture.isLive && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleSkipSeconds(-10);
+                              scheduleHideFsControls();
+                            }}
+                            className="w-12 h-12 rounded-full flex flex-col items-center justify-center text-white cursor-pointer"
+                            style={{
+                              backgroundColor: 'rgba(20, 20, 26, 0.72)',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                            }}
+                          >
+                            <RotateCcw size={16} />
+                            <span className="text-[9px] font-mono">-10s</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleTogglePlayPause();
+                            scheduleHideFsControls();
+                          }}
+                          className="w-16 h-16 rounded-full flex items-center justify-center cursor-pointer shadow-lg"
+                          style={{
+                            backgroundColor: 'var(--accent-primary)',
+                            color: 'var(--text-on-accent)',
+                          }}
+                        >
+                          {isPlaying ? (
+                            <Pause size={26} fill="currentColor" />
+                          ) : (
+                            <Play size={26} fill="currentColor" className="ml-0.5" />
+                          )}
+                        </button>
+                        {!activeLecture.isLive && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleSkipSeconds(10);
+                              scheduleHideFsControls();
+                            }}
+                            className="w-12 h-12 rounded-full flex flex-col items-center justify-center text-white cursor-pointer"
+                            style={{
+                              backgroundColor: 'rgba(20, 20, 26, 0.72)',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                            }}
+                          >
+                            <RotateCw size={16} />
+                            <span className="text-[9px] font-mono">+10s</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Fullscreen Bottom Seek + Speed/Quality */}
+                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                        {!activeLecture.isLive && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono tabular-nums text-white shrink-0">
+                              {formatDurationSeconds(currentTime)}
+                            </span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={Math.max(1, mediaDuration || activeLecture.duration || 1)}
+                              step={1}
+                              value={Math.min(
+                                currentTime,
+                                mediaDuration || activeLecture.duration || currentTime
+                              )}
+                              onChange={handleSeekBarChange}
+                              aria-label="Seek lecture timeline"
+                              className="flex-1 h-2 rounded-full cursor-pointer"
+                              style={{ accentColor: 'var(--accent-primary)' }}
+                            />
+                            <span className="text-xs font-mono tabular-nums text-zinc-300 shrink-0">
+                              {formatDurationSeconds(mediaDuration || activeLecture.duration)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={handleCycleSpeed}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-white cursor-pointer"
+                            style={{
+                              backgroundColor: 'rgba(24, 24, 30, 0.8)',
+                              border: '1px solid rgba(255,255,255,0.18)',
+                            }}
+                          >
+                            {playbackSpeed}x
+                          </button>
+                          {streamData && streamData.muxedStreams.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={handleCycleResolution}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold text-white flex items-center gap-1 cursor-pointer"
+                              style={{
+                                backgroundColor: 'rgba(24, 24, 30, 0.8)',
+                                border: '1px solid rgba(255,255,255,0.18)',
+                              }}
+                            >
+                              <MonitorPlay size={12} />
+                              <span>{activeResolutionLabel}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
               {engineMode === 'fallback_iframe' && activeLecture && (
-                <iframe
-                  title={activeLecture.title}
-                  src={`https://www.youtube-nocookie.com/embed/${activeLecture.videoId}?rel=0&modestbranding=1&playsinline=1`}
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  className="w-full h-full border-0"
-                />
+                <>
+                  <iframe
+                    title={activeLecture.title}
+                    src={`https://www.youtube-nocookie.com/embed/${activeLecture.videoId}?rel=0&modestbranding=1&playsinline=1${iframeStartSeconds >= 3 ? `&start=${iframeStartSeconds}` : ''}`}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                  {isVideoFullscreen && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFullscreen();
+                      }}
+                      className="absolute top-3 right-4 z-20 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--accent-primary)',
+                        color: 'var(--text-on-accent)',
+                      }}
+                    >
+                      <Minimize2 size={13} />
+                      <span>Exit Fullscreen</span>
+                    </button>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Native Study Controls Bar */}
-            {engineMode === 'native' && activeLecture && (
+            {/* Native Study Controls Bar (hidden while in landscape fullscreen overlay) */}
+            {!isVideoFullscreen && engineMode === 'native' && activeLecture && (
               <div
                 className="px-3.5 py-2 space-y-2"
                 style={{
@@ -1504,57 +2025,113 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
               </div>
             )}
 
-            {/* Active Lecture Title Strip with Minimize Player button */}
-            {activeLecture && (
+            {/* Active Lecture Title Strip with Previous-Video Return & Minimize Player */}
+            {!isVideoFullscreen && activeLecture && (
               <div
-                className="px-4 py-2 flex items-center justify-between gap-2"
+                className="px-4 py-2 space-y-2"
                 style={{
                   backgroundColor: 'var(--bg-surface)',
                   borderTop: '1px solid var(--border-subtle)',
                 }}
               >
-                <div className="min-w-0 flex-1">
-                  <h4
-                    className="text-xs font-semibold truncate"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {activeLecture.title}
-                  </h4>
-                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                    <span
-                      className="text-[10px] font-mono truncate"
-                      style={{ color: 'var(--accent-primary)' }}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4
+                      className="text-xs font-semibold truncate"
+                      style={{ color: 'var(--text-primary)' }}
                     >
-                      {activeLecture.uploaderName}
-                    </span>
-                    <span
-                      className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+                      {activeLecture.title}
+                    </h4>
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span
+                        className="text-[10px] font-mono truncate"
+                        style={{ color: 'var(--accent-primary)' }}
+                      >
+                        {activeLecture.uploaderName}
+                      </span>
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: 'var(--surface-tonal)',
+                          color: 'var(--text-muted)',
+                          border: '1px solid var(--border-subtle)',
+                        }}
+                        title={fallbackReason}
+                      >
+                        {engineMode === 'native'
+                          ? `Native • ${activeResolutionLabel}`
+                          : 'No-Cookie Embed'}
+                      </span>
+                      {resumedAtSeconds !== null && resumedAtSeconds >= 3 && (
+                        <span
+                          className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: 'var(--accent-soft)',
+                            color: 'var(--accent-primary)',
+                            border: '1px solid var(--accent-border)',
+                          }}
+                        >
+                          Resumed {formatDurationSeconds(resumedAtSeconds)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {engineMode === 'fallback_iframe' && (
+                      <button
+                        type="button"
+                        onClick={handleFullscreen}
+                        aria-label="Fullscreen"
+                        className="p-1.5 rounded-xl cursor-pointer shrink-0"
+                        style={{
+                          backgroundColor: 'var(--surface-tonal)',
+                          border: '1px solid var(--border-subtle)',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        <Maximize2 size={12} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleClosePlayer}
+                      className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer shrink-0"
                       style={{
                         backgroundColor: 'var(--surface-tonal)',
-                        color: 'var(--text-muted)',
                         border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
                       }}
-                      title={fallbackReason}
                     >
-                      {engineMode === 'native'
-                        ? `Native • ${activeResolutionLabel}`
-                        : 'No-Cookie Embed'}
-                    </span>
+                      <ChevronDown size={12} />
+                      <span>Hide</span>
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleClosePlayer}
-                  className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer shrink-0"
-                  style={{
-                    backgroundColor: 'var(--surface-tonal)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  <ChevronDown size={12} />
-                  <span>Hide Player</span>
-                </button>
+
+                {previousLecture && previousLecture.lecture.videoId !== activeLecture.videoId && (
+                  <button
+                    type="button"
+                    onClick={handleSwitchBackToPrevious}
+                    className="w-full px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center justify-between gap-2 cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--accent-soft)',
+                      border: '1px solid var(--accent-border)',
+                      color: 'var(--accent-primary)',
+                    }}
+                  >
+                    <span className="flex items-center gap-1.5 min-w-0 truncate">
+                      <Undo2 size={12} className="shrink-0" />
+                      <span className="truncate">
+                        Switch back: {previousLecture.lecture.title}
+                      </span>
+                    </span>
+                    <span className="font-mono text-[10px] shrink-0">
+                      {previousLecture.savedTime >= 3
+                        ? formatDurationSeconds(previousLecture.savedTime)
+                        : 'Return'}
+                    </span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -2198,6 +2775,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {visibleSavedLectures.slice(0, 6).map((lec) => {
                       const isCurrent = activeLecture?.videoId === lec.videoId;
+                      const savedProg = !lec.isLive ? videoProgressMap[lec.videoId] : undefined;
                       return (
                         <div
                           key={lec.videoId}
@@ -2212,8 +2790,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              haptics.tick(600);
-                              void loadLectureIntoPlayer({
+                              requestLectureSwitch({
                                 videoId: lec.videoId,
                                 url: lec.url,
                                 title: lec.title,
@@ -2238,7 +2815,9 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                               style={{ color: 'var(--accent-primary)' }}
                             >
                               {lec.uploaderName} •{' '}
-                              {formatDurationSeconds(lec.duration, lec.isLive)}
+                              {savedProg && savedProg.currentTime >= 3
+                                ? `Resume ${formatDurationSeconds(savedProg.currentTime)}`
+                                : formatDurationSeconds(lec.duration, lec.isLive)}
                             </p>
                           </button>
                           <button
@@ -2297,6 +2876,65 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Accidental Misclick Guard Confirmation Toast */}
+      {pendingSwitchLecture && !isVideoFullscreen && (
+        <div
+          className="fixed bottom-4 left-4 right-4 z-[150] max-w-xl mx-auto p-3.5 rounded-2xl shadow-2xl space-y-2.5 animate-fadeIn"
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--accent-border)',
+          }}
+        >
+          <div className="min-w-0">
+            <p
+              className="text-[10px] font-mono font-bold tracking-wider"
+              style={{ color: 'var(--accent-primary)' }}
+            >
+              ACCIDENTAL TAP GUARD • CURRENT SAVED AT {formatDurationSeconds(currentTime)}
+            </p>
+            <p
+              className="text-xs font-semibold line-clamp-1 mt-0.5"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Switch to: {pendingSwitchLecture.title}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.tick(450);
+                setPendingSwitchLecture(null);
+              }}
+              className="flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-tonal)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Keep Watching
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                haptics.tick(650);
+                const nextTarget = pendingSwitchLecture;
+                setPendingSwitchLecture(null);
+                void loadLectureIntoPlayer(nextTarget);
+              }}
+              className="flex-1 py-2 rounded-xl text-xs font-bold cursor-pointer"
+              style={{
+                backgroundColor: 'var(--accent-primary)',
+                color: 'var(--text-on-accent)',
+              }}
+            >
+              Switch Video
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

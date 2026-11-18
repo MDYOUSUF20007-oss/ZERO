@@ -32,9 +32,12 @@ import org.zero.detox.data.BagStore
 import org.zero.detox.data.ParachuteStore
 import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.receiver.ZeroDeviceAdminReceiver
+import org.zero.detox.schedule.ScheduleAlarmManager
 import org.zero.detox.security.AppSecurityGuard
 import org.zero.detox.ui.TheVoidActivity
 import org.zero.detox.ui.VoidThemeStore
+import org.zero.detox.widget.WidgetDataStore
+import org.zero.detox.widget.ZeroWidgetUpdater
 import java.io.File
 
 /**
@@ -557,6 +560,33 @@ class ZeroNativeBridge(
     @JavascriptInterface
     fun setActiveThemeAccent(accentHex: String, accentRgb: String, badgeTextHex: String) {
         VoidThemeStore.saveAccent(activity, accentHex, accentRgb, badgeTextHex)
+        ZeroWidgetUpdater.requestAllUpdates(activity)
+    }
+
+    @JavascriptInterface
+    fun syncRoutinesToNative(routinesJson: String) {
+        try {
+            ScheduleAlarmManager.saveAndReschedule(activity, routinesJson)
+            ZeroWidgetUpdater.requestAllUpdates(activity)
+        } catch (_: Throwable) {}
+    }
+
+    @JavascriptInterface
+    fun setRoutinesJson(routinesJson: String) {
+        syncRoutinesToNative(routinesJson)
+    }
+
+    @JavascriptInterface
+    fun syncWidgetStatsJson(payloadJson: String) {
+        try {
+            WidgetDataStore.saveFromJson(activity, payloadJson)
+            ZeroWidgetUpdater.requestAllUpdates(activity)
+        } catch (_: Throwable) {}
+    }
+
+    @JavascriptInterface
+    fun setVideoFullscreenMode(enabled: Boolean) {
+        (activity as? MainActivity)?.setVideoFullscreenMode(enabled)
     }
 
     @JavascriptInterface

@@ -9,19 +9,27 @@ import androidx.core.content.ContextCompat
 import org.zero.detox.MainActivity
 import org.zero.detox.core.LockEngine
 import org.zero.detox.data.ParachuteStore
+import org.zero.detox.schedule.ScheduleAlarmManager
 import org.zero.detox.service.LockForegroundService
 import org.zero.detox.ui.TheVoidActivity
+import org.zero.detox.widget.ZeroWidgetUpdater
 
 /**
- * BootReceiver: Anti-tamper watchdog.
+ * BootReceiver: Anti-tamper watchdog & schedule re-arm hook.
  * Catches device reboot intents (BOOT_COMPLETED, LOCKED_BOOT_COMPLETED, QUICKBOOT_POWERON).
- * Re-anchors SystemClock.elapsedRealtime() on reboot and restarts The Void or emits a signed VerifiedCompletionEvent.
+ * Re-anchors SystemClock.elapsedRealtime() on reboot, re-arms recurring schedules, refreshes home widgets,
+ * and restarts The Void or emits a signed VerifiedCompletionEvent.
  */
 class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val receivedAction = intent.action ?: return
         Log.i("ZeroAntiTamper", "Boot event intercepted: $receivedAction")
+
+        try {
+            ScheduleAlarmManager.rescheduleAll(context)
+            ZeroWidgetUpdater.requestAllUpdates(context)
+        } catch (_: Throwable) {}
 
         val prefs = context.getSharedPreferences(LockEngine.PREFS_NAME, Context.MODE_PRIVATE)
         val isLocked = prefs.getBoolean(LockEngine.KEY_IS_LOCKED, false)

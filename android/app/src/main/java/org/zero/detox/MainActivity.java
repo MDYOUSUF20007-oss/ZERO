@@ -3,6 +3,7 @@ package org.zero.detox;
 import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
@@ -12,11 +13,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import android.util.Log;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.appcompat.app.AlertDialog;
@@ -26,6 +29,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
@@ -49,6 +53,10 @@ public class MainActivity extends BridgeActivity {
     private boolean signatureVerified = false;
     private boolean tamperDialogShown = false;
     private volatile boolean voidImmersiveMode = false;
+    private volatile boolean videoFullscreenMode = false;
+    private View customFullscreenView = null;
+    private WebChromeClient.CustomViewCallback customViewCallback = null;
+    private FrameLayout fullscreenContainer = null;
 
     private void ensureNativeBridge() {
         if (!signatureVerified || nativeBridge != null) return;
@@ -101,6 +109,65 @@ public class MainActivity extends BridgeActivity {
         settings.setGeolocationEnabled(false);
 
         if (getBridge() != null) {
+            webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
+                @Override
+                public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+                    if (customFullscreenView != null) {
+                        if (callback != null) callback.onCustomViewHidden();
+                        return;
+                    }
+                    customFullscreenView = view;
+                    customViewCallback = callback;
+                    runOnUiThread(() -> {
+                        try {
+                            ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+                            FrameLayout container = new FrameLayout(MainActivity.this);
+                            container.setBackgroundColor(Color.BLACK);
+                            container.addView(
+                                view,
+                                new FrameLayout.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            );
+                            fullscreenContainer = container;
+                            decor.addView(
+                                container,
+                                new ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            );
+                            setVideoFullscreenMode(true);
+                        } catch (Throwable t) {
+                            Log.w("ZeroMainActivity", "onShowCustomView failed", t);
+                        }
+                    });
+                }
+
+                @Override
+                public void onHideCustomView() {
+                    runOnUiThread(() -> {
+                        try {
+                            if (fullscreenContainer != null) {
+                                ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+                                decor.removeView(fullscreenContainer);
+                                fullscreenContainer.removeAllViews();
+                                fullscreenContainer = null;
+                            }
+                            customFullscreenView = null;
+                            if (customViewCallback != null) {
+                                customViewCallback.onCustomViewHidden();
+                                customViewCallback = null;
+                            }
+                            setVideoFullscreenMode(false);
+                        } catch (Throwable t) {
+                            Log.w("ZeroMainActivity", "onHideCustomView failed", t);
+                        }
+                    });
+                }
+            });
+
             getBridge().setWebViewClient(new BridgeWebViewClient(getBridge()) {
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -322,7 +389,7 @@ public class MainActivity extends BridgeActivity {
             return;
         }
         dispatchPermissionRefreshToJs();
-        if (voidImmersiveMode) {
+        if (voidImmersiveMode || videoFullscreenMode) {
             applyVoidImmersiveSystemBars(true);
         }
     }
@@ -330,14 +397,34 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && voidImmersiveMode) {
+        if (hasFocus && (voidImmersiveMode || videoFullscreenMode)) {
             applyVoidImmersiveSystemBars(true);
         }
     }
 
     public void setVoidImmersiveMode(boolean enabled) {
         voidImmersiveMode = enabled;
-        runOnUiThread(() -> applyVoidImmersiveSystemBars(enabled));
+        runOnUiThread(() -> applyVoidImmersiveSystemBars(voidImmersiveMode || videoFullscreenMode));
+    }
+
+    public void setVideoFullscreenMode(boolean enabled) {
+        videoFullscreenMode = enabled;
+        runOnUiThread(() -> {
+            try {
+                if (enabled) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                } else {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                    if (!voidImmersiveMode) {
+                        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    }
+                }
+                applyVoidImmersiveSystemBars(voidImmersiveMode || videoFullscreenMode);
+            } catch (Throwable t) {
+                Log.w("ZeroMainActivity", "Failed to toggle video fullscreen mode", t);
+            }
+        });
     }
 
     @SuppressWarnings("deprecation")

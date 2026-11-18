@@ -5,4 +5,8 @@
     <string name="package_name">org.zero.detox</string>
     <string name="custom_url_scheme">org.zero.detox</string>
     <string name="accessibility_description">Zero-Noise focus guard service: blocks YouTube Shorts, enforces Official YouTube Study Mode channel whitelist, and protects active focus sessions.</string>
+    <string name="widget_focus_label">Zero-Noise Focus Heatmap</string>
+    <string name="widget_focus_description">Shows time saved today, next scheduled focus session, streak, and a 42-day focus heatmap.</string>
+    <string name="widget_compact_label">Zero-Noise Quick Bar</string>
+    <string name="widget_compact_description">Compact home screen bar with time saved today, next session countdown, and 7-day activity.</string>
 </resources>

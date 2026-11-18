@@ -13,6 +13,8 @@ import org.zero.detox.data.ParachuteStore
 import org.zero.detox.engage.EngageConfigStore
 import org.zero.detox.service.LockForegroundService
 import org.zero.detox.ui.TheVoidActivity
+import org.zero.detox.widget.WidgetDataStore
+import org.zero.detox.widget.ZeroWidgetUpdater
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -256,6 +258,10 @@ class LockEngine @JvmOverloads constructor(
             }
             context.startActivity(voidIntent)
         } catch (_: Exception) {}
+
+        try {
+            ZeroWidgetUpdater.requestAllUpdates(context)
+        } catch (_: Throwable) {}
     }
 
     fun getCurrentTiming(): LockTimingSnapshot {
@@ -350,6 +356,10 @@ class LockEngine @JvmOverloads constructor(
             timestamp = endWall
         )
 
+        try {
+            WidgetDataStore.recordNativeCompletedSeconds(context, completedSeconds)
+        } catch (_: Throwable) {}
+
         clearLockState()
     }
 
@@ -391,6 +401,10 @@ class LockEngine @JvmOverloads constructor(
             val serviceIntent = Intent(context, LockForegroundService::class.java)
             context.stopService(serviceIntent)
         } catch (_: Exception) {}
+
+        try {
+            ZeroWidgetUpdater.requestAllUpdates(context)
+        } catch (_: Throwable) {}
     }
 
     private fun loadPersistedState(): SessionState = synchronized(COMPLETION_LOCK) {

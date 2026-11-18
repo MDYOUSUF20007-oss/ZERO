@@ -44,6 +44,12 @@ import {
   sanitizeZeroProfile,
 } from '../utils/parachuteRewardsPolicy';
 import {
+  syncRoutinesToNative,
+  isScheduleActiveNow,
+  isScheduleWarningActive,
+  getScheduleRemainingSeconds,
+} from '../utils/routineEngine';
+import {
   DEFAULT_THEME_CONFIG,
   computeDynamicAccentTokens,
   computeThemeRuntime,
@@ -1248,6 +1254,7 @@ export function useZeroStore() {
 
   useEffect(() => {
     localStorage.setItem(UI_STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
+    syncRoutinesToNative(schedules);
   }, [schedules]);
 
   useEffect(() => {
@@ -1811,6 +1818,103 @@ export function useZeroStore() {
     () => IntegrityEngine.computeCurrentStreak(sessions),
     [sessions]
   );
+
+  // Sync Home Screen Widget stats & 45-day focus heatmap to Android AppWidgets
+  useEffect(() => {
+    try {
+      if (!window.ZeroNative?.syncWidgetStatsJson) return;
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const localTodayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const utcTodayKey = now.toISOString().split('T')[0];
+
+      const heatmap: Record<string, number> = {};
+      let todaySavedSeconds = 0;
+
+      for (const s of sessions) {
+        if (s.status !== 'completed') continue;
+        const dKey = s.dateStr || new Date(s.endTime || s.startTime).toISOString().split('T')[0];
+        if (dKey === localTodayKey || dKey === utcTodayKey) {
+          todaySavedSeconds += Math.max(0, Math.round(s.durationSeconds));
+        }
+        const mins = Math.max(1, Math.round(s.durationSeconds / 60));
+        heatmap[dKey] = (heatmap[dKey] || 0) + mins;
+      }
+
+      const payload = {
+        todaySavedSeconds,
+        totalSavedSeconds: Math.round(parachuteMetrics.totalReclaimedHours * 3600),
+        streakDays: currentStreak,
+        dailyGoalHours: profile?.dailyGoalHours ?? 2,
+        heatmap,
+      };
+      window.ZeroNative.syncWidgetStatsJson(JSON.stringify(payload));
+    } catch {
+      // Ignore on web preview
+    }
+  }, [sessions, parachuteMetrics.totalReclaimedHours, currentStreak, profile?.dailyGoalHours, activeLock.isLocked, schedules]);
+
+  // Foreground recurring schedule watchdog (complements native AlarmManager/WorkManager)
+  const igniteSessionRef = useRef(igniteSession);
+  igniteSessionRef.current = igniteSession;
+
+  useEffect(() => {
+    const checkSchedules = () => {
+      if (activeLockRef.current.isLocked) return;
+      const now = new Date();
+      const dayTag = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+      for (const sched of schedules) {
+        if (!sched.isEnabled) continue;
+
+        // 1. Pre-lock heads-up banner inside app
+        if (isScheduleWarningActive(sched, sched.preLockWarningMinutes || 5, now)) {
+          const warnKey = `warn_${sched.id}_${dayTag}_${sched.startTime}`;
+          try {
+            if (sessionStorage.getItem('zero_last_warn_key') !== warnKey) {
+              sessionStorage.setItem('zero_last_warn_key', warnKey);
+              setPreLockAlert({
+                show: true,
+                scheduleName: sched.name,
+                minutesLeft: sched.preLockWarningMinutes || 5,
+              });
+              haptics.tick(600);
+              setTimeout(() => setPreLockAlert(null), 8000);
+            }
+          } catch {
+            // Ignore sessionStorage errors
+          }
+        }
+
+        // 2. Auto-ignite lock when inside an active schedule window
+        if (isScheduleActiveNow(sched, now)) {
+          const fireKey = `fire_${sched.id}_${dayTag}_${sched.startTime}`;
+          let alreadyFired = false;
+          try {
+            alreadyFired = localStorage.getItem('zero_sched_auto_fired_v1') === fireKey;
+          } catch {
+            alreadyFired = false;
+          }
+          if (!alreadyFired) {
+            const remSecs = getScheduleRemainingSeconds(sched, now);
+            if (remSecs >= 60) {
+              try {
+                localStorage.setItem('zero_sched_auto_fired_v1', fireKey);
+              } catch {
+                // Ignore
+              }
+              igniteSessionRef.current(remSecs, sched.tag || sched.name);
+              break;
+            }
+          }
+        }
+      }
+    };
+
+    checkSchedules();
+    const timer = window.setInterval(checkSchedules, 15000);
+    return () => window.clearInterval(timer);
+  }, [schedules]);
 
   const buildBackupJson = (): string =>
     IntegrityEngine.buildLegacyBackupJson({
