@@ -18,6 +18,8 @@ import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfo
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
 import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.stream.StreamInfo
@@ -376,6 +378,134 @@ class ZeroTubePlugin : Plugin() {
             } catch (t: Throwable) {
                 Log.e(TAG, "getStream failed for url=$canonicalUrl", t)
                 call.reject(t.message ?: "Failed to extract video stream.", "STREAM_EXTRACTION_ERROR")
+            }
+        }
+    }
+
+    /**
+     * Method 5: getChannelVideos
+     * Fetches the official full-length uploaded Videos tab for a whitelisted YouTube channel
+     * via NewPipeExtractor (ChannelInfo + ChannelTabInfo), stripping Shorts (< 120s) so
+     * ZeroTube renders a real YouTube-style channel videos feed immediately on pill tap.
+     */
+    @PluginMethod
+    fun getChannelVideos(call: PluginCall) {
+        val rawUrl = call.getString("channelUrl")?.trim().orEmpty()
+        val rawId = call.getString("channelId")?.trim().orEmpty()
+        val rawHandle = call.getString("channelHandle")?.trim().orEmpty()
+        val fallbackName = call.getString("channelName")?.trim().orEmpty()
+        val limit = (call.getInt("limit", 24) ?: 24).coerceIn(4, 40)
+
+        val targetUrl = when {
+            rawId.startsWith("UC") -> "https://www.youtube.com/channel/$rawId"
+            rawUrl.isNotEmpty() -> normalizeChannelInputToUrl(rawUrl) ?: rawUrl
+            rawHandle.isNotEmpty() -> normalizeChannelInputToUrl(rawHandle)
+            else -> null
+        }
+
+        if (targetUrl.isNullOrBlank()) {
+            call.reject("A valid channelUrl, channelId, or channelHandle is required.", "INVALID_CHANNEL")
+            return
+        }
+
+        pluginScope.launch {
+            try {
+                ensureNewPipeInitialized()
+                val channelInfo = ChannelInfo.getInfo(ServiceList.YouTube, targetUrl)
+                val resolvedId = resolveCanonicalChannelId(channelInfo, targetUrl, rawId)
+                val resolvedName = channelInfo.name.orEmpty().ifBlank { fallbackName }
+                val resolvedUrl = if (resolvedId.startsWith("UC")) {
+                    "https://www.youtube.com/channel/$resolvedId"
+                } else {
+                    channelInfo.url.orEmpty().ifBlank { targetUrl }
+                }
+                val resolvedHandle = firstNonBlank(
+                    extractChannelHandle(rawHandle),
+                    extractChannelHandle(rawUrl),
+                    extractChannelHandle(channelInfo.originalUrl),
+                    extractChannelHandle(channelInfo.url)
+                )
+                val avatarUrl = bestThumbnailUrl(channelInfo.avatars)
+
+                val tabs = channelInfo.tabs.orEmpty()
+                val videosTab = tabs.firstOrNull { tab ->
+                    tab.contentFilters.orEmpty().any { it.equals(ChannelTabs.VIDEOS, ignoreCase = true) }
+                } ?: tabs.firstOrNull { tab ->
+                    tab.contentFilters.orEmpty().none {
+                        it.equals(ChannelTabs.SHORTS, ignoreCase = true) ||
+                            it.equals(ChannelTabs.CHANNELS, ignoreCase = true)
+                    }
+                }
+
+                val videosArray = JSArray()
+                val seenIds = HashSet<String>()
+
+                fun appendChannelItems(items: List<InfoItem>) {
+                    for (item in items) {
+                        if (videosArray.length() >= limit) break
+                        if (item !is StreamInfoItem) continue
+                        val itemUrl = item.url.orEmpty()
+                        if (item.isShortFormContent || isShortUrl(itemUrl)) continue
+
+                        val isLive = item.streamType == StreamType.LIVE_STREAM ||
+                            item.streamType == StreamType.AUDIO_LIVE_STREAM
+                        val durationSec = item.duration
+                        if (!isLive && durationSec >= 0L && durationSec < MIN_FULL_LENGTH_SECONDS) {
+                            continue
+                        }
+
+                        val videoId = extractVideoId(itemUrl) ?: continue
+                        if (!seenIds.add(videoId)) continue
+
+                        val itemUploaderName = item.uploaderName.orEmpty().ifBlank { resolvedName }
+                        val itemUploaderUrl = item.uploaderUrl.orEmpty().ifBlank { resolvedUrl }
+
+                        videosArray.put(JSObject().apply {
+                            put("videoId", videoId)
+                            put("url", itemUrl)
+                            put("title", item.name.orEmpty())
+                            put("uploaderName", itemUploaderName)
+                            put("uploaderUrl", itemUploaderUrl)
+                            put("uploaderChannelId", extractChannelId(itemUploaderUrl).ifBlank { resolvedId })
+                            put("uploaderHandle", extractChannelHandle(itemUploaderUrl).ifBlank { resolvedHandle })
+                            put("duration", durationSec)
+                            put("thumbnailUrl", bestThumbnailUrl(item.thumbnails))
+                            put("viewCount", item.viewCount)
+                            put("textualUploadDate", item.textualUploadDate.orEmpty())
+                            put("isLive", isLive)
+                        })
+                    }
+                }
+
+                if (videosTab != null) {
+                    val tabInfo = ChannelTabInfo.getInfo(ServiceList.YouTube, videosTab)
+                    appendChannelItems(tabInfo.relatedItems.orEmpty())
+
+                    if (videosArray.length() < limit && tabInfo.hasNextPage() && tabInfo.nextPage != null) {
+                        try {
+                            val nextPage = ChannelTabInfo.getMoreItems(
+                                ServiceList.YouTube,
+                                videosTab,
+                                tabInfo.nextPage
+                            )
+                            appendChannelItems(nextPage.items.orEmpty())
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Channel videos next page skipped: ${t.message}")
+                        }
+                    }
+                }
+
+                call.resolve(JSObject().apply {
+                    put("channelId", resolvedId)
+                    put("channelName", resolvedName)
+                    put("channelHandle", resolvedHandle)
+                    put("channelUrl", resolvedUrl)
+                    put("avatarUrl", avatarUrl)
+                    put("videos", videosArray)
+                })
+            } catch (t: Throwable) {
+                Log.e(TAG, "getChannelVideos failed for targetUrl=$targetUrl", t)
+                call.reject(t.message ?: "Failed to load channel videos.", "CHANNEL_VIDEOS_ERROR")
             }
         }
     }

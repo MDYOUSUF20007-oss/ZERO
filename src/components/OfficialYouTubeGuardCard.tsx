@@ -16,26 +16,26 @@ interface OfficialYouTubeGuardCardProps {
 
 function readNativeAccessibilityState(): {
   isNative: boolean;
-  isStrictAccessibilityBuild: boolean;
   isAccessibilityEnabled: boolean;
 } {
   if (typeof window === 'undefined' || !window.ZeroNative) {
     return {
       isNative: false,
-      isStrictAccessibilityBuild: false,
       isAccessibilityEnabled: false,
     };
   }
   try {
+    const enabled =
+      typeof window.ZeroNative.isYouTubeGuardAccessibilityEnabled === 'function'
+        ? Boolean(window.ZeroNative.isYouTubeGuardAccessibilityEnabled())
+        : Boolean(window.ZeroNative.isAccessibilityEnabled?.());
     return {
       isNative: true,
-      isStrictAccessibilityBuild: Boolean(window.ZeroNative.isStrictAccessibilityBuild?.()),
-      isAccessibilityEnabled: Boolean(window.ZeroNative.isAccessibilityEnabled?.()),
+      isAccessibilityEnabled: enabled,
     };
   } catch {
     return {
       isNative: true,
-      isStrictAccessibilityBuild: false,
       isAccessibilityEnabled: false,
     };
   }
@@ -105,15 +105,11 @@ export const OfficialYouTubeGuardCard: React.FC<OfficialYouTubeGuardCardProps> =
     setPermState(latestPerm);
     if (nextValue && latestPerm.isNative && !latestPerm.isAccessibilityEnabled) {
       setShowPermissionPrompt(true);
-      if (latestPerm.isStrictAccessibilityBuild) {
-        handleOpenAccessibilitySettings();
-      }
+      handleOpenAccessibilitySettings();
     }
   };
 
   const anyEnabled = config.blockOfficialShorts || config.strictOfficialStudyMode;
-  const isStandardWithoutAccessibility =
-    permState.isNative && !permState.isStrictAccessibilityBuild;
   const needsAccessibilityBanner =
     showPermissionPrompt ||
     (anyEnabled && permState.isNative && !permState.isAccessibilityEnabled);
@@ -170,8 +166,6 @@ export const OfficialYouTubeGuardCard: React.FC<OfficialYouTubeGuardCardProps> =
           <span>
             {!anyEnabled
               ? 'Standby'
-              : isStandardWithoutAccessibility
-              ? 'Strict APK Needed'
               : permState.isNative && !permState.isAccessibilityEnabled
               ? 'Permission Needed'
               : 'Active'}
@@ -179,7 +173,7 @@ export const OfficialYouTubeGuardCard: React.FC<OfficialYouTubeGuardCardProps> =
         </span>
       </div>
 
-      {/* Accessibility Edition / Permission Prompt Banner */}
+      {/* Accessibility Permission Prompt Banner */}
       {needsAccessibilityBanner && (
         <div
           className="p-3 rounded-xl space-y-2"
@@ -198,39 +192,35 @@ export const OfficialYouTubeGuardCard: React.FC<OfficialYouTubeGuardCardProps> =
               className="text-[11px] leading-snug"
               style={{ color: 'var(--text-secondary)' }}
             >
-              {isStandardWithoutAccessibility
-                ? 'You are on the Standard Edition APK, which does not include Android Accessibility Service. Install the Strict Accessibility APK (ZERO-requires-adb) from GitHub Releases to enable Official YouTube Shorts & Study Mode blocking.'
-                : 'Enable Zero-Noise under Settings → Accessibility → Installed apps. On Android 13–16, if the switch is grayed out ("Restricted setting"), tap App Info below → ⋮ (top-right) → Allow restricted settings first.'}
+              Enable Zero-Noise under Settings → Accessibility → Installed apps. On Android 13–16, if the switch is grayed out (&quot;Restricted setting&quot;), tap App Info below → ⋮ (top-right) → Allow restricted settings first.
             </p>
           </div>
-          {!isStandardWithoutAccessibility && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={handleOpenAccessibilitySettings}
-                className="px-3 py-1.5 rounded-xl text-[10px] font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--accent-primary)',
-                  color: 'var(--text-on-accent)',
-                }}
-              >
-                <span>Open Accessibility</span>
-                <ExternalLink size={11} />
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenAppInfoSettings}
-                className="px-3 py-1.5 rounded-xl text-[10px] font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--surface-tonal)',
-                  border: '1px solid var(--border-strong)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <span>App Info (Restricted Settings)</span>
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleOpenAccessibilitySettings}
+              className="px-3 py-1.5 rounded-xl text-[10px] font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--accent-primary)',
+                color: 'var(--text-on-accent)',
+              }}
+            >
+              <span>Open Accessibility</span>
+              <ExternalLink size={11} />
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenAppInfoSettings}
+              className="px-3 py-1.5 rounded-xl text-[10px] font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-tonal)',
+                border: '1px solid var(--border-strong)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <span>App Info (Restricted Settings)</span>
+            </button>
+          </div>
         </div>
       )}
 

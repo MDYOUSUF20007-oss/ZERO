@@ -195,6 +195,41 @@ class ZeroNativeBridge(
         return enabledServices.contains(expectedFull) || enabledServices.contains(expectedShort)
     }
 
+    /**
+     * Checks whether ANY Zero-Noise AccessibilityService is enabled (Strict ZeroAccessibilityService
+     * OR Standard ZeroYouTubeAccessibilityService) for Official YouTube Shorts & Study Mode Guard.
+     */
+    @JavascriptInterface
+    fun isYouTubeGuardAccessibilityEnabled(): Boolean {
+        try {
+            val am = activity.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            val enabledList = am?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            if (enabledList != null) {
+                for (info in enabledList) {
+                    val pkg = info.resolveInfo?.serviceInfo?.packageName
+                    if (pkg == activity.packageName) return true
+                }
+            }
+        } catch (_: Exception) {}
+
+        val enabledServices = Settings.Secure.getString(
+            activity.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: ""
+        val candidates = listOf(
+            "${activity.packageName}.service.ZeroAccessibilityService",
+            "${activity.packageName}.service.ZeroYouTubeAccessibilityService"
+        )
+        for (cls in candidates) {
+            val full = ComponentName(activity.packageName, cls).flattenToString()
+            val short = ComponentName(activity.packageName, cls).flattenToShortString()
+            if (enabledServices.contains(full) || enabledServices.contains(short)) {
+                return true
+            }
+        }
+        return false
+    }
+
     @JavascriptInterface
     fun openAccessibilitySettings() {
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {

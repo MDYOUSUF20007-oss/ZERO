@@ -89,6 +89,15 @@ export interface YouTubeGuardSyncResult {
   revision: number;
 }
 
+export interface ZeroTubeChannelVideosResult {
+  channelId: string;
+  channelName: string;
+  channelHandle: string;
+  channelUrl: string;
+  avatarUrl?: string;
+  videos: ZeroTubeSearchVideo[];
+}
+
 export interface ZeroTubePluginInterface {
   searchVideos(options: {
     query: string;
@@ -103,6 +112,14 @@ export interface ZeroTubePluginInterface {
   resolveChannel(options: {
     input: string;
   }): Promise<ZeroTubeResolvedChannel>;
+
+  getChannelVideos(options: {
+    channelUrl?: string;
+    channelId?: string;
+    channelHandle?: string;
+    channelName?: string;
+    limit?: number;
+  }): Promise<ZeroTubeChannelVideosResult>;
 
   getStream(options: {
     videoUrl: string;

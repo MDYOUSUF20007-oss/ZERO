@@ -32,8 +32,9 @@
 -keep @interface com.getcapacitor.annotation.** { *; }
 -keep @interface com.getcapacitor.PluginMethod { *; }
 
-# Preserve Strict Edition AccessibilityService (loaded by OS & checked via Class.forName)
+# Preserve AccessibilityServices (Strict & Standard YouTube Guard, loaded by OS & checked via Class.forName)
 -keep class org.zero.detox.service.ZeroAccessibilityService { *; }
+-keep class org.zero.detox.service.ZeroYouTubeAccessibilityService { *; }
 -keep public class * extends android.accessibilityservice.AccessibilityService { *; }
 
 # Preserve Manifest-declared Activities, Foreground Services, Receivers & FileProvider

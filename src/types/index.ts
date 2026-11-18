@@ -448,6 +448,7 @@ export interface ZeroNativeBridgeInterface {
   hasNotificationPermission(): boolean;
   requestNotificationPermission(): void;
   isAccessibilityEnabled(): boolean;
+  isYouTubeGuardAccessibilityEnabled?(): boolean;
   openAccessibilitySettings(): void;
   openAppSettingsDetails(): void;
   getRestrictedSettingsStatus?(): RestrictedSettingsStatus;
