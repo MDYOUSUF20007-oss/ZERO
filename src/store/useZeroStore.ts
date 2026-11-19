@@ -1809,6 +1809,21 @@ export function useZeroStore() {
     setHasDismissedWelcomeModal(true);
   }, []);
 
+  const burnAllEscapeTickets = useCallback((): { ok: boolean; burnedCount: number; message: string } => {
+    const res = IntegrityEngine.burnAllEscapeTickets(integrityStateRef.current, true);
+    if (!res.ok) {
+      return { ok: false, burnedCount: 0, message: res.message };
+    }
+    integrityStateRef.current = res.state;
+    setIntegrityState(res.state);
+    syncNativeLedger(
+      res.state.cumulativeSeconds,
+      res.state.usedParachutes,
+      res.state.bonusParachutes
+    );
+    return { ok: true, burnedCount: res.burnedTickets, message: res.message };
+  }, [syncNativeLedger]);
+
   const badgeSummary = useMemo(
     () =>
       IntegrityEngine.evaluateBadges({
@@ -2491,6 +2506,7 @@ export function useZeroStore() {
     isZeroSupporter,
     isDeveloper: Boolean(isDeveloper),
     activateDonorUnlockToken,
+    burnAllEscapeTickets,
     badgeSummary,
     currentStreak,
     hasClaimedFirstTimeParachute,

@@ -80,6 +80,7 @@ import {
   Users,
   Target,
   Zap,
+  Flame,
 } from 'lucide-react';
 
 interface SchedulesDonateViewProps {
@@ -133,6 +134,7 @@ interface SchedulesDonateViewProps {
   onOpenProfileModal?: () => void;
   onClaimFirstDonationBonus?: (rawToken?: string) => boolean;
   onActivateDonorToken?: (rawToken: string) => { ok: boolean; message: string; grantedNewPerks: boolean };
+  onBurnAllEscapeTickets?: () => { ok: boolean; burnedCount: number; message: string };
   onRecalibrateHabitProfile?: () => void;
 }
 
@@ -217,6 +219,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   onOpenProfileModal,
   onClaimFirstDonationBonus,
   onActivateDonorToken,
+  onBurnAllEscapeTickets,
   onRecalibrateHabitProfile,
 }) => {
   const {
@@ -278,6 +281,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
   const [showUPIQR, setShowUPIQR] = useState(false);
   const [upiQrUrl, setUpiQrUrl] = useState<string>('');
   const [confirmingDonationClaim, setConfirmingDonationClaim] = useState(false);
+  const [confirmingBurnTickets, setConfirmingBurnTickets] = useState(false);
+  const [burnTicketsNotice, setBurnTicketsNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const [backupNotice, setBackupNotice] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
@@ -2897,6 +2902,132 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   GitHub Releases
                 </a>{' '}
                 anytime for the latest APK updates.
+              </p>
+            }
+          />
+
+          {/* Burn All Escape Tickets (Optional) */}
+          <ObsidianCard
+            accentOverride={{ hex: '#F97316', rgb: '249, 115, 22' }}
+            className={`${isBespoke ? 'font-sans' : 'font-mono'} text-xs`}
+            headerClassName={isBespoke ? 'p-5 space-y-3' : 'p-4 space-y-3'}
+            footerClassName={
+              isBespoke
+                ? 'px-5 py-2.5 text-[11px] text-zinc-400 leading-relaxed'
+                : 'px-4 py-2.5 text-[10px] text-zinc-400 leading-relaxed'
+            }
+            headerContent={
+              <>
+                <div className="flex items-center justify-between text-zinc-200 font-semibold uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-7 h-7 obsidian-icon-box flex items-center justify-center shrink-0 ${
+                        isBespoke ? 'rounded-md text-amber-400' : 'rounded-xl text-orange-400'
+                      }`}
+                      style={isBespoke ? undefined : { color: '#F97316' }}
+                    >
+                      <Flame size={14} />
+                    </div>
+                    <span>Burn All Escape Tickets (Optional)</span>
+                  </div>
+                  <span
+                    className={`text-[9px] font-semibold uppercase px-2 py-0.5 border font-mono ${
+                      isBespoke ? 'rounded-sm' : 'rounded-full font-black'
+                    } ${
+                      remainingEscapeTickets > 0
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-600/50'
+                        : 'bg-zinc-900/60 text-zinc-400 border-zinc-700/50'
+                    }`}
+                  >
+                    {remainingEscapeTickets} in Vault
+                  </span>
+                </div>
+
+                <div
+                  className={`p-3 obsidian-inset-neutral space-y-2 text-[11px] ${
+                    isBespoke ? 'rounded-md' : 'rounded-xl'
+                  }`}
+                >
+                  <p className="text-zinc-300 leading-relaxed">
+                    Completely resets your escape parachute inventory to 0. Useful for developer testing, voucher recalibration, or starting with a clean slate. Focus time, streaks, and Occasion Bags are preserved.
+                  </p>
+
+                  {burnTicketsNotice && (
+                    <div
+                      className={`p-2 rounded text-[10px] flex items-center gap-1.5 ${
+                        burnTicketsNotice.ok
+                          ? 'bg-emerald-950/50 border border-emerald-500/30 text-emerald-300'
+                          : 'bg-red-950/50 border border-red-500/30 text-red-300'
+                      }`}
+                    >
+                      {burnTicketsNotice.ok ? (
+                        <CheckCircle2 size={12} className="shrink-0" />
+                      ) : (
+                        <ShieldAlert size={12} className="shrink-0" />
+                      )}
+                      <span>{burnTicketsNotice.message}</span>
+                    </div>
+                  )}
+
+                  <div className="pt-1 flex items-center gap-2">
+                    {remainingEscapeTickets <= 0 ? (
+                      <div className="text-[10px] text-zinc-500 italic">
+                        Vault already empty (0 tickets available to burn).
+                      </div>
+                    ) : !confirmingBurnTickets ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          haptics.tick(300);
+                          setConfirmingBurnTickets(true);
+                          setBurnTicketsNotice(null);
+                        }}
+                        className={`px-3 py-1.5 text-[11px] font-semibold text-orange-200 bg-orange-950/40 hover:bg-orange-900/50 border border-orange-500/40 transition-colors flex items-center gap-1.5 ${
+                          isBespoke ? 'rounded-sm' : 'rounded-lg'
+                        }`}
+                      >
+                        <Flame size={12} className="text-orange-400" />
+                        <span>Burn All Tickets ({remainingEscapeTickets})</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!onBurnAllEscapeTickets) return;
+                            haptics.tick(900);
+                            const res = onBurnAllEscapeTickets();
+                            setBurnTicketsNotice(res);
+                            setConfirmingBurnTickets(false);
+                          }}
+                          className={`flex-1 px-3 py-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-500 transition-colors flex items-center justify-center gap-1.5 ${
+                            isBespoke ? 'rounded-sm' : 'rounded-lg'
+                          }`}
+                        >
+                          <Flame size={12} />
+                          <span>Confirm Burn ({remainingEscapeTickets})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptics.tick(150);
+                            setConfirmingBurnTickets(false);
+                          }}
+                          className={`px-3 py-1.5 text-[11px] text-zinc-400 hover:text-white bg-zinc-800/80 transition-colors ${
+                            isBespoke ? 'rounded-sm' : 'rounded-lg'
+                          }`}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            }
+            footerContent={
+              <p>
+                After burning, you can redeem a donor code in Support to get your fresh allocation.
               </p>
             }
           />

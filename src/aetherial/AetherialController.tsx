@@ -98,6 +98,7 @@ export const AetherialController: React.FC<AetherialControllerProps> = ({
             hasClaimedFirstDonationParachute={store.hasClaimedFirstDonationParachute}
             onClaimFirstDonationBonus={store.claimFirstDonationBonus}
             onActivateDonorToken={store.activateDonorUnlockToken}
+            onBurnAllEscapeTickets={store.burnAllEscapeTickets}
             onOpenProfileModal={onOpenProfileModal}
             sectionOverride={{ section: showSettingsSection, key: Date.now() }}
             viewMode="all"

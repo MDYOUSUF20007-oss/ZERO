@@ -1589,6 +1589,58 @@ export function activateDonorUnlockToken(
   };
 }
 
+export function burnAllEscapeTickets(
+  currentState: ProtectedIntegrityState,
+  persist = true
+): {
+  ok: boolean;
+  burnedTickets: number;
+  state: ProtectedIntegrityState;
+  message: string;
+} {
+  const currentBalance = computeParachuteBalance(currentState).currentBalance;
+  if (currentBalance <= 0 && currentState.bonusParachutes === 0) {
+    return {
+      ok: true,
+      burnedTickets: 0,
+      state: currentState,
+      message: 'Vault is already empty (0 tickets available).',
+    };
+  }
+
+  const earnedFromHours = Math.floor(Math.max(0, currentState.cumulativeSeconds) / SECONDS_PER_PARACHUTE);
+  const now = Date.now();
+  const nextLedger = [...currentState.ledger];
+
+  if (currentBalance > 0) {
+    nextLedger.unshift({
+      id: `txn_burn_${now}`,
+      timestamp: now,
+      type: 'DEPLOYED',
+      description: `Voluntary Vault Burn: Incinerated ${currentBalance} Emergency Escape Tickets`,
+      delta: -currentBalance,
+    });
+  }
+
+  const nextState: ProtectedIntegrityState = {
+    ...currentState,
+    bonusParachutes: 0,
+    usedParachutes: earnedFromHours,
+    ledger: nextLedger.slice(0, 300),
+  };
+
+  if (persist) {
+    persistProtectedState(nextState);
+  }
+
+  return {
+    ok: true,
+    burnedTickets: currentBalance,
+    state: nextState,
+    message: `Burned ${currentBalance} ${currentBalance === 1 ? 'ticket' : 'tickets'}. Vault balance is now 0.`,
+  };
+}
+
 export const DEFAULT_SAFE_ENVIRONMENT_SECURITY: NativeEnvironmentSecurity = Object.freeze({
   isSignatureValid: true,
   isRooted: false,
@@ -2186,6 +2238,7 @@ export const IntegrityEngine = Object.freeze({
   claimFirstTimerProfileGift,
   claimFirstDonationSupporterPerks,
   activateDonorUnlockToken,
+  burnAllEscapeTickets,
   applyVerifiedRestore,
   resetProtectedState,
   verifyNativeCompletionEvent,

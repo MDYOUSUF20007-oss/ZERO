@@ -701,6 +701,7 @@ export function App() {
             onOpenProfileModal={openInteractiveProfile}
             onClaimFirstDonationBonus={store.claimFirstDonationBonus}
             onActivateDonorToken={store.activateDonorUnlockToken}
+            onBurnAllEscapeTickets={store.burnAllEscapeTickets}
             onRecalibrateHabitProfile={() => setShowOnboardingWizard(true)}
           />
         )}
