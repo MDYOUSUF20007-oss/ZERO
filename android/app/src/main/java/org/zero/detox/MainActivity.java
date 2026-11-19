@@ -298,7 +298,50 @@ public class MainActivity extends BridgeActivity {
             showTamperAlertAndTerminate();
             return;
         }
+        applySavedTargetFps();
         requestStartupNotificationPermissionOnce();
+    }
+
+    public void applySavedTargetFps() {
+        try {
+            SharedPreferences prefs = getSharedPreferences(ZeroBridgePlugin.PREFS_NAME, MODE_PRIVATE);
+            int fps = prefs.getInt("zero_target_fps", 120);
+            applyTargetFps(fps);
+        } catch (Throwable t) {
+            Log.w("ZeroMainActivity", "Failed to apply saved target FPS", t);
+        }
+    }
+
+    public void applyTargetFps(final int fps) {
+        runOnUiThread(() -> {
+            try {
+                android.view.Window window = getWindow();
+                if (window == null) return;
+                WindowManager.LayoutParams params = window.getAttributes();
+                if (fps <= 0) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        params.preferredMinDisplayRefreshRate = 0;
+                        params.preferredMaxDisplayRefreshRate = 0;
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        params.preferredRefreshRate = 0;
+                    }
+                } else {
+                    float targetRate = (float) fps;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        params.preferredMinDisplayRefreshRate = targetRate;
+                        params.preferredMaxDisplayRefreshRate = targetRate;
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        params.preferredRefreshRate = targetRate;
+                    }
+                }
+                window.setAttributes(params);
+                Log.d("ZeroMainActivity", "Applied target display refresh rate: " + fps);
+            } catch (Throwable t) {
+                Log.w("ZeroMainActivity", "Could not set display refresh rate: " + t.getMessage());
+            }
+        });
     }
 
     private void showTamperAlertAndTerminate() {

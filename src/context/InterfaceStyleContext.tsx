@@ -18,9 +18,11 @@ import {
 } from '../themes';
 import type { ThemeConfig, ClassicPreset, M3Palette } from '../types';
 import { initActiveThemeMod, removeActiveModStyles } from '../utils/themeMods';
+import { setNativeTargetFps } from '../plugins/zeroBridge';
 
 export type { CanonicalThemeId, AccentColorId, InterfaceStyle, ThemeEngineDefinition };
 export { AVAILABLE_THEMES, normalizeThemeId };
+export type GlassEngineType = 'acrylic' | 'eco';
 
 const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
 const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
@@ -28,6 +30,8 @@ const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
 const STORAGE_KEY_GLASS_STRENGTH = 'zero_fluent_glass_strength_v1';
 const STORAGE_KEY_GPU_SAFEGUARD = 'zero_gpu_thermal_safeguard_v1';
 const STORAGE_KEY_AMBIENT_DRIFT = 'zero_ambient_drift_enabled_v1';
+const STORAGE_KEY_GLASS_ENGINE = 'zero_glass_engine_v1';
+const STORAGE_KEY_TARGET_FPS = 'zero_target_fps_v1';
 const STYLE_TAG_ID = 'zero-active-theme-engine';
 
 const LEGACY_STORAGE_KEYS = [
@@ -147,10 +151,21 @@ function mountIsolatedThemeEngine(
   // Set real-time fluent glass parameters
   applyGlassTokens(root, glassStrength);
 
-  // Restore GPU Battery & Thermal Safeguard & optional Ambient Drift attributes
+  // Restore GPU Battery & Thermal Safeguard, Glass Engine, Target FPS & optional Ambient Drift attributes
   try {
     if (window.localStorage.getItem(STORAGE_KEY_GPU_SAFEGUARD) === 'true') {
       root.setAttribute('data-gpu-safeguard', 'true');
+    }
+    const savedGlass = window.localStorage.getItem(STORAGE_KEY_GLASS_ENGINE);
+    if (savedGlass === 'eco') {
+      root.setAttribute('data-glass-engine', 'eco');
+    } else {
+      root.setAttribute('data-glass-engine', 'acrylic');
+    }
+    const savedFps = window.localStorage.getItem(STORAGE_KEY_TARGET_FPS);
+    if (savedFps) {
+      root.setAttribute('data-target-fps', savedFps);
+      root.style.setProperty('--zero-target-fps', savedFps);
     }
     if (window.localStorage.getItem(STORAGE_KEY_AMBIENT_DRIFT) === 'true') {
       root.setAttribute('data-ambient-drift', 'true');
@@ -221,6 +236,10 @@ export interface InterfaceStyleContextValue {
   setGpuThermalSafeguard: (enabled: boolean) => void;
   ambientDriftEnabled: boolean;
   setAmbientDriftEnabled: (enabled: boolean) => void;
+  glassEngine: GlassEngineType;
+  setGlassEngine: (engine: GlassEngineType) => void;
+  targetFps: number;
+  setTargetFps: (fps: number) => void;
   fluentBlurStrength: number;
   setFluentBlurStrength: (b: number) => void;
   fluentSpecularHighlight: number;
@@ -330,6 +349,30 @@ export function InterfaceStyleProvider({
     }
   });
 
+  const [glassEngine, setGlassEngineState] = useState<GlassEngineType>(() => {
+    if (typeof window === 'undefined') return 'acrylic';
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_GLASS_ENGINE);
+      return saved === 'eco' ? 'eco' : 'acrylic';
+    } catch {
+      return 'acrylic';
+    }
+  });
+
+  const [targetFps, setTargetFpsState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 120;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_TARGET_FPS);
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+      return 120;
+    } catch {
+      return 120;
+    }
+  });
+
   const [theme, setThemeState] = useState<CanonicalThemeId>(() => {
     if (typeof window === 'undefined') return 'fluent';
     try {
@@ -409,6 +452,46 @@ export function InterfaceStyleProvider({
       // ignore
     }
   }, []);
+
+  const setGlassEngine = useCallback((engine: GlassEngineType) => {
+    setGlassEngineState(engine);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-glass-engine', engine);
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_GLASS_ENGINE, engine);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setTargetFps = useCallback((fps: number) => {
+    setTargetFpsState(fps);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-target-fps', fps.toString());
+      document.documentElement.style.setProperty('--zero-target-fps', fps.toString());
+    }
+    try {
+      window.localStorage.setItem(STORAGE_KEY_TARGET_FPS, fps.toString());
+    } catch {
+      // ignore
+    }
+    void setNativeTargetFps(fps);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-glass-engine', glassEngine);
+    }
+  }, [glassEngine]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-target-fps', targetFps.toString());
+      document.documentElement.style.setProperty('--zero-target-fps', targetFps.toString());
+    }
+    void setNativeTargetFps(targetFps);
+  }, [targetFps]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -538,6 +621,10 @@ export function InterfaceStyleProvider({
       setGpuThermalSafeguard,
       ambientDriftEnabled,
       setAmbientDriftEnabled,
+      glassEngine,
+      setGlassEngine,
+      targetFps,
+      setTargetFps,
       fluentBlurStrength: Math.round(2 + fluentGlassStrength * 22),
       setFluentBlurStrength: (b: number) => {
         const normalized = Math.max(0.05, Math.min(1, (b - 2) / 22));
@@ -578,6 +665,10 @@ export function InterfaceStyleProvider({
       setGpuThermalSafeguard,
       ambientDriftEnabled,
       setAmbientDriftEnabled,
+      glassEngine,
+      setGlassEngine,
+      targetFps,
+      setTargetFps,
     ]
   );
 

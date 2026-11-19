@@ -236,6 +236,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     setGpuThermalSafeguard,
     ambientDriftEnabled,
     setAmbientDriftEnabled,
+    glassEngine,
+    setGlassEngine,
+    targetFps,
+    setTargetFps,
     accent,
     setAccent,
   } = useInterfaceStyle();
@@ -964,6 +968,144 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   {gpuThermalSafeguard ? 'Active • Eco Shaderless (Cold GPU)' : 'Standard • High Acrylic Glass'}
                 </span>
                 <span className="font-mono">{gpuThermalSafeguard ? '0ms Overhead' : 'Hardware Composited'}</span>
+              </div>
+            </div>
+
+            {/* Glass Surface Engine (Lush Frosted Acrylic Glass vs Eco Shaderless) */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold theme-text-primary block">
+                    Glass Surface Engine
+                  </label>
+                  <p className="text-[11px] theme-text-muted leading-tight">
+                    Switch between original high-fidelity acrylic blur or eco shaderless
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full liquid-pill-active uppercase shrink-0">
+                  {glassEngine === 'acrylic' ? 'Acrylic Blur' : 'Eco Matte'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.tick(900);
+                    setGlassEngine('acrylic');
+                  }}
+                  className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    glassEngine === 'acrylic'
+                      ? 'theme-pill-active font-semibold shadow-lg'
+                      : 'theme-pill text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold theme-text-primary">Lush Acrylic Glass</span>
+                    {glassEngine === 'acrylic' && <Check size={13} className="text-cyan-400 shrink-0" />}
+                  </div>
+                  <p className="text-[10px] theme-text-muted leading-snug">
+                    Original frosted blur, specular rims &amp; deep acrylic translucency. Flagship visual fidelity.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.tick(700);
+                    setGlassEngine('eco');
+                  }}
+                  className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    glassEngine === 'eco'
+                      ? 'theme-pill-active font-semibold shadow-lg'
+                      : 'theme-pill text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold theme-text-primary">Eco Optical Matte</span>
+                    {glassEngine === 'eco' && <Check size={13} className="text-cyan-400 shrink-0" />}
+                  </div>
+                  <p className="text-[10px] theme-text-muted leading-snug">
+                    0ms GPU shader passes, solid contrast backing. Ultra-cool phone &amp; maximum battery savings.
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Display Refresh Rate & Target FPS (24, 30, 60, 90, 120 FPS / Native) */}
+            <div className="pt-3 border-t theme-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold theme-text-primary block">
+                    Display Refresh Rate &amp; Target FPS
+                  </label>
+                  <p className="text-[11px] theme-text-muted leading-tight">
+                    Sync Android SurfaceFlinger &amp; UI frame pacing from 24Hz to 120Hz
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full liquid-pill-active uppercase shrink-0">
+                  {targetFps === 0 ? 'Display Sync' : `${targetFps} FPS`}
+                </span>
+              </div>
+
+              {/* 6 FPS Pill Selector */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: '24 FPS', value: 24, note: 'Cinematic' },
+                  { label: '30 FPS', value: 30, note: 'Power Saver' },
+                  { label: '60 FPS', value: 60, note: 'Standard' },
+                  { label: '90 FPS', value: 90, note: 'High Refresh' },
+                  { label: '120 FPS', value: 120, note: 'Flagship' },
+                  { label: 'Native', value: 0, note: 'Display Sync' },
+                ].map((fpsOption) => {
+                  const isActive = targetFps === fpsOption.value;
+                  return (
+                    <button
+                      key={fpsOption.label}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(isActive ? 500 : 850);
+                        setTargetFps(fpsOption.value);
+                      }}
+                      className={`py-2 px-2 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        isActive
+                          ? 'theme-pill-active font-semibold shadow-md'
+                          : 'theme-pill text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xs font-bold theme-text-primary leading-tight">
+                        {fpsOption.label}
+                      </span>
+                      <span className="text-[9px] theme-text-muted leading-tight mt-0.5">
+                        {fpsOption.note}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] theme-text-muted pt-0.5">
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      targetFps >= 90 ? 'bg-cyan-400 animate-pulse' : targetFps >= 60 ? 'bg-emerald-400' : 'bg-amber-400'
+                    }`}
+                  />
+                  {targetFps === 120
+                    ? '120Hz Flagship Ultra Smooth Compositing'
+                    : targetFps === 90
+                    ? '90Hz High-Refresh Motion Pacing'
+                    : targetFps === 60
+                    ? '60Hz Standard Fluid Performance'
+                    : targetFps === 30
+                    ? '30Hz Low Power Consumption'
+                    : targetFps === 24
+                    ? '24Hz LTPO Ultra-Low Thermal Mode'
+                    : 'Display Adaptive Sync Mode'}
+                </span>
+                <span className="font-mono">
+                  {targetFps === 0 ? 'SurfaceFlinger Auto' : `${targetFps}Hz Hardware Sync`}
+                </span>
               </div>
             </div>
 

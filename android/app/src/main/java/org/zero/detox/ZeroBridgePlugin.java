@@ -91,4 +91,41 @@ public class ZeroBridgePlugin extends Plugin {
             call.reject("Could not exit app", e);
         }
     }
+
+    @PluginMethod
+    public void setTargetFps(PluginCall call) {
+        int fps = call.getInt("fps", 120);
+        try {
+            Context ctx = getContext();
+            if (ctx != null) {
+                SharedPreferences prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                prefs.edit().putInt("zero_target_fps", fps).apply();
+            }
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).applyTargetFps(fps);
+            }
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("fps", fps);
+            call.resolve(ret);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set target FPS", e);
+            call.reject("Failed to set target FPS", e);
+        }
+    }
+
+    @PluginMethod
+    public void getTargetFps(PluginCall call) {
+        int fps = 120;
+        try {
+            Context ctx = getContext();
+            if (ctx != null) {
+                SharedPreferences prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                fps = prefs.getInt("zero_target_fps", 120);
+            }
+        } catch (Exception ignored) {}
+        JSObject ret = new JSObject();
+        ret.put("fps", fps);
+        call.resolve(ret);
+    }
 }

@@ -78,8 +78,9 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     Fluent Optical Glass Surface Cards (Zero-Shader Specular Glass)
-     Renders crisp translucent specular glass with 0ms GPU blur passes
+     Liquid Glass Surface Cards (Authentic Frosted Acrylic Glass)
+     Full-fidelity backdrop-filter blur with specular bevel highlights.
+     No intrusive radial color stains or background bleed-through.
      ------------------------------------------------------------- */
   .glass-card,
   .obsidian-card,
@@ -89,30 +90,22 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   .settings-card,
   [data-frosted-card="true"],
   [data-obsidian-card="true"] {
-    background-color: rgba(13, 21, 36, 0.80) !important;
+    background-color: var(--glass-surface-bg, rgba(16, 26, 44, 0.62)) !important;
     background-image:
       linear-gradient(
-        145deg,
-        rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.14)) 0%,
-        rgba(255, 255, 255, 0.03) 26%,
-        rgba(14, 24, 42, 0.12) 55%,
-        rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.04)) 100%
-      ),
-      radial-gradient(
-        120% 80% at 0% 0%,
-        var(--liquid-accent-soft-glow) 0%,
-        transparent 58%
+        160deg,
+        rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.08)) 0%,
+        rgba(255, 255, 255, 0.01) 35%,
+        rgba(0, 0, 0, 0.18) 100%
       ) !important;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.10)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
     border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.28)) !important;
-    border-left: 1px solid rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.20)) !important;
     border-radius: 20px !important;
     box-shadow:
-      inset 0 1px 0.5px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.28)),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.35),
-      0 12px 28px -6px rgba(0, 0, 0, 0.62) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+      inset 0 1px 0 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.22)),
+      0 12px 30px -6px rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: var(--surface-blur, blur(18px) saturate(160%)) !important;
+    -webkit-backdrop-filter: var(--surface-blur, blur(18px) saturate(160%)) !important;
     text-shadow: var(--glass-text-shadow, none) !important;
     color: var(--text-primary, #f0f9ff) !important;
   }
@@ -220,20 +213,20 @@ export const BASE_ENGINE_BRIDGE_CSS = `
      Radial Dial Optical Glass Surface & Zero-Heat Touch Dragging
      ------------------------------------------------------------- */
   .zero-dial-surface {
-    background-color: rgba(12, 18, 30, 0.86) !important;
+    background-color: var(--glass-dial-bg, rgba(14, 22, 38, 0.70)) !important;
     background-image:
       radial-gradient(
-        circle at 30% 20%,
-        rgba(255, 255, 255, 0.10) 0%,
-        rgba(255, 255, 255, 0.02) 45%,
-        transparent 75%
+        circle at 35% 25%,
+        rgba(255, 255, 255, 0.08) 0%,
+        rgba(255, 255, 255, 0.01) 50%,
+        transparent 80%
       ) !important;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
-    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.26)) !important;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14)) !important;
+    border-top: 1px solid var(--border-specular, rgba(255, 255, 255, 0.30)) !important;
     border-radius: 9999px !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), 0 14px 32px -8px rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: var(--surface-blur, blur(18px) saturate(160%)) !important;
+    -webkit-backdrop-filter: var(--surface-blur, blur(18px) saturate(160%)) !important;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 16px 36px -8px rgba(0, 0, 0, 0.70) !important;
     contain: layout style paint;
     touch-action: none !important;
   }
@@ -275,21 +268,41 @@ export const BASE_ENGINE_BRIDGE_CSS = `
   }
 
   /* -------------------------------------------------------------
-     GPU Battery & Thermal Safeguard (Zero Shader Pass Architecture)
+     Eco Glass Engine & GPU Battery Safeguard (Shaderless Architecture)
      ------------------------------------------------------------- */
+  html[data-glass-engine="eco"] .glass-card,
+  html[data-glass-engine="eco"] .obsidian-card,
+  html[data-glass-engine="eco"] .liquid-glass,
+  html[data-glass-engine="eco"] .liquid-card,
+  html[data-glass-engine="eco"] .theme-card,
+  html[data-glass-engine="eco"] .settings-card,
+  html[data-glass-engine="eco"] [data-frosted-card="true"],
+  html[data-glass-engine="eco"] [data-obsidian-card="true"],
+  html[data-glass-engine="eco"] .zero-dial-surface,
+  html[data-glass-engine="eco"] .liquid-dock,
+  html[data-glass-engine="eco"] .modal-glass,
+  html[data-glass-engine="eco"] [data-modal-glass="true"],
   html[data-gpu-safeguard="true"] .glass-card,
   html[data-gpu-safeguard="true"] .obsidian-card,
   html[data-gpu-safeguard="true"] .liquid-glass,
   html[data-gpu-safeguard="true"] .liquid-card,
   html[data-gpu-safeguard="true"] .theme-card,
   html[data-gpu-safeguard="true"] .settings-card,
+  html[data-gpu-safeguard="true"] [data-frosted-card="true"],
+  html[data-gpu-safeguard="true"] [data-obsidian-card="true"],
   html[data-gpu-safeguard="true"] .zero-dial-surface,
   html[data-gpu-safeguard="true"] .liquid-dock,
   html[data-gpu-safeguard="true"] .modal-glass,
   html[data-gpu-safeguard="true"] [data-modal-glass="true"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: rgba(14, 20, 32, 0.94) !important;
+    background-color: rgba(14, 20, 32, 0.95) !important;
+    background-image: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.01) 40%,
+      transparent 100%
+    ) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75) !important;
   }
 
