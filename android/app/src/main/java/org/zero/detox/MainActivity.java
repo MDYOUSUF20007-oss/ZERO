@@ -319,21 +319,40 @@ public class MainActivity extends BridgeActivity {
                 if (window == null) return;
                 WindowManager.LayoutParams params = window.getAttributes();
                 if (fps <= 0) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        params.preferredMinDisplayRefreshRate = 0;
-                        params.preferredMaxDisplayRefreshRate = 0;
-                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        params.preferredRefreshRate = 0;
+                        params.preferredRefreshRate = 0f;
+                        params.preferredDisplayModeId = 0;
                     }
                 } else {
                     float targetRate = (float) fps;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        params.preferredMinDisplayRefreshRate = targetRate;
-                        params.preferredMaxDisplayRefreshRate = targetRate;
-                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         params.preferredRefreshRate = targetRate;
+                        try {
+                            android.view.Display display = null;
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                display = getDisplay();
+                            } else {
+                                WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+                                if (wm != null) display = wm.getDefaultDisplay();
+                            }
+                            if (display != null) {
+                                android.view.Display.Mode[] modes = display.getSupportedModes();
+                                if (modes != null) {
+                                    int bestModeId = 0;
+                                    float minDiff = Float.MAX_VALUE;
+                                    for (android.view.Display.Mode mode : modes) {
+                                        float diff = Math.abs(mode.getRefreshRate() - targetRate);
+                                        if (diff < minDiff) {
+                                            minDiff = diff;
+                                            bestModeId = mode.getModeId();
+                                        }
+                                    }
+                                    if (bestModeId != 0 && minDiff <= 2.0f) {
+                                        params.preferredDisplayModeId = bestModeId;
+                                    }
+                                }
+                            }
+                        } catch (Throwable ignored) {}
                     }
                 }
                 window.setAttributes(params);
