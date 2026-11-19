@@ -733,6 +733,7 @@ export function computeParachuteBalance(input: {
   cumulativeSeconds: number;
   bonusParachutes: number;
   usedParachutes: number;
+  isDeveloper?: boolean;
 }): {
   earnedFromHours: number;
   bonusParachutes: number;
@@ -740,7 +741,11 @@ export function computeParachuteBalance(input: {
   currentBalance: number;
 } {
   const safeCumulative = Math.max(0, Math.floor(input.cumulativeSeconds || 0));
-  const safeBonus = Math.min(MAX_BONUS_PARACHUTES, Math.max(0, Math.floor(input.bonusParachutes || 0)));
+  const maxBonus =
+    input.isDeveloper || input.bonusParachutes > MAX_BONUS_PARACHUTES
+      ? 500
+      : MAX_BONUS_PARACHUTES;
+  const safeBonus = Math.min(maxBonus, Math.max(0, Math.floor(input.bonusParachutes || 0)));
   const safeUsed = Math.max(0, Math.floor(input.usedParachutes || 0));
   const earnedFromHours = Math.floor(safeCumulative / SECONDS_PER_PARACHUTE);
   const lifetimeEarned = earnedFromHours + safeBonus;
@@ -1531,7 +1536,7 @@ export function activateDonorUnlockToken(
 
   // Developer Token: Awards test Escape Tickets & Founder Status (replenishable for UI testing)
   if (verified.payload.tier === 'developer') {
-    const devTicketsToAdd = Math.max(10, Math.min(100, verified.payload.devTickets ?? 50));
+    const devTicketsToAdd = Math.max(1, Math.min(100, verified.payload.devTickets ?? 5));
     const nextBonus = Math.min(500, currentState.bonusParachutes + devTicketsToAdd);
     const nextState: ProtectedIntegrityState = {
       ...currentState,
