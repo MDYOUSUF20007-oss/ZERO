@@ -6,6 +6,7 @@ import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
 import { haptics } from '../utils/haptics';
 import { AmbientBackground } from '../components/AmbientBackground';
 import { ZeroTubeModal } from '../components/ZeroTubeModal';
+import { EscapeTicketDockButton, EscapeTicketModal } from '../components/EscapeTicketSystem';
 import {
   COMPULSORY_STUDY_APPS_EVENT,
   getCompulsoryStudyAppsConfig,
@@ -17,7 +18,6 @@ import {
   QrCode,
   ExternalLink,
   X,
-  AlertTriangle,
   Play,
   Pause,
   Headphones,
@@ -60,8 +60,10 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
-  const [showBreakConfirm, setShowBreakConfirm] = useState(false);
+  const [showEscapeTicketModal, setShowEscapeTicketModal] = useState(false);
   const [showZeroTube, setShowZeroTube] = useState(false);
+
+  const effectiveTicketCount = activeLock.burnTheBoats ? 0 : (parachuteMetrics.currentBalance || 0);
   const [studyAppsConfig, setStudyAppsConfig] = useState<CompulsoryStudyAppsConfig>(() =>
     getCompulsoryStudyAppsConfig()
   );
@@ -71,7 +73,6 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
     window.addEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
     return () => window.removeEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
   }, []);
-  const [breakReason, setBreakReason] = useState('');
   const [installedPaymentApps, setInstalledPaymentApps] = useState<PaymentAppOption[]>([]);
   const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
     getRandomVoidQuote(profile?.motto)
@@ -226,13 +227,6 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
     window.location.href = `intent:#Intent;package=${packageName};end`;
   };
 
-  const handleConfirmBreak = () => {
-    if (!breakReason.trim()) return;
-    haptics.parachuteDeploy();
-    setShowBreakConfirm(false);
-    setBreakReason('');
-    onDeployParachute();
-  };
 
   const perimeter = 741.4;
   const progressFraction =
@@ -579,30 +573,33 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
         </div>
 
         {/* Action Controls: Emergency Dial & Escape */}
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div
+          className={`flex items-center gap-2 pt-1 ${
+            effectiveTicketCount > 0 ? 'justify-between' : 'justify-center'
+          }`}
+        >
           <button
             type="button"
             onClick={() => {
               haptics.thud();
               setShowEmergencyModal(true);
             }}
-            className="py-3 px-4 rounded-xl bg-[#282a32]/80 hover:bg-[#33343d] text-xs font-semibold text-[#bdc8d1] hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2 border border-white/5 active:scale-95"
+            className={`py-3 px-4 rounded-xl bg-[#282a32]/80 hover:bg-[#33343d] text-xs font-semibold text-[#bdc8d1] hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2 border border-white/5 active:scale-95 ${
+              effectiveTicketCount > 0 ? 'flex-1' : 'w-full max-w-xs'
+            }`}
           >
             <Phone size={14} className="text-[#ffb4ab]" />
             <span>Emergency Call</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              haptics.thud();
-              setShowBreakConfirm(true);
-            }}
-            className="py-3 px-4 rounded-xl bg-[#282a32]/80 hover:bg-[#33343d] text-xs font-semibold text-[#bdc8d1] hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2 border border-white/5 active:scale-95"
-          >
-            <AlertTriangle size={14} className="text-[#fbbf24]" />
-            <span>Escape ({parachuteMetrics.currentBalance})</span>
-          </button>
+          {effectiveTicketCount > 0 && (
+            <EscapeTicketDockButton
+              ticketCount={effectiveTicketCount}
+              onOpen={() => {
+                setShowEscapeTicketModal(true);
+              }}
+            />
+          )}
         </div>
       </footer>
 
@@ -757,77 +754,17 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
         </div>
       )}
 
-      {/* Emergency Escape Break Confirmation Modal */}
-      {showBreakConfirm && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
-        >
-          <div className="relative w-full max-w-sm rounded-[24px] bg-[#191b24] p-5 shadow-2xl border border-white/10 space-y-4 font-sans select-none">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-[#fbbf24]" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Emergency Escape Ticket
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowBreakConfirm(false)}
-                className="w-7 h-7 rounded-full bg-[#282a32] flex items-center justify-center text-[#bdc8d1] hover:text-white cursor-pointer"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            <p className="text-xs text-[#bdc8d1] leading-relaxed">
-              You are about to use 1 of your{' '}
-              <strong className="text-white">{parachuteMetrics.currentBalance}</strong> Emergency Escape Tickets.
-            </p>
-
-            <div className="p-3 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/30 text-xs text-[#bdc8d1]">
-              <strong className="text-[#fbbf24] block mb-1">Anti-Exploit Rule:</strong>
-              Elapsed session time ({elapsedMins}m) will be voided and will NOT count toward your 35-hour milestone.
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <label className="text-[11px] font-semibold text-[#fbbf24] uppercase tracking-wider block">
-                Why am I breaking this session?
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Type your reflection to stay conscious..."
-                value={breakReason}
-                onChange={(e) => setBreakReason(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-[#282a32] text-xs text-white placeholder-[#87929a] outline-none focus:ring-1 focus:ring-[#fbbf24] resize-none"
-                autoFocus
-              />
-            </div>
-
-            <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                disabled={!breakReason.trim()}
-                onClick={handleConfirmBreak}
-                className="w-full py-3 rounded-xl bg-[#fbbf24] hover:bg-amber-400 disabled:opacity-40 text-black font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md"
-              >
-                Confirm Break &amp; Deploy (-1 Ticket)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowBreakConfirm(false);
-                  setBreakReason('');
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#282a32] text-[#bdc8d1] text-xs font-semibold hover:text-white cursor-pointer"
-              >
-                Cancel &amp; Stay Focused
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Full-Size Interactive Escape Ticket Modal */}
+      <EscapeTicketModal
+        isOpen={showEscapeTicketModal}
+        ticketCount={effectiveTicketCount}
+        onClose={() => setShowEscapeTicketModal(false)}
+        onEscapeConfirmed={() => {
+          setShowEscapeTicketModal(false);
+          haptics.parachuteDeploy();
+          onDeployParachute();
+        }}
+      />
 
       {/* POMODORO FREEDOM BREAK MODAL (PAUSES BLOCKADE - ALLOWS ANY APP) */}
       {showPomodoroBreakModal && (

@@ -398,6 +398,7 @@ export function App() {
 
         <EscapeTicketModal
           isOpen={showTicketModal}
+          ticketCount={store.parachuteMetrics.currentBalance}
           parachuteMetrics={store.parachuteMetrics}
           profile={store.profile}
           isZeroSupporter={store.isZeroSupporter}
@@ -787,6 +788,7 @@ export function App() {
 
       <EscapeTicketModal
         isOpen={showTicketModal}
+        ticketCount={store.parachuteMetrics.currentBalance}
         parachuteMetrics={store.parachuteMetrics}
         profile={store.profile}
         isZeroSupporter={store.isZeroSupporter}

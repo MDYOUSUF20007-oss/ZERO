@@ -17,6 +17,7 @@ import { getRandomVoidQuote, type VoidQuote } from '../utils/voidQuotes';
 import { computeThemeRuntime, DEFAULT_THEME_CONFIG } from '../utils/themes';
 import { AppFrictionModal } from './AppFrictionModal';
 import { ZeroTubeModal } from './ZeroTubeModal';
+import { EscapeTicketDockButton, EscapeTicketModal } from './EscapeTicketSystem';
 import {
   COMPULSORY_STUDY_APPS_EVENT,
   getCompulsoryStudyAppsConfig,
@@ -116,9 +117,11 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
   // Modals & warnings
   const [showEmergencyModal, setShowEmergencyModal] = useState<boolean>(false);
-  const [showParachuteConfirm, setShowParachuteConfirm] = useState<boolean>(false);
+  const [showEscapeTicketModal, setShowEscapeTicketModal] = useState<boolean>(false);
   const [emergencyNumber, setEmergencyNumber] = useState<string>('');
   const [tamperWarning, setTamperWarning] = useState<string | null>(null);
+
+  const effectiveTicketCount = activeLock.burnTheBoats ? 0 : (parachuteMetrics.currentBalance || 0);
 
   // Quotes under Chronometer
   const [currentQuote, setCurrentQuote] = useState<VoidQuote>(() =>
@@ -161,8 +164,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return () => window.removeEventListener(COMPULSORY_STUDY_APPS_EVENT, syncStudy);
   }, []);
 
-  // Parachute reflection reason
-  const [parachuteReason, setParachuteReason] = useState<string>('');
 
   // Feature: AOD Glanceable Pixel Clock Mode
   const [isAodMode, setIsAodMode] = useState<boolean>(false);
@@ -489,19 +490,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     window.location.href = `tel:${num}`;
   };
 
-  const handleConfirmDeploy = () => {
-    if (activeLock.burnTheBoats) {
-      haptics.thud();
-      setTamperWarning('Burn the Boats is active. Escape tickets are strictly disabled for this session.');
-      setTimeout(() => setTamperWarning(null), 3500);
-      return;
-    }
-    if (!parachuteReason.trim()) return;
-    haptics.parachuteDeploy();
-    setShowParachuteConfirm(false);
-    setParachuteReason('');
-    onDeployParachute();
-  };
 
   const handleTogglePomodoro = () => {
     haptics.thud();
@@ -1352,49 +1340,39 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       </div>
 
       {/* BOTTOM ACTION BAR: Emergency Call & Emergency Escape Ticket */}
-      <div className="relative z-10 w-full max-w-md mx-auto pt-1 pb-1 shrink-0 grid grid-cols-2 gap-3">
+      <div
+        className={`relative z-10 w-full max-w-md mx-auto pt-1 pb-1 shrink-0 flex items-center gap-3 ${
+          effectiveTicketCount > 0 ? 'justify-between' : 'justify-center'
+        }`}
+      >
         <button
           type="button"
           onClick={() => {
             haptics.thud();
             setShowEmergencyModal(true);
           }}
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-pill text-xs font-sans font-medium text-zinc-300 hover:text-white transition-all cursor-pointer active:scale-95"
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl liquid-pill text-xs font-sans font-medium text-zinc-300 hover:text-white transition-all cursor-pointer active:scale-95 ${
+            effectiveTicketCount > 0 ? 'flex-1' : 'w-full max-w-xs'
+          }`}
         >
           <Phone size={14} className="text-red-400" />
           <span>Emergency Call</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (activeLock.burnTheBoats) {
-              haptics.thud();
-              setTamperWarning('Burn the Boats is active. Escape tickets are strictly disabled for this session.');
-              setTimeout(() => setTamperWarning(null), 3500);
-              return;
-            }
-            haptics.thud();
-            setShowParachuteConfirm(true);
-          }}
-          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-sans font-medium transition-all cursor-pointer active:scale-95 ${
-            activeLock.burnTheBoats
-              ? 'bg-amber-950/40 border border-amber-500/30 text-amber-300'
-              : 'liquid-pill text-zinc-300 hover:text-white'
-          }`}
-        >
-          {activeLock.burnTheBoats ? (
-            <>
-              <Flame size={14} className="text-amber-400 animate-pulse" />
-              <span>Boats Burned</span>
-            </>
-          ) : (
-            <>
-              <AlertTriangle size={14} className="text-amber-400" />
-              <span>Escape ({parachuteMetrics.currentBalance})</span>
-            </>
-          )}
-        </button>
+        {effectiveTicketCount > 0 && (
+          <EscapeTicketDockButton
+            ticketCount={effectiveTicketCount}
+            onOpen={() => {
+              if (activeLock.burnTheBoats) {
+                haptics.thud();
+                setTamperWarning('Burn the Boats is active. Escape tickets are strictly disabled for this session.');
+                setTimeout(() => setTamperWarning(null), 3500);
+                return;
+              }
+              setShowEscapeTicketModal(true);
+            }}
+          />
+        )}
       </div>
 
       {/* MINDFUL MICRO-FRICTION INTERSTITIAL BEFORE OPENING BAG APP */}
@@ -1488,91 +1466,17 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
       )}
 
-      {/* EMERGENCY ESCAPE TICKET CONFIRMATION MODAL */}
-      {showParachuteConfirm && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
-        >
-          <div className="relative w-full max-w-sm rounded-[24px] modal-glass p-5 shadow-2xl border border-white/10 space-y-4 font-sans select-none">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Emergency Escape Ticket
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowParachuteConfirm(false)}
-                className="w-7 h-7 rounded-full liquid-pill-inactive flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-zinc-300 leading-relaxed font-sans">
-              <p>
-                You are about to use 1 of your{' '}
-                <strong className="text-white tabular-nums">
-                  {parachuteMetrics.currentBalance}
-                </strong>{' '}
-                Emergency Escape Tickets.
-              </p>
-
-              <div className="p-3.5 liquid-inset rounded-xl text-zinc-200 text-xs border border-amber-500/30 bg-amber-500/10">
-                <strong className="text-amber-200 block mb-1">Strict Anti-Exploit Rule:</strong>
-                All elapsed time in this session (
-                <span className="font-semibold text-white tabular-nums">
-                  {Math.floor(activeLock.elapsedSeconds / 60)}m
-                </span>
-                ) will be <strong>permanently voided</strong> and will NOT count toward your next
-                35-hour milestone.
-              </div>
-
-              {/* Cognitive Mirror Question */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block">
-                  Why am I breaking this session for myself?
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Type your reason to stay conscious of this decision..."
-                  value={parachuteReason}
-                  onChange={(e) => setParachuteReason(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl liquid-inset text-xs text-white placeholder-zinc-500 outline-none focus:ring-1 focus:ring-amber-400 resize-none"
-                  autoFocus
-                />
-                <p className="text-[10px] text-zinc-500 italic">
-                  This answer is not saved anywhere. It serves only as a mindful mirror before you break.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                disabled={!parachuteReason.trim()}
-                onClick={handleConfirmDeploy}
-                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-black font-sans font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-md"
-              >
-                Confirm Break &amp; Deploy (-1 Ticket)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowParachuteConfirm(false);
-                  setParachuteReason('');
-                }}
-                className="w-full py-2.5 liquid-pill text-zinc-300 font-medium text-xs rounded-xl hover:text-white cursor-pointer"
-              >
-                Cancel &amp; Stay Focused
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* FULL-SIZE INTERACTIVE ESCAPE TICKET MODAL */}
+      <EscapeTicketModal
+        isOpen={showEscapeTicketModal}
+        ticketCount={effectiveTicketCount}
+        onClose={() => setShowEscapeTicketModal(false)}
+        onEscapeConfirmed={() => {
+          setShowEscapeTicketModal(false);
+          haptics.parachuteDeploy();
+          onDeployParachute();
+        }}
+      />
 
       {/* DISTRACTION PARKING LOT MODAL (MENTAL RAM DISCHARGE) */}
       {showParkingLot && (
