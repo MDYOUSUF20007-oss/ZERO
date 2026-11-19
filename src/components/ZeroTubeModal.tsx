@@ -186,6 +186,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const [fallbackReason, setFallbackReason] = useState('');
 
   const mediaRef = useRef<HTMLVideoElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingSeekTimeRef = useRef<number | null>(null);
   const shouldResumeAfterSwapRef = useRef<boolean>(false);
@@ -204,17 +205,66 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
   const persistCurrentWatchProgress = useCallback((force = false) => {
     const lec = activeLectureRef.current;
     if (!lec || lec.isLive) return;
+    if (pendingSeekTimeRef.current !== null) return;
     const el = mediaRef.current;
     const t = el && Number.isFinite(el.currentTime) ? el.currentTime : currentTimeRef.current;
     const d =
       el && Number.isFinite(el.duration) && el.duration > 0
         ? el.duration
         : mediaDurationRef.current || lec.duration || 0;
+    if (t < 3) return;
     if (!force && Math.abs(t - lastSavedSecRef.current) < 2) return;
     lastSavedSecRef.current = t;
     const nextMap = saveVideoProgress(lec.videoId, t, d);
     setVideoProgressMap(nextMap);
   }, []);
+
+  const applyPendingSeek = useCallback(() => {
+    const el = mediaRef.current;
+    if (!el) return;
+    const seekTarget = pendingSeekTimeRef.current;
+    if (seekTarget !== null && Number.isFinite(seekTarget) && seekTarget >= 2) {
+      const clampedSeek =
+        Number.isFinite(el.duration) && el.duration > 5
+          ? Math.min(seekTarget, Math.max(0, el.duration - 3))
+          : seekTarget;
+      try {
+        el.currentTime = clampedSeek;
+        setCurrentTime(clampedSeek);
+        lastSavedSecRef.current = clampedSeek;
+        pendingSeekTimeRef.current = null;
+      } catch {
+        // Will retry on canplay/loadeddata
+      }
+    } else {
+      pendingSeekTimeRef.current = null;
+    }
+  }, []);
+
+  const handleRestartFromBeginning = useCallback(() => {
+    if (!activeLecture) return;
+    haptics.tick(500);
+    setVideoProgressMap(clearVideoProgress(activeLecture.videoId));
+    setResumedAtSeconds(null);
+    lastSavedSecRef.current = 0;
+    pendingSeekTimeRef.current = null;
+    setCurrentTime(0);
+    currentTimeRef.current = 0;
+    if (engineMode === 'native' && mediaRef.current) {
+      mediaRef.current.currentTime = 0;
+    }
+    if (engineMode === 'fallback_iframe') {
+      setIframeStartSeconds(0);
+      try {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+          '*'
+        );
+      } catch {
+        // Handled by key remount
+      }
+    }
+  }, [activeLecture, engineMode]);
 
   const exitVideoFullscreen = useCallback(() => {
     setIsVideoFullscreen(false);
@@ -314,6 +364,84 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     window.addEventListener(ZEROTUBE_WHITELIST_EVENT, syncWhitelist);
     return () => window.removeEventListener(ZEROTUBE_WHITELIST_EVENT, syncWhitelist);
   }, []);
+
+  // Track playback time in YouTube iframe via YouTube IFrame API postMessage & polling
+  useEffect(() => {
+    if (engineMode !== 'fallback_iframe' || !activeLecture || !isOpen) return;
+
+    const handleWindowMessage = (event: MessageEvent) => {
+      if (typeof event.data !== 'string') return;
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.event === 'infoDelivery' && payload?.info) {
+          const info = payload.info;
+          if (typeof info.currentTime === 'number' && Number.isFinite(info.currentTime)) {
+            const t = Math.floor(info.currentTime);
+            if (t >= 0) {
+              setCurrentTime(t);
+              currentTimeRef.current = t;
+              if (t >= 3) {
+                const dur =
+                  typeof info.duration === 'number' && info.duration > 0
+                    ? info.duration
+                    : mediaDurationRef.current || activeLecture.duration || 0;
+                if (dur > 0 && Math.abs(dur - mediaDurationRef.current) > 1) {
+                  setMediaDuration(dur);
+                  mediaDurationRef.current = dur;
+                }
+                if (Math.abs(t - lastSavedSecRef.current) >= 3) {
+                  lastSavedSecRef.current = t;
+                  const nextMap = saveVideoProgress(activeLecture.videoId, t, dur);
+                  setVideoProgressMap(nextMap);
+                }
+              }
+            }
+          }
+          if (typeof info.playerState === 'number') {
+            // 1: PLAYING, 2: PAUSED, 0: ENDED
+            setIsPlaying(info.playerState === 1);
+            if (info.playerState === 0) {
+              setVideoProgressMap(clearVideoProgress(activeLecture.videoId));
+            }
+          }
+        }
+      } catch {
+        // Non-JSON message from other origins
+      }
+    };
+
+    window.addEventListener('message', handleWindowMessage);
+
+    // Initial handshake to tell YouTube iframe API to emit infoDelivery events
+    const handshakeTimer = setTimeout(() => {
+      try {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'listening' }),
+          '*'
+        );
+      } catch {
+        // Ignore
+      }
+    }, 1200);
+
+    // Poll getCurrentTime every 2s to request continuous time update from YouTube iframe
+    const pollInterval = setInterval(() => {
+      try {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'getCurrentTime' }),
+          '*'
+        );
+      } catch {
+        // Ignore
+      }
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('message', handleWindowMessage);
+      clearTimeout(handshakeTimer);
+      clearInterval(pollInterval);
+    };
+  }, [engineMode, activeLecture, isOpen]);
 
   const pickPreferredMuxedIndex = useCallback((streams: ZeroTubeMuxedStream[]): number => {
     if (streams.length === 0) return 0;
@@ -579,6 +707,7 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     const lectures = getSavedZeroTubeLectures();
     setWhitelistedChannels(channels);
     setSavedLectures(lectures);
+    setVideoProgressMap(getAllVideoProgress());
     setBlockedNotice(null);
     setSearchError('');
 
@@ -650,16 +779,9 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
     el.playbackRate = playbackSpeed;
     if (Number.isFinite(el.duration) && el.duration > 0) {
       setMediaDuration(el.duration);
+      mediaDurationRef.current = el.duration;
     }
-    if (pendingSeekTimeRef.current !== null && Number.isFinite(pendingSeekTimeRef.current)) {
-      const clampedSeek =
-        Number.isFinite(el.duration) && el.duration > 5
-          ? Math.min(pendingSeekTimeRef.current, Math.max(0, el.duration - 3))
-          : pendingSeekTimeRef.current;
-      el.currentTime = clampedSeek;
-      setCurrentTime(clampedSeek);
-      pendingSeekTimeRef.current = null;
-    }
+    applyPendingSeek();
     if (shouldResumeAfterSwapRef.current) {
       shouldResumeAfterSwapRef.current = false;
       void el.play().catch(() => {
@@ -1568,9 +1690,14 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                     playsInline
                     preload="metadata"
                     onLoadedMetadata={handleMediaLoadedMetadata}
+                    onLoadedData={applyPendingSeek}
+                    onCanPlay={applyPendingSeek}
                     onTimeUpdate={() => {
                       if (mediaRef.current) {
-                        setCurrentTime(mediaRef.current.currentTime);
+                        if (pendingSeekTimeRef.current !== null) return;
+                        const t = mediaRef.current.currentTime;
+                        if (t < 2 && resumedAtSeconds && resumedAtSeconds >= 3) return;
+                        setCurrentTime(t);
                         persistCurrentWatchProgress(false);
                       }
                     }}
@@ -1833,8 +1960,10 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
               {engineMode === 'fallback_iframe' && activeLecture && (
                 <>
                   <iframe
+                    ref={iframeRef}
+                    key={`${activeLecture.videoId}-${iframeStartSeconds}`}
                     title={activeLecture.title}
-                    src={`https://www.youtube-nocookie.com/embed/${activeLecture.videoId}?rel=0&modestbranding=1&playsinline=1${iframeStartSeconds >= 3 ? `&start=${iframeStartSeconds}` : ''}`}
+                    src={`https://www.youtube-nocookie.com/embed/${activeLecture.videoId}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : 'http://localhost')}${iframeStartSeconds >= 2 ? `&start=${iframeStartSeconds}` : ''}`}
                     referrerPolicy="strict-origin-when-cross-origin"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
@@ -2063,16 +2192,27 @@ export const ZeroTubeModal: React.FC<ZeroTubeModalProps> = ({
                           : 'No-Cookie Embed'}
                       </span>
                       {resumedAtSeconds !== null && resumedAtSeconds >= 3 && (
-                        <span
-                          className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: 'var(--accent-soft)',
-                            color: 'var(--accent-primary)',
-                            border: '1px solid var(--accent-border)',
-                          }}
-                        >
-                          Resumed {formatDurationSeconds(resumedAtSeconds)}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: 'var(--accent-soft)',
+                              color: 'var(--accent-primary)',
+                              border: '1px solid var(--accent-border)',
+                            }}
+                          >
+                            Resumed {formatDurationSeconds(resumedAtSeconds)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleRestartFromBeginning}
+                            className="text-[9px] font-mono underline opacity-80 hover:opacity-100 cursor-pointer"
+                            style={{ color: 'var(--text-secondary)' }}
+                            title="Restart lecture from 00:00"
+                          >
+                            Restart
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -528,7 +528,7 @@ export function saveVideoProgress(
     safeDuration > 20 &&
     (currentTime >= safeDuration - 8 || currentTime / safeDuration >= 0.96);
 
-  if (isFinished || currentTime < 3) {
+  if (isFinished) {
     if (all[videoId]) {
       delete all[videoId];
       try {
@@ -537,6 +537,11 @@ export function saveVideoProgress(
         // Ignore storage errors
       }
     }
+    return all;
+  }
+
+  // Micro-ticks or initial loads under 3s should never wipe out existing progress
+  if (currentTime < 3) {
     return all;
   }
 
