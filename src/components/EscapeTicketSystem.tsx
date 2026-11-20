@@ -157,26 +157,14 @@ interface Particle {
   color: string;
 }
 
-interface ContainmentRing {
+interface SoftShockwave {
   cx: number;
   cy: number;
   radius: number;
   maxRadius: number;
   speed: number;
   alpha: number;
-  segments: number;
-  rotation: number;
-  rotSpeed: number;
-}
-
-interface LightStreak {
-  cx: number;
-  cy: number;
-  angle: number;
-  dist: number;
-  length: number;
-  speed: number;
-  alpha: number;
+  width: number;
 }
 
 /**
@@ -204,8 +192,10 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   const lastNotchRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const ringsRef = useRef<ContainmentRing[]>([]);
-  const streaksRef = useRef<LightStreak[]>([]);
+  const shockwavesRef = useRef<SoftShockwave[]>([]);
+  const lastTimeRef = useRef<number>(0);
+  const rafMoveRef = useRef<number | null>(null);
+  const pendingMoveYRef = useRef<number | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const phaseRef = useRef<'idle' | 'ripping' | 'escaped'>('idle');
 
@@ -231,8 +221,13 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
       setWaveFlatness(0);
       lastNotchRef.current = 0;
       particlesRef.current = [];
-      ringsRef.current = [];
-      streaksRef.current = [];
+      shockwavesRef.current = [];
+      lastTimeRef.current = 0;
+      pendingMoveYRef.current = null;
+      if (rafMoveRef.current !== null) {
+        cancelAnimationFrame(rafMoveRef.current);
+        rafMoveRef.current = null;
+      }
     }
   }, [isOpen]);
 
@@ -355,36 +350,23 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
     };
     setTimeout(() => requestAnimationFrame(stepWave), 160);
 
-    // Stage 3: Spawn Void Containment Fracture Rings & Radial Light Streaks
+    // Stage 3: Spawn Smooth Atmospheric Shockwave Aura (No harsh wireframe lines)
     setTimeout(() => {
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      for (let i = 0; i < 4; i++) {
-        ringsRef.current.push({
+      const maxRadius = Math.max(window.innerWidth, window.innerHeight) * 0.95;
+      for (let i = 0; i < 3; i++) {
+        shockwavesRef.current.push({
           cx,
           cy,
-          radius: 70 + i * 28,
-          maxRadius: Math.max(window.innerWidth, window.innerHeight) * 0.85,
-          speed: 7 + i * 2.4,
-          alpha: 0.75 - i * 0.12,
-          segments: 8 + i * 2,
-          rotation: (i * Math.PI) / 6,
-          rotSpeed: (i % 2 === 0 ? 1 : -1) * 0.006,
+          radius: 35 + i * 40,
+          maxRadius,
+          speed: 8.5 + i * 2.8,
+          alpha: 0.65 - i * 0.12,
+          width: 70 + i * 25,
         });
       }
-      for (let i = 0; i < 22; i++) {
-        const angle = (Math.PI * 2 * i) / 22 + (Math.random() - 0.5) * 0.12;
-        streaksRef.current.push({
-          cx,
-          cy,
-          angle,
-          dist: 90 + Math.random() * 40,
-          length: 45 + Math.random() * 95,
-          speed: 12 + Math.random() * 8,
-          alpha: 0.85,
-        });
-      }
-    }, 340);
+    }, 280);
 
     // Stage 4: Commit ticket consumption & unlock session
     setTimeout(() => {
@@ -396,7 +378,7 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
     }, 1550);
   }, [playDetachSound, spawnSeamSparks, onEscapeConfirmed, onClose]);
 
-  // 2D Canvas overlay loop for sparks, void fracture rings, and light streaks
+  // 2D Canvas overlay loop for smooth sparks & soft aura glow
   useEffect(() => {
     if (!isOpen) return;
     const canvas = canvasRef.current;
@@ -407,24 +389,30 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
     const strokeColor = accentColor || '#7dd3fc';
 
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
+    lastTimeRef.current = performance.now();
 
-    const render = () => {
+    const render = (now: number) => {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      // Update & draw sparks
+      // Delta time normalized to 60fps (dt ≈ 1.0 at 60fps, dt ≈ 0.5 at 120fps)
+      const rawDt = (now - lastTimeRef.current) / 16.667;
+      const dt = Math.max(0.2, Math.min(rawDt, 2.0));
+      lastTimeRef.current = now;
+
+      // Update & draw glowing ember sparks with delta-time
       particlesRef.current = particlesRef.current.filter((p) => p.alpha > 0.02);
       for (const p of particlesRef.current) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.14; // subtle gravity
-        p.alpha -= p.decay;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.12 * dt; // gentle weightless gravity
+        p.alpha -= p.decay * dt;
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.alpha);
@@ -437,50 +425,24 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
         ctx.restore();
       }
 
-      // Update & draw fracturing void containment rings
-      ringsRef.current = ringsRef.current.filter((r) => r.alpha > 0.01);
-      for (const r of ringsRef.current) {
-        r.radius += r.speed;
-        r.rotation += r.rotSpeed;
-        r.alpha *= 0.968;
+      // Update & draw silky soft expanding atmospheric aura glow waves
+      shockwavesRef.current = shockwavesRef.current.filter((sw) => sw.alpha > 0.01 && sw.radius < sw.maxRadius);
+      for (const sw of shockwavesRef.current) {
+        sw.radius += sw.speed * dt;
+        sw.alpha *= Math.pow(0.97, dt);
 
         ctx.save();
-        ctx.translate(r.cx, r.cy);
-        ctx.rotate(r.rotation);
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 1.4;
-        ctx.globalAlpha = Math.max(0, r.alpha);
+        const rInner = Math.max(0, sw.radius - sw.width);
+        const rOuter = sw.radius + sw.width;
+        const grad = ctx.createRadialGradient(sw.cx, sw.cy, rInner, sw.cx, sw.cy, rOuter);
+        grad.addColorStop(0, 'rgba(125, 211, 252, 0)');
+        grad.addColorStop(0.5, `rgba(125, 211, 252, ${Math.max(0, sw.alpha * 0.32)})`);
+        grad.addColorStop(1, 'rgba(125, 211, 252, 0)');
 
-        const step = (Math.PI * 2) / r.segments;
-        for (let s = 0; s < r.segments; s++) {
-          const a0 = s * step + 0.06;
-          const a1 = (s + 1) * step - 0.06;
-          ctx.beginPath();
-          ctx.arc(0, 0, r.radius, a0, a1);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      // Update & draw radial escape light streaks
-      streaksRef.current = streaksRef.current.filter((st) => st.alpha > 0.02);
-      for (const st of streaksRef.current) {
-        st.dist += st.speed;
-        st.alpha *= 0.945;
-
-        const x0 = st.cx + Math.cos(st.angle) * st.dist;
-        const y0 = st.cy + Math.sin(st.angle) * st.dist;
-        const x1 = st.cx + Math.cos(st.angle) * (st.dist + st.length);
-        const y1 = st.cy + Math.sin(st.angle) * (st.dist + st.length);
-
-        ctx.save();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = Math.max(0, st.alpha);
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
+        ctx.arc(sw.cx, sw.cy, rOuter, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
       }
 
@@ -498,9 +460,13 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   useEffect(() => {
     if (isDragging || phase === 'escaped' || ripProgress === 0) return;
     let raf: number;
-    const springBack = () => {
+    let lastSpringTime = performance.now();
+    const springBack = (now: number) => {
+      const rawDt = (now - lastSpringTime) / 16.667;
+      const dt = Math.max(0.2, Math.min(rawDt, 2.0));
+      lastSpringTime = now;
       setRipProgress((prev) => {
-        const next = prev * 0.78;
+        const next = prev * Math.pow(0.78, dt);
         if (next < 0.008) {
           setPhase('idle');
           lastNotchRef.current = 0;
@@ -524,28 +490,40 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging || phase === 'escaped') return;
-    const box = ticketBoxRef.current;
-    const dragRange = box ? Math.max(130, box.getBoundingClientRect().height * 0.74) : 170;
-    const raw = (e.clientY - dragStartYRef.current) / dragRange;
-    const clamped = Math.max(0, Math.min(1, raw));
-    setRipProgress(clamped);
+    pendingMoveYRef.current = e.clientY;
+    if (rafMoveRef.current !== null) return;
 
-    // Mechanical notch tick + micro-sparks every ~8%
-    const notch = Math.floor(clamped * 12);
-    if (notch > lastNotchRef.current) {
-      lastNotchRef.current = notch;
-      playTickSound(clamped);
-      if (navigator.vibrate) navigator.vibrate(6);
-      haptics.tick(150);
-      spawnSeamSparks(clamped, false);
-    }
+    rafMoveRef.current = requestAnimationFrame(() => {
+      rafMoveRef.current = null;
+      if (pendingMoveYRef.current === null) return;
+      const box = ticketBoxRef.current;
+      const dragRange = box ? Math.max(130, box.getBoundingClientRect().height * 0.74) : 170;
+      const raw = (pendingMoveYRef.current - dragStartYRef.current) / dragRange;
+      const clamped = Math.max(0, Math.min(1, raw));
+      setRipProgress(clamped);
 
-    if (clamped >= 0.85) {
-      triggerEscapeSequence();
-    }
+      // Mechanical notch tick + micro-sparks every ~8%
+      const notch = Math.floor(clamped * 12);
+      if (notch > lastNotchRef.current) {
+        lastNotchRef.current = notch;
+        playTickSound(clamped);
+        if (navigator.vibrate) navigator.vibrate(6);
+        haptics.tick(150);
+        spawnSeamSparks(clamped, false);
+      }
+
+      if (clamped >= 0.85) {
+        triggerEscapeSequence();
+      }
+    });
   };
 
   const handlePointerUp = () => {
+    if (rafMoveRef.current !== null) {
+      cancelAnimationFrame(rafMoveRef.current);
+      rafMoveRef.current = null;
+    }
+    pendingMoveYRef.current = null;
     if (!isDragging) return;
     setIsDragging(false);
     if (ripProgress >= 0.85) {
@@ -569,17 +547,19 @@ export const EscapeTicketModal: React.FC<EscapeTicketModalProps> = ({
   const isEscaped = phase === 'escaped';
   const tearY = 14 + ripProgress * 268;
 
-  // Left stub physical hinge transform
+  // Left stub physical hinge transform (GPU accelerated translate3d)
   const stubStyle: React.CSSProperties = isEscaped
     ? {
-        transform: 'translate(-44px, 340px) rotate(-26deg)',
+        transform: 'translate3d(-44px, 340px, 0) rotate(-26deg)',
         opacity: 0,
-        transition: 'transform 0.58s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.48s ease-out',
+        transition: 'transform 0.62s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out',
+        willChange: 'transform, opacity',
       }
     : {
-        transform: `translate(${-ripProgress * 12}px, ${ripProgress * 16}px) rotate(${-ripProgress * 7.5}deg)`,
+        transform: `translate3d(${-ripProgress * 12}px, ${ripProgress * 16}px, 0) rotate(${-ripProgress * 7.5}deg)`,
         transformOrigin: '160px 282px',
-        transition: isDragging ? 'none' : 'transform 0.25s ease-out',
+        transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform',
       };
 
   return (

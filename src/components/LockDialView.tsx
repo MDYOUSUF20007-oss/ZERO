@@ -34,6 +34,7 @@ import {
   UserPlus,
   Trophy,
   Palette,
+  Ticket,
   CloudUpload,
   Loader2,
   Download,
@@ -664,45 +665,24 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
           headerContent={
             <>
               <div
-                className="h-6 px-2 obsidian-icon-box flex items-center justify-center gap-1.5 rounded-xl"
+                className="relative w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
                 style={{
                   border: '1px solid var(--accent-hex, rgba(125, 211, 252, 0.45))',
                   boxShadow: '0 0 10px var(--accent-hex, rgba(125, 211, 252, 0.15))',
                 }}
               >
-                <svg
-                  className="w-5 h-3 shrink-0"
-                  viewBox="0 0 48 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M 4 1 L 11 1 L 13 3 L 15 1 L 44 1 A 3 3 0 0 1 47 4 L 47 9 A 3 3 0 0 0 47 15 L 47 20 A 3 3 0 0 1 44 23 L 15 23 L 13 21 L 11 23 L 4 23 A 3 3 0 0 1 1 20 L 1 15 A 3 3 0 0 0 1 9 L 1 4 A 3 3 0 0 1 4 1 Z"
-                    fill="#070b11"
-                    stroke="var(--accent-hex, #7dd3fc)"
-                    strokeWidth="1.2"
-                  />
-                  <line
-                    x1="13"
-                    y1="3"
-                    x2="13"
-                    y2="21"
-                    stroke="var(--accent-hex, #7dd3fc)"
-                    strokeWidth="0.9"
-                    strokeDasharray="2 1.5"
-                    strokeOpacity="0.7"
-                  />
-                  <path
-                    d="M 18 12 L 22 12 L 24 8 L 26 16 L 28 9 L 30 14 L 32 12 L 40 12"
-                    stroke="var(--accent-hex, #7dd3fc)"
-                    strokeWidth="1.1"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span className="text-[11px] font-sans tabular-nums font-bold leading-none text-white">
-                  {parachuteMetrics.currentBalance}
-                </span>
+                <Ticket
+                  size={13}
+                  strokeWidth={2}
+                  style={{ color: 'var(--accent-hex, #7dd3fc)' }}
+                />
+                {parachuteMetrics.currentBalance > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#070b11] border border-cyan-400/80 text-[8.5px] font-mono font-bold leading-[13px] text-cyan-200 text-center flex items-center justify-center shadow-sm"
+                  >
+                    {parachuteMetrics.currentBalance}
+                  </span>
+                )}
               </div>
               <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
                 {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}

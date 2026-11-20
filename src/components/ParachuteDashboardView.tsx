@@ -2265,9 +2265,9 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
               )}
               <div
                 aria-hidden="true"
-                className="absolute right-3 bottom-9 text-7xl opacity-5 pointer-events-none select-none font-mono"
+                className="absolute right-3 bottom-9 opacity-5 pointer-events-none select-none text-cyan-300"
               >
-                🎫
+                <Ticket size={72} strokeWidth={1} />
               </div>
             </>
           )
@@ -2289,27 +2289,15 @@ export const ParachuteDashboardView: React.FC<ParachuteDashboardViewProps> = ({
                       : `obsidian-icon-box flex items-center justify-center shrink-0 ${
                           isBespoke
                             ? 'w-12 h-12 rounded-md text-blue-500'
-                            : 'w-14 h-14 rounded-2xl text-2xl'
+                            : 'w-14 h-14 rounded-2xl'
                         }`
                   }
                 >
-                  {isModernFont ? (
-                    <Ticket
-                      size={22}
-                      strokeWidth={isFluentGlass ? 1.75 : 2}
-                      className={isFluentGlass ? 'text-cyan-200' : undefined}
-                    />
-                  ) : (
-                    <span
-                      className={
-                        parachuteMetrics.currentBalance > 0
-                          ? 'animate-parachute-float inline-block'
-                          : ''
-                      }
-                    >
-                      🎫
-                    </span>
-                  )}
+                  <Ticket
+                    size={22}
+                    strokeWidth={isFluentGlass ? 1.75 : 2}
+                    className="text-cyan-300"
+                  />
                 </div>
                 <div>
                   <div
