@@ -138,6 +138,17 @@ class ZeroAccessibilityService : AccessibilityService() {
             refreshPackageCachesIfNeeded(nowElapsed)
             syncEngageConfig(force = false)
 
+            val inPomodoroBreak = nowElapsed <= TheVoidActivity.pomodoroBreakUntilElapsed
+            if (inPomodoroBreak) {
+                lastObservedAppPackage = null
+                overlayController.hideBlockingOverlay()
+                overlayController.hideNudgeBanner()
+                if (isTickerRunning) {
+                    mainHandler.postDelayed(this, TICKER_INTERVAL_MS)
+                }
+                return
+            }
+
             if (TheVoidActivity.isInForeground) {
                 lastObservedAppPackage = null
                 overlayController.hideBlockingOverlay()
@@ -357,6 +368,26 @@ class ZeroAccessibilityService : AccessibilityService() {
         refreshPackageCachesIfNeeded(nowElapsed)
         syncEngageConfig(force = false)
         startTickerIfNeeded()
+
+        // Check if Pomodoro freedom break is active (allows all apps and home launcher)
+        val inPomodoroBreak = nowElapsed <= TheVoidActivity.pomodoroBreakUntilElapsed
+        if (inPomodoroBreak) {
+            overlayController.hideBlockingOverlay()
+            overlayController.hideNudgeBanner()
+            if (eventPkg == "com.android.packageinstaller" ||
+                eventPkg == "com.google.android.packageinstaller" ||
+                eventPkg == "com.samsung.android.packageinstaller"
+            ) {
+                performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                snapToVoid(nowElapsed)
+                return
+            }
+            if (eventPkg == YouTubeAccessibilityGuard.YOUTUBE_PACKAGE) {
+                youTubeGuard.onYouTubeEvent(this, event, nowElapsed)
+            }
+            return
+        }
 
         // 0. Ignore active soft keyboard (InputMethodService) events so typing never resets
         // controlled continuous timers or falsely triggers re-entry Mindful Friction.

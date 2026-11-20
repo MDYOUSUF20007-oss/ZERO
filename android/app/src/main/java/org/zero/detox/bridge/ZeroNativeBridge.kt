@@ -1043,7 +1043,7 @@ class ZeroNativeBridge(
 
     @JavascriptInterface
     fun startPomodoroBreak(durationSeconds: Long): Boolean {
-        val safeSeconds = durationSeconds.coerceIn(30L, 1800L) // up to 30 mins max
+        val safeSeconds = durationSeconds.coerceIn(1L, 1800L) // up to 30 mins max
         TheVoidActivity.pomodoroBreakUntilElapsed = SystemClock.elapsedRealtime() + (safeSeconds * 1000L)
         return true
     }

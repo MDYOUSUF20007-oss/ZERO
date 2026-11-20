@@ -104,31 +104,43 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
     setCurrentQuote((prev) => getRandomVoidQuote(profile?.motto, prev.quote));
   };
 
-  // Flexible Hourly Pomodoro Break Engine
+  // Flexible Hourly Pomodoro Break Bank (10 minutes total per hour, usable in any increments)
+  const currentHourBlock = Math.floor(activeLock.elapsedSeconds / 3600);
+  const [trackedHourBlock, setTrackedHourBlock] = useState<number>(currentHourBlock);
+  const [hourlyBreakBankSecondsLeft, setHourlyBreakBankSecondsLeft] = useState<number>(600);
   const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
-  const [pomodoroBreakSecondsLeft, setPomodoroBreakSecondsLeft] = useState<number>(0);
-  const [breakTakenHourBlocks, setBreakTakenHourBlocks] = useState<Set<number>>(new Set());
   const [showPomodoroBreakModal, setShowPomodoroBreakModal] = useState<boolean>(false);
 
-  const currentHourBlock = Math.floor(activeLock.elapsedSeconds / 3600);
-  const isBreakAvailableThisHour = !breakTakenHourBlocks.has(currentHourBlock);
+  // New hour rollover: replenishes the 10-minute break bank
+  useEffect(() => {
+    if (currentHourBlock !== trackedHourBlock) {
+      setTrackedHourBlock(currentHourBlock);
+      setHourlyBreakBankSecondsLeft(600);
+      setPomodoroIsBreak(false);
+      setShowPomodoroBreakModal(false);
+      if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+        window.ZeroNative.endPomodoroBreak();
+      }
+    }
+  }, [currentHourBlock, trackedHourBlock]);
 
-  const handleStartPomodoroBreak = (durationSeconds: number = 600) => {
+  // Start or resume break using remaining bank seconds
+  const handleStartPomodoroBreak = (customDuration?: number) => {
+    const duration = customDuration ?? hourlyBreakBankSecondsLeft;
+    if (duration <= 0) return;
     haptics.tick(900);
     setPomodoroIsBreak(true);
-    setPomodoroBreakSecondsLeft(durationSeconds);
     setShowPomodoroBreakModal(true);
-    setBreakTakenHourBlocks((prev) => new Set([...prev, currentHourBlock]));
 
     if (typeof window !== 'undefined' && window.ZeroNative?.startPomodoroBreak) {
-      window.ZeroNative.startPomodoroBreak(durationSeconds);
+      window.ZeroNative.startPomodoroBreak(duration);
     }
   };
 
-  const handleEndPomodoroBreak = () => {
+  // Pause break: saves remaining bank time and re-arms focus protection
+  const handlePausePomodoroBreak = () => {
     haptics.tick(600);
     setPomodoroIsBreak(false);
-    setPomodoroBreakSecondsLeft(0);
     setShowPomodoroBreakModal(false);
 
     if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
@@ -136,11 +148,12 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
     }
   };
 
+  // Timer countdown while break is active
   useEffect(() => {
     if (!pomodoroIsBreak) return;
 
     const interval = setInterval(() => {
-      setPomodoroBreakSecondsLeft((prev) => {
+      setHourlyBreakBankSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           setPomodoroIsBreak(false);
@@ -157,6 +170,33 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
     }, 1000);
 
     return () => clearInterval(interval);
+  }, [pomodoroIsBreak]);
+
+  // Synchronize remaining break seconds when app returns to foreground
+  useEffect(() => {
+    const handleSyncFromNative = () => {
+      if (typeof window !== 'undefined' && window.ZeroNative?.isPomodoroBreakActive) {
+        const isActive = window.ZeroNative.isPomodoroBreakActive();
+        const nativeSecs = window.ZeroNative.getPomodoroBreakSecondsLeft?.() ?? 0;
+
+        if (isActive && nativeSecs > 0) {
+          setPomodoroIsBreak(true);
+          setHourlyBreakBankSecondsLeft(Number(nativeSecs));
+        } else if (pomodoroIsBreak && (!isActive || nativeSecs <= 0)) {
+          setPomodoroIsBreak(false);
+          setHourlyBreakBankSecondsLeft(0);
+          setShowPomodoroBreakModal(false);
+          voidAudio.playZenBowl();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleSyncFromNative);
+    document.addEventListener('visibilitychange', handleSyncFromNative);
+    return () => {
+      window.removeEventListener('focus', handleSyncFromNative);
+      document.removeEventListener('visibilitychange', handleSyncFromNative);
+    };
   }, [pomodoroIsBreak]);
 
   useEffect(() => {
@@ -310,19 +350,31 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/50 text-xs font-mono font-bold animate-pulse cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.5)]"
             >
               <Coffee size={13} />
-              <span>Break: {Math.floor(pomodoroBreakSecondsLeft / 60)}:{String(pomodoroBreakSecondsLeft % 60).padStart(2, '0')}</span>
+              <span>Break: {Math.floor(hourlyBreakBankSecondsLeft / 60)}:{String(hourlyBreakBankSecondsLeft % 60).padStart(2, '0')}</span>
             </button>
-          ) : isBreakAvailableThisHour ? (
+          ) : hourlyBreakBankSecondsLeft > 0 ? (
             <button
               type="button"
-              onClick={() => handleStartPomodoroBreak(600)}
+              onClick={() => handleStartPomodoroBreak()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30 hover:bg-amber-500/25 text-xs font-semibold cursor-pointer active:scale-95 transition-all shadow-sm"
-              title="Take your 10-minute freedom break anytime this hour"
+              title="Take or resume your 10-minute freedom break bank anytime this hour"
             >
               <Coffee size={13} />
-              <span>Take 10m Break</span>
+              <span>
+                {hourlyBreakBankSecondsLeft >= 600
+                  ? 'Take 10m Break'
+                  : `Take Break (${Math.ceil(hourlyBreakBankSecondsLeft / 60)}m left)`}
+              </span>
             </button>
-          ) : null}
+          ) : (
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.02] text-zinc-500 border border-white/5 text-xs font-mono cursor-not-allowed"
+              title="10-minute break bank used for this hour. Refreshes next hour."
+            >
+              <Coffee size={13} className="text-zinc-600" />
+              <span>0m left this hr</span>
+            </span>
+          )}
         </div>
 
         {/* Giant Circular Arc Progress Hub */}
@@ -780,19 +832,19 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
 
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
-                10-Minute Freedom Window
+                Flexible Break Window ({Math.ceil(hourlyBreakBankSecondsLeft / 60)}m Left)
               </span>
               <h3 className="text-3xl font-black font-mono text-white tracking-wider tabular-nums">
-                {Math.floor(pomodoroBreakSecondsLeft / 60)}:{String(pomodoroBreakSecondsLeft % 60).padStart(2, '0')}
+                {Math.floor(hourlyBreakBankSecondsLeft / 60)}:{String(hourlyBreakBankSecondsLeft % 60).padStart(2, '0')}
               </h3>
             </div>
 
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Blockade is <strong className="text-amber-200">temporarily paused</strong>. You can use <strong>any app</strong> you want freely — social media, browser, games, chat, whatever you need.
+              Blockade is <strong className="text-amber-200">temporarily paused</strong>. Use any app or home screen freely. When you return, pause the break &mdash; any unused time is preserved for later this hour!
             </p>
 
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 text-left">
-              <span>⏱️ The Void will automatically re-arm lockdown when this 10-minute break expires.</span>
+              <span>⏱️ Use 1 minute now, 5 minutes later, 3 minutes later &mdash; up to 10 minutes total this hour.</span>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -812,10 +864,10 @@ export const AetherialVoidView: React.FC<AetherialVoidViewProps> = ({
 
               <button
                 type="button"
-                onClick={handleEndPomodoroBreak}
-                className="w-full py-2.5 rounded-xl bg-[#282a32] text-zinc-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
+                onClick={handlePausePomodoroBreak}
+                className="w-full py-2.5 rounded-xl bg-[#282a32] text-amber-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
               >
-                <span>End Break Early &amp; Resume Focus</span>
+                <span>Pause Break &amp; Save Remaining Time</span>
               </button>
             </div>
           </div>

@@ -142,13 +142,6 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   const [soundVolume, setSoundVolume] = useState<number>(0.5);
   const [showAudioDrawer, setShowAudioDrawer] = useState<boolean>(false);
 
-  // Feature 3: Optional Pomodoro Mode ('off' | 'flexible_hourly' | '50_10' | '25_5')
-  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('flexible_hourly');
-  const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
-  const [pomodoroBreakSecondsLeft, setPomodoroBreakSecondsLeft] = useState<number>(0);
-  const [breakTakenHourBlocks, setBreakTakenHourBlocks] = useState<Set<number>>(new Set());
-  const [showPomodoroBreakModal, setShowPomodoroBreakModal] = useState<boolean>(false);
-
   // Feature 4: Flip-to-Focus AMOLED Blackout Sensor
   const [flipToFocusEnabled, setFlipToFocusEnabled] = useState<boolean>(true);
   const [isDeviceFaceDown, setIsDeviceFaceDown] = useState<boolean>(false);
@@ -442,26 +435,44 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     };
   }, [flipToFocusEnabled]);
 
-  // Feature 3: Pomodoro & Flexible Hourly Break Engine
+  // Feature 3: Flexible Hourly Pomodoro Break Bank (10 minutes total per hour, usable in any increments)
   const currentHourBlock = Math.floor(activeLock.elapsedSeconds / 3600);
-  const isBreakAvailableThisHour = !breakTakenHourBlocks.has(currentHourBlock);
+  const [trackedHourBlock, setTrackedHourBlock] = useState<number>(currentHourBlock);
+  const [hourlyBreakBankSecondsLeft, setHourlyBreakBankSecondsLeft] = useState<number>(600);
+  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('flexible_hourly');
+  const [pomodoroIsBreak, setPomodoroIsBreak] = useState<boolean>(false);
+  const [showPomodoroBreakModal, setShowPomodoroBreakModal] = useState<boolean>(false);
 
-  const handleStartPomodoroBreak = (durationSeconds: number = 600) => {
+  // New hour rollover: replenishes the 10-minute break bank
+  useEffect(() => {
+    if (currentHourBlock !== trackedHourBlock) {
+      setTrackedHourBlock(currentHourBlock);
+      setHourlyBreakBankSecondsLeft(600);
+      setPomodoroIsBreak(false);
+      setShowPomodoroBreakModal(false);
+      if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
+        window.ZeroNative.endPomodoroBreak();
+      }
+    }
+  }, [currentHourBlock, trackedHourBlock]);
+
+  // Start or resume break using remaining bank seconds
+  const handleStartPomodoroBreak = (customDuration?: number) => {
+    const duration = customDuration ?? hourlyBreakBankSecondsLeft;
+    if (duration <= 0) return;
     haptics.tick(900);
     setPomodoroIsBreak(true);
-    setPomodoroBreakSecondsLeft(durationSeconds);
     setShowPomodoroBreakModal(true);
-    setBreakTakenHourBlocks((prev) => new Set([...prev, currentHourBlock]));
 
     if (typeof window !== 'undefined' && window.ZeroNative?.startPomodoroBreak) {
-      window.ZeroNative.startPomodoroBreak(durationSeconds);
+      window.ZeroNative.startPomodoroBreak(duration);
     }
   };
 
-  const handleEndPomodoroBreak = () => {
+  // Pause break: saves remaining bank time and re-arms focus protection
+  const handlePausePomodoroBreak = () => {
     haptics.tick(600);
     setPomodoroIsBreak(false);
-    setPomodoroBreakSecondsLeft(0);
     setShowPomodoroBreakModal(false);
 
     if (typeof window !== 'undefined' && window.ZeroNative?.endPomodoroBreak) {
@@ -474,7 +485,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     if (!pomodoroIsBreak) return;
 
     const interval = setInterval(() => {
-      setPomodoroBreakSecondsLeft((prev) => {
+      setHourlyBreakBankSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           setPomodoroIsBreak(false);
@@ -493,6 +504,33 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
     return () => clearInterval(interval);
   }, [pomodoroIsBreak]);
 
+  // Synchronize remaining break seconds when app returns to foreground
+  useEffect(() => {
+    const handleSyncFromNative = () => {
+      if (typeof window !== 'undefined' && window.ZeroNative?.isPomodoroBreakActive) {
+        const isActive = window.ZeroNative.isPomodoroBreakActive();
+        const nativeSecs = window.ZeroNative.getPomodoroBreakSecondsLeft?.() ?? 0;
+
+        if (isActive && nativeSecs > 0) {
+          setPomodoroIsBreak(true);
+          setHourlyBreakBankSecondsLeft(Number(nativeSecs));
+        } else if (pomodoroIsBreak && (!isActive || nativeSecs <= 0)) {
+          setPomodoroIsBreak(false);
+          setHourlyBreakBankSecondsLeft(0);
+          setShowPomodoroBreakModal(false);
+          voidAudio.playZenBowl();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleSyncFromNative);
+    document.addEventListener('visibilitychange', handleSyncFromNative);
+    return () => {
+      window.removeEventListener('focus', handleSyncFromNative);
+      document.removeEventListener('visibilitychange', handleSyncFromNative);
+    };
+  }, [pomodoroIsBreak]);
+
   // Automatic break trigger for fixed presets (50_10 or 25_5)
   useEffect(() => {
     if (pomodoroMode === 'off' || pomodoroMode === 'flexible_hourly' || pomodoroIsBreak) return;
@@ -503,10 +541,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
     const cyclePos = activeLock.elapsedSeconds % cycleSpan;
 
-    if (cyclePos >= focusSpan && isBreakAvailableThisHour) {
-      handleStartPomodoroBreak(breakSpan);
+    if (cyclePos >= focusSpan && hourlyBreakBankSecondsLeft > 0) {
+      handleStartPomodoroBreak(Math.min(breakSpan, hourlyBreakBankSecondsLeft));
     }
-  }, [pomodoroMode, activeLock.elapsedSeconds, isBreakAvailableThisHour, pomodoroIsBreak]);
+  }, [pomodoroMode, activeLock.elapsedSeconds, hourlyBreakBankSecondsLeft, pomodoroIsBreak]);
 
   // Sound player helpers
   const handleSelectSound = (trackId: FocusSoundTrack) => {
@@ -957,20 +995,33 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
                   className="flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border bg-amber-500/25 text-amber-200 border-amber-400/50 animate-pulse cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.5)]"
                 >
                   <Coffee size={10} />
-                  <span>Break: {formatCountdown(pomodoroBreakSecondsLeft)}</span>
+                  <span>Break: {formatCountdown(hourlyBreakBankSecondsLeft)}</span>
                 </button>
               ) : (
                 <>
-                  {pomodoroMode !== 'off' && isBreakAvailableThisHour && (
+                  {pomodoroMode !== 'off' && hourlyBreakBankSecondsLeft > 0 && (
                     <button
                       type="button"
-                      onClick={() => handleStartPomodoroBreak(600)}
+                      onClick={() => handleStartPomodoroBreak()}
                       className="flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-400/40 hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
-                      title="Take your 10-minute freedom break anytime this hour"
+                      title="Take or resume your 10-minute freedom break bank anytime this hour"
                     >
                       <Coffee size={10} />
-                      <span>Take 10m Break</span>
+                      <span>
+                        {hourlyBreakBankSecondsLeft >= 600
+                          ? 'Take 10m Break'
+                          : `Take Break (${Math.ceil(hourlyBreakBankSecondsLeft / 60)}m left)`}
+                      </span>
                     </button>
+                  )}
+                  {pomodoroMode !== 'off' && hourlyBreakBankSecondsLeft <= 0 && (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border border-white/5 bg-white/[0.02] text-zinc-500 cursor-not-allowed"
+                      title="10-minute break bank used for this hour. Refreshes next hour."
+                    >
+                      <Coffee size={10} className="text-zinc-600" />
+                      <span>0m left this hr</span>
+                    </span>
                   )}
                   <button
                     type="button"
@@ -1746,19 +1797,19 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
-                10-Minute Freedom Window
+                Flexible Break Window ({Math.ceil(hourlyBreakBankSecondsLeft / 60)}m Left)
               </span>
               <h3 className="text-3xl font-black font-mono text-white tracking-wider tabular-nums">
-                {formatCountdown(pomodoroBreakSecondsLeft)}
+                {formatCountdown(hourlyBreakBankSecondsLeft)}
               </h3>
             </div>
 
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Blockade is <strong className="text-amber-200">temporarily paused</strong>. You can use <strong>any app</strong> you want freely — social media, browser, games, chat, whatever you need.
+              Blockade is <strong className="text-amber-200">temporarily paused</strong>. Use any app or home screen freely. When you return, pause the break &mdash; any unused time is preserved for later this hour!
             </p>
 
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 text-left">
-              <span>⏱️ The Void will automatically re-arm lockdown when this 10-minute break expires.</span>
+              <span>⏱️ Use 1 minute now, 5 minutes later, 3 minutes later &mdash; up to 10 minutes total this hour.</span>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -1778,10 +1829,10 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
               <button
                 type="button"
-                onClick={handleEndPomodoroBreak}
-                className="w-full py-2.5 rounded-xl liquid-pill text-zinc-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
+                onClick={handlePausePomodoroBreak}
+                className="w-full py-2.5 rounded-xl liquid-pill text-amber-300 hover:text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
               >
-                <span>End Break Early &amp; Resume Focus</span>
+                <span>Pause Break &amp; Save Remaining Time</span>
               </button>
             </div>
           </div>
