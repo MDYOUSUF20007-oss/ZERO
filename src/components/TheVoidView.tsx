@@ -23,6 +23,14 @@ import {
   getCompulsoryStudyAppsConfig,
   type CompulsoryStudyAppsConfig,
 } from '../utils/compulsoryStudyApps';
+import { ActionReminderModal } from './ActionReminderModal';
+import { ActionReminderAlertModal } from './ActionReminderAlertModal';
+import {
+  type ActionReminderConfig,
+  getActionReminderConfig,
+  shouldTriggerReminder,
+  triggerActionReminder,
+} from '../utils/actionReminders';
 import {
   Phone,
   AlertTriangle,
@@ -48,6 +56,7 @@ import {
   QrCode,
   ExternalLink,
   GraduationCap,
+  Dumbbell,
 } from 'lucide-react';
 
 interface PaymentAppOption {
@@ -180,6 +189,37 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
   });
   const [showParkingLot, setShowParkingLot] = useState<boolean>(false);
   const [newThoughtInput, setNewThoughtInput] = useState<string>('');
+
+  // Feature: Movement & Action Reminders (Zero-Guilt Nudges)
+  const [actionReminderConfig, setActionReminderConfig] = useState<ActionReminderConfig>(getActionReminderConfig);
+  const [showReminderModal, setShowReminderModal] = useState<boolean>(false);
+  const [activeAlertReminder, setActiveAlertReminder] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleConfigUpdate = (e: CustomEvent<ActionReminderConfig>) => {
+      if (e.detail) setActionReminderConfig(e.detail);
+    };
+    const handleAlert = (e: CustomEvent<{ text: string }>) => {
+      if (e.detail?.text) {
+        setActiveAlertReminder(e.detail.text);
+      }
+    };
+    window.addEventListener('zero:action_reminder_config_updated', handleConfigUpdate as EventListener);
+    window.addEventListener('zero:action_reminder_alert', handleAlert as EventListener);
+
+    const interval = setInterval(() => {
+      const current = getActionReminderConfig();
+      if (shouldTriggerReminder(current)) {
+        triggerActionReminder(undefined, current);
+      }
+    }, 20000);
+
+    return () => {
+      window.removeEventListener('zero:action_reminder_config_updated', handleConfigUpdate as EventListener);
+      window.removeEventListener('zero:action_reminder_alert', handleAlert as EventListener);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Silence Mode / Optional DND state (Phone is silent, Calls & WhatsApp unblocked)
   const [isDndEnabled, setIsDndEnabled] = useState<boolean>(false);
@@ -669,24 +709,14 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
 
       {/* Dynamic Sub-Surface Ambient Glow Orbs */}
       {themeRuntime.family !== 'kindle' && (
-        <>
-          <div
-            aria-hidden="true"
-            className="fixed -top-20 -left-20 w-80 h-80 rounded-full pointer-events-none blur-3xl transition-all duration-700"
-            style={{
-              background: `radial-gradient(circle, ${activeAccent} 0%, rgba(56,189,248,0.25) 45%, transparent 70%)`,
-              opacity: gpuThermalSafeguard ? 0.15 : Math.max(0.2, fluentOrbIntensity * 0.75),
-            }}
-          />
-          <div
-            aria-hidden="true"
-            className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full pointer-events-none blur-3xl transition-all duration-700"
-            style={{
-              background: `radial-gradient(circle, ${activeAccent} 0%, transparent 65%)`,
-              opacity: gpuThermalSafeguard ? 0.12 : Math.max(0.18, fluentOrbIntensity * 0.6),
-            }}
-          />
-        </>
+        <div
+          aria-hidden="true"
+          className="fixed -top-20 -left-20 w-80 h-80 rounded-full pointer-events-none blur-3xl transition-all duration-700"
+          style={{
+            background: `radial-gradient(circle, ${activeAccent} 0%, rgba(56,189,248,0.25) 45%, transparent 70%)`,
+            opacity: gpuThermalSafeguard ? 0.15 : Math.max(0.2, fluentOrbIntensity * 0.75),
+          }}
+        />
       )}
 
       {/* TOP STATUS BAR: Live Clock, Status, Battery, Controls */}
@@ -709,6 +739,26 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Movement & Action Reminders button (Left of Parking Lot) */}
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(700);
+              setShowReminderModal(true);
+            }}
+            title="Action & Movement Reminders (Zero Guilt)"
+            className={`p-1.5 rounded-lg liquid-spring cursor-pointer relative ${
+              actionReminderConfig.enabled
+                ? 'liquid-pill-active text-emerald-300'
+                : 'liquid-pill-inactive text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Dumbbell size={13} strokeWidth={1.75} />
+            {actionReminderConfig.enabled && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            )}
+          </button>
+
           {/* Distraction Parking Lot button */}
           <button
             type="button"
@@ -1566,6 +1616,23 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ACTION & MOVEMENT REMINDER MODAL */}
+      <ActionReminderModal
+        isOpen={showReminderModal}
+        onClose={() => setShowReminderModal(false)}
+        config={actionReminderConfig}
+        onConfigChange={setActionReminderConfig}
+      />
+
+      {/* IN-APP POPUP NUDGE ALERT */}
+      {activeAlertReminder && (
+        <ActionReminderAlertModal
+          text={activeAlertReminder}
+          voiceEnabled={actionReminderConfig.voiceEnabled}
+          onDismiss={() => setActiveAlertReminder(null)}
+        />
       )}
 
       {/* QUICK PAYMENT & UPI MODAL */}

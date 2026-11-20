@@ -24,6 +24,13 @@ import { IntegrityEngine } from './core/integrity/IntegrityEngine';
 import { checkForAppUpdate, isUpdatePromptDue, recordUpdatePromptShown } from './utils/autoUpdater';
 import { checkAndEnforceRoutines } from './utils/routineEngine';
 import { syncYouTubeGuardToNative } from './utils/zeroTubeWhitelist';
+import { ActionReminderAlertModal } from './components/ActionReminderAlertModal';
+import {
+  type ActionReminderConfig,
+  getActionReminderConfig,
+  shouldTriggerReminder,
+  triggerActionReminder,
+} from './utils/actionReminders';
 import type { AppUpdateReleaseInfo, HabitCalibrationProfile, RecurringSchedule, OccasionBag } from './types';
 import { BellRing, X, AlertTriangle, Download, Upload } from 'lucide-react';
 
@@ -48,8 +55,38 @@ export function App() {
   const [updateInfo, setUpdateInfo] = useState<AppUpdateReleaseInfo | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [backupNudgeVisible, setBackupNudgeVisible] = useState(false);
+  const [globalReminderAlert, setGlobalReminderAlert] = useState<string | null>(null);
+  const [globalReminderConfig, setGlobalReminderConfig] = useState<ActionReminderConfig>(getActionReminderConfig);
   const lastBackPressRef = useRef<number>(0);
   const hasAutoPromptedRef = useRef(false);
+
+  useEffect(() => {
+    const handleConfigUpdate = (e: CustomEvent<ActionReminderConfig>) => {
+      if (e.detail) setGlobalReminderConfig(e.detail);
+    };
+    const handleAlert = (e: CustomEvent<{ text: string }>) => {
+      if (e.detail?.text) {
+        setGlobalReminderAlert(e.detail.text);
+      }
+    };
+    window.addEventListener('zero:action_reminder_config_updated', handleConfigUpdate as EventListener);
+    window.addEventListener('zero:action_reminder_alert', handleAlert as EventListener);
+
+    const interval = setInterval(() => {
+      if (!store.activeLock) {
+        const current = getActionReminderConfig();
+        if (shouldTriggerReminder(current)) {
+          triggerActionReminder(undefined, current);
+        }
+      }
+    }, 20000);
+
+    return () => {
+      window.removeEventListener('zero:action_reminder_config_updated', handleConfigUpdate as EventListener);
+      window.removeEventListener('zero:action_reminder_alert', handleAlert as EventListener);
+      clearInterval(interval);
+    };
+  }, [store.activeLock]);
 
   // Author integrity verification on startup & native YouTube guard whitelist sync
   useEffect(() => {
@@ -992,6 +1029,14 @@ export function App() {
           onDismiss={() => {
             store.dismissVictoryModal();
           }}
+        />
+      )}
+      {/* Global In-App Movement Reminder Alert */}
+      {globalReminderAlert && (
+        <ActionReminderAlertModal
+          text={globalReminderAlert}
+          voiceEnabled={globalReminderConfig.voiceEnabled}
+          onDismiss={() => setGlobalReminderAlert(null)}
         />
       )}
     </div>

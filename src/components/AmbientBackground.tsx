@@ -23,16 +23,6 @@ export const AmbientBackground: React.FC = memo(() => {
           opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.90)',
         }}
       />
-
-      {/* Node 2: Ambient Companion (Lower Right Corner) */}
-      <div
-        className="ambient-mesh-node-2 absolute -bottom-28 -right-24 w-[460px] h-[460px] sm:w-[580px] sm:h-[580px] rounded-full pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 50%, var(--accent-shift-1, var(--accent-secondary)) 0%, var(--liquid-accent-soft-glow) 30%, transparent 68%)',
-          opacity: 'calc(var(--ambient-glow-opacity, 0.35) * 0.80)',
-        }}
-      />
     </div>
   );
 });

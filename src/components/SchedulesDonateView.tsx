@@ -36,6 +36,7 @@ import { ObsidianCard } from './ObsidianCard';
 import { CreditsModal } from './CreditsModal';
 import { ZeroTubeSettingsCard } from './ZeroTubeSettingsCard';
 import { CompulsoryStudyAppsCard } from './CompulsoryStudyAppsCard';
+import { ActionRemindersSettingsCard } from './ActionRemindersSettingsCard';
 import { ZeroTubeModal } from './ZeroTubeModal';
 import {
   getAllThemeMods,
@@ -2270,6 +2271,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               setShowZeroTubeModal(true);
             }}
           />
+
+          {/* CARD #6.6: MOVEMENT & ACTION REMINDERS (WORKOUT NUDGES) */}
+          <ActionRemindersSettingsCard />
 
           {/* CARD #7: DONOR PERKS & BADGES */}
           <DonorPerksBadgesCard
