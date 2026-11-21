@@ -13,6 +13,7 @@ import type {
 } from '../types';
 
 export function normalizeInterfaceStyle(value: unknown): InterfaceStyle {
+  if (value === 'aero' || value === 'aero_ui' || value === 'aeroui') return 'aero';
   if (value === 'bespoke' || value === 'minimalist' || value === 'minimal') return 'bespoke';
   if (value === 'fluent' || value === 'fluent_glass' || value === 'fluent-glass' || value === 'liquid_glass') return 'fluent_glass';
   if (value === 'onyx' || value === 'classic-v2' || value === 'classic_v2' || value === 'v2') return 'classic-v2';

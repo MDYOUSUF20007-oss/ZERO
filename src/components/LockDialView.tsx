@@ -8,6 +8,7 @@ import type {
   ZeroProfile,
   CloudReminderInterval,
 } from '../types';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 import { haptics } from '../utils/haptics';
 import {
   DEFAULT_SESSION_TAGS,
@@ -104,14 +105,14 @@ function secsToDialAngle(secs: number): number {
   return Math.min(360, Math.max(0, pct * 360));
 }
 
-const DialTickRing = React.memo(function DialTickRing() {
+const DialTickRing = React.memo(function DialTickRing({ isAero }: { isAero?: boolean }) {
   return (
     <circle
       cx="144"
       cy="144"
       r="132"
       fill="none"
-      stroke="rgba(255, 255, 255, 0.18)"
+      stroke={isAero ? 'rgba(17, 24, 39, 0.20)' : 'rgba(255, 255, 255, 0.18)'}
       strokeOpacity="0.85"
       strokeWidth="9"
       strokeDasharray="1.5 8.5"
@@ -122,9 +123,11 @@ const DialTickRing = React.memo(function DialTickRing() {
 const DialWheelSection = React.memo(function DialWheelSection({
   durationSeconds,
   onSelectDuration,
+  isAero = false,
 }: {
   durationSeconds: number;
   onSelectDuration: (secs: number) => void;
+  isAero?: boolean;
 }) {
   const dialRef = useRef<HTMLDivElement>(null);
   const arcRef = useRef<SVGCircleElement>(null);
@@ -299,8 +302,15 @@ const DialWheelSection = React.memo(function DialWheelSection({
         ref={dialRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className="zero-dial-surface zero-dial-ring liquid-dial-outer relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow"
-        style={{ touchAction: 'none' }}
+        className={`zero-dial-surface zero-dial-ring liquid-dial-outer relative w-60 h-60 sm:w-68 sm:h-68 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-shadow ${
+          isAero ? 'border border-white/90 shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''
+        }`}
+        style={{
+          touchAction: 'none',
+          backgroundColor: isAero ? 'rgba(255, 255, 255, 0.72)' : undefined,
+          backdropFilter: isAero ? 'blur(20px)' : undefined,
+          WebkitBackdropFilter: isAero ? 'blur(20px)' : undefined,
+        }}
       >
         <svg
           className="absolute pointer-events-none inset-0 w-full h-full"
@@ -313,14 +323,14 @@ const DialWheelSection = React.memo(function DialWheelSection({
               <stop offset="100%" style={{ stopColor: 'var(--liquid-accent-vibrant)' }} />
             </linearGradient>
           </defs>
-          <DialTickRing />
+          <DialTickRing isAero={isAero} />
           <circle
             ref={arcRef}
             cx="144"
             cy="144"
             r="132"
             fill="none"
-            stroke="url(#zeroLiquidDialGrad)"
+            stroke={isAero ? '#111827' : 'url(#zeroLiquidDialGrad)'}
             strokeWidth="5"
             strokeDasharray={`${(initialAngle / 360) * DIAL_ARC_CIRCUMFERENCE} ${DIAL_ARC_CIRCUMFERENCE}`}
             strokeLinecap="round"
@@ -335,34 +345,50 @@ const DialWheelSection = React.memo(function DialWheelSection({
           style={{ transform: `rotate(${initialAngle}deg)` }}
         >
           <div
-            className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-white/60 flex items-center justify-center"
+            className={`absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full flex items-center justify-center ${
+              isAero ? 'border-2 border-[#111827] bg-white' : 'border border-white/60 bg-white'
+            }`}
             style={{
-              backgroundColor: '#ffffff',
-              boxShadow: '0 0 16px #ffffff, 0 0 26px var(--liquid-accent-vibrant)',
+              boxShadow: isAero
+                ? '0 2px 10px rgba(17, 24, 39, 0.25)'
+                : '0 0 16px #ffffff, 0 0 26px var(--liquid-accent-vibrant)',
             }}
           >
             <div
               className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: 'var(--liquid-accent-vibrant)' }}
+              style={{ backgroundColor: isAero ? '#111827' : 'var(--liquid-accent-vibrant)' }}
             />
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
-          <span className="text-[11px] font-sans tracking-[0.14em] text-zinc-400 uppercase mb-1 font-medium">
+          <span
+            className={`text-[11px] font-sans tracking-[0.14em] uppercase mb-1 font-semibold ${
+              isAero ? 'text-[#5B6B79]' : 'text-zinc-400 font-medium'
+            }`}
+          >
             Lock Duration
           </span>
           <div
             ref={durationTextRef}
-            className="font-sans tabular-nums text-4xl font-semibold tracking-tight liquid-metric"
+            className={`font-sans tabular-nums text-4xl font-semibold tracking-tight ${
+              isAero ? 'text-[#111827]' : 'liquid-metric'
+            }`}
           >
             {formatDialTime(durationSeconds)}
           </div>
-          <div className="flex items-center gap-1.5 mt-2 text-xs font-sans text-zinc-400">
-            <Clock size={12} strokeWidth={1.75} className="text-cyan-300" />
+          <div
+            className={`flex items-center gap-1.5 mt-2 text-xs font-sans ${
+              isAero ? 'text-[#5B6B79]' : 'text-zinc-400'
+            }`}
+          >
+            <Clock size={12} strokeWidth={1.75} className={isAero ? 'text-[#111827]' : 'text-cyan-300'} />
             <span>
               Until{' '}
-              <span ref={untilTextRef} className="font-mono tabular-nums text-zinc-200">
+              <span
+                ref={untilTextRef}
+                className={`font-mono tabular-nums ${isAero ? 'text-[#111827] font-semibold' : 'text-zinc-200'}`}
+              >
                 {formatUntilTime(durationSeconds)}
               </span>
             </span>
@@ -380,7 +406,11 @@ const DialWheelSection = React.memo(function DialWheelSection({
               onSelectDuration(preset.seconds);
             }}
             className={`px-3 py-1.5 text-xs font-sans tabular-nums rounded-xl liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
-              durationSeconds === preset.seconds
+              isAero
+                ? durationSeconds === preset.seconds
+                  ? 'bg-[#111827] text-white font-bold shadow-sm'
+                  : 'bg-white/80 text-[#374151] border border-white/90 shadow-sm'
+                : durationSeconds === preset.seconds
                 ? 'liquid-pill-active font-semibold'
                 : 'liquid-pill-inactive font-normal'
             }`}
@@ -419,6 +449,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   onOpenThemes,
   onOpenManualBackup,
 }) => {
+  const { isAero } = useInterfaceStyle();
   const [cloudBannerMsg, setCloudBannerMsg] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
@@ -559,174 +590,304 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       {/* Interactive Profile Strip + Compact Escape Ticket + 1-Tap Theme Studio Shortcut */}
       <div className="w-full flex items-stretch gap-2">
         {profile ? (
-          <ObsidianCard
-            fullWidth={false}
-            className="flex-1 min-w-0"
-            headerClassName="p-3 flex items-center justify-between gap-2.5"
-            headerContent={
-              <>
-                <ProfileAvatar
-                  avatarId={profile.avatarId}
-                  size="sm"
-                  interactive
-                />
-                <button
-                  type="button"
-                  onClick={onOpenProfileModal}
-                  className="flex-1 min-w-0 text-left group flex items-center justify-between gap-1.5 font-sans"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="truncate font-semibold text-xs text-white">
-                        {profile.displayName}
+          isAero ? (
+            <div className="aero-hero-card flex-1 min-w-0 p-3 flex items-center justify-between gap-2.5 relative">
+              <div className="aero-aurora-glow" />
+              <ProfileAvatar
+                avatarId={profile.avatarId}
+                size="sm"
+                interactive
+              />
+              <button
+                type="button"
+                onClick={onOpenProfileModal}
+                className="flex-1 min-w-0 text-left group flex items-center justify-between gap-1.5 font-sans relative z-10"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="truncate font-bold text-xs text-[#111827]">
+                      {profile.displayName}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#111827]/8 border border-[#111827]/15 text-[#111827] shrink-0">
+                      {profileRank.title}
+                    </span>
+                    {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                  </div>
+                  <div className="truncate mt-0.5 flex items-center gap-1.5 text-[11px] text-[#5B6B79]">
+                    <span>
+                      <span className="font-mono tabular-nums font-semibold text-[#111827]">
+                        {todayReclaimedHours}h / {profile.dailyGoalHours}h
+                      </span>{' '}
+                      • #{profile.primaryMission}
+                    </span>
+                    {badgeSummary.unlockedBadges.length > 0 && (
+                      <span className="inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums text-[#111827] font-semibold">
+                        <Trophy size={9} strokeWidth={1.75} />
+                        {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
                       </span>
-                      <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
-                        {profileRank.title}
-                      </span>
-                      {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
-                    </div>
-                    <div className="truncate mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-400">
-                      <span>
-                        <span className="font-mono tabular-nums">
-                          {todayReclaimedHours}h / {profile.dailyGoalHours}h
-                        </span>{' '}
-                        • #{profile.primaryMission}
-                      </span>
-                      {badgeSummary.unlockedBadges.length > 0 && (
-                        <span className="inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums text-cyan-200 font-semibold">
-                          <Trophy size={9} strokeWidth={1.75} />
-                          {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="w-8 bg-[#E2E8F0] rounded-full h-1.5 hidden sm:block overflow-hidden">
+                    <div
+                      className="h-full bg-[#111827] rounded-full"
+                      style={{ width: `${dailyGoalPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-[#5B6B79] group-hover:text-[#111827] font-semibold transition-colors duration-75">
+                    Edit
+                  </span>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <ObsidianCard
+              fullWidth={false}
+              className="flex-1 min-w-0"
+              headerClassName="p-3 flex items-center justify-between gap-2.5"
+              headerContent={
+                <>
+                  <ProfileAvatar
+                    avatarId={profile.avatarId}
+                    size="sm"
+                    interactive
+                  />
+                  <button
+                    type="button"
+                    onClick={onOpenProfileModal}
+                    className="flex-1 min-w-0 text-left group flex items-center justify-between gap-1.5 font-sans"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate font-semibold text-xs text-white">
+                          {profile.displayName}
                         </span>
+                        <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-cyan-400/15 border border-cyan-300/35 text-cyan-200 shrink-0">
+                          {profileRank.title}
+                        </span>
+                        {isZeroSupporter && <ZeroSupporterGoldenBadge compact />}
+                      </div>
+                      <div className="truncate mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-400">
+                        <span>
+                          <span className="font-mono tabular-nums">
+                            {todayReclaimedHours}h / {profile.dailyGoalHours}h
+                          </span>{' '}
+                          • #{profile.primaryMission}
+                        </span>
+                        {badgeSummary.unlockedBadges.length > 0 && (
+                          <span className="inline-flex items-center gap-0.5 shrink-0 font-mono tabular-nums text-cyan-200 font-semibold">
+                            <Trophy size={9} strokeWidth={1.75} />
+                            {badgeSummary.unlockedBadges.length}/{badgeSummary.badges.length}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="w-8 liquid-track rounded-full h-1.5 hidden sm:block overflow-hidden">
+                        <div
+                          className="h-full liquid-mercury-fill"
+                          style={{ width: `${dailyGoalPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-zinc-400 group-hover:text-white font-medium transition-colors duration-75">
+                        Edit
+                      </span>
+                    </div>
+                  </button>
+                </>
+              }
+            />
+          )
+        ) : (
+          isAero ? (
+            <div
+              onClick={onOpenProfileModal}
+              className="aero-hero-card flex-1 min-w-0 p-3 flex items-center justify-between gap-2.5 relative cursor-pointer"
+            >
+              <div className="aero-aurora-glow" />
+              <div className="flex items-center gap-2.5 min-w-0 relative z-10">
+                <div className="w-8 h-8 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#111827]">
+                  {hasClaimedFirstTimeParachute ? (
+                    <UserPlus size={15} strokeWidth={1.75} />
+                  ) : (
+                    <Gift size={15} strokeWidth={1.75} />
+                  )}
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="text-xs truncate font-bold text-[#111827]">
+                    {hasClaimedFirstTimeParachute ? 'Create Profile' : 'Profile • +1 Ticket'}
+                  </div>
+                  <div className="text-[10px] truncate text-[#5B6B79]">
+                    {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
+                  </div>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#111827] text-white text-[10px] font-bold uppercase tracking-wide shrink-0 relative z-10">
+                <Sparkles size={10} strokeWidth={1.75} />
+                <span>{hasClaimedFirstTimeParachute ? 'Set' : 'Claim'}</span>
+              </span>
+            </div>
+          ) : (
+            <ObsidianCard
+              asButton
+              fullWidth={false}
+              onClick={onOpenProfileModal}
+              className="flex-1 min-w-0"
+              headerClassName="p-3 flex items-center justify-between gap-2.5 font-sans"
+              headerContent={
+                <>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="liquid-squircle text-cyan-200">
+                      {hasClaimedFirstTimeParachute ? (
+                        <UserPlus size={15} strokeWidth={1.75} />
+                      ) : (
+                        <Gift size={15} strokeWidth={1.75} />
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="w-8 liquid-track rounded-full h-1.5 hidden sm:block overflow-hidden">
-                      <div
-                        className="h-full liquid-mercury-fill"
-                        style={{ width: `${dailyGoalPct}%` }}
-                      />
+                    <div className="text-left min-w-0">
+                      <div className="text-xs truncate font-semibold text-white">
+                        {hasClaimedFirstTimeParachute ? 'Create Profile' : 'Profile • +1 Ticket'}
+                      </div>
+                      <div className="text-[10px] truncate text-cyan-200/80">
+                        {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
+                      </div>
                     </div>
-                    <span className="text-[11px] text-zinc-400 group-hover:text-white font-medium transition-colors duration-75">
-                      Edit
-                    </span>
                   </div>
-                </button>
-              </>
-            }
-          />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl liquid-pill-active text-[10px] font-semibold uppercase tracking-wide shrink-0">
+                    <Sparkles size={10} strokeWidth={1.75} />
+                    <span>{hasClaimedFirstTimeParachute ? 'Set' : 'Claim'}</span>
+                  </span>
+                </>
+              }
+            />
+          )
+        )}
+
+        {/* Compact Escape Ticket Shortcut (left of Theme) */}
+        {isAero ? (
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(860);
+              onOpenTicketModal();
+            }}
+            className={`shrink-0 px-2.5 py-2 rounded-[18px] bg-white/85 backdrop-blur-md border border-white/95 text-[#111827] shadow-sm flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 ${
+              justEarnedParachute ? 'ring-2 ring-[#111827]' : ''
+            }`}
+            title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
+            aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
+          >
+            <div className="relative w-6 h-6 flex items-center justify-center rounded-xl bg-[#F6F9FC] border border-[#E2E8F0]">
+              <Ticket size={13} strokeWidth={2} className="text-[#111827]" />
+              {parachuteMetrics.currentBalance > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#111827] text-white text-[8.5px] font-mono font-bold leading-[13px] text-center flex items-center justify-center shadow-sm">
+                  {parachuteMetrics.currentBalance}
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] uppercase tracking-wider leading-none font-bold text-[#5B6B79]">
+              {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
+            </span>
+          </button>
         ) : (
           <ObsidianCard
             asButton
             fullWidth={false}
-            onClick={onOpenProfileModal}
-            className="flex-1 min-w-0"
-            headerClassName="p-3 flex items-center justify-between gap-2.5 font-sans"
+            onClick={() => {
+              haptics.tick(860);
+              onOpenTicketModal();
+            }}
+            className={`shrink-0 ${justEarnedParachute ? 'border-cyan-400/60' : ''}`}
+            headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
+            title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
+            aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
             headerContent={
               <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="liquid-squircle text-cyan-200">
-                    {hasClaimedFirstTimeParachute ? (
-                      <UserPlus size={15} strokeWidth={1.75} />
-                    ) : (
-                      <Gift size={15} strokeWidth={1.75} />
-                    )}
-                  </div>
-                  <div className="text-left min-w-0">
-                    <div className="text-xs truncate font-semibold text-white">
-                      {hasClaimedFirstTimeParachute ? 'Create Profile' : 'Profile • +1 Ticket'}
-                    </div>
-                    <div className="text-[10px] truncate text-cyan-200/80">
-                      {hasClaimedFirstTimeParachute ? 'Goal & emblem' : 'Free starter ticket'}
-                    </div>
-                  </div>
+                <div
+                  className="relative w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
+                  style={{
+                    border: '1px solid var(--accent-hex, rgba(125, 211, 252, 0.45))',
+                    boxShadow: '0 0 10px var(--accent-hex, rgba(125, 211, 252, 0.15))',
+                  }}
+                >
+                  <Ticket
+                    size={13}
+                    strokeWidth={2}
+                    style={{ color: 'var(--accent-hex, #7dd3fc)' }}
+                  />
+                  {parachuteMetrics.currentBalance > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#070b11] border border-cyan-400/80 text-[8.5px] font-mono font-bold leading-[13px] text-cyan-200 text-center flex items-center justify-center shadow-sm"
+                    >
+                      {parachuteMetrics.currentBalance}
+                    </span>
+                  )}
                 </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl liquid-pill-active text-[10px] font-semibold uppercase tracking-wide shrink-0">
-                  <Sparkles size={10} strokeWidth={1.75} />
-                  <span>{hasClaimedFirstTimeParachute ? 'Set' : 'Claim'}</span>
+                <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
+                  {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
                 </span>
               </>
             }
           />
         )}
 
-        {/* Compact Escape Ticket Shortcut (left of Theme) */}
-        <ObsidianCard
-          asButton
-          fullWidth={false}
-          onClick={() => {
-            haptics.tick(860);
-            onOpenTicketModal();
-          }}
-          className={`shrink-0 ${justEarnedParachute ? 'border-cyan-400/60' : ''}`}
-          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
-          title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
-          aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
-          headerContent={
-            <>
-              <div
-                className="relative w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
-                style={{
-                  border: '1px solid var(--accent-hex, rgba(125, 211, 252, 0.45))',
-                  boxShadow: '0 0 10px var(--accent-hex, rgba(125, 211, 252, 0.15))',
-                }}
-              >
-                <Ticket
-                  size={13}
-                  strokeWidth={2}
-                  style={{ color: 'var(--accent-hex, #7dd3fc)' }}
-                />
-                {parachuteMetrics.currentBalance > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#070b11] border border-cyan-400/80 text-[8.5px] font-mono font-bold leading-[13px] text-cyan-200 text-center flex items-center justify-center shadow-sm"
-                  >
-                    {parachuteMetrics.currentBalance}
-                  </span>
-                )}
-              </div>
-              <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
-                {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
-              </span>
-            </>
-          }
-        />
-
-        <ObsidianCard
-          asButton
-          fullWidth={false}
-          onClick={() => {
-            haptics.tick(820);
-            onOpenThemes();
-          }}
-          className="shrink-0"
-          headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
-          title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
-          aria-label="Open Theme Studio"
-          headerContent={
-            <>
-              <div
-                className="w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
-                style={{
-                  background:
-                    'linear-gradient(135deg, #ffffff 0%, var(--liquid-accent-tint) 50%, var(--liquid-accent-vibrant) 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.95)',
-                  boxShadow: '0 2px 10px var(--liquid-accent-glow)',
-                  color: '#07040d',
-                }}
-              >
-                <Palette
-                  size={12}
-                  strokeWidth={2}
-                  className="text-[#07040d]"
-                  style={{ color: '#07040d' }}
-                />
-              </div>
-              <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
-                Theme
-              </span>
-            </>
-          }
-        />
+        {isAero ? (
+          <button
+            type="button"
+            onClick={() => {
+              haptics.tick(820);
+              onOpenThemes();
+            }}
+            className="shrink-0 px-2.5 py-2 rounded-[18px] bg-[#111827] border border-[#111827] text-white shadow-md flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 hover:bg-black"
+            title="Open Theme Studio (Aero UI, Fluent Glass, AMOLED)"
+            aria-label="Open Theme Studio"
+          >
+            <div className="w-6 h-6 flex items-center justify-center rounded-xl bg-white/20 text-white">
+              <Palette size={12} strokeWidth={2} className="text-white" />
+            </div>
+            <span className="text-[9px] uppercase tracking-wider leading-none font-bold text-white">
+              Theme
+            </span>
+          </button>
+        ) : (
+          <ObsidianCard
+            asButton
+            fullWidth={false}
+            onClick={() => {
+              haptics.tick(820);
+              onOpenThemes();
+            }}
+            className="shrink-0"
+            headerClassName="flex-1 px-2.5 py-2 flex flex-col items-center justify-center gap-1 font-sans text-zinc-300 hover:text-white transition-colors duration-75"
+            title="Open Theme Studio (AMOLED, Paper Kindle, Matte)"
+            aria-label="Open Theme Studio"
+            headerContent={
+              <>
+                <div
+                  className="w-6 h-6 obsidian-icon-box flex items-center justify-center rounded-xl"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, #ffffff 0%, var(--liquid-accent-tint) 50%, var(--liquid-accent-vibrant) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.95)',
+                    boxShadow: '0 2px 10px var(--liquid-accent-glow)',
+                    color: '#07040d',
+                  }}
+                >
+                  <Palette
+                    size={12}
+                    strokeWidth={2}
+                    className="text-[#07040d]"
+                    style={{ color: '#07040d' }}
+                  />
+                </div>
+                <span className="text-[9px] uppercase tracking-wider leading-none font-medium text-zinc-400">
+                  Theme
+                </span>
+              </>
+            }
+          />
+        )}
       </div>
 
       {/* Native Android Strict Permission Banner — only shown when permissions are NOT armed yet */}
@@ -868,19 +1029,32 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
       <DialWheelSection
         durationSeconds={durationSeconds}
         onSelectDuration={setDurationSeconds}
+        isAero={isAero}
       />
 
       {/* Bottom Area: The 4-Bag Selector, Tags & Hold to Lock */}
-      <div className="w-full flex flex-col items-center mt-auto gap-4">
+      <div
+        className={
+          isAero
+            ? 'aero-sheet w-[calc(100%+2rem)] -mx-4 -mb-32 px-5 pt-6 pb-36 mt-auto flex flex-col items-center gap-4'
+            : 'w-full flex flex-col items-center mt-auto gap-4'
+        }
+      >
         {/* Session Tags */}
         <div className="w-full">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-sans uppercase tracking-wider text-zinc-400 font-medium">
+            <span
+              className={`text-[11px] font-sans uppercase tracking-wider font-semibold ${
+                isAero ? 'text-[#5B6B79]' : 'text-zinc-400 font-medium'
+              }`}
+            >
               Session Focus Tag
             </span>
             <button
               onClick={() => setIsAddingTag(!isAddingTag)}
-              className="text-[11px] font-sans text-zinc-400 hover:text-white transition-colors duration-75"
+              className={`text-[11px] font-sans transition-colors duration-75 ${
+                isAero ? 'text-[#5B6B79] hover:text-[#111827] font-semibold' : 'text-zinc-400 hover:text-white'
+              }`}
             >
               {isAddingTag ? 'Cancel' : '+ Custom'}
             </button>
@@ -895,11 +1069,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 placeholder="e.g. Thesis, Meditation..."
                 maxLength={20}
                 autoFocus
-                className="flex-1 obsidian-input text-xs text-white rounded-xl px-3 py-2 font-sans outline-none"
+                className={`flex-1 text-xs rounded-xl px-3 py-2 font-sans outline-none ${
+                  isAero
+                    ? 'bg-[#F6F9FC] border border-[#E2E8F0] text-[#111827] placeholder-[#9CA3AF]'
+                    : 'obsidian-input text-white'
+                }`}
               />
               <button
                 type="submit"
-                className="liquid-pill-active text-xs font-sans font-semibold px-4 py-2 rounded-xl uppercase tracking-wide liquid-spring active:scale-[0.97]"
+                className={`text-xs font-sans font-semibold px-4 py-2 rounded-xl uppercase tracking-wide liquid-spring active:scale-[0.97] ${
+                  isAero ? 'bg-[#111827] text-white shadow-sm' : 'liquid-pill-active'
+                }`}
               >
                 Add
               </button>
@@ -914,7 +1094,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                     setSelectedTag(tag);
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-sans whitespace-nowrap liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
-                    selectedTag === tag
+                    isAero
+                      ? selectedTag === tag
+                        ? 'bg-[#111827] text-white font-bold shadow-sm'
+                        : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0] font-medium'
+                      : selectedTag === tag
                       ? 'liquid-pill-active font-semibold'
                       : 'liquid-pill-inactive font-normal'
                   }`}
@@ -927,46 +1111,43 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         </div>
 
         {/* Active Bag Card */}
-        <ObsidianCard
-          asButton
-          onClick={onOpenBagDrawer}
-          headerClassName="p-4 flex items-center justify-between gap-3 text-left font-sans group"
-          footerClassName="px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap font-sans text-[11px] text-zinc-400"
-          headerContent={
-            <>
+        {isAero ? (
+          <div
+            onClick={onOpenBagDrawer}
+            className="w-full bg-[#F6F9FC] border border-[#E2E8F0] rounded-[22px] p-4 flex flex-col gap-2.5 shadow-sm text-left group cursor-pointer transition-all active:scale-[0.99]"
+          >
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="liquid-squircle text-cyan-200">
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#111827] shrink-0">
                   <Briefcase size={16} strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs truncate font-semibold text-white">
+                    <span className="text-xs truncate font-bold text-[#111827]">
                       Bag: {activeBag.name}
                     </span>
-                    <span className="text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full liquid-row text-zinc-200 shrink-0">
+                    <span className="text-[10px] font-sans font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white border border-[#E2E8F0] text-[#111827] shrink-0">
                       {activeBag.apps.length} app{activeBag.apps.length === 1 ? '' : 's'}
                     </span>
                   </div>
-                  <div className="truncate mt-0.5 text-[11px] text-zinc-400">
+                  <div className="truncate mt-0.5 text-[11px] text-[#5B6B79]">
                     {activeBag.occasionLabel}
                   </div>
                 </div>
               </div>
-              <span className="text-xs font-medium text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
+              <span className="text-xs font-bold text-[#111827] group-hover:text-black shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
                 Pack <ChevronRight size={14} strokeWidth={1.75} />
               </span>
-            </>
-          }
-          footerContent={
-            <>
+            </div>
+            <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between gap-2 flex-wrap text-[11px] text-[#5B6B79]">
               <div className="flex items-center gap-3">
-                <span className="text-cyan-200 flex items-center gap-1 font-medium">
+                <span className="text-[#111827] flex items-center gap-1 font-semibold">
                   <Phone size={10} strokeWidth={1.75} /> Calls Always ON
                 </span>
                 <span
                   className={
                     activeBag.allowSms
-                      ? 'text-cyan-200 flex items-center gap-1 font-medium'
+                      ? 'text-[#111827] flex items-center gap-1 font-semibold'
                       : 'flex items-center gap-1'
                   }
                 >
@@ -974,14 +1155,70 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
                 </span>
               </div>
-              <span className="text-zinc-300 break-words">
+              <span className="text-[#5B6B79] break-words">
                 {activeBag.apps.length > 0
                   ? activeBag.apps.map((a) => a.appName).join(', ')
                   : 'Monk Mode (0 apps)'}
               </span>
-            </>
-          }
-        />
+            </div>
+          </div>
+        ) : (
+          <ObsidianCard
+            asButton
+            onClick={onOpenBagDrawer}
+            headerClassName="p-4 flex items-center justify-between gap-3 text-left font-sans group"
+            footerClassName="px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap font-sans text-[11px] text-zinc-400"
+            headerContent={
+              <>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="liquid-squircle text-cyan-200">
+                    <Briefcase size={16} strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs truncate font-semibold text-white">
+                        Bag: {activeBag.name}
+                      </span>
+                      <span className="text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full liquid-row text-zinc-200 shrink-0">
+                        {activeBag.apps.length} app{activeBag.apps.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="truncate mt-0.5 text-[11px] text-zinc-400">
+                      {activeBag.occasionLabel}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs font-medium text-zinc-300 group-hover:text-white shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
+                  Pack <ChevronRight size={14} strokeWidth={1.75} />
+                </span>
+              </>
+            }
+            footerContent={
+              <>
+                <div className="flex items-center gap-3">
+                  <span className="text-cyan-200 flex items-center gap-1 font-medium">
+                    <Phone size={10} strokeWidth={1.75} /> Calls Always ON
+                  </span>
+                  <span
+                    className={
+                      activeBag.allowSms
+                        ? 'text-cyan-200 flex items-center gap-1 font-medium'
+                        : 'flex items-center gap-1'
+                    }
+                  >
+                    <MessageSquare size={10} strokeWidth={1.75} />{' '}
+                    {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
+                  </span>
+                </div>
+                <span className="text-zinc-300 break-words">
+                  {activeBag.apps.length > 0
+                    ? activeBag.apps.map((a) => a.appName).join(', ')
+                    : 'Monk Mode (0 apps)'}
+                </span>
+              </>
+            }
+          />
+        )}
 
         {/* 3-Second Hold to Ignite Button */}
         <div className="w-full flex flex-col items-center">
@@ -992,49 +1229,60 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             onTouchStart={startHold}
             onTouchEnd={cancelHold}
             onTouchCancel={cancelHold}
-            className={`relative w-full h-14 py-4 rounded-2xl liquid-glass font-sans font-extrabold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
+            className={`relative w-full h-14 py-4 rounded-full font-sans font-bold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
               isHolding ? 'scale-[0.98]' : 'active:scale-[0.98]'
+            } ${
+              isAero ? 'bg-[#111827] text-white shadow-lg' : 'liquid-glass'
             }`}
-            style={{
-              touchAction: 'none',
-              backgroundColor: 'var(--accent-soft)',
-              backgroundImage:
-                'linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%)',
-              border: '1px solid var(--accent-border)',
-              boxShadow: isHolding
-                ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 24px var(--liquid-accent-glow)'
-                : 'inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.30)), 0 8px 18px -4px var(--liquid-accent-soft-glow)',
-            }}
+            style={
+              isAero
+                ? { touchAction: 'none' }
+                : {
+                    touchAction: 'none',
+                    backgroundColor: 'var(--accent-soft)',
+                    backgroundImage:
+                      'linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%)',
+                    border: '1px solid var(--accent-border)',
+                    boxShadow: isHolding
+                      ? 'inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 24px var(--liquid-accent-glow)'
+                      : 'inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-opacity, 0.50) * 0.30)), 0 8px 18px -4px var(--liquid-accent-soft-glow)',
+                  }
+            }
           >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px]"
-              style={{
-                opacity: 'var(--glass-specular-opacity, 0.60)',
-                background:
-                  'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.48) 50%, transparent 100%)',
-              }}
-            />
+            {!isAero && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 left-4 right-4 h-[1.5px]"
+                style={{
+                  opacity: 'var(--glass-specular-opacity, 0.60)',
+                  background:
+                    'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.48) 50%, transparent 100%)',
+                }}
+              />
+            )}
             <div
               className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all"
               style={{
                 width: `${holdProgress * 100}%`,
                 opacity: isHolding ? 0.98 : 0,
-                background:
-                  'linear-gradient(90deg, #ffffff 0%, var(--liquid-accent-tint) 45%, var(--liquid-accent-vibrant) 100%)',
+                background: isAero
+                  ? 'rgba(255, 255, 255, 0.25)'
+                  : 'linear-gradient(90deg, #ffffff 0%, var(--liquid-accent-tint) 45%, var(--liquid-accent-vibrant) 100%)',
               }}
             />
 
             <div
               className={`relative z-10 flex items-center justify-center gap-2 transition-colors duration-75 ${
-                holdProgress > 0.4
+                isAero
+                  ? 'text-white font-bold'
+                  : holdProgress > 0.4
                   ? 'font-extrabold text-[#07040d]'
                   : 'text-zinc-100'
               }`}
             >
               {isHolding ? (
                 <>
-                  <Flame size={18} strokeWidth={1.75} />
+                  <Flame size={18} strokeWidth={1.75} className={isAero ? 'text-white' : undefined} />
                   <span>
                     Arming...{' '}
                     <span className="font-mono tabular-nums">
@@ -1047,7 +1295,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <ShieldAlert
                     size={18}
                     strokeWidth={1.75}
-                    className="text-cyan-200"
+                    className={isAero ? 'text-white' : 'text-cyan-200'}
                   />
                   <span>Grant Permissions to Lock</span>
                 </>
@@ -1056,7 +1304,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   <ShieldAlert
                     size={18}
                     strokeWidth={1.75}
-                    className="text-cyan-200"
+                    className={isAero ? 'text-white' : 'text-cyan-200'}
                   />
                   <span>Hold 3s to Lock</span>
                 </>
@@ -1077,7 +1325,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 } catch {}
               }}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
-                intentionRitualEnabled
+                isAero
+                  ? intentionRitualEnabled
+                    ? 'bg-[#111827] text-white font-semibold'
+                    : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0]'
+                  : intentionRitualEnabled
                   ? 'liquid-pill-active font-medium text-cyan-300'
                   : 'liquid-pill-inactive text-zinc-400'
               }`}
@@ -1098,12 +1350,16 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               }}
               title="Burn the Boats disables emergency escape tickets for this session"
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
-                burnTheBoatsEnabled
+                isAero
+                  ? burnTheBoatsEnabled
+                    ? 'bg-[#111827] text-white font-semibold border border-[#111827]'
+                    : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0]'
+                  : burnTheBoatsEnabled
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
                   : 'liquid-pill-inactive text-zinc-400'
               }`}
             >
-              <Flame size={11} className={burnTheBoatsEnabled ? 'text-amber-400' : 'text-zinc-500'} />
+              <Flame size={11} className={burnTheBoatsEnabled ? (isAero ? 'text-amber-300' : 'text-amber-400') : (isAero ? 'text-[#5B6B79]' : 'text-zinc-500')} />
               <span>Burn Boats: {burnTheBoatsEnabled ? 'Active' : 'Off'}</span>
             </button>
           </div>

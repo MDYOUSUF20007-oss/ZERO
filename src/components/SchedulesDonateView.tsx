@@ -230,6 +230,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     isBespoke,
     isFluentGlass,
     isMaterialYou,
+    isAero,
     materialYouSeed: _ctxMaterialYouSeed,
     setMaterialYouSeed: _ctxSetMaterialYouSeed,
     fluentOrbIntensity,
@@ -364,34 +365,38 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
       {viewMode === 'support' ? (
         <div className="space-y-1">
           <h1
-            className={`text-xl tracking-tight text-white flex items-center gap-2 ${
-              isFluentGlass
-                ? 'font-sans font-semibold liquid-metric'
+            className={`text-xl tracking-tight flex items-center gap-2 ${
+              isAero
+                ? 'font-sans font-bold text-[#111827]'
+                : isFluentGlass
+                ? 'font-sans font-semibold liquid-metric text-white'
                 : isBespoke
-                ? 'font-sans font-bold'
-                : 'font-mono font-black'
+                ? 'font-sans font-bold text-white'
+                : 'font-mono font-black text-white'
             }`}
           >
             <span>KEEP ZERO FREE</span>
           </h1>
-          <p className={`text-xs text-zinc-400 ${isModernFont ? 'font-sans' : 'font-mono'}`}>
+          <p className={`text-xs ${isAero ? 'font-sans text-[#5B6B79]' : isModernFont ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'}`}>
             100% FOSS • Voluntary UPI / Ko-fi Support &amp; Donor Perks
           </p>
         </div>
       ) : (
         <div className="space-y-1">
           <h1
-            className={`text-xl tracking-tight text-white flex items-center gap-2 ${
-              isFluentGlass
-                ? 'font-sans font-semibold liquid-metric'
+            className={`text-xl tracking-tight flex items-center gap-2 ${
+              isAero
+                ? 'font-sans font-bold text-[#111827]'
+                : isFluentGlass
+                ? 'font-sans font-semibold liquid-metric text-white'
                 : isBespoke
-                ? 'font-sans font-bold'
-                : 'font-mono font-black'
+                ? 'font-sans font-bold text-white'
+                : 'font-mono font-black text-white'
             }`}
           >
             <span>SETTINGS &amp; OS</span>
           </h1>
-          <p className={`text-xs text-zinc-400 ${isModernFont ? 'font-sans' : 'font-mono'}`}>
+          <p className={`text-xs ${isAero ? 'font-sans text-[#5B6B79]' : isModernFont ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'}`}>
             Auto-Pilot Schedules, Theme Studio, Backups &amp; Android Guards
           </p>
         </div>
@@ -403,7 +408,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           className={`grid ${
             viewMode === 'settings_os' ? 'grid-cols-4' : 'grid-cols-5'
           } gap-1 p-1 ${
-            isFluentGlass
+            isAero
+              ? 'bg-white/80 border border-white/95 rounded-full text-[11px] font-sans shadow-sm'
+              : isFluentGlass
               ? 'liquid-track rounded-full text-[11px] font-sans'
               : isBespoke
               ? 'bg-black border border-neutral-800 rounded-md text-[11px] font-sans'
@@ -413,7 +420,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('schedules')}
             className={`py-2 truncate px-1 ${
-              isFluentGlass
+              isAero
+                ? `rounded-full transition-all ${
+                    effectiveSection === 'schedules'
+                      ? 'bg-[#111827] text-white font-bold shadow-sm'
+                      : 'text-[#5B6B79] hover:text-[#111827] font-medium'
+                  }`
+                : isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'schedules'
                       ? 'liquid-pill-active font-semibold'
@@ -437,7 +450,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('themes')}
             className={`py-2 truncate px-1 ${
-              isFluentGlass
+              isAero
+                ? `rounded-full transition-all ${
+                    effectiveSection === 'themes'
+                      ? 'bg-[#111827] text-white font-bold shadow-sm'
+                      : 'text-[#5B6B79] hover:text-[#111827] font-medium'
+                  }`
+                : isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'themes'
                       ? 'liquid-pill-active font-semibold'
@@ -461,7 +480,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('settings')}
             className={`py-2 truncate px-1 ${
-              isFluentGlass
+              isAero
+                ? `rounded-full transition-all ${
+                    effectiveSection === 'settings'
+                      ? 'bg-[#111827] text-white font-bold shadow-sm'
+                      : 'text-[#5B6B79] hover:text-[#111827] font-medium'
+                  }`
+                : isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'settings'
                       ? 'liquid-pill-active font-semibold'
@@ -485,7 +510,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <button
             onClick={() => setActiveSection('os_security')}
             className={`py-2 truncate px-1 ${
-              isFluentGlass
+              isAero
+                ? `rounded-full transition-all ${
+                    effectiveSection === 'os_security'
+                      ? 'bg-[#111827] text-white font-bold shadow-sm'
+                      : 'text-[#5B6B79] hover:text-[#111827] font-medium'
+                  }`
+                : isFluentGlass
                 ? `rounded-full font-medium liquid-spring ${
                     effectiveSection === 'os_security'
                       ? 'liquid-pill-active font-semibold'
@@ -510,7 +541,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             <button
               onClick={() => setActiveSection('support')}
               className={`py-2 truncate px-1 ${
-                isFluentGlass
+                isAero
+                  ? `rounded-full transition-all ${
+                      effectiveSection === 'support'
+                        ? 'bg-[#111827] text-white font-bold shadow-sm'
+                        : 'text-[#5B6B79] hover:text-[#111827] font-medium'
+                    }`
+                  : isFluentGlass
                   ? `rounded-full font-medium liquid-spring ${
                       effectiveSection === 'support'
                         ? 'liquid-pill-active font-semibold'
@@ -535,6 +572,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         </div>
       )}
 
+      {/* Active Section Content Container: Elevated pure-white bottom sheet in Aero UI */}
+      <div className={isAero ? 'aero-sheet w-[calc(100%+2rem)] -mx-4 -mb-32 px-5 pt-6 pb-36 flex flex-col gap-4 mt-2' : 'contents'}>
       {/* SECTION 0: THEME SETTINGS (INTERFACE STYLE + 2 TONAL ACCENT COLORS + COMMUNITY MODS) */}
       {effectiveSection === 'themes' && (
         <div className="space-y-4">
@@ -598,27 +637,49 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     </p>
 
                     <div className="flex items-center gap-1.5 pt-1">
-                      <div
-                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
-                        style={{ backgroundColor: engineDef.swatchBg }}
-                        title="Background"
-                      />
-                      <div
-                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
-                        style={{ backgroundColor: engineDef.swatchSurface }}
-                        title="Surface"
-                      />
-                      <div
-                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
-                        style={{ backgroundColor: engineDef.swatchAccent }}
-                        title="Primary Accent"
-                      />
-                      {engineDef.swatchAccentSecondary && (
-                        <div
-                          className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
-                          style={{ backgroundColor: engineDef.swatchAccentSecondary }}
-                          title="Secondary Accent"
-                        />
+                      {engineDef.id === 'aero' ? (
+                        <>
+                          <div
+                            className="w-8 h-3.5 rounded-full border border-black/10 shrink-0"
+                            style={{
+                              background: 'linear-gradient(90deg, #C7DCE8 0%, #DAEAF3 35%, #FDE68A 70%, #F472B6 100%)',
+                            }}
+                            title="Aero Sky-to-Pastel Gradient"
+                          />
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0 bg-[#FFFFFF]"
+                            title="Pure White Sheet"
+                          />
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0 bg-[#111827]"
+                            title="Ink Black"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                            style={{ backgroundColor: engineDef.swatchBg }}
+                            title="Background"
+                          />
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                            style={{ backgroundColor: engineDef.swatchSurface }}
+                            title="Surface"
+                          />
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                            style={{ backgroundColor: engineDef.swatchAccent }}
+                            title="Primary Accent"
+                          />
+                          {engineDef.swatchAccentSecondary && (
+                            <div
+                              className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                              style={{ backgroundColor: engineDef.swatchAccentSecondary }}
+                              title="Secondary Accent"
+                            />
+                          )}
+                        </>
                       )}
                       <span className="text-[9px] theme-text-muted ml-auto font-mono">
                         {isSelected ? 'ACTIVE' : 'SELECT'}
@@ -1244,8 +1305,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
         <div className={isBespoke ? 'space-y-5' : 'space-y-4'}>
           <div className="flex items-center justify-between">
             <span
-              className={`text-xs uppercase tracking-wider text-zinc-400 font-bold ${
-                isBespoke ? 'font-sans' : 'font-mono'
+              className={`text-xs uppercase tracking-wider font-bold ${
+                isAero ? 'text-[#5B6B79] font-sans' : isBespoke ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'
               }`}
             >
               Recurring Schedules (<span className="font-mono tabular-nums">{schedules.length}</span>)
@@ -1253,7 +1314,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             <button
               onClick={() => setShowAddModal(true)}
               className={`px-3 py-1.5 font-semibold text-xs flex items-center gap-1.5 ${
-                isBespoke
+                isAero
+                  ? 'rounded-full bg-[#111827] text-white shadow-sm font-sans font-bold active:scale-95 transition-all'
+                  : isBespoke
                   ? 'rounded-md bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 transition-colors duration-75 font-sans'
                   : 'obsidian-pill-active font-mono font-black rounded-xl active:scale-95 transition-all'
               }`}
@@ -1264,14 +1327,22 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           </div>
 
           {/* Schedule List */}
-          <div className={isModernFont ? 'space-y-4' : 'space-y-3'}>
+          <div className={isModernFont || isAero ? 'space-y-4' : 'space-y-3'}>
             {schedules.map((sched) => (
               <ObsidianCard
                 key={sched.id}
-                className={`${isModernFont ? 'font-sans' : 'font-mono'} ${sched.isEnabled ? '' : 'opacity-65'}`}
-                headerClassName={isBespoke ? 'p-5' : 'p-4'}
+                className={`${
+                  isAero
+                    ? 'aero-card border border-[#E2E8F0] !bg-[#F6F9FC] !text-[#111827] rounded-[20px] font-sans'
+                    : isModernFont
+                    ? 'font-sans'
+                    : 'font-mono'
+                } ${sched.isEnabled ? '' : 'opacity-65'}`}
+                headerClassName={isModernFont || isAero ? 'p-5' : 'p-4'}
                 footerClassName={
-                  isBespoke
+                  isAero
+                    ? 'px-5 py-3 flex items-center justify-between text-[11px] text-[#5B6B79]'
+                    : isBespoke
                     ? 'px-5 py-3 flex items-center justify-between text-[11px] text-zinc-400'
                     : 'px-4 py-2.5 flex items-center justify-between text-[11px] text-zinc-400'
                 }
@@ -1279,19 +1350,21 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <>
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <div className="font-semibold text-sm text-zinc-100 flex items-center gap-2 flex-wrap">
+                        <div className={`font-semibold text-sm flex items-center gap-2 flex-wrap ${isAero ? 'text-[#111827]' : 'text-zinc-100'}`}>
                           <span>{sched.name}</span>
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 text-zinc-300 ${
-                              isBespoke
-                                ? 'rounded-sm bg-neutral-950 border border-neutral-800'
-                                : 'rounded obsidian-inset-neutral'
+                            className={`text-[10px] px-2 py-0.5 ${
+                              isAero
+                                ? 'rounded-full bg-white border border-[#E2E8F0] text-[#111827] font-semibold'
+                                : isBespoke
+                                ? 'rounded-sm bg-neutral-950 border border-neutral-800 text-zinc-300'
+                                : 'rounded obsidian-inset-neutral text-zinc-300'
                             }`}
                           >
                             #{sched.tag}
                           </span>
                         </div>
-                        <div className="text-xs font-mono tabular-nums text-zinc-400 mt-1">
+                        <div className={`text-xs tabular-nums mt-1 ${isAero ? 'font-sans text-[#5B6B79]' : 'font-mono text-zinc-400'}`}>
                           {sched.startTime} – {sched.endTime}
                         </div>
                       </div>
@@ -1301,7 +1374,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         onClick={() => onToggleSchedule(sched.id)}
                         aria-label={`Toggle ${sched.name}`}
                         style={
-                          sched.isEnabled
+                          isAero
+                            ? sched.isEnabled
+                              ? { backgroundColor: '#111827', borderColor: '#111827' }
+                              : { backgroundColor: '#E2E8F0', borderColor: '#CBD5E1' }
+                            : sched.isEnabled
                             ? isFluentGlass
                               ? {
                                   background: 'linear-gradient(135deg, var(--liquid-accent-vibrant), var(--liquid-accent-tint))',
@@ -1321,7 +1398,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             : undefined
                         }
                         className={`relative border shrink-0 toggle-track ${
-                          isBespoke
+                          isAero
+                            ? 'w-12 h-6 rounded-full transition-colors'
+                            : isBespoke
                             ? `w-11 h-6 rounded-sm transition-colors duration-75 ${
                                 sched.isEnabled
                                   ? ''
@@ -1342,7 +1421,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       >
                         <div
                           style={
-                            sched.isEnabled
+                            isAero
+                              ? { backgroundColor: '#FFFFFF' }
+                              : sched.isEnabled
                               ? {
                                   backgroundColor: isBespoke || isFluentGlass
                                     ? '#FFFFFF'
@@ -1351,7 +1432,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                               : undefined
                           }
                           className={`w-4 h-4 transform toggle-thumb ${
-                            isBespoke
+                            isAero
+                              ? `rounded-full transition-transform ${
+                                  sched.isEnabled ? 'translate-x-6' : 'translate-x-1'
+                                }`
+                              : isBespoke
                               ? `rounded-sm transition-transform duration-75 ${
                                   sched.isEnabled
                                     ? 'translate-x-5'
@@ -1373,7 +1458,13 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         <span
                           key={day}
                           className={`text-[10px] px-2 py-0.5 ${
-                            isFluentGlass
+                            isAero
+                              ? `rounded-full font-sans font-semibold ${
+                                  sched.days.includes(idx)
+                                    ? 'bg-[#111827] text-white shadow-sm'
+                                    : 'bg-white text-[#9CA3AF] border border-[#E2E8F0]'
+                                }`
+                              : isFluentGlass
                               ? `rounded-full font-sans font-semibold ${
                                   sched.days.includes(idx)
                                     ? 'liquid-pill-active'
@@ -1400,25 +1491,25 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 }
                 footerContent={
                   <>
-                    <div className="flex items-center gap-1.5 text-zinc-300">
+                    <div className={`flex items-center gap-1.5 ${isAero ? 'text-[#5B6B79]' : 'text-zinc-300'}`}>
                       <Bell
                         size={12}
-                        className={isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
-                        style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        className={isAero ? 'shrink-0 text-[#111827]' : isBespoke ? 'shrink-0 text-blue-500' : 'shrink-0'}
+                        style={isBespoke || isAero ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       />
                       <span>5-min heads-up alert enabled</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => onTriggerTestWarning(sched.name)}
-                        className="text-[10px] text-zinc-300 hover:text-white underline"
+                        className={`text-[10px] underline ${isAero ? 'text-[#5B6B79] hover:text-[#111827]' : 'text-zinc-300 hover:text-white'}`}
                         title="Simulates 5-minute pre-lock heads-up warning notification"
                       >
                         Test Warning
                       </button>
                       <button
                         onClick={() => onDeleteSchedule(sched.id)}
-                        className="text-red-400 hover:text-red-300 p-1"
+                        className={`${isAero ? 'text-red-500 hover:text-red-700' : 'text-red-400 hover:text-red-300'} p-1`}
                         aria-label={`Delete ${sched.name}`}
                       >
                         <Trash2 size={13} />
@@ -3515,6 +3606,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           </div>
         </div>
       )}
+      </div>
 
       {/* Add Schedule Modal */}
       {showAddModal && (

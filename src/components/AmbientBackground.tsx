@@ -1,13 +1,43 @@
 ﻿import React, { memo } from 'react';
+import { useInterfaceStyle } from '../context/InterfaceStyleContext';
 
 /**
  * Ambient Background Mesh (Zero-Heat Optical Glass Core)
  * Optimized 2-corner radial glow layout (Upper Left & Lower Right).
- * Static by default for 0% idle GPU heat; optional drift animation controlled
- * via html[data-ambient-drift="true"].
- * Full-screen SVG feTurbulence + mix-blend-overlay removed to eliminate per-frame GPU bandwidth drain.
+ * When Aero UI is active, renders airy mist-blue sky with two soft sunlit cloud glows.
  */
 export const AmbientBackground: React.FC = memo(() => {
+  const { isAero } = useInterfaceStyle();
+
+  if (isAero) {
+    return (
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 pointer-events-none overflow-hidden aero-canvas"
+        style={{ contain: 'strict' }}
+      >
+        {/* Sunlit Cloud Glow 1 (Upper Left) */}
+        <div
+          className="absolute -top-16 -left-12 w-[440px] h-[440px] rounded-full pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.40) 42%, transparent 70%)',
+            filter: 'blur(32px)',
+          }}
+        />
+        {/* Sunlit Cloud Glow 2 (Upper Right) */}
+        <div
+          className="absolute -top-12 -right-16 w-[420px] h-[420px] rounded-full pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.80) 0%, rgba(255, 255, 255, 0.35) 45%, transparent 70%)',
+            filter: 'blur(36px)',
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       aria-hidden="true"

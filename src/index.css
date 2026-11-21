@@ -88,3 +88,79 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==========================================================================
+   AERO UI SPATIAL ARCHITECTURE & VISUAL TOKENS
+   ========================================================================== */
+.aero-canvas {
+  background-color: #DAEAF3;
+  background-image:
+    radial-gradient(circle at 25% 15%, rgba(255, 255, 255, 0.80) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.70) 0%, transparent 45%),
+    linear-gradient(180deg, #C7DCE8 0%, #DAEAF3 26%, #ECF4F8 55%, #F6F9FC 100%);
+  background-attachment: fixed;
+  color: #111827;
+}
+
+.aero-cloud-glows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 14%, rgba(255, 255, 255, 0.85) 0%, transparent 40%),
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.75) 0%, transparent 38%);
+  filter: blur(28px);
+  z-index: 0;
+}
+
+.aero-sheet {
+  background: #FFFFFF;
+  border-radius: 30px 30px 0 0;
+  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.06);
+  border-top: 1px solid #E2E8F0;
+  position: relative;
+  z-index: 10;
+}
+
+.aero-hero-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.60) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.06);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.aero-aurora-glow {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 140px;
+  height: 140px;
+  pointer-events: none;
+  background: radial-gradient(circle at 85% 85%, rgba(251, 146, 60, 0.45) 0%, rgba(244, 114, 182, 0.35) 40%, rgba(167, 139, 250, 0.30) 75%, transparent 100%);
+  filter: blur(14px);
+  z-index: 1;
+}
+
+.aero-pill-active {
+  background-color: #111827 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.aero-pill-inactive {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  color: #374151 !important;
+  border: 1px solid rgba(255, 255, 255, 0.90) !important;
+}
+
+.aero-card {
+  background-color: #F6F9FC;
+  border: 1px solid #E2E8F0;
+  color: #111827;
+  border-radius: 20px;
+}
+

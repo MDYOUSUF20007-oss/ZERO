@@ -358,6 +358,7 @@ export type InterfaceStyle =
   | 'bespoke'
   | 'fluent_glass'
   | 'aetherial'
+  | 'aero'
   | 'trantor'
   | 'onyx'
   | 'fintech'

@@ -142,14 +142,20 @@ function mountIsolatedThemeEngine(
   root.setAttribute('data-theme', themeId);
   root.setAttribute('data-engine', themeId);
   root.setAttribute('data-accent', accent);
-  root.classList.add('dark');
-
-  // Set real-time ambient glow parameters
-  root.style.setProperty('--ambient-glow-opacity', glowIntensity.toString());
-  root.style.setProperty('--ambient-glow-scale', (0.75 + glowIntensity * 0.45).toString());
-
-  // Set real-time fluent glass parameters
-  applyGlassTokens(root, glassStrength);
+  if (themeId === 'aero') {
+    root.setAttribute('data-interface-style', 'aero');
+    root.classList.remove('dark');
+    root.classList.add('light');
+  } else {
+    root.removeAttribute('data-interface-style');
+    root.classList.remove('light');
+    root.classList.add('dark');
+    // Set real-time ambient glow parameters
+    root.style.setProperty('--ambient-glow-opacity', glowIntensity.toString());
+    root.style.setProperty('--ambient-glow-scale', (0.75 + glowIntensity * 0.45).toString());
+    // Set real-time fluent glass parameters
+    applyGlassTokens(root, glassStrength);
+  }
 
   // Restore GPU Battery & Thermal Safeguard, Glass Engine, Target FPS & optional Ambient Drift attributes
   try {
@@ -215,6 +221,7 @@ export interface InterfaceStyleContextValue {
   isFluentGlass: boolean;
   isLiquidGlass: boolean;
   isAetherial: boolean;
+  isAero: boolean;
   isMinimalist: boolean;
   isBespoke: boolean;
 
@@ -598,6 +605,7 @@ export function InterfaceStyleProvider({
       isFluentGlass: theme === 'fluent' && !isBespokeActive,
       isLiquidGlass: theme === 'fluent' && !isBespokeActive,
       isAetherial: theme === 'aetherial' && !isBespokeActive,
+      isAero: theme === 'aero' && !isBespokeActive,
       isMinimalist: isBespokeActive,
       isBespoke: isBespokeActive,
 
