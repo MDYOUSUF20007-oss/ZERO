@@ -286,6 +286,8 @@ export interface ZeroBackupPayload {
   theme: ThemeStyle;
   themeConfig?: ThemeConfig;
   onboardingComplete?: boolean;
+  isZeroSupporter?: boolean;
+  isDeveloper?: boolean;
 }
 
 export interface ZeroZbakPayload {
@@ -307,6 +309,7 @@ export interface ZeroZbakPayload {
   // Donor Badges & Status
   hasClaimedFirstDonationParachute: boolean;
   isZeroSupporter: boolean;
+  isDeveloper?: boolean;
   unlockedBadgeIds: string[];
   // Preset Bags, Schedules, Theme & Profile
   bags: OccasionBag[];
