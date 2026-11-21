@@ -4,13 +4,17 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+def isCI = System.getenv("CI") != null || System.getenv("GITHUB_ACTIONS") != null
+def targetJavaVersion = isCI ? JavaVersion.VERSION_21 : JavaVersion.VERSION_17
+def targetJvmTarget = isCI ? '21' : '17'
+
 android {
     namespace = "org.zero.detox"
     compileSdk = rootProject.ext.compileSdkVersion
     def envVersionCode = System.getenv("ZERO_VERSION_CODE")
-    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 127
+    def resolvedVersionCode = (envVersionCode != null && envVersionCode.isInteger()) ? envVersionCode.toInteger() : 300
     def envVersionName = System.getenv("ZERO_VERSION_NAME")
-    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.27"
+    def resolvedVersionName = (envVersionName != null && !envVersionName.trim().isEmpty()) ? envVersionName.trim() : "1.0.300"
 
     defaultConfig {
         applicationId "org.zero.detox"
@@ -86,11 +90,11 @@ android {
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility targetJavaVersion
+        targetCompatibility targetJavaVersion
     }
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = targetJvmTarget
     }
     lint {
         checkReleaseBuilds false
@@ -128,13 +132,15 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-android {
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = '17'
+if (!isCI) {
+    android {
+        compileOptions {
+            sourceCompatibility targetJavaVersion
+            targetCompatibility targetJavaVersion
+        }
+        kotlinOptions {
+            jvmTarget = targetJvmTarget
+        }
     }
 }
 
