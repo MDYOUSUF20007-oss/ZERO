@@ -32,18 +32,19 @@ export const aeroEngine: ThemeEngineDefinition = {
       --glass-dial-bg: rgba(255, 255, 255, 0.72);
       --glass-glow-mult: 0.25;
 
-      --text-primary: #111827;
-      --text-secondary: #5B6B79;
-      --text-muted: #9CA3AF;
+      /* Matte black high-contrast ink text */
+      --text-primary: #0f172a;
+      --text-secondary: #0f172a;
+      --text-muted: #334155;
       --text-on-accent: #FFFFFF;
 
-      --accent-primary: #111827;
-      --accent-secondary: #374151;
-      --accent-tertiary: #4B5563;
-      --accent-soft: rgba(17, 24, 39, 0.06);
-      --accent-border: #E2E8F0;
-      --accent-hex: #111827;
-      --accent-rgb: 17, 24, 39;
+      --accent-primary: var(--aero-palette-color, #0f172a);
+      --accent-secondary: var(--aero-palette-color, #0f172a);
+      --accent-tertiary: #334155;
+      --accent-soft: rgba(15, 23, 42, 0.06);
+      --accent-border: #CBD5E1;
+      --accent-hex: var(--aero-palette-color, #0f172a);
+      --accent-rgb: 15, 23, 42;
 
       --border-subtle: #E2E8F0;
       --border-strong: #CBD5E1;
@@ -66,8 +67,8 @@ export const aeroEngine: ThemeEngineDefinition = {
       --aero-sheet-bg: #FFFFFF;
       --aero-sheet-radius: 30px 30px 0 0;
       --aero-sheet-shadow: 0 -10px 30px rgba(15, 23, 42, 0.06);
-      --aero-ink-primary: #111827;
-      --aero-ink-secondary: #5B6B79;
+      --aero-ink-primary: var(--aero-palette-color, #0f172a);
+      --aero-ink-secondary: #0f172a;
       --aero-card-bg: #F6F9FC;
       --aero-card-border: 1px solid #E2E8F0;
       --aero-hero-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.54) 100%);
@@ -79,19 +80,19 @@ export const aeroEngine: ThemeEngineDefinition = {
       --zero-surface-1: #FFFFFF;
       --zero-surface-2: #F6F9FC;
       --zero-surface-elevated: #FFFFFF;
-      --zero-ink-primary: #111827;
-      --zero-ink-secondary: #5B6B79;
-      --zero-ink-muted: #9CA3AF;
+      --zero-ink-primary: #0f172a;
+      --zero-ink-secondary: #0f172a;
+      --zero-ink-muted: #334155;
       --zero-border: #E2E8F0;
-      --zero-dial-stroke: #111827;
-      --zero-dial-track: rgba(17, 24, 39, 0.20);
-      --zero-accent: #111827;
-      --zero-accent-glow: rgba(17, 24, 39, 0.08);
+      --zero-dial-stroke: var(--aero-palette-color, #0f172a);
+      --zero-dial-track: rgba(15, 23, 42, 0.16);
+      --zero-accent: var(--aero-palette-color, #0f172a);
+      --zero-accent-glow: rgba(15, 23, 42, 0.08);
 
-      --liquid-accent-tint: #111827;
-      --liquid-accent-vibrant: #111827;
-      --liquid-accent-glow: rgba(17, 24, 39, 0.12);
-      --liquid-accent-soft-glow: rgba(17, 24, 39, 0.06);
+      --liquid-accent-tint: var(--aero-palette-color, #0f172a);
+      --liquid-accent-vibrant: var(--aero-palette-color, #0f172a);
+      --liquid-accent-glow: rgba(15, 23, 42, 0.12);
+      --liquid-accent-soft-glow: rgba(15, 23, 42, 0.06);
       --liquid-surface-blur: 20px;
     }
 
@@ -100,7 +101,7 @@ export const aeroEngine: ThemeEngineDefinition = {
     html[data-interface-style="aero"] body,
     html[data-interface-style="aero"] #root {
       background: linear-gradient(180deg, #C7DCE8 0%, #DAEAF3 26%, #ECF4F8 55%, #F6F9FC 100%) !important;
-      color: #111827 !important;
+      color: #0f172a !important;
       font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif !important;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -108,7 +109,7 @@ export const aeroEngine: ThemeEngineDefinition = {
 
     html[data-interface-style="aero"] .zero-app-shell {
       background: transparent !important;
-      color: #111827 !important;
+      color: #0f172a !important;
     }
 
     /* Aero Navigation Dock (Bottom bar) */
@@ -119,8 +120,8 @@ export const aeroEngine: ThemeEngineDefinition = {
     }
 
     html[data-interface-style="aero"] .liquid-dock-item-active {
-      background: rgba(17, 24, 39, 0.06) !important;
-      border: 1px solid rgba(17, 24, 39, 0.12) !important;
+      background: rgba(15, 23, 42, 0.06) !important;
+      border: 1px solid rgba(15, 23, 42, 0.12) !important;
       box-shadow: none !important;
     }
 
@@ -135,20 +136,60 @@ export const aeroEngine: ThemeEngineDefinition = {
       -webkit-backdrop-filter: blur(20px) !important;
       border: 1px solid rgba(255, 255, 255, 0.95) !important;
       box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.05) !important;
-      color: #111827 !important;
+      color: #0f172a !important;
     }
 
-    /* Aero Pill Toggles */
+    /* Aero Pill Toggles & Squircle Capsules */
     html[data-interface-style="aero"] .liquid-pill-active {
-      background-color: #111827 !important;
+      background-color: var(--aero-palette-color, #0f172a) !important;
       color: #FFFFFF !important;
-      border: 1px solid #111827 !important;
+      border: 1px solid var(--aero-palette-color, #0f172a) !important;
+      border-radius: 18px !important;
     }
 
     html[data-interface-style="aero"] .liquid-pill-inactive {
-      background-color: rgba(255, 255, 255, 0.80) !important;
-      color: #374151 !important;
-      border: 1px solid rgba(255, 255, 255, 0.90) !important;
+      background-color: #FFFFFF !important;
+      color: #0f172a !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 18px !important;
+      font-weight: 700 !important;
+    }
+
+    html[data-interface-style="aero"] .aero-capsule {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 18px;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+
+    html[data-interface-style="aero"] .aero-pill-active {
+      background-color: var(--aero-palette-color, #0f172a) !important;
+      color: #FFFFFF !important;
+      border: 1px solid var(--aero-palette-color, #0f172a) !important;
+      border-radius: 18px !important;
+    }
+
+    html[data-interface-style="aero"] .aero-pill-inactive {
+      background-color: #FFFFFF !important;
+      color: #0f172a !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 18px !important;
+      font-weight: 700 !important;
+    }
+
+    /* Aero Dock Ticket Preview & Badge */
+    html[data-interface-style="aero"] .zn-dock-ticket-svg {
+      filter: drop-shadow(0 8px 24px rgba(15, 23, 42, 0.10)) drop-shadow(0 1px 3px rgba(15, 23, 42, 0.06)) !important;
+    }
+
+    html[data-interface-style="aero"] .zn-dock-ticket-badge {
+      background: var(--aero-palette-color, #0f172a) !important;
+      color: #FFFFFF !important;
+      border: 2px solid #FFFFFF !important;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.20) !important;
+      font-weight: 800 !important;
+      font-size: 11px !important;
     }
 
     html[data-interface-style="aero"] .liquid-track {
@@ -156,7 +197,7 @@ export const aeroEngine: ThemeEngineDefinition = {
     }
 
     html[data-interface-style="aero"] .liquid-metric {
-      color: #111827 !important;
+      color: #0f172a !important;
       text-shadow: none !important;
     }
 

@@ -231,6 +231,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
     isFluentGlass,
     isMaterialYou,
     isAero,
+    aeroPalette,
+    setAeroPalette,
+    aeroAccentColor,
     materialYouSeed: _ctxMaterialYouSeed,
     setMaterialYouSeed: _ctxSetMaterialYouSeed,
     fluentOrbIntensity,
@@ -742,16 +745,18 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             {/* Aero UI Palette Selector — only shown when Aero UI is active */}
             {isAero && (
             <div className="pt-3 border-t space-y-2.5" style={{ borderColor: '#E2E8F0' }}>
-              <label className="text-[11px] font-semibold text-[#111827] block">Aero Palette</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-[#0f172a] block uppercase tracking-wider">Aero Palette</label>
+                <span className="text-[10px] font-black text-[#0f172a] px-2.5 py-0.5 rounded-xl bg-white border border-[#CBD5E1] shadow-xs uppercase font-mono">
+                  {aeroPalette}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { id: 'ink', name: 'Ink', preview: '#111827' },
-                  { id: 'azure', name: 'Azure', preview: '#0284C7' },
-                  { id: 'emerald', name: 'Emerald', preview: '#059669' },
+                  { id: 'ink' as const, name: 'Ink', preview: '#0f172a' },
+                  { id: 'azure' as const, name: 'Azure', preview: '#0284C7' },
+                  { id: 'emerald' as const, name: 'Emerald', preview: '#059669' },
                 ].map((palette) => {
-                  const aeroPalette = (() => {
-                    try { return localStorage.getItem('zero_aero_palette_v1') || 'ink'; } catch { return 'ink'; }
-                  })();
                   const isSelected = aeroPalette === palette.id;
                   return (
                     <button
@@ -759,23 +764,26 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       type="button"
                       onClick={() => {
                         haptics.tick(900);
-                        try { localStorage.setItem('zero_aero_palette_v1', palette.id); } catch {}
-                        const ink = palette.id === 'ink' ? '#111827' : palette.preview;
-                        document.documentElement.style.setProperty('--aero-ink-primary', ink);
-                        document.documentElement.style.setProperty('--accent-primary', ink);
-                        document.documentElement.style.setProperty('--accent-hex', ink);
+                        setAeroPalette(palette.id);
                       }}
-                      className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                      style={
                         isSelected
-                          ? 'bg-[#111827] border-[#111827]'
-                          : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1]'
+                          ? { backgroundColor: palette.preview, borderColor: palette.preview }
+                          : undefined
+                      }
+                      className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer shadow-xs ${
+                        isSelected
+                          ? 'text-white font-black shadow-md'
+                          : 'bg-white border-[#CBD5E1] hover:border-[#94A3B8]'
                       }`}
                     >
                       <div
-                        className="w-4 h-4 rounded-full shrink-0"
+                        className="w-4 h-4 rounded-full shrink-0 border border-white/40"
                         style={{ backgroundColor: palette.preview }}
                       />
-                      <span className={`text-xs font-medium truncate ${isSelected ? 'text-white' : 'text-[#374151]'}`}>{palette.name}</span>
+                      <span className={`text-xs font-black truncate ${isSelected ? 'text-white' : 'text-[#0f172a]'}`}>
+                        {palette.name}
+                      </span>
                     </button>
                   );
                 })}
@@ -1233,7 +1241,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             </div>
           </div>
 
-          {/* Theme Mods & Community Themes Card (Directly Underneath the 2 Colors) */}
+          {/* Theme Mods & Community Themes Card (Directly Underneath the 2 Colors) — Hidden in Aero UI */}
+          {!isAero && (
           <ObsidianCard
             ambientGlow={!isBespoke}
             className={isModernFont ? 'font-sans' : 'font-mono'}
@@ -1359,6 +1368,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               </>
             }
           />
+          )}
         </div>
       )}
 
@@ -1368,16 +1378,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           <div className="flex items-center justify-between">
             <span
               className={`text-xs uppercase tracking-wider font-bold ${
-                isAero ? 'text-[#5B6B79] font-sans' : isBespoke ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'
+                isAero ? 'text-[#0f172a] font-sans font-black' : isBespoke ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'
               }`}
             >
               Recurring Schedules (<span className="font-mono tabular-nums">{schedules.length}</span>)
             </span>
             <button
               onClick={() => setShowAddModal(true)}
-              className={`px-3 py-1.5 font-semibold text-xs flex items-center gap-1.5 ${
+              style={isAero ? { backgroundColor: aeroAccentColor || '#0f172a' } : undefined}
+              className={`px-3.5 py-1.5 font-semibold text-xs flex items-center gap-1.5 cursor-pointer ${
                 isAero
-                  ? 'rounded-full bg-[#111827] text-white shadow-sm font-sans font-bold active:scale-95 transition-all'
+                  ? 'rounded-2xl text-white shadow-sm font-sans font-black active:scale-95 transition-all'
                   : isBespoke
                   ? 'rounded-md bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 transition-colors duration-75 font-sans'
                   : 'obsidian-pill-active font-mono font-black rounded-xl active:scale-95 transition-all'
@@ -1395,7 +1406,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 key={sched.id}
                 className={`${
                   isAero
-                    ? 'aero-card border border-[#E2E8F0] !bg-[#F6F9FC] !text-[#111827] rounded-[20px] font-sans'
+                    ? 'aero-card border border-[#CBD5E1] !bg-white !text-[#0f172a] rounded-[22px] font-sans shadow-xs'
                     : isModernFont
                     ? 'font-sans'
                     : 'font-mono'
@@ -1403,7 +1414,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 headerClassName={isModernFont || isAero ? 'p-5' : 'p-4'}
                 footerClassName={
                   isAero
-                    ? 'px-5 py-3 flex items-center justify-between text-[11px] text-[#5B6B79]'
+                    ? 'px-5 py-3 flex items-center justify-between text-[11px] text-[#0f172a] font-bold border-t border-[#E2E8F0]'
                     : isBespoke
                     ? 'px-5 py-3 flex items-center justify-between text-[11px] text-zinc-400'
                     : 'px-4 py-2.5 flex items-center justify-between text-[11px] text-zinc-400'
@@ -1412,12 +1423,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <>
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <div className={`font-semibold text-sm flex items-center gap-2 flex-wrap ${isAero ? 'text-[#111827]' : 'text-zinc-100'}`}>
+                        <div className={`font-black text-sm flex items-center gap-2 flex-wrap ${isAero ? 'text-[#0f172a]' : 'text-zinc-100'}`}>
                           <span>{sched.name}</span>
                           <span
-                            className={`text-[10px] px-2 py-0.5 ${
+                            className={`text-[10px] px-2.5 py-0.5 ${
                               isAero
-                                ? 'rounded-full bg-white border border-[#E2E8F0] text-[#111827] font-semibold'
+                                ? 'rounded-xl bg-[#F6F9FC] border border-[#CBD5E1] text-[#0f172a] font-black'
                                 : isBespoke
                                 ? 'rounded-sm bg-neutral-950 border border-neutral-800 text-zinc-300'
                                 : 'rounded obsidian-inset-neutral text-zinc-300'
@@ -1426,7 +1437,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             #{sched.tag}
                           </span>
                         </div>
-                        <div className={`text-xs tabular-nums mt-1 ${isAero ? 'font-sans text-[#5B6B79]' : 'font-mono text-zinc-400'}`}>
+                        <div className={`text-xs tabular-nums mt-1 ${isAero ? 'font-sans text-[#0f172a] font-bold' : 'font-mono text-zinc-400'}`}>
                           {sched.startTime} – {sched.endTime}
                         </div>
                       </div>
@@ -1438,7 +1449,7 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         style={
                           isAero
                             ? sched.isEnabled
-                              ? { backgroundColor: '#111827', borderColor: '#111827' }
+                              ? { backgroundColor: aeroAccentColor || '#0f172a', borderColor: aeroAccentColor || '#0f172a' }
                               : { backgroundColor: '#E2E8F0', borderColor: '#CBD5E1' }
                             : sched.isEnabled
                             ? isFluentGlass
@@ -1519,12 +1530,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       {DAYS_OF_WEEK.map((day, idx) => (
                         <span
                           key={day}
-                          className={`text-[10px] px-2 py-0.5 ${
+                          style={
+                            isAero && sched.days.includes(idx)
+                              ? { backgroundColor: aeroAccentColor || '#0f172a' }
+                              : undefined
+                          }
+                          className={`text-[10px] px-2.5 py-0.5 ${
                             isAero
-                              ? `rounded-full font-sans font-semibold ${
+                              ? `rounded-xl font-sans font-black ${
                                   sched.days.includes(idx)
-                                    ? 'bg-[#111827] text-white shadow-sm'
-                                    : 'bg-white text-[#9CA3AF] border border-[#E2E8F0]'
+                                    ? 'text-white shadow-xs'
+                                    : 'bg-white text-[#64748B] border border-[#CBD5E1]'
                                 }`
                               : isFluentGlass
                               ? `rounded-full font-sans font-semibold ${

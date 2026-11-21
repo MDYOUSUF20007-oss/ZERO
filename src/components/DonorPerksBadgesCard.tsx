@@ -52,7 +52,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   onImportData,
   onRestoreSuccess,
 }) => {
-  const { isBespoke, isFluentGlass, isAero } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass, isAero, aeroAccentColor } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass;
   const [tokenInput, setTokenInput] = useState('');
   const [tokenNotice, setTokenNotice] = useState<{ ok: boolean; message: string } | null>(null);
@@ -602,25 +602,26 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
               </div>
             </div>
           ) : isAero ? (
-            /* Aero UI: clean white card, dark ink */
-            <div className="p-4 rounded-2xl bg-[#F6F9FC] border border-[#E2E8F0] space-y-3">
+            /* Aero UI: clean white card, matte black ink, squircle capsules */
+            <div className="p-4 rounded-[22px] bg-white border border-[#CBD5E1] space-y-3 shadow-xs">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#111827] flex items-center gap-1.5">
-                  <Mail size={13} strokeWidth={1.75} className="shrink-0 text-[#374151]" />
+                <span className="text-xs font-black uppercase tracking-wide text-[#0f172a] flex items-center gap-1.5">
+                  <Mail size={13} strokeWidth={2.2} className="shrink-0 text-[#0f172a]" />
                   <span>Manual Ko-fi Verification</span>
                 </span>
-                <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#E2E8F0] border border-[#CBD5E1] text-[#374151]">
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-xl bg-[#F6F9FC] border border-[#CBD5E1] text-[#0f172a]">
                   Ko-fi Support
                 </span>
               </div>
 
-              <p className="text-xs text-[#4B5563] leading-relaxed">
+              <p className="text-xs text-[#0f172a] font-medium leading-relaxed">
                 Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet? Send a screenshot
                 of your receipt and your account email to{' '}
                 <a
                   href={SUPPORT_MAILTO_URL}
                   onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
-                  className="text-[#0284C7] font-medium underline underline-offset-2"
+                  className="font-bold underline underline-offset-2"
+                  style={{ color: aeroAccentColor || '#0284C7' }}
                 >
                   <strong>{SUPPORT_EMAIL}</strong>
                 </a>{' '}
@@ -631,24 +632,25 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                 <a
                   href={SUPPORT_MAILTO_URL}
                   onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#111827] text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  style={isAero ? { backgroundColor: aeroAccentColor || '#0f172a' } : undefined}
+                  className="flex-1 py-2.5 px-3 rounded-2xl text-white font-black text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs"
                 >
-                  <Mail size={12} strokeWidth={1.75} />
+                  <Mail size={12} strokeWidth={2.2} />
                   <span>Email Receipt</span>
                 </a>
                 <button
                   type="button"
                   onClick={handleCopySupportEmail}
-                  className="px-3 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#111827] font-medium text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="px-3.5 py-2.5 rounded-2xl bg-white border border-[#CBD5E1] text-[#0f172a] font-black text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs"
                 >
                   {copiedEmail ? (
                     <>
-                      <Check size={12} strokeWidth={1.75} className="text-[#059669]" />
+                      <Check size={12} strokeWidth={2.2} className="text-[#059669]" />
                       <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy size={12} strokeWidth={1.75} className="text-[#374151]" />
+                      <Copy size={12} strokeWidth={2.2} className="text-[#0f172a]" />
                       <span>Copy Email</span>
                     </>
                   )}

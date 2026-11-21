@@ -30,7 +30,7 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
 
   if (!ticketCount || ticketCount <= 0) return null;
 
-  const primaryAccent = isAero ? '#111827' : (accentColor || 'var(--accent-hex, #7dd3fc)');
+  const primaryAccent = isAero ? 'var(--aero-palette-color, #0f172a)' : (accentColor || 'var(--accent-hex, #7dd3fc)');
 
   return (
     <button
@@ -54,8 +54,7 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
             {isAero ? (
               <>
                 <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="55%" stopColor="#F1F5F9" />
-                <stop offset="100%" stopColor="#E2E8F0" />
+                <stop offset="100%" stopColor="#FFFFFF" />
               </>
             ) : (
               <>
@@ -66,9 +65,9 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
             )}
           </linearGradient>
           <linearGradient id={specularGradId} x1="0" y1="0" x2="296" y2="124" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={primaryAccent} stopOpacity={isAero ? 0.5 : 0.85} />
-            <stop offset="45%" stopColor={primaryAccent} stopOpacity={isAero ? 0.2 : 0.35} />
-            <stop offset="100%" stopColor={isAero ? '#CBD5E1' : '#1e293b'} stopOpacity="0.6" />
+            <stop offset="0%" stopColor={primaryAccent} stopOpacity={isAero ? 0.9 : 0.85} />
+            <stop offset="45%" stopColor={primaryAccent} stopOpacity={isAero ? 0.6 : 0.35} />
+            <stop offset="100%" stopColor={isAero ? '#E2E8F0' : '#1e293b'} stopOpacity="0.6" />
           </linearGradient>
           <clipPath id={clipId}>
             <path d="M 16 2 L 68 2 L 74 8 L 80 2 L 280 2 A 14 14 0 0 1 294 16 L 294 48 A 14 14 0 0 0 294 76 L 294 108 A 14 14 0 0 1 280 122 L 80 122 L 74 116 L 68 122 L 16 122 A 14 14 0 0 1 2 108 L 2 76 A 14 14 0 0 0 2 48 L 2 16 A 14 14 0 0 1 16 2 Z" />
@@ -76,23 +75,25 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
         </defs>
 
         <g clipPath={`url(#${clipId})`}>
-          {/* Base AMOLED Fill */}
-          <rect x="0" y="0" width="296" height="124" fill={`url(#${bgGradId})`} />
+          {/* Base Fill */}
+          <rect x="0" y="0" width="296" height="124" fill={isAero ? '#FFFFFF' : `url(#${bgGradId})`} />
 
           {/* Subtle Left Stub Tint */}
-          <rect x="0" y="0" width="74" height="124" fill={primaryAccent} fillOpacity="0.035" />
+          <rect x="0" y="0" width="74" height="124" fill={isAero ? '#F8FAFC' : primaryAccent} fillOpacity={isAero ? 1 : 0.035} />
 
-          {/* Ambient Specular Sheen Sweep */}
-          <rect
-            className="zn-dock-sheen"
-            x="-120"
-            y="0"
-            width="90"
-            height="124"
-            fill={primaryAccent}
-            fillOpacity="0.07"
-            transform="skewX(-22)"
-          />
+          {/* Ambient Specular Sheen Sweep (dark only) */}
+          {!isAero && (
+            <rect
+              className="zn-dock-sheen"
+              x="-120"
+              y="0"
+              width="90"
+              height="124"
+              fill={primaryAccent}
+              fillOpacity="0.07"
+              transform="skewX(-22)"
+            />
+          )}
 
           {/* Vertical Perforation Seam at 25% (x=74) */}
           <line
@@ -100,16 +101,28 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
             y1="10"
             x2="74"
             y2="114"
-            stroke={primaryAccent}
-            strokeOpacity="0.45"
+            stroke={isAero ? '#CBD5E1' : primaryAccent}
+            strokeOpacity={isAero ? 0.8 : 0.45}
             strokeWidth="1.5"
             strokeDasharray="4 4"
           />
 
           {/* Left Stub Grip Dots */}
-          <circle cx="38" cy="48" r="2" fill={primaryAccent} fillOpacity="0.45" />
-          <circle cx="38" cy="62" r="2" fill={primaryAccent} fillOpacity="0.7" />
-          <circle cx="38" cy="76" r="2" fill={primaryAccent} fillOpacity="0.45" />
+          <circle cx="38" cy="48" r="2" fill={primaryAccent} fillOpacity={isAero ? 0.8 : 0.45} />
+          <circle cx="38" cy="62" r="2" fill={primaryAccent} fillOpacity={isAero ? 1 : 0.7} />
+          <circle cx="38" cy="76" r="2" fill={primaryAccent} fillOpacity={isAero ? 0.8 : 0.45} />
+
+          {/* Aero In-Ticket Typography */}
+          {isAero && (
+            <>
+              <text x="180" y="38" textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="800" letterSpacing="0.08em" fontFamily="system-ui, sans-serif">
+                ESCAPE TICKET
+              </text>
+              <text x="180" y="96" textAnchor="middle" fill="#0f172a" fontSize="10.5" fontWeight="700" letterSpacing="0.04em" fontFamily="system-ui, sans-serif">
+                {ticketCount} {ticketCount === 1 ? 'TICKET' : 'TICKETS'} AVAILABLE
+              </text>
+            </>
+          )}
 
           {/* Right Body Live Breathing Damped Waveform */}
           <path
@@ -126,17 +139,19 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
           <path
             d="M 16 2 L 68 2 L 74 8 L 80 2 L 280 2 A 14 14 0 0 1 294 16 L 294 48 A 14 14 0 0 0 294 76 L 294 108 A 14 14 0 0 1 280 122 L 80 122 L 74 116 L 68 122 L 16 122 A 14 14 0 0 1 2 108 L 2 76 A 14 14 0 0 0 2 48 L 2 16 A 14 14 0 0 1 16 2 Z"
             stroke={isAero ? '#CBD5E1' : '#1e293b'}
-            strokeWidth="2"
+            strokeWidth={isAero ? "1.75" : "2"}
           />
           <path
-            d="M 19 7 L 66 7 L 74 14 L 82 7 L 277 7 A 10 10 0 0 1 289 19 L 289 45 A 17 17 0 0 0 289 79 L 289 105 A 10 10 0 0 1 277 117 L 82 117 L 74 110 L 66 117 L 19 117 A 10 10 0 0 1 7 105 L 7 79 A 17 17 0 0 0 7 45 L 7 19 A 10 10 0 0 1 19 7 Z"
-            stroke={`url(#${specularGradId})`}
+            d="M 19 7 L 66 7 L 74 14 L 82 7 L 277 7 A 10 10 0 0 1 289 19 L 289 45 A 17 17 0 0 0 289 79 L 289 105 A 10 10 0 0 1 277 117 L 82 117 L 74 110 L 66 117 L 19 117 A 10 10 0 0 1 277 117 L 82 117 L 74 110 L 66 117 L 19 117 A 10 10 0 0 1 7 105 L 7 79 A 17 17 0 0 0 7 45 L 7 19 A 10 10 0 0 1 19 7 Z"
+            stroke={isAero ? '#F1F5F9' : `url(#${specularGradId})`}
             strokeWidth="1.25"
           />
         </g>
       </svg>
 
-      <span className="zn-dock-ticket-badge">×{ticketCount}</span>
+      <span className={`zn-dock-ticket-badge ${isAero ? 'border-2 border-white shadow-md' : ''}`}>
+        ×{ticketCount}
+      </span>
     </button>
   );
 };

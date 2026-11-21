@@ -142,6 +142,7 @@ const DialWheelSection = React.memo(function DialWheelSection({
   const rafIdRef = useRef<number | null>(null);
   const lastTouchAtRef = useRef<number>(0);
   const onSelectDurationRef = useRef(onSelectDuration);
+  const { aeroAccentColor } = useInterfaceStyle();
 
   useEffect(() => {
     onSelectDurationRef.current = onSelectDuration;
@@ -330,7 +331,7 @@ const DialWheelSection = React.memo(function DialWheelSection({
             cy="144"
             r="132"
             fill="none"
-            stroke={isAero ? '#111827' : 'url(#zeroLiquidDialGrad)'}
+            stroke={isAero ? (aeroAccentColor || '#0f172a') : 'url(#zeroLiquidDialGrad)'}
             strokeWidth="5"
             strokeDasharray={`${(initialAngle / 360) * DIAL_ARC_CIRCUMFERENCE} ${DIAL_ARC_CIRCUMFERENCE}`}
             strokeLinecap="round"
@@ -346,78 +347,100 @@ const DialWheelSection = React.memo(function DialWheelSection({
         >
           <div
             className={`absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full flex items-center justify-center ${
-              isAero ? 'border-2 border-[#111827] bg-white' : 'border border-white/60 bg-white'
+              isAero ? 'border-2 bg-white shadow-sm' : 'border border-white/60 bg-white'
             }`}
             style={{
+              borderColor: isAero ? (aeroAccentColor || '#0f172a') : undefined,
               boxShadow: isAero
-                ? '0 2px 10px rgba(17, 24, 39, 0.25)'
+                ? '0 2px 10px rgba(15, 23, 42, 0.20)'
                 : '0 0 16px #ffffff, 0 0 26px var(--liquid-accent-vibrant)',
             }}
           >
             <div
               className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: isAero ? '#111827' : 'var(--liquid-accent-vibrant)' }}
+              style={{ backgroundColor: isAero ? (aeroAccentColor || '#0f172a') : 'var(--liquid-accent-vibrant)' }}
             />
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-center z-10 pointer-events-none">
-          <span
-            className={`text-[11px] font-sans tracking-[0.14em] uppercase mb-1 font-semibold ${
-              isAero ? 'text-[#5B6B79]' : 'text-zinc-400 font-medium'
-            }`}
-          >
-            Lock Duration
-          </span>
+          {isAero ? (
+            <span className="px-3 py-1 rounded-2xl bg-white border border-[#CBD5E1] shadow-xs text-[10.5px] font-sans tracking-[0.14em] uppercase mb-1 font-black text-[#0f172a]">
+              Lock Duration
+            </span>
+          ) : (
+            <span className="text-[11px] font-sans tracking-[0.14em] uppercase mb-1 font-medium text-zinc-400">
+              Lock Duration
+            </span>
+          )}
           <div
             ref={durationTextRef}
-            className={`font-sans tabular-nums text-4xl font-semibold tracking-tight ${
-              isAero ? 'text-[#111827]' : 'liquid-metric'
+            className={`font-sans tabular-nums text-4xl font-black tracking-tight ${
+              isAero ? 'text-[#0f172a]' : 'liquid-metric'
             }`}
           >
             {formatDialTime(durationSeconds)}
           </div>
-          <div
-            className={`flex items-center gap-1.5 mt-2 text-xs font-sans ${
-              isAero ? 'text-[#5B6B79]' : 'text-zinc-400'
-            }`}
-          >
-            <Clock size={12} strokeWidth={1.75} className={isAero ? 'text-[#111827]' : 'text-cyan-300'} />
-            <span>
-              Until{' '}
-              <span
-                ref={untilTextRef}
-                className={`font-mono tabular-nums ${isAero ? 'text-[#111827] font-semibold' : 'text-zinc-200'}`}
-              >
-                {formatUntilTime(durationSeconds)}
+          {isAero ? (
+            <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-2xl bg-white border border-[#CBD5E1] text-xs font-bold text-[#0f172a] shadow-xs">
+              <Clock size={12} strokeWidth={2.2} className="text-[#0f172a]" />
+              <span>
+                Until{' '}
+                <span
+                  ref={untilTextRef}
+                  className="font-mono tabular-nums font-black text-[#0f172a]"
+                >
+                  {formatUntilTime(durationSeconds)}
+                </span>
               </span>
-            </span>
-          </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 mt-2 text-xs font-sans text-zinc-400">
+              <Clock size={12} strokeWidth={1.75} className="text-cyan-300" />
+              <span>
+                Until{' '}
+                <span
+                  ref={untilTextRef}
+                  className="font-mono tabular-nums text-zinc-200"
+                >
+                  {formatUntilTime(durationSeconds)}
+                </span>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Quick-Preset Chips */}
       <div className="flex items-center justify-center flex-wrap max-w-sm gap-2 mt-5">
-        {PRESET_DURATIONS.map((preset) => (
-          <button
-            key={preset.label}
-            onClick={() => {
-              haptics.thud();
-              onSelectDuration(preset.seconds);
-            }}
-            className={`px-3 py-1.5 text-xs font-sans tabular-nums rounded-xl liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
-              isAero
-                ? durationSeconds === preset.seconds
-                  ? 'bg-[#111827] text-white font-bold shadow-sm'
-                  : 'bg-white/80 text-[#374151] border border-white/90 shadow-sm'
-                : durationSeconds === preset.seconds
-                ? 'liquid-pill-active font-semibold'
-                : 'liquid-pill-inactive font-normal'
-            }`}
-          >
-            {preset.label}
-          </button>
-        ))}
+        {PRESET_DURATIONS.map((preset) => {
+          const isSelected = durationSeconds === preset.seconds;
+          return (
+            <button
+              key={preset.label}
+              onClick={() => {
+                haptics.thud();
+                onSelectDuration(preset.seconds);
+              }}
+              style={
+                isAero && isSelected
+                  ? { backgroundColor: aeroAccentColor || '#0f172a', borderColor: aeroAccentColor || '#0f172a' }
+                  : undefined
+              }
+              className={`px-3.5 py-1.5 text-xs font-sans tabular-nums liquid-spring hover:scale-[1.02] active:scale-[0.97] cursor-pointer ${
+                isAero
+                  ? isSelected
+                    ? 'text-white font-black shadow-md rounded-2xl border'
+                    : 'bg-white text-[#0f172a] font-bold border border-[#CBD5E1] shadow-xs rounded-2xl hover:border-[#94A3B8]'
+                  : isSelected
+                  ? 'liquid-pill-active font-semibold rounded-xl'
+                  : 'liquid-pill-inactive font-normal rounded-xl'
+              }`}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -449,7 +472,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
   onOpenThemes,
   onOpenManualBackup,
 }) => {
-  const { isAero } = useInterfaceStyle();
+  const { isAero, aeroAccentColor } = useInterfaceStyle();
   const [cloudBannerMsg, setCloudBannerMsg] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState<number>(45 * 60);
   const [selectedTag, setSelectedTag] = useState<SessionTag>('Deep Work');
@@ -772,23 +795,23 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               haptics.tick(860);
               onOpenTicketModal();
             }}
-            className={`shrink-0 px-2.5 py-2 rounded-[18px] bg-white/85 backdrop-blur-md border border-white/95 text-[#111827] shadow-sm flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 ${
-              justEarnedParachute ? 'ring-2 ring-[#111827]' : ''
+            className={`shrink-0 px-3 py-2 rounded-2xl bg-white border border-[#CBD5E1] text-[#0f172a] shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 ${
+              justEarnedParachute ? 'ring-2 ring-[#0f172a]' : ''
             }`}
             title={`Escape Tickets (${parachuteMetrics.currentBalance}) — Tap to inspect ticket`}
             aria-label={`View Escape Ticket (${parachuteMetrics.currentBalance} available)`}
           >
-            <div className="relative w-6 h-6 flex items-center justify-center rounded-xl bg-[#F6F9FC] border border-[#E2E8F0]">
-              <Ticket size={13} strokeWidth={2} className="text-[#111827]" />
-              {parachuteMetrics.currentBalance > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#111827] text-white text-[8.5px] font-mono font-bold leading-[13px] text-center flex items-center justify-center shadow-sm">
-                  {parachuteMetrics.currentBalance}
-                </span>
-              )}
+            <div className="w-6 h-6 flex items-center justify-center rounded-xl bg-[#F6F9FC] border border-[#CBD5E1]">
+              <Ticket size={13} strokeWidth={2.2} className="text-[#0f172a]" />
             </div>
-            <span className="text-[9px] uppercase tracking-wider leading-none font-bold text-[#5B6B79]">
-              {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
-            </span>
+            <div className="flex flex-col text-left leading-none">
+              <span className="text-xs font-black tabular-nums text-[#0f172a]">
+                {parachuteMetrics.currentBalance}
+              </span>
+              <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#0f172a] mt-0.5">
+                {parachuteMetrics.currentBalance === 1 ? 'Ticket' : 'Tickets'}
+              </span>
+            </div>
           </button>
         ) : (
           <ObsidianCard
@@ -1044,8 +1067,8 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         <div className="w-full">
           <div className="flex items-center justify-between mb-2">
             <span
-              className={`text-[11px] font-sans uppercase tracking-wider font-semibold ${
-                isAero ? 'text-[#5B6B79]' : 'text-zinc-400 font-medium'
+              className={`text-[11px] font-sans uppercase tracking-wider ${
+                isAero ? 'text-[#0f172a] font-black' : 'text-zinc-400 font-medium'
               }`}
             >
               Session Focus Tag
@@ -1053,7 +1076,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             <button
               onClick={() => setIsAddingTag(!isAddingTag)}
               className={`text-[11px] font-sans transition-colors duration-75 ${
-                isAero ? 'text-[#5B6B79] hover:text-[#111827] font-semibold' : 'text-zinc-400 hover:text-white'
+                isAero ? 'text-[#0f172a] hover:opacity-80 font-bold' : 'text-zinc-400 hover:text-white'
               }`}
             >
               {isAddingTag ? 'Cancel' : '+ Custom'}
@@ -1069,16 +1092,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 placeholder="e.g. Thesis, Meditation..."
                 maxLength={20}
                 autoFocus
-                className={`flex-1 text-xs rounded-xl px-3 py-2 font-sans outline-none ${
+                className={`flex-1 text-xs rounded-2xl px-3 py-2 font-sans outline-none ${
                   isAero
-                    ? 'bg-[#F6F9FC] border border-[#E2E8F0] text-[#111827] placeholder-[#9CA3AF]'
+                    ? 'bg-white border border-[#CBD5E1] text-[#0f172a] placeholder-[#64748B] font-bold'
                     : 'obsidian-input text-white'
                 }`}
               />
               <button
                 type="submit"
-                className={`text-xs font-sans font-semibold px-4 py-2 rounded-xl uppercase tracking-wide liquid-spring active:scale-[0.97] ${
-                  isAero ? 'bg-[#111827] text-white shadow-sm' : 'liquid-pill-active'
+                style={isAero ? { backgroundColor: aeroAccentColor || '#0f172a' } : undefined}
+                className={`text-xs font-sans font-bold px-4 py-2 rounded-2xl uppercase tracking-wide liquid-spring active:scale-[0.97] cursor-pointer ${
+                  isAero ? 'text-white shadow-sm' : 'liquid-pill-active'
                 }`}
               >
                 Add
@@ -1086,26 +1110,34 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             </form>
           ) : (
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => {
-                    haptics.tick(900);
-                    setSelectedTag(tag);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-sans whitespace-nowrap liquid-spring hover:scale-[1.02] active:scale-[0.97] ${
-                    isAero
-                      ? selectedTag === tag
-                        ? 'bg-[#111827] text-white font-bold shadow-sm'
-                        : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0] font-medium'
-                      : selectedTag === tag
-                      ? 'liquid-pill-active font-semibold'
-                      : 'liquid-pill-inactive font-normal'
-                  }`}
-                >
-                  #{tag}
-                </button>
-              ))}
+              {allTags.map((tag) => {
+                const isSelected = selectedTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      haptics.tick(900);
+                      setSelectedTag(tag);
+                    }}
+                    style={
+                      isAero && isSelected
+                        ? { backgroundColor: aeroAccentColor || '#0f172a', borderColor: aeroAccentColor || '#0f172a' }
+                        : undefined
+                    }
+                    className={`px-3.5 py-1.5 text-xs font-sans whitespace-nowrap liquid-spring hover:scale-[1.02] active:scale-[0.97] cursor-pointer ${
+                      isAero
+                        ? isSelected
+                          ? 'text-white font-black shadow-sm rounded-2xl border'
+                          : 'bg-white text-[#0f172a] border border-[#CBD5E1] font-bold rounded-2xl shadow-xs hover:border-[#94A3B8]'
+                        : isSelected
+                        ? 'liquid-pill-active font-semibold rounded-xl'
+                        : 'liquid-pill-inactive font-normal rounded-xl'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1114,48 +1146,46 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
         {isAero ? (
           <div
             onClick={onOpenBagDrawer}
-            className="w-full bg-[#F6F9FC] border border-[#E2E8F0] rounded-[22px] p-4 flex flex-col gap-2.5 shadow-sm text-left group cursor-pointer transition-all active:scale-[0.99]"
+            className="w-full bg-white border border-[#CBD5E1] rounded-[22px] p-4 flex flex-col gap-2.5 shadow-xs text-left group cursor-pointer transition-all active:scale-[0.99]"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#111827] shrink-0">
-                  <Briefcase size={16} strokeWidth={1.75} />
+                <div className="w-9 h-9 rounded-2xl bg-[#F6F9FC] border border-[#CBD5E1] flex items-center justify-center text-[#0f172a] shrink-0">
+                  <Briefcase size={16} strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs truncate font-bold text-[#111827]">
+                    <span className="text-xs truncate font-black text-[#0f172a]">
                       Bag: {activeBag.name}
                     </span>
-                    <span className="text-[10px] font-sans font-semibold tabular-nums px-2 py-0.5 rounded-full bg-white border border-[#E2E8F0] text-[#111827] shrink-0">
+                    <span className="text-[10px] font-sans font-black tabular-nums px-2.5 py-0.5 rounded-xl bg-[#F6F9FC] border border-[#CBD5E1] text-[#0f172a] shrink-0">
                       {activeBag.apps.length} app{activeBag.apps.length === 1 ? '' : 's'}
                     </span>
                   </div>
-                  <div className="truncate mt-0.5 text-[11px] text-[#5B6B79]">
+                  <div className="truncate mt-0.5 text-[11px] font-semibold text-[#0f172a]">
                     {activeBag.occasionLabel}
                   </div>
                 </div>
               </div>
-              <span className="text-xs font-bold text-[#111827] group-hover:text-black shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
-                Pack <ChevronRight size={14} strokeWidth={1.75} />
+              <span className="text-xs font-black text-[#0f172a] shrink-0 ml-2 flex items-center gap-0.5 transition-colors duration-75">
+                Pack <ChevronRight size={14} strokeWidth={2.2} />
               </span>
             </div>
-            <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between gap-2 flex-wrap text-[11px] text-[#5B6B79]">
-              <div className="flex items-center gap-3">
-                <span className="text-[#111827] flex items-center gap-1 font-semibold">
-                  <Phone size={10} strokeWidth={1.75} /> Calls Always ON
+            <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between gap-2 flex-wrap text-[11px]">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 rounded-xl bg-[#F6F9FC] border border-[#CBD5E1] text-[#0f172a] flex items-center gap-1 font-black">
+                  <Phone size={10} strokeWidth={2.2} /> Calls Always ON
                 </span>
                 <span
-                  className={
-                    activeBag.allowSms
-                      ? 'text-[#111827] flex items-center gap-1 font-semibold'
-                      : 'flex items-center gap-1'
-                  }
+                  className={`px-2.5 py-1 rounded-xl bg-[#F6F9FC] border border-[#CBD5E1] flex items-center gap-1 font-black ${
+                    activeBag.allowSms ? 'text-[#0f172a]' : 'text-[#64748B]'
+                  }`}
                 >
-                  <MessageSquare size={10} strokeWidth={1.75} />{' '}
+                  <MessageSquare size={10} strokeWidth={2.2} />{' '}
                   {activeBag.allowSms ? 'SMS ON' : 'SMS Off'}
                 </span>
               </div>
-              <span className="text-[#5B6B79] break-words">
+              <span className="text-[#0f172a] font-bold break-words">
                 {activeBag.apps.length > 0
                   ? activeBag.apps.map((a) => a.appName).join(', ')
                   : 'Monk Mode (0 apps)'}
@@ -1232,11 +1262,11 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
             className={`relative w-full h-14 py-4 rounded-full font-sans font-bold text-sm tracking-wide uppercase overflow-hidden select-none flex items-center justify-center liquid-spring ${
               isHolding ? 'scale-[0.98]' : 'active:scale-[0.98]'
             } ${
-              isAero ? 'bg-[#111827] text-white shadow-lg' : 'liquid-glass'
+              isAero ? 'text-white shadow-lg' : 'liquid-glass'
             }`}
             style={
               isAero
-                ? { touchAction: 'none' }
+                ? { touchAction: 'none', backgroundColor: aeroAccentColor || '#0f172a' }
                 : {
                     touchAction: 'none',
                     backgroundColor: 'var(--accent-soft)',
@@ -1324,17 +1354,22 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                   localStorage.setItem('zero_intention_ritual_v1', String(nextVal));
                 } catch {}
               }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
+              style={
+                isAero && intentionRitualEnabled
+                  ? { backgroundColor: aeroAccentColor || '#0f172a' }
+                  : undefined
+              }
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-sans transition-all cursor-pointer ${
                 isAero
                   ? intentionRitualEnabled
-                    ? 'bg-[#111827] text-white font-semibold'
-                    : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0]'
+                    ? 'text-white font-black rounded-2xl shadow-sm'
+                    : 'bg-white text-[#0f172a] font-bold border border-[#CBD5E1] rounded-2xl shadow-xs'
                   : intentionRitualEnabled
-                  ? 'liquid-pill-active font-medium text-cyan-300'
-                  : 'liquid-pill-inactive text-zinc-400'
+                  ? 'liquid-pill-active font-medium text-cyan-300 rounded-full'
+                  : 'liquid-pill-inactive text-zinc-400 rounded-full'
               }`}
             >
-              <Sparkles size={11} />
+              <Sparkles size={12} strokeWidth={2} />
               <span>5s Breath: {intentionRitualEnabled ? 'On' : 'Off'}</span>
             </button>
 
@@ -1349,17 +1384,17 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
                 } catch {}
               }}
               title="Burn the Boats disables emergency escape tickets for this session"
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-sans transition-all cursor-pointer ${
                 isAero
                   ? burnTheBoatsEnabled
-                    ? 'bg-[#111827] text-white font-semibold border border-[#111827]'
-                    : 'bg-[#F6F9FC] text-[#5B6B79] border border-[#E2E8F0]'
+                    ? 'bg-amber-600 text-white font-black rounded-2xl shadow-sm'
+                    : 'bg-white text-[#0f172a] font-bold border border-[#CBD5E1] rounded-2xl shadow-xs'
                   : burnTheBoatsEnabled
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
-                  : 'liquid-pill-inactive text-zinc-400'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold rounded-full'
+                  : 'liquid-pill-inactive text-zinc-400 rounded-full'
               }`}
             >
-              <Flame size={11} className={burnTheBoatsEnabled ? (isAero ? 'text-amber-300' : 'text-amber-400') : (isAero ? 'text-[#5B6B79]' : 'text-zinc-500')} />
+              <Flame size={12} strokeWidth={2} className={burnTheBoatsEnabled ? (isAero ? 'text-white' : 'text-amber-400') : (isAero ? 'text-[#0f172a]' : 'text-zinc-500')} />
               <span>Burn Boats: {burnTheBoatsEnabled ? 'Active' : 'Off'}</span>
             </button>
           </div>

@@ -23,9 +23,11 @@ import { setNativeTargetFps } from '../plugins/zeroBridge';
 export type { CanonicalThemeId, AccentColorId, InterfaceStyle, ThemeEngineDefinition };
 export { AVAILABLE_THEMES, normalizeThemeId };
 export type GlassEngineType = 'acrylic' | 'eco';
+export type AeroPaletteId = 'ink' | 'azure' | 'emerald';
 
 const STORAGE_KEY_THEME = 'zero_isolated_theme_engine_v5';
 const STORAGE_KEY_ACCENT = 'zero_theme_accent_seed_v5';
+const STORAGE_KEY_AERO_PALETTE = 'zero_aero_palette_v1';
 const STORAGE_KEY_GLOW = 'zero_ambient_glow_intensity_v1';
 const STORAGE_KEY_GLASS_STRENGTH = 'zero_fluent_glass_strength_v1';
 const STORAGE_KEY_GPU_SAFEGUARD = 'zero_gpu_thermal_safeguard_v1';
@@ -146,6 +148,17 @@ function mountIsolatedThemeEngine(
     root.setAttribute('data-interface-style', 'aero');
     root.classList.remove('dark');
     root.classList.add('light');
+    let aeroPal: AeroPaletteId = 'ink';
+    try {
+      const savedPal = window.localStorage.getItem(STORAGE_KEY_AERO_PALETTE);
+      if (savedPal === 'azure' || savedPal === 'emerald' || savedPal === 'ink') aeroPal = savedPal;
+    } catch {}
+    const palColor = aeroPal === 'azure' ? '#0284C7' : aeroPal === 'emerald' ? '#059669' : '#0f172a';
+    root.setAttribute('data-aero-palette', aeroPal);
+    root.style.setProperty('--aero-palette-color', palColor);
+    root.style.setProperty('--aero-ink-primary', palColor);
+    root.style.setProperty('--accent-primary', palColor);
+    root.style.setProperty('--accent-hex', palColor);
   } else {
     root.removeAttribute('data-interface-style');
     root.classList.remove('light');
@@ -222,6 +235,9 @@ export interface InterfaceStyleContextValue {
   isLiquidGlass: boolean;
   isAetherial: boolean;
   isAero: boolean;
+  aeroPalette: AeroPaletteId;
+  setAeroPalette: (palette: AeroPaletteId) => void;
+  aeroAccentColor: string;
   isMinimalist: boolean;
   isBespoke: boolean;
 
@@ -304,6 +320,32 @@ export function InterfaceStyleProvider({
       return 'purple';
     }
   });
+
+  const [aeroPalette, setAeroPaletteState] = useState<AeroPaletteId>(() => {
+    if (typeof window === 'undefined') return 'ink';
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY_AERO_PALETTE);
+      if (saved === 'azure' || saved === 'emerald' || saved === 'ink') return saved;
+    } catch {}
+    return 'ink';
+  });
+
+  const aeroAccentColor = aeroPalette === 'azure' ? '#0284C7' : aeroPalette === 'emerald' ? '#059669' : '#0f172a';
+
+  const setAeroPalette = useCallback((nextPalette: AeroPaletteId) => {
+    setAeroPaletteState(nextPalette);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_AERO_PALETTE, nextPalette);
+    } catch {}
+    const color = nextPalette === 'azure' ? '#0284C7' : nextPalette === 'emerald' ? '#059669' : '#0f172a';
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-aero-palette', nextPalette);
+      document.documentElement.style.setProperty('--aero-palette-color', color);
+      document.documentElement.style.setProperty('--aero-ink-primary', color);
+      document.documentElement.style.setProperty('--accent-primary', color);
+      document.documentElement.style.setProperty('--accent-hex', color);
+    }
+  }, []);
 
   const [fluentOrbIntensity, setFluentOrbIntensityState] = useState<number>(() => {
     if (typeof window === 'undefined') return 0.35;
@@ -606,6 +648,9 @@ export function InterfaceStyleProvider({
       isLiquidGlass: theme === 'fluent' && !isBespokeActive,
       isAetherial: theme === 'aetherial' && !isBespokeActive,
       isAero: theme === 'aero' && !isBespokeActive,
+      aeroPalette,
+      setAeroPalette,
+      aeroAccentColor,
       isMinimalist: isBespokeActive,
       isBespoke: isBespokeActive,
 
@@ -677,6 +722,9 @@ export function InterfaceStyleProvider({
       setGlassEngine,
       targetFps,
       setTargetFps,
+      aeroPalette,
+      setAeroPalette,
+      aeroAccentColor,
     ]
   );
 
