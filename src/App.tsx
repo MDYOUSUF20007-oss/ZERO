@@ -49,6 +49,7 @@ export function App() {
   const [profileModalMode, setProfileModalMode] = useState<'welcome' | 'edit'>('welcome');
   const [showSessionFlexModal, setShowSessionFlexModal] = useState(false);
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(!store.onboardingComplete);
+  const [suppressOnboardingForRestore, setSuppressOnboardingForRestore] = useState(false);
   const [showInteractiveTour, setShowInteractiveTour] = useState(false);
   const [exitToast, setExitToast] = useState(false);
   const [integrityViolation, setIntegrityViolation] = useState<string | null>(null);
@@ -886,7 +887,7 @@ export function App() {
       )}
 
       {/* FTUE Theme-First & Habit Calibration Wizard */}
-      {(showOnboardingWizard || !store.onboardingComplete) && (
+      {((showOnboardingWizard || !store.onboardingComplete) && !suppressOnboardingForRestore) && (
         <OnboardingWizard
           themeConfig={store.themeConfig}
           setThemeConfig={store.setThemeConfig}
@@ -895,8 +896,18 @@ export function App() {
           installedApps={store.installedApps}
           onComplete={handleOnboardingComplete}
           onOpenRestore={() => {
+            setSuppressOnboardingForRestore(true);
             setShowOnboardingWizard(false);
             openInteractiveProfile();
+          }}
+          onRestoreFromCloudPicker={store.restoreBackupFromCloudPicker}
+          onRestoreFromFile={async (content: string) => {
+            const res = store.importData(content);
+            if (res.ok) {
+              setSuppressOnboardingForRestore(false);
+              setShowOnboardingWizard(false);
+            }
+            return res;
           }}
         />
       )}

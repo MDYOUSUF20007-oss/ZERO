@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type {
   HabitCalibrationProfile,
   FrictionLevel,
@@ -35,6 +35,8 @@ interface OnboardingWizardProps {
   installedApps: BagApp[];
   onComplete: (profile: HabitCalibrationProfile, schedules: RecurringSchedule[], bags: OccasionBag[]) => void;
   onOpenRestore: () => void;
+  onRestoreFromCloudPicker?: () => Promise<{ ok: boolean; cancelled?: boolean; message: string }>;
+  onRestoreFromFile?: (content: string) => Promise<{ ok: boolean; message: string }>;
 }
 
 const PRIMARY_GOALS = [
@@ -81,9 +83,50 @@ export function OnboardingWizard({
   installedApps: _installedApps,
   onComplete,
   onOpenRestore,
+  onRestoreFromCloudPicker,
+  onRestoreFromFile,
 }: OnboardingWizardProps) {
   const [step, setStep] = useState<number>(1);
   const totalSteps = 6;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [restoreStatus, setRestoreStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsRestoring(true);
+    setRestoreStatus(null);
+    try {
+      const text = await file.text();
+      if (onRestoreFromFile) {
+        const res = await onRestoreFromFile(text);
+        setRestoreStatus(res);
+      }
+    } catch (err: unknown) {
+      setRestoreStatus({
+        ok: false,
+        message: err instanceof Error ? err.message : 'Failed to read selected file.',
+      });
+    } finally {
+      setIsRestoring(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCloudRestore = async () => {
+    if (!onRestoreFromCloudPicker || isRestoring) return;
+    setIsRestoring(true);
+    setRestoreStatus(null);
+    try {
+      const res = await onRestoreFromCloudPicker();
+      if (!res.cancelled) {
+        setRestoreStatus({ ok: res.ok, message: res.message });
+      }
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   // Calibration survey state
   const [primaryGoal, setPrimaryGoal] = useState<string>(PRIMARY_GOALS[0].title);
@@ -318,23 +361,76 @@ export function OnboardingWizard({
 
               {/* Instant Backup Restore Shortcut */}
               <div
-                className="pt-3"
+                className="pt-3 space-y-2"
                 style={{ borderTop: '1px solid rgba(255, 255, 255, 0.10)' }}
               >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".zbak,.json"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={isRestoring}
+                    onClick={() => {
+                      haptics.tick(900);
+                      fileInputRef.current?.click();
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-2xl liquid-pill text-xs font-semibold text-white flex items-center justify-center gap-1.5 liquid-spring cursor-pointer disabled:opacity-50"
+                    style={{
+                      border: '1px solid rgba(255, 255, 255, 0.20)',
+                      background: 'rgba(56, 189, 248, 0.15)',
+                    }}
+                  >
+                    <Upload size={14} style={{ color: 'var(--accent-primary, #38bdf8)' }} />
+                    <span>{isRestoring ? 'Restoring...' : 'Restore .zbak File'}</span>
+                  </button>
+
+                  {onRestoreFromCloudPicker && (
+                    <button
+                      type="button"
+                      disabled={isRestoring}
+                      onClick={() => {
+                        haptics.tick(900);
+                        handleCloudRestore();
+                      }}
+                      className="flex-1 py-2.5 px-3 rounded-2xl liquid-pill text-xs font-semibold text-sky-100/90 hover:text-white flex items-center justify-center gap-1.5 liquid-spring cursor-pointer disabled:opacity-50"
+                      style={{
+                        border: '1px solid rgba(255, 255, 255, 0.14)',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                      }}
+                    >
+                      <Sparkles size={14} style={{ color: 'var(--accent-primary, #38bdf8)' }} />
+                      <span>Cloud Backup</span>
+                    </button>
+                  )}
+                </div>
+
+                {restoreStatus && (
+                  <div
+                    className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                      restoreStatus.ok
+                        ? 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-200'
+                        : 'bg-red-950/80 border border-red-500/40 text-red-200'
+                    }`}
+                  >
+                    <span>{restoreStatus.message}</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
                     haptics.tick(900);
                     onOpenRestore();
                   }}
-                  className="w-full py-2.5 px-4 rounded-2xl liquid-pill text-xs font-medium text-sky-100/85 hover:text-white flex items-center justify-center gap-2 liquid-spring cursor-pointer"
-                  style={{
-                    border: '1px solid rgba(255, 255, 255, 0.14)',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                  }}
+                  className="w-full text-center text-[11px] text-sky-200/60 hover:text-sky-200 liquid-spring py-1 block"
                 >
-                  <Upload size={14} style={{ color: 'var(--accent-primary, #38bdf8)' }} />
-                  Already have a backup? Restore File or Cloud Backup
+                  Need manual restore or settings? Open Profile &amp; Storage
                 </button>
               </div>
             </div>

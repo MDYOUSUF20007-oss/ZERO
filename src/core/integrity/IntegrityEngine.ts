@@ -420,10 +420,21 @@ export function decodeAndVerifyZbak(
       parsed.hasClaimedFirstDonationParachute || (hasSupporterBadge && bonus >= 2)
     );
 
-    const maxBonusLimit = isDeveloper ? 500 : MAX_BONUS_PARACHUTES;
+    const isSupporterOrDev = isDeveloper || hasSupporterBadge || Boolean(parsed.isZeroSupporter);
+
+    // Max bonus allowed:
+    // Developer sandbox: up to 500
+    // Supporter / Founder / Donor: up to 5 tickets (1 starter + 1 tip + up to 3 founder/promotional perks)
+    // Regular user: up to 3 tickets (1 starter + promotional)
+    const maxBonusLimit = isDeveloper
+      ? 500
+      : (hasSupporterBadge || Boolean(parsed.isZeroSupporter))
+      ? 5
+      : 3;
+
     const maxGiftAllowed = isDeveloper
       ? 500
-      : (claimedFirstTime ? 1 : 0) + (claimedFirstDonation ? 1 : 0);
+      : (claimedFirstTime ? 1 : 0) + (claimedFirstDonation ? 1 : 0) + 1; // +1 grace allowance for founder/promotional perk
 
     if (bonus > maxBonusLimit || bonus > maxGiftAllowed + 0.001) {
       return {
@@ -444,7 +455,7 @@ export function decodeAndVerifyZbak(
       typeof parsed.remainingEscapeTickets === 'number' &&
       parsed.remainingEscapeTickets !== expectedRemaining35h &&
       parsed.remainingEscapeTickets !== expectedRemaining20h &&
-      !isDeveloper
+      !isSupporterOrDev
     ) {
       return {
         ok: false,
@@ -933,10 +944,9 @@ function sanitizeStoredState(raw: Partial<ProtectedIntegrityState>): ProtectedIn
       localStorage.getItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE) === '1');
   const claimedFirstTime = Boolean(raw.hasClaimedFirstTimeParachute);
   const claimedFirstDonation = Boolean(raw.hasClaimedFirstDonationParachute);
-  const maxAllowedBonus = isDeveloper
-    ? 500
-    : (claimedFirstTime ? 1 : 0) + (claimedFirstDonation ? 1 : 0);
-  const maxBonusCeiling = isDeveloper ? 500 : MAX_BONUS_PARACHUTES;
+  const isSupporterOrDev = isDeveloper || claimedFirstDonation || Boolean(raw.isZeroSupporter);
+  const maxAllowedBonus = isSupporterOrDev ? 500 : 10;
+  const maxBonusCeiling = isSupporterOrDev ? 500 : 10;
   const rawBonus = Math.max(0, Math.floor(Number(raw.bonusParachutes) || 0));
 
   return {
@@ -1874,7 +1884,8 @@ function applyVerifiedRestore(input: RestoreInputPayload, persist = true): Verif
       (typeof localStorage !== 'undefined' &&
         localStorage.getItem(PROTECTED_STORAGE_KEYS.DEVELOPER_MODE) === '1')
     );
-    const maxBonusCeiling = isDeveloper ? 500 : MAX_BONUS_PARACHUTES;
+    const isSupporterOrDev = isDeveloper || nextClaimedFirstDonation || Boolean(parsed.isZeroSupporter);
+    const maxBonusCeiling = isSupporterOrDev ? 500 : 10;
     const nextBonus = Math.min(maxBonusCeiling, Math.max(minBonusFromFlags, rawBonus));
 
     const nextSessions = parsed.sessions.slice(0, 5000);
