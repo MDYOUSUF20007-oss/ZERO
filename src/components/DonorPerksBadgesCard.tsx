@@ -158,7 +158,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
         <>
           {/* Header & Live Donor Status */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2.5 text-xs text-white font-semibold uppercase tracking-wider">
+            <div className={`flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider ${isAero ? 'text-[#0f172a]' : 'text-white'}`}>
               <div
                 className={
                   isFluentGlass
@@ -261,7 +261,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-neutral-400">Escape Tickets Balance:</span>
-              <span className="text-white font-mono tabular-nums font-semibold">
+              <span className={`${isAero ? 'text-[#0f172a]' : 'text-white'} font-mono tabular-nums font-semibold`}>
                 {remainingEscapeTickets} Ready
               </span>
             </div>
@@ -363,7 +363,9 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                         ? 'py-2.5 px-3 rounded-xl liquid-pill font-medium text-xs uppercase tracking-wide'
                         : isBespoke
                         ? 'py-2.5 px-3 rounded-md bg-black border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-medium text-xs uppercase tracking-wide transition-colors duration-75'
-                        : 'py-2 px-3 rounded-xl obsidian-inset hover:border-white/30 text-white font-bold text-[10px] uppercase tracking-wider'
+                        : `py-2 px-3 rounded-xl obsidian-inset hover:border-slate-300 font-bold text-[10px] uppercase tracking-wider ${
+                            isAero ? 'text-[#0f172a]' : 'text-white hover:border-white/30'
+                          }`
                     }
                   >
                     Tipped ₹{FIRST_DONATION_BONUS_INR}+ Already?
@@ -480,7 +482,9 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   restoreDisabled ? 'Paste ZDON1... unlock token' : 'Paste ZDON1... or ZBAK1... token'
                 }
                 className={
-                  isFluentGlass
+                  isAero
+                    ? 'flex-1 min-w-0 obsidian-input rounded-xl px-3 py-2 text-xs text-[#0f172a] outline-none placeholder:text-slate-400'
+                    : isFluentGlass
                     ? 'flex-1 min-w-0 obsidian-input rounded-xl px-3 py-2 text-xs text-white outline-none'
                     : isBespoke
                     ? 'flex-1 min-w-0 obsidian-input focus:border-blue-500 rounded-md px-3 py-2 text-xs font-mono text-white outline-none'

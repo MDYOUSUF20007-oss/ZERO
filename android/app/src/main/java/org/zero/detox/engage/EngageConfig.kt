@@ -213,6 +213,9 @@ class EngageConfigStore(private val context: Context) {
         val bagStore = BagStore(context)
         val extraCompulsory = HashSet<String>()
         extraCompulsory.addAll(bagStore.getAllowedDialerPackages())
+        extraCompulsory.addAll(bagStore.getAllowedPaymentPackages())
+        extraCompulsory.addAll(BagStore.COMPULSORY_AI_ASSISTANT_PACKAGES)
+        extraCompulsory.addAll(BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES)
         val parsedInitial = EngageConfig.parseSessionPayload(rawJson, context.packageName) ?: return null
         if (parsedInitial.allowSms || bagStore.isSmsAllowed()) {
             extraCompulsory.addAll(bagStore.getAllowedSmsPackages())

@@ -1556,6 +1556,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
             {effectiveTicketCount > 0 && (
               <EscapeTicketDockButton
                 ticketCount={effectiveTicketCount}
+                isAero={isAero}
                 onOpen={() => {
                   if (activeLock.burnTheBoats) {
                     haptics.thud();
@@ -1704,6 +1705,7 @@ export const TheVoidView: React.FC<TheVoidViewProps> = ({
       <EscapeTicketModal
         isOpen={showEscapeTicketModal}
         ticketCount={effectiveTicketCount}
+        isAero={isAero}
         onClose={() => setShowEscapeTicketModal(false)}
         onEscapeConfirmed={() => {
           setShowEscapeTicketModal(false);

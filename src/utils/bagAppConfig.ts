@@ -38,6 +38,46 @@ export const COMPULSORY_AI_ASSISTANT_PACKAGES: readonly string[] = [
   'com.deepseek.chat',
 ];
 
+// Samsung Customization, Good Lock, System Gestures & Lockscreen Utilities
+// Always whitelisted during lock sessions in background without cluttering Bag selection
+export const SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES: readonly string[] = [
+  // Samsung One Hand Operation + & Edge Gestures
+  'com.samsung.android.sidegesturepad',
+  'com.samsung.android.app.cocktailbarservice',
+  // Samsung Good Lock Suite & Lock Screen Customization
+  'com.samsung.android.goodlock',
+  'com.samsung.android.lockstar',
+  'com.samsung.android.clockpack',
+  'com.samsung.android.dynamiclock',
+  'com.samsung.android.app.aodservice',
+  'com.samsung.android.wallpaper.res',
+  'com.samsung.android.themedesigner',
+  'com.samsung.android.soundassistant',
+  'com.samsung.android.keyscafe',
+  'com.samsung.android.wonderland',
+  'com.samsung.android.navstar',
+  'com.samsung.android.pentastic',
+  'com.samsung.android.quickstar',
+  'com.samsung.android.homeup',
+  'com.samsung.android.rubin.app',
+  'com.samsung.android.honeyboard',
+  'com.samsung.android.biometrics.app.setting',
+  'com.samsung.android.app.routines',
+  'com.samsung.android.app.modes',
+  // Android Keyguard, System UI & Customization
+  'com.android.keyguard',
+  'com.android.systemui',
+  'com.google.android.systemui',
+  'com.miui.systemui',
+  'com.coloros.systemui',
+  'com.oplus.systemui',
+  'com.google.android.apps.wallpaper',
+  'com.android.wallpaper.livepicker',
+  'com.oneplus.gesture',
+  'com.miui.gesture',
+  'com.oppo.gesture',
+];
+
 export const PROTECTED_SYSTEM_PACKAGES: readonly string[] = [
   'com.android.settings',
   'com.android.packageinstaller',
@@ -48,6 +88,7 @@ export const PROTECTED_SYSTEM_PACKAGES: readonly string[] = [
 const PROTECTED_SYSTEM_SET = new Set(PROTECTED_SYSTEM_PACKAGES);
 const COMPULSORY_DIALER_SET = new Set(COMPULSORY_DIALER_PACKAGES);
 const COMPULSORY_AI_ASSISTANT_SET = new Set(COMPULSORY_AI_ASSISTANT_PACKAGES);
+const SYSTEM_CUSTOMIZATION_GESTURE_SET = new Set(SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES);
 
 function clampNonNegativeInt(raw: unknown, maxVal = 86_400 * 7): number {
   const num = Number(raw);
@@ -58,6 +99,12 @@ function clampNonNegativeInt(raw: unknown, maxVal = 86_400 * 7): number {
 export function isProtectedSystemPackage(packageName?: string | null): boolean {
   if (!packageName) return false;
   return PROTECTED_SYSTEM_SET.has(packageName.trim());
+}
+
+export function isSystemCustomizationPackage(appOrPkg: BagApp | string | null | undefined): boolean {
+  if (!appOrPkg) return false;
+  const pkg = typeof appOrPkg === 'string' ? appOrPkg.trim() : appOrPkg.packageName.trim();
+  return SYSTEM_CUSTOMIZATION_GESTURE_SET.has(pkg);
 }
 
 export function isCompulsoryDialerPackage(appOrPkg: BagApp | string | null | undefined): boolean {
@@ -251,6 +298,11 @@ export function buildEngageSessionPayload(input: {
         compulsorySet.add(clean);
       }
     }
+  }
+
+  // System customization, lockscreen widgets, and edge gestures are always compulsory
+  for (const pkg of SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES) {
+    compulsorySet.add(pkg);
   }
 
   const appConfigs: Record<string, AppLockRuleConfig> = {};

@@ -151,10 +151,13 @@ class EngageRuntimeEngine(
             return TickDecision(TickAction.NONE, foregroundPkg)
         }
 
-        // Ignore SystemUI and Launchers in session timer evaluation so notifications,
-        // volume panels, or brief Home transitions never corrupt controlled session timers
-        // or falsely reset friction state.
-        if (foregroundPkg == "com.android.systemui" || launcherPackages.contains(foregroundPkg)) {
+        // Ignore SystemUI, Launchers, and System Customization / Gestures (One Hand Operation +, AOD, Good Lock)
+        // so notifications, lockscreen clocks, edge gestures, or brief Home transitions never corrupt timers
+        // or falsely trigger blocking overlays.
+        if (foregroundPkg == "com.android.systemui" ||
+            launcherPackages.contains(foregroundPkg) ||
+            org.zero.detox.data.BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(foregroundPkg)
+        ) {
             return TickDecision(TickAction.NONE, foregroundPkg)
         }
 

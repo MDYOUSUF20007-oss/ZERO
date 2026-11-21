@@ -346,7 +346,10 @@ class ZeroAccessibilityService : AccessibilityService() {
 
         if (eventPkg.isNotBlank()) {
             refreshPackageCachesIfNeeded(nowElapsed)
-            if (!cachedImePackages.contains(eventPkg) && eventPkg != "com.android.systemui") {
+            if (!cachedImePackages.contains(eventPkg) &&
+                eventPkg != "com.android.systemui" &&
+                !BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(eventPkg)
+            ) {
                 youTubeGuard.onPackageChanged(eventPkg)
             }
         }
@@ -445,8 +448,12 @@ class ZeroAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 4. Dialers and Payment/Wallet apps (Samsung Wallet, Navi, Paytm, PhonePe, GPay, etc.): always permitted without blocking overlays
-        if (cachedDialerPackages.contains(eventPkg) || cachedPaymentPackages.contains(eventPkg)) {
+        // 4. Dialers, Payment/Wallet apps, System Customization / Gestures (One Hand Operation +, AOD, Good Lock) and AI Assistants: always permitted without blocking overlays
+        if (cachedDialerPackages.contains(eventPkg) ||
+            cachedPaymentPackages.contains(eventPkg) ||
+            BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(eventPkg) ||
+            BagStore.COMPULSORY_AI_ASSISTANT_PACKAGES.contains(eventPkg)
+        ) {
             overlayController.hideBlockingOverlay()
             overlayController.hideNudgeBanner()
             return
@@ -666,7 +673,8 @@ class ZeroAccessibilityService : AccessibilityService() {
                     }
                     if (pkg.isNullOrBlank() ||
                         pkg == "com.android.systemui" ||
-                        cachedImePackages.contains(pkg)
+                        cachedImePackages.contains(pkg) ||
+                        BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(pkg)
                     ) {
                         continue
                     }

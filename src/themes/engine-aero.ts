@@ -178,9 +178,65 @@ export const aeroEngine: ThemeEngineDefinition = {
       font-weight: 700 !important;
     }
 
+    /* Aero Insets, Rows, and Inputs High-Contrast Glass Rules */
+    html[data-interface-style="aero"] .obsidian-inset,
+    html[data-interface-style="aero"] .liquid-inset {
+      background-color: #FFFFFF !important;
+      border: 1px solid #E2E8F0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    html[data-interface-style="aero"] .obsidian-inset-neutral,
+    html[data-interface-style="aero"] .liquid-row {
+      background-color: #FFFFFF !important;
+      border: 1px solid #E2E8F0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    html[data-interface-style="aero"] .obsidian-input {
+      background-color: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0f172a !important;
+    }
+
+    html[data-interface-style="aero"] .obsidian-input::placeholder {
+      color: #94A3B8 !important;
+    }
+
+    html[data-interface-style="aero"] .obsidian-pill-active,
+    html[data-interface-style="aero"] .theme-pill-active {
+      background-color: var(--aero-palette-color, #0f172a) !important;
+      color: #FFFFFF !important;
+      border: 1px solid var(--aero-palette-color, #0f172a) !important;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16) !important;
+    }
+
+    html[data-interface-style="aero"] .obsidian-pill-inactive,
+    html[data-interface-style="aero"] .theme-pill {
+      background-color: #FFFFFF !important;
+      color: #334155 !important;
+      border: 1px solid #CBD5E1 !important;
+      font-weight: 600 !important;
+    }
+
+    /* Aero Global Contrast Boost for Text Inside Light Cards */
+    html[data-interface-style="aero"] .text-zinc-400,
+    html[data-interface-style="aero"] .text-neutral-400,
+    html[data-interface-style="aero"] .text-zinc-500,
+    html[data-interface-style="aero"] .text-neutral-500 {
+      color: #475569 !important;
+    }
+
+    html[data-interface-style="aero"] .text-zinc-300,
+    html[data-interface-style="aero"] .text-neutral-300 {
+      color: #334155 !important;
+    }
+
     /* Aero Dock Ticket Preview & Badge */
     html[data-interface-style="aero"] .zn-dock-ticket-svg {
-      filter: drop-shadow(0 8px 24px rgba(15, 23, 42, 0.10)) drop-shadow(0 1px 3px rgba(15, 23, 42, 0.06)) !important;
+      filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.08)) drop-shadow(0 1px 3px rgba(15, 23, 42, 0.05)) !important;
     }
 
     html[data-interface-style="aero"] .zn-dock-ticket-badge {

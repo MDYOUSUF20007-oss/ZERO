@@ -43,14 +43,14 @@ html[data-engine="<name>"] {
 
 A new theme is **not** a simple color palette change. To make the app look genuinely and unmistakably different, every new theme must redefine all **6 visual dimensions**:
 
-| Dimension | Fluent Glass (Current Default) | Bespoke / E-Ink Example | Cyberpunk / Neon Example |
+| Dimension | Fluent Glass | Aero UI | Aetherial Focus |
 | :--- | :--- | :--- | :--- |
-| **1. Surface & Depth** | Frosted Acrylic (`rgba(16,24,38,0.65)`), 28px blur | Pure AMOLED `#000000`, 0px blur, flat surfaces | Heavy dark matte, carbon fiber scanlines |
-| **2. Corner Radii** | Squircles (`20px` card, `12px` pill) | Sharp mechanical (`4px` or `0px`) | Hexagonal chamfers or sharp angled corners |
-| **3. Typography** | Proportional Segoe UI Variable, tabular metrics | Tabular Monospace (JetBrains Mono / Inter) | Sci-Fi / High-contrast display headers |
-| **4. Borders & Specular** | Specular top edge (`border-t: rgba(255,255,255,0.28)`) | Crisp hairline (`1px solid #262626`), no highlights | Dual-tone neon stroke (`1px solid var(--accent)`) |
-| **5. Lighting & Orbs** | Sub-surface drifting colored ambient orbs | Pitch void (all ambient glow orbs hidden) | High-contrast laser grid top lighting |
-| **6. Motion & Spring** | Fluid spring (`cubic-bezier(0.16, 1, 0.3, 1)`) | Instant mechanical snaps (`0ms` / `duration-75`) | Staccato kinetic transforms |
+| **1. Surface & Depth** | Frosted Acrylic (`rgba(16,24,38,0.65)`), 28px blur | Two-Zone: Sky canvas (`#DAEAF3`) + Pure White sheet (`#FFFFFF`) | Celestial Obsidian (`#11131b`), 0px blur |
+| **2. Corner Radii** | Squircles (`20px` card, `12px` pill) | Squircle Capsules (`rounded-2xl`, `rounded-[22px]`, `rounded-t-[30px]`) | Sharp geometric rings & 16px arcs |
+| **3. Typography** | Proportional Segoe UI Variable, tabular metrics | High-contrast Matte Black ink (`#0f172a`), bold tracking | Plus Jakarta Sans & Inter |
+| **4. Borders & Specular** | Specular top edge (`border-t: rgba(255,255,255,0.28)`) | Clean silver hairline (`1px solid #CBD5E1` / `#E2E8F0`) | Atmospheric field glow strokes (`#38bdf8`) |
+| **5. Lighting & Orbs** | Sub-surface drifting colored ambient orbs | Sunlit cloud radial highlights (no dark GPU drift) | Deep celestial ambient field aura |
+| **6. Motion & Spring** | Fluid spring (`cubic-bezier(0.16, 1, 0.3, 1)`) | Soft micro-press scale (`0.98`) & instant palette tinting | Smooth radial transitions |
 
 ---
 

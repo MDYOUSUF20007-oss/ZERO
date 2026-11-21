@@ -265,6 +265,7 @@ class LockForegroundService : Service() {
                     !pkg.isNullOrBlank() &&
                     !cachedImePackages.contains(pkg) &&
                     pkg != "com.android.systemui" &&
+                    !BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(pkg) &&
                     event.timeStamp >= latestTime
                 ) {
                     latestTime = event.timeStamp

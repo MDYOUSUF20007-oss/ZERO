@@ -460,7 +460,11 @@ class ZeroNativeBridge(
 
         for (ri in resolveList) {
             val pkg = ri.activityInfo?.packageName ?: continue
-            if (pkg == activity.packageName || pkg == "com.android.settings") continue
+            if (pkg == activity.packageName ||
+                pkg == "com.android.settings" ||
+                BagStore.SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(pkg) ||
+                BagStore.COMPULSORY_AI_ASSISTANT_PACKAGES.contains(pkg)
+            ) continue
             if (!seen.add(pkg)) continue
             val label = ri.loadLabel(pm)?.toString()?.trim().takeUnless { it.isNullOrBlank() } ?: pkg
             val category = when {

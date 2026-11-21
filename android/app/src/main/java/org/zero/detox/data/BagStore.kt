@@ -132,6 +132,46 @@ class BagStore(private val context: Context) {
             "com.deepseek.chat"
         )
 
+        // Samsung Customization, Good Lock, System Gestures & Lockscreen Utilities
+        // These are always whitelisted in the background without cluttering the bag UI
+        val SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES = setOf(
+            // Samsung One Hand Operation + & Edge Gestures
+            "com.samsung.android.sidegesturepad",
+            "com.samsung.android.app.cocktailbarservice",
+            // Samsung Good Lock Suite & Lock Screen Customization
+            "com.samsung.android.goodlock",
+            "com.samsung.android.lockstar",
+            "com.samsung.android.clockpack",
+            "com.samsung.android.dynamiclock",
+            "com.samsung.android.app.aodservice",
+            "com.samsung.android.wallpaper.res",
+            "com.samsung.android.themedesigner",
+            "com.samsung.android.soundassistant",
+            "com.samsung.android.keyscafe",
+            "com.samsung.android.wonderland",
+            "com.samsung.android.navstar",
+            "com.samsung.android.pentastic",
+            "com.samsung.android.quickstar",
+            "com.samsung.android.homeup",
+            "com.samsung.android.rubin.app",
+            "com.samsung.android.honeyboard",
+            "com.samsung.android.biometrics.app.setting",
+            "com.samsung.android.app.routines",
+            "com.samsung.android.app.modes",
+            // Android Keyguard, System UI & Customization
+            "com.android.keyguard",
+            "com.android.systemui",
+            "com.google.android.systemui",
+            "com.miui.systemui",
+            "com.coloros.systemui",
+            "com.oplus.systemui",
+            "com.google.android.apps.wallpaper",
+            "com.android.wallpaper.livepicker",
+            "com.oneplus.gesture",
+            "com.miui.gesture",
+            "com.oppo.gesture"
+        )
+
         val PROTECTED_SYSTEM_PACKAGES = setOf(
             "com.android.settings",
             "com.android.packageinstaller",
@@ -379,6 +419,10 @@ class BagStore(private val context: Context) {
 
         // AI & System Assistants are compulsory and always permitted during locks
         if (COMPULSORY_AI_ASSISTANT_PACKAGES.contains(pkg)) return true
+
+        // System customization, lockscreen widgets & gesture utilities (Samsung One Hand Operation +, Good Lock, AOD)
+        // are always permitted in background and never blocked or popped over
+        if (SYSTEM_CUSTOMIZATION_GESTURE_PACKAGES.contains(pkg)) return true
 
         // Toggleable Verified Compulsory Study / Online Class Apps (max 2 lean slots)
         if (getCompulsoryStudyPackages().contains(pkg)) return true

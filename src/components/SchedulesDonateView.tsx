@@ -3219,17 +3219,19 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
             headerContent={
               <>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 text-white font-semibold text-sm">
+                  <div className={`flex items-center gap-2.5 font-semibold text-sm ${isAero ? 'text-[#0f172a]' : 'text-white'}`}>
                     <div
                       className={
-                        isFluentGlass
+                        isAero
+                          ? 'w-9 h-9 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0 shadow-xs'
+                          : isFluentGlass
                           ? 'liquid-squircle text-rose-300'
                           : `w-8 h-8 obsidian-icon-box flex items-center justify-center shrink-0 ${
                               isBespoke ? 'rounded-md' : 'rounded-xl'
                             }`
                       }
                     >
-                      <Heart size={15} strokeWidth={1.75} className="text-red-400 fill-red-400" />
+                      <Heart size={15} strokeWidth={1.75} className="text-red-500 fill-red-500" />
                     </div>
                     <span>THE ZERO-NOISE PROMISE</span>
                   </div>
@@ -3240,22 +3242,26 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       haptics.tick(900);
                       setShowCreditsModal(true);
                     }}
-                    className="px-3 py-1 text-xs font-bold rounded-lg bg-white text-black hover:bg-zinc-200 transition-colors shadow-sm flex items-center gap-1.5 shrink-0"
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 shrink-0 ${
+                      isAero
+                        ? 'bg-[#F1F5F9] border border-[#CBD5E1] text-[#0f172a] hover:bg-[#E2E8F0]'
+                        : 'bg-white text-black hover:bg-zinc-200'
+                    }`}
                   >
                     <Users size={12} />
                     <span>Credits</span>
                   </button>
                 </div>
-                <p className="text-xs text-zinc-300 leading-relaxed">
+                <p className={`text-xs leading-relaxed ${isAero ? 'text-[#334155]' : 'text-zinc-300'}`}>
                   Zero-Noise is 100% free, libre, and open-source software (FOSS). There are no paywalls,
                   no subscriptions, no analytics trackers, and no advertisements.
                 </p>
-                <p className="text-xs text-zinc-400 leading-relaxed">
+                <p className={`text-xs leading-relaxed ${isAero ? 'text-[#475569]' : 'text-zinc-400'}`}>
                   We believe your attention belongs to you—not to algorithms or paywalled apps.
                   Emergency Escape Tickets can never be purchased outright; earn 1 every 35 focus
                   hours, plus one-time free gifts (+1 starter on first profile, and strictly on your
                   1st tip of minimum ₹<span className="font-mono tabular-nums">{FIRST_DONATION_BONUS_INR}</span>: +1 thank-you ticket &amp; Golden{' '}
-                  <strong className="text-white">ZERO-SUPPORTER</strong> badge).
+                  <strong className={isAero ? 'text-[#0f172a]' : 'text-white'}>ZERO-SUPPORTER</strong> badge).
                 </p>
               </>
             }
@@ -3267,9 +3273,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   rel="noreferrer"
                   onClick={(e) => handleOpenExternal(e, RELEASES_URL)}
                   className={`hover:underline flex items-center gap-1 font-semibold ${
-                    isBespoke ? 'text-blue-400' : 'font-bold'
+                    isAero ? 'text-[#0f172a] font-bold' : isBespoke ? 'text-blue-400' : 'font-bold'
                   }`}
-                  style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                  style={isAero || isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                 >
                   <span>Check Updates</span>
                   <ExternalLink size={12} />
@@ -3279,7 +3285,9 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => handleOpenExternal(e, SOURCE_URL)}
-                  className="text-white hover:underline flex items-center gap-1 font-semibold"
+                  className={`hover:underline flex items-center gap-1 font-semibold ${
+                    isAero ? 'text-[#0f172a] font-bold' : 'text-white'
+                  }`}
                 >
                   <Code2 size={13} />
                   <span>Source Code</span>
@@ -3291,8 +3299,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
           {/* Donation Channels */}
           <div className={isBespoke ? 'space-y-4' : 'space-y-3'}>
             <span
-              className={`text-xs uppercase tracking-wider text-zinc-400 font-bold block ${
-                isBespoke ? 'font-sans' : 'font-mono'
+              className={`text-xs uppercase tracking-wider font-bold block ${
+                isAero ? 'text-[#0f172a]' : isBespoke ? 'font-sans text-zinc-400' : 'font-mono text-zinc-400'
               }`}
             >
               Support the Project
@@ -3303,15 +3311,17 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               ambientGlow={!isBespoke}
               className={isBespoke ? 'font-sans' : 'font-mono'}
               headerClassName={isBespoke ? 'p-5 space-y-3.5' : 'p-4 space-y-3'}
-              footerClassName={`px-5 py-2.5 text-[11px] leading-relaxed flex items-center justify-between gap-2 flex-wrap text-zinc-400 ${
-                isBespoke ? '' : 'px-4 text-[10px]'
-              }`}
+              footerClassName={`px-5 py-2.5 text-[11px] leading-relaxed flex items-center justify-between gap-2 flex-wrap ${
+                isAero ? 'text-[#475569]' : 'text-zinc-400'
+              } ${isBespoke ? '' : 'px-4 text-[10px]'}`}
               headerContent={
                 <>
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span
-                      className={`px-2 py-0.5 text-[10px] uppercase tracking-wider ${
-                        isBespoke
+                      className={`px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${
+                        isAero
+                          ? 'bg-[#0f172a] text-white rounded-md font-bold shadow-xs'
+                          : isBespoke
                           ? 'rounded-sm obsidian-pill-active font-semibold'
                           : 'rounded-md obsidian-pill-active font-black'
                       }`}
@@ -3319,10 +3329,14 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       Best Offer • Best Option
                     </span>
                     <span
-                      className={`px-2 py-0.5 obsidian-inset text-[10px] font-semibold ${
-                        isBespoke ? 'rounded-sm text-blue-400' : 'rounded-md font-bold'
+                      className={`px-2.5 py-0.5 text-[10px] font-semibold ${
+                        isAero
+                          ? 'bg-white border border-[#CBD5E1] text-[#0f172a] rounded-md font-bold shadow-xs'
+                          : isBespoke
+                          ? 'rounded-sm text-blue-400 obsidian-inset'
+                          : 'rounded-md font-bold obsidian-inset'
                       }`}
-                      style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                      style={isAero || isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                     >
                       NO MINIMUM LIMIT
                     </span>
@@ -3332,23 +3346,25 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={
-                          isFluentGlass
+                          isAero
+                            ? 'w-10 h-10 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs'
+                            : isFluentGlass
                             ? 'liquid-squircle font-bold text-xs text-cyan-200'
                             : `w-9 h-9 obsidian-icon-box flex items-center justify-center font-bold text-xs shrink-0 ${
                                 isBespoke ? 'rounded-md font-mono text-blue-400' : 'rounded-xl text-white'
                               }`
                         }
-                        style={isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                        style={isAero || isModernFont ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                       >
                         UPI
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-xs text-white">UPI / Instant Pay</div>
+                        <div className={`font-semibold text-xs ${isAero ? 'text-[#0f172a] font-bold' : 'text-white'}`}>UPI / Instant Pay</div>
                         <div
                           className={`text-[11px] truncate font-mono ${
-                            isBespoke ? 'text-zinc-300' : ''
+                            isAero ? 'text-[#0f172a] font-bold' : isBespoke ? 'text-zinc-300' : ''
                           }`}
-                          style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                          style={isAero || isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                         >
                           {UPI_ID}
                         </div>
@@ -3358,11 +3374,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowUPIQR(!showUPIQR)}
-                        className={`p-1.5 ${
-                          isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg transition-colors'
-                        } ${
+                        className={`p-2 rounded-xl transition-all ${
                           showUPIQR
-                            ? 'obsidian-pill-active font-bold'
+                            ? 'bg-[#0f172a] text-white font-bold shadow-xs'
+                            : isAero
+                            ? 'bg-[#F1F5F9] border border-[#CBD5E1] text-[#0f172a] hover:bg-[#E2E8F0] shadow-xs'
                             : 'obsidian-inset-neutral text-zinc-300 hover:text-white'
                         }`}
                         title="Toggle QR Code"
@@ -3373,8 +3389,10 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopy(UPI_ID, 'upi')}
-                        className={`p-1.5 obsidian-inset-neutral text-zinc-300 hover:text-white ${
-                          isBespoke ? 'rounded-md transition-colors duration-75' : 'rounded-lg'
+                        className={`p-2 rounded-xl transition-all ${
+                          isAero
+                            ? 'bg-[#F1F5F9] border border-[#CBD5E1] text-[#0f172a] hover:bg-[#E2E8F0] shadow-xs'
+                            : 'obsidian-inset-neutral text-zinc-300 hover:text-white'
                         }`}
                         title="Copy UPI ID"
                         aria-label="Copy UPI ID"
@@ -3382,8 +3400,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         {copiedId === 'upi' ? (
                           <Check
                             size={14}
-                            className={isBespoke ? 'text-blue-400' : ''}
-                            style={isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
+                            className={isAero ? 'text-[#0f172a]' : isBespoke ? 'text-blue-400' : ''}
+                            style={isAero || isBespoke ? undefined : { color: 'var(--accent-hex, #FFFFFF)' }}
                           />
                         ) : (
                           <Copy size={14} />
@@ -3619,11 +3637,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                       />
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-xs text-white">Buy Me a Coffee (Ko-fi)</div>
-                      <div className="text-[11px] text-zinc-400 font-mono truncate">ko-fi.com/mdyousuf2620</div>
+                      <div className={`font-semibold text-xs ${isAero ? 'text-[#0f172a]' : 'text-white'}`}>Buy Me a Coffee (Ko-fi)</div>
+                      <div className={`text-[11px] font-mono truncate ${isAero ? 'text-[#475569]' : 'text-zinc-400'}`}>ko-fi.com/mdyousuf2620</div>
                     </div>
                   </div>
-                  <ExternalLink size={14} className="text-zinc-400 group-hover:text-white shrink-0 ml-2" />
+                  <ExternalLink size={14} className={`${isAero ? 'text-[#0f172a]' : 'text-zinc-400 group-hover:text-white'} shrink-0 ml-2`} />
                 </a>
               }
               footerContent={
