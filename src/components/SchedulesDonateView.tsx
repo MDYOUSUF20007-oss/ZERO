@@ -690,7 +690,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
               })}
             </div>
 
-            {/* 2 Choosable Accent Colors Directly Underneath Interface Style */}
+            {/* 2 Choosable Accent Colors — hidden in Aero UI (palette replaces it) */}
+            {!isAero && (
             <div className="pt-3 border-t theme-border space-y-2.5">
               <label className="text-[11px] font-semibold theme-text-primary block">
                 Accent Color
@@ -736,7 +737,55 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 })}
               </div>
             </div>
+            )}
 
+            {/* Aero UI Palette Selector — only shown when Aero UI is active */}
+            {isAero && (
+            <div className="pt-3 border-t space-y-2.5" style={{ borderColor: '#E2E8F0' }}>
+              <label className="text-[11px] font-semibold text-[#111827] block">Aero Palette</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'ink', name: 'Ink', preview: '#111827' },
+                  { id: 'azure', name: 'Azure', preview: '#0284C7' },
+                  { id: 'emerald', name: 'Emerald', preview: '#059669' },
+                ].map((palette) => {
+                  const aeroPalette = (() => {
+                    try { return localStorage.getItem('zero_aero_palette_v1') || 'ink'; } catch { return 'ink'; }
+                  })();
+                  const isSelected = aeroPalette === palette.id;
+                  return (
+                    <button
+                      key={palette.id}
+                      type="button"
+                      onClick={() => {
+                        haptics.tick(900);
+                        try { localStorage.setItem('zero_aero_palette_v1', palette.id); } catch {}
+                        const ink = palette.id === 'ink' ? '#111827' : palette.preview;
+                        document.documentElement.style.setProperty('--aero-ink-primary', ink);
+                        document.documentElement.style.setProperty('--accent-primary', ink);
+                        document.documentElement.style.setProperty('--accent-hex', ink);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#111827] border-[#111827]'
+                          : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1]'
+                      }`}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full shrink-0"
+                        style={{ backgroundColor: palette.preview }}
+                      />
+                      <span className={`text-xs font-medium truncate ${isSelected ? 'text-white' : 'text-[#374151]'}`}>{palette.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            )}
+
+            {/* Glass controls — hidden in Aero UI (no glass engine needed) */}
+            {!isAero && (
+            <>
             {/* Ambient Glow Intensity Slider */}
             <div className="pt-3 border-t theme-border space-y-2.5">
               <div className="flex items-center justify-between">
@@ -1098,6 +1147,8 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                 </button>
               </div>
             </div>
+            </>
+            )}
 
             {/* Display Refresh Rate & Target FPS (24, 30, 60, 90, 120 FPS / Native) */}
             <div className="pt-3 border-t theme-border space-y-2.5">
@@ -1240,20 +1291,27 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                         className={`p-3 text-left rounded-xl border transition-all cursor-pointer ${
                           isModActive
                             ? 'theme-pill-active font-semibold shadow-lg'
+                            : isAero
+                            ? 'border-[#E2E8F0] bg-[#F6F9FC] hover:border-[#CBD5E1] hover:bg-[#EEF3F8]'
                             : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
                         }`}
                         style={
                           isModActive
-                            ? {
-                                borderColor: 'var(--accent-border, var(--accent-primary))',
-                                backgroundColor: 'var(--accent-soft)',
-                                boxShadow: '0 0 16px var(--liquid-accent-soft-glow)',
-                              }
+                            ? isAero
+                              ? {
+                                  borderColor: '#CBD5E1',
+                                  backgroundColor: '#F1F5F9',
+                                }
+                              : {
+                                  borderColor: 'var(--accent-border, var(--accent-primary))',
+                                  backgroundColor: 'var(--accent-soft)',
+                                  boxShadow: '0 0 16px var(--liquid-accent-soft-glow)',
+                                }
                             : undefined
                         }
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-xs text-white truncate">{mod.name}</span>
+                          <span className={`font-semibold text-xs truncate ${isAero ? 'text-[#111827]' : 'text-white'}`}>{mod.name}</span>
                           {isModActive && (
                             <Check
                               size={13}
@@ -1262,12 +1320,12 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                             />
                           )}
                         </div>
-                        <p className="text-[10px] text-zinc-300 line-clamp-2 leading-relaxed">{mod.description}</p>
-                        <div className="text-[9px] font-mono text-zinc-400 mt-2 truncate flex items-center justify-between">
+                        <p className={`text-[10px] line-clamp-2 leading-relaxed ${isAero ? 'text-[#4B5563]' : 'text-zinc-300'}`}>{mod.description}</p>
+                        <div className={`text-[9px] font-mono mt-2 truncate flex items-center justify-between ${isAero ? 'text-[#64748B]' : 'text-zinc-400'}`}>
                           <span>by {mod.author}</span>
                           {mod.accentColor && (
                             <span
-                              className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0"
+                              className={`w-2.5 h-2.5 rounded-full shrink-0 ${isAero ? 'border border-[#CBD5E1]' : 'border border-white/20'}`}
                               style={{ backgroundColor: mod.accentColor }}
                               title={`Accent: ${mod.accentColor}`}
                             />
@@ -1282,7 +1340,11 @@ export const SchedulesDonateView: React.FC<SchedulesDonateViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowImportModModal(true)}
-                    className="flex-1 py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className={`flex-1 py-2 px-3 rounded-lg border flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs font-semibold ${
+                      isAero
+                        ? 'border-[#E2E8F0] bg-white hover:bg-[#F6F9FC] text-[#111827]'
+                        : 'border-white/10 hover:border-white/20 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200'
+                    }`}
                   >
                     <Upload size={13} />
                     <span>Import Mod JSON</span>

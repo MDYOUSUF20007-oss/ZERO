@@ -8,6 +8,7 @@ export interface EscapeTicketDockButtonProps {
   accentColor?: string;
   className?: string;
   style?: React.CSSProperties;
+  isAero?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
   accentColor,
   className = '',
   style,
+  isAero = false,
 }) => {
   const uid = useId().replace(/:/g, '');
   const bgGradId = `znDockBg_${uid}`;
@@ -28,7 +30,7 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
 
   if (!ticketCount || ticketCount <= 0) return null;
 
-  const primaryAccent = accentColor || 'var(--accent-hex, #7dd3fc)';
+  const primaryAccent = isAero ? '#111827' : (accentColor || 'var(--accent-hex, #7dd3fc)');
 
   return (
     <button
@@ -49,14 +51,24 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
       >
         <defs>
           <linearGradient id={bgGradId} x1="0" y1="0" x2="296" y2="124" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#0c1118" />
-            <stop offset="55%" stopColor="#070a0f" />
-            <stop offset="100%" stopColor="#040609" />
+            {isAero ? (
+              <>
+                <stop offset="0%" stopColor="#FFFFFF" />
+                <stop offset="55%" stopColor="#F1F5F9" />
+                <stop offset="100%" stopColor="#E2E8F0" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="#0c1118" />
+                <stop offset="55%" stopColor="#070a0f" />
+                <stop offset="100%" stopColor="#040609" />
+              </>
+            )}
           </linearGradient>
           <linearGradient id={specularGradId} x1="0" y1="0" x2="296" y2="124" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={primaryAccent} stopOpacity="0.85" />
-            <stop offset="45%" stopColor={primaryAccent} stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#1e293b" stopOpacity="0.6" />
+            <stop offset="0%" stopColor={primaryAccent} stopOpacity={isAero ? 0.5 : 0.85} />
+            <stop offset="45%" stopColor={primaryAccent} stopOpacity={isAero ? 0.2 : 0.35} />
+            <stop offset="100%" stopColor={isAero ? '#CBD5E1' : '#1e293b'} stopOpacity="0.6" />
           </linearGradient>
           <clipPath id={clipId}>
             <path d="M 16 2 L 68 2 L 74 8 L 80 2 L 280 2 A 14 14 0 0 1 294 16 L 294 48 A 14 14 0 0 0 294 76 L 294 108 A 14 14 0 0 1 280 122 L 80 122 L 74 116 L 68 122 L 16 122 A 14 14 0 0 1 2 108 L 2 76 A 14 14 0 0 0 2 48 L 2 16 A 14 14 0 0 1 16 2 Z" />
@@ -113,7 +125,7 @@ export const EscapeTicketDockButton: React.FC<EscapeTicketDockButtonProps> = ({
           {/* Outer & Inner Concentric Hairline Borders */}
           <path
             d="M 16 2 L 68 2 L 74 8 L 80 2 L 280 2 A 14 14 0 0 1 294 16 L 294 48 A 14 14 0 0 0 294 76 L 294 108 A 14 14 0 0 1 280 122 L 80 122 L 74 116 L 68 122 L 16 122 A 14 14 0 0 1 2 108 L 2 76 A 14 14 0 0 0 2 48 L 2 16 A 14 14 0 0 1 16 2 Z"
-            stroke="#1e293b"
+            stroke={isAero ? '#CBD5E1' : '#1e293b'}
             strokeWidth="2"
           />
           <path

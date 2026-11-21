@@ -1369,6 +1369,7 @@ export const LockDialView: React.FC<LockDialViewProps> = ({
               <EscapeTicketDockButton
                 ticketCount={parachuteMetrics.currentBalance}
                 onOpen={onOpenTicketModal}
+                isAero={isAero}
               />
             </div>
           )}

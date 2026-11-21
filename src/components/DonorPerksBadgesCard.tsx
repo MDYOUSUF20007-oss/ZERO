@@ -52,7 +52,7 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
   onImportData,
   onRestoreSuccess,
 }) => {
-  const { isBespoke, isFluentGlass } = useInterfaceStyle();
+  const { isBespoke, isFluentGlass, isAero } = useInterfaceStyle();
   const isModernFont = isBespoke || isFluentGlass;
   const [tokenInput, setTokenInput] = useState('');
   const [tokenNotice, setTokenNotice] = useState<{ ok: boolean; message: string } | null>(null);
@@ -595,6 +595,60 @@ export const DonorPerksBadgesCard: React.FC<DonorPerksBadgesCardProps> = ({
                   ) : (
                     <>
                       <Copy size={12} strokeWidth={1.75} className="text-cyan-300" />
+                      <span>Copy Email</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : isAero ? (
+            /* Aero UI: clean white card, dark ink */
+            <div className="p-4 rounded-2xl bg-[#F6F9FC] border border-[#E2E8F0] space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#111827] flex items-center gap-1.5">
+                  <Mail size={13} strokeWidth={1.75} className="shrink-0 text-[#374151]" />
+                  <span>Manual Ko-fi Verification</span>
+                </span>
+                <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#E2E8F0] border border-[#CBD5E1] text-[#374151]">
+                  Ko-fi Support
+                </span>
+              </div>
+
+              <p className="text-xs text-[#4B5563] leading-relaxed">
+                Donated on Ko-fi but haven&apos;t received your badge or ticket bundle yet? Send a screenshot
+                of your receipt and your account email to{' '}
+                <a
+                  href={SUPPORT_MAILTO_URL}
+                  onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
+                  className="text-[#0284C7] font-medium underline underline-offset-2"
+                >
+                  <strong>{SUPPORT_EMAIL}</strong>
+                </a>{' '}
+                for manual activation.
+              </p>
+
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href={SUPPORT_MAILTO_URL}
+                  onClick={(e) => handleOpenExternalUrl(e, SUPPORT_MAILTO_URL)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#111827] text-white font-semibold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <Mail size={12} strokeWidth={1.75} />
+                  <span>Email Receipt</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopySupportEmail}
+                  className="px-3 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#111827] font-medium text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  {copiedEmail ? (
+                    <>
+                      <Check size={12} strokeWidth={1.75} className="text-[#059669]" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} strokeWidth={1.75} className="text-[#374151]" />
                       <span>Copy Email</span>
                     </>
                   )}
